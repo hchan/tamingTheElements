@@ -8,6 +8,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { lintPlan } from './lint-targets';
 import { remoteAlias } from './redact';
 import {
   buildImporters,
@@ -36,6 +37,8 @@ export class UsageError extends Error {}
 export interface Args {
   kind: 'commit' | 'push';
   keepGoing: boolean;
+  full: boolean;
+  fromPush: boolean;
   force: boolean;
   hook: boolean;
   json: boolean;
@@ -51,7 +54,7 @@ export function parseArgs(argv: readonly string[]): Args {
   const rest = argv.filter((a) => a !== '--');
   const kind = rest[0];
   if (kind !== 'commit' && kind !== 'push') throw new UsageError('usage: gate.ts <commit|push> [flags]');
-  const a: Args = { kind, keepGoing: false, force: false, hook: false, json: false, noStamp: false, dryRun: false, verify: false };
+  const a: Args = { kind, keepGoing: false, full: false, fromPush: false, force: false, hook: false, json: false, noStamp: false, dryRun: false, verify: false };
   const num = (flag: string, v: string | undefined): number => {
     const n = Number(v);
     if (v === undefined || !Number.isFinite(n) || n <= 0) throw new UsageError(`${flag} needs a positive number`);
@@ -63,6 +66,7 @@ export function parseArgs(argv: readonly string[]): Args {
       if (kind !== k) throw new UsageError(`${f} is only valid for ${k}`);
     };
     if (f === '--keep-going') a.keepGoing = true;
+    else if (f === '--full') a.full = true;
     else if (f === '--no-stamp') a.noStamp = true;
     else if (f === '--force') {
       only('commit');
@@ -268,9 +272,10 @@ const PNPM_RUN = ['corepack', 'pnpm', 'run'];
 const CONCURRENT = ['lint', 'test'] as const;
 
 /** Async step runner: output is buffered (so concurrent steps never interleave). */
-export function runStepAsync(cwd: string, step: string, run: readonly string[] = PNPM_RUN): { done: Promise<StepResult>; kill: () => void } {
+export function runStepAsync(cwd: string, step: string, run: readonly string[] = PNPM_RUN, argv?: readonly string[]): { done: Promise<StepResult>; kill: () => void } {
   const t0 = Date.now();
-  const child = spawn(run[0] as string, [...run.slice(1), step], { cwd, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  const cmd = argv ?? [...run, step];
+  const child = spawn(cmd[0] as string, cmd.slice(1), { cwd, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   const chunks: Buffer[] = [];
   child.stdout.on('data', (d: Buffer) => chunks.push(d));
   child.stderr.on('data', (d: Buffer) => chunks.push(d));
@@ -305,8 +310,9 @@ export async function runConcurrent(
   keepGoing: boolean,
   emit: (step: string, r: StepResult) => void,
   run: readonly string[] = PNPM_RUN,
+  overrides: Readonly<Record<string, readonly string[]>> = {},
 ): Promise<{ name: string; sec: number; code: number; tail: string }[]> {
-  const jobs = steps.map((s) => runStepAsync(cwd, s, run));
+  const jobs = steps.map((s) => runStepAsync(cwd, s, run, overrides[s]));
   let failFast = false;
   const settled = jobs.map((j) =>
     j.done.then((r) => {
@@ -325,6 +331,31 @@ export async function runConcurrent(
     out.push({ name, sec: r.sec, code: r.code, tail: r.tail });
   }
   return out;
+}
+
+/** Files changed vs the merge-base with main plus dirty/untracked ones; undefined when git cannot tell (full lint). */
+function changedForLint(cwd: string): string[] | undefined {
+  try {
+    const base = git(cwd, ['merge-base', 'HEAD', 'main']).trim();
+    const out = [...git(cwd, ['diff', '--no-renames', '--name-only', base]).split('\n'), ...git(cwd, ['ls-files', '--others', '--exclude-standard']).split('\n')];
+    return out.filter(Boolean);
+  } catch {
+    return undefined;
+  }
+}
+
+/** `gate:commit` lints only changed files (a command override); an empty override keeps the full `pnpm run lint`. */
+function lintOverride(a: Args, cwd: string, log: (s: string) => void): Record<string, readonly string[]> {
+  if (a.full || a.fromPush) return {};
+  const top = gitOk(cwd, ['rev-parse', '--show-toplevel']) ?? cwd;
+  const files = lintPlan(changedForLint(cwd), (p) => existsSync(join(top, p)));
+  if (!files) {
+    log('gate:commit: lint all (config change or no diff base)');
+    return {};
+  }
+  log(`gate:commit: lint ${files.length} changed files (--full lints all)`);
+  if (files.length === 0) return { lint: ['node', '-e', '0'] };
+  return { lint: [...PNPM_RUN.slice(0, 2), 'exec', 'eslint', '--cache', '--cache-strategy', 'content', '--cache-location', '.scratch/eslintcache', ...files] };
 }
 
 async function runCommit(a: Args, cwd: string): Promise<number> {
@@ -355,7 +386,7 @@ async function runCommit(a: Args, cwd: string): Promise<number> {
   log(`gate:commit: ${CONCURRENT.join(' + ')} (concurrent) ...`);
   const pair = await runConcurrent(cwd, CONCURRENT, a.keepGoing, (step, r) => {
     if (!a.hook && !a.json) process.stdout.write(`--- ${step} ---\n${r.out}`);
-  });
+  }, PNPM_RUN, a.hook ? {} : lintOverride(a, cwd, log));
   const pairFail = pair.find((r) => r.code !== 0 && r.code !== 143) ?? pair.find((r) => r.code !== 0);
   // a step killed by fail-fast is not a result of its own
   for (const r of pair) if (!(r.code === 143 && pairFail && pairFail !== r)) results.push({ name: r.name, sec: r.sec, code: r.code });
@@ -496,7 +527,7 @@ async function runPush(a: Args, cwd: string, env: Env): Promise<number> {
     if (refuse) console.log(`would refuse: ${refuse}`);
     return 0;
   }
-  const t1 = await runCommit({ ...a, kind: 'commit', hook: false, json: false, force: false }, cwd);
+  const t1 = await runCommit({ ...a, kind: 'commit', fromPush: true, hook: false, json: false, force: false }, cwd);
   if (t1 !== 0) return t1;
   if (sel.noE2e) {
     console.log('gate:push: pass (no e2e-relevant change)');
