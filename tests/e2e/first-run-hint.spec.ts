@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
+import { waitForArena } from './support/wait';
 
 // The e2e harness is manually stepped (?manual=1: the tick stays 0 until stepped), so the ROUND 1 / FIGHT! banner never runs out by itself and the card, which never shows over a banner, would wait for the 7 s + 12 s fallbacks. Step past the banner first.
 const PAST_BANNER = 'window.__TTE__.arena.step(160)';
@@ -140,3 +141,19 @@ for (const vp of [
     });
   });
 }
+
+// qa-r125 (long gate: visual size check, about 10 s): at 1920x1080 the card text scales up instead of staying 11px.
+test('first-run hint text scales up at 1920x1080', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByRole('button', { name: /^Fight/ }).click();
+  await waitForArena(page);
+  await page.evaluate(PAST_BANNER);
+  const card = page.locator('#firstRunHint');
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  const px = await page.evaluate<number>(`parseFloat(getComputedStyle(document.getElementById('firstRunHint')).fontSize)`);
+  expect(px).toBeGreaterThanOrEqual(15);
+  await page.screenshot({ path: '.scratch/first-run-1920.png' });
+  expect(errors).toEqual([]);
+});
