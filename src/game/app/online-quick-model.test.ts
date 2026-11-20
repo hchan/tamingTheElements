@@ -3,7 +3,7 @@ import { DEFAULT_RESTING_SEC, type OnlineFailure } from '../net/ws/online-client
 import {
   BUSY_TEXT, CHECKING_TEXT, CONNECTING_TEXT, controlsFor, checkMatch, endText, failureView, GENERIC_TEXT, IDLE_TEXT, MATCHED_TEXT,
   netStatusText, OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, reconnectText, REST_KEY, resetRestMemory, restStore, rejectText, UPDATE_TEXT,
-  WAITING_PICK_TEXT, waitText, type QuickState,
+  WAITING_PICK_TEXT, waitText, GATEWAY_NOTICE_TEXT, type QuickState,
 } from './online-quick-model';
 
 const FORBIDDEN = /\b(classic|arcade|ruleset|capture|room|friend)\b/i;
@@ -49,7 +49,7 @@ describe('online quick match model', () => {
     for (let code = 0; code <= 14; code++) fs.push({ kind: 'server', code, retryAfterSec: 0, status: 0 });
     for (const f of fs) expect(failureView(f).text, JSON.stringify(f)).not.toMatch(FORBIDDEN);
     const words = [IDLE_TEXT, CONNECTING_TEXT, MATCHED_TEXT, WAITING_PICK_TEXT, CHECKING_TEXT, UPDATE_TEXT, BUSY_TEXT, GENERIC_TEXT,
-      OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, waitText(7), reconnectText(2), rejectText('simVersion'), rejectText('roster'), rejectText(undefined),
+      OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, GATEWAY_NOTICE_TEXT, waitText(7), reconnectText(2), rejectText('simVersion'), rejectText('roster'), rejectText(undefined),
       endText(-1, 0, undefined), endText(0, 0, [2, 1]), endText(1, 0, [0, 2]), netStatusText('desync', undefined) ?? '',
       netStatusText('forfeit', 'timeout') ?? '', netStatusText('forfeit', undefined) ?? '', netStatusText('remote-paused', undefined) ?? ''];
     for (const w of words) expect(w).not.toMatch(FORBIDDEN);

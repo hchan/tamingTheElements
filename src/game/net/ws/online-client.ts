@@ -2,7 +2,7 @@ import { cleanRoomCode, ROOM_CODE_RE } from '../relay';
 import { linkQuality, medianRtt, type LinkQuality } from '../link-quality';
 import type { OnlineConfig } from './config';
 import { WebSocketTransport, type SocketLike } from './transport';
-import { BINARY_TYPE, inboundBytes } from './inbound';
+import { BINARY_TYPE, gatewayEvent, inboundBytes, type GatewayNoticeEvent } from './inbound';
 import { encodeText } from './text-codec';
 import { decodeFrame } from './wire';
 
@@ -45,6 +45,7 @@ export type OnlineEvent =
   | { readonly t: 'resting'; readonly failure: OnlineFailure }
   /** A refused request (busy, no-room, full, ...); the connection stays. */
   | { readonly t: 'error'; readonly failure: OnlineFailure }
+  | GatewayNoticeEvent
   /** Final: no more events. `failure` is undefined for a normal close. */
   | { readonly t: 'closed'; readonly failure: OnlineFailure | undefined };
 
@@ -340,6 +341,7 @@ export class OnlineClient {
       });
       ws.addEventListener('message', (ev) => {
         if (done) { this.onMessage(ws, ev.data); return; }
+        const gw = gatewayEvent(ev.data); if (gw) { this.onEvent(gw); finish(fail(NET)); return; } // A gateway notice instead of WELCOME: this attempt fails fast.
         const b = inboundBytes(ev.data);
         const w = b && decodeLobby(b);
         const e = b && decodeFrame(b);
@@ -379,6 +381,7 @@ export class OnlineClient {
 
   private onMessage(ws: WsLike, data: unknown): void {
     if (ws !== this.hub.cur || this.stopped) return;
+    const gw = gatewayEvent(data); if (gw) { this.onEvent(gw); return; } // Not a frame: the transport never sees it, so it is not malformed.
     const b = inboundBytes(data);
     const w = b && decodeLobby(b);
     if (w) {
