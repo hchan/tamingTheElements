@@ -68,6 +68,9 @@ export function elementalNotice(fighting: boolean, tick: number, e: { name: stri
   return undefined;
 }
 
+/** Left inset (design px) of the line, matching the action bar inset so it never hugs the screen edge (QA r126). */
+export const NOTICE_INSET_X = 24;
+
 /** How long the line stays up (ms) and how much of that it fades over. */
 export const NOTICE_MS = 1600;
 const FADE_MS = 300;
@@ -86,7 +89,7 @@ export class SwapNotice {
 
   constructor(scene: Phaser.Scene, private readonly reduced: () => boolean, private readonly place?: () => { x: number; y: number; scale: number }) {
     // The same engraved bone serif and thin dark outline as the other HUD call-outs (QA r36: it was a plain yellow sans).
-    this.text = styleCombatText(scene.add.text(4, 604, '', { fontSize: '24px', fontStyle: 'bold', resolution: resolutionOf(scene) }), 'number')
+    this.text = styleCombatText(scene.add.text(NOTICE_INSET_X, 604, '', { fontSize: '24px', fontStyle: 'bold', resolution: resolutionOf(scene) }), 'number')
       .setOrigin(0, 1)
       .setDepth(103)
       .setVisible(false);
@@ -105,7 +108,7 @@ export class SwapNotice {
   update(now: number): void {
     if (!this.text.visible) return;
     const box = this.place?.();
-    if (box) this.text.setPosition(box.x + 4 * box.scale, box.y + 604 * box.scale).setScale(box.scale);
+    if (box) this.text.setPosition(box.x + NOTICE_INSET_X * box.scale, box.y + 604 * box.scale).setScale(box.scale);
     const a = noticeAlpha(now - this.shownAt, this.reduced());
     if (a <= 0) this.text.setVisible(false);
     else this.text.setAlpha(a);
