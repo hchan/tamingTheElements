@@ -29,7 +29,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [pax-treenoc-team-step](../brainstorm/pax-treenoc-team-step.md): Pax and Treenoc team step. After v86 pax is 55.4% in 2v2 and treenoc 44.7%.
 - [void-boss-retune](../brainstorm/void-boss-retune.md): Void boss retune. Hero win rates against the Void on Normal and with partners are too low.
 - [3v3-balance-and-round-length](../brainstorm/3v3-balance-and-round-length.md): 3v3 balance and round length. At SIM_VERSION 77 (measured by the FG-RL planner, legacy 12, 4 seeds, 264 matches, report only) Arcade 3v3 race win rates span 0.114-0.750, the round 
-- [pax-speed-10-vs-5](../brainstorm/pax-speed-10-vs-5.md): Pax speed 10 versus 5. data/characters.ts line 27 gives Pax speed 10 while other docs and the legacy data say 5.
+- [pax-speed-10-vs-5](../done/pax-speed-10-vs-5.md): Pax speed 10 versus 5. data/characters.ts line 27 gives Pax speed 10 while other docs and the legacy data say 5.
 - [dash-parry-weather-usage](../brainstorm/dash-parry-weather-usage.md): Dash, Parry, Weather and Charge usage metrics. ability:usage covers the two ability slots only.
 - [weather-secondary-effects](../brainstorm/weather-secondary-effects.md): Weather secondary effects: Sandstorm and Gale. Split from dead-ability-cleanup: Sandstorm slows projectiles, Gale pushes knockback further (sim change, SIM_VERSION bump).
 - [wispera-fearful-lightning](../brainstorm/wispera-fearful-lightning.md): Wispera: more fearful, with lightning. Owner, 2026-11-15: "wispera can be modified to be more fearful with lightning".
@@ -66,7 +66,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### AB-3 Team and speed balance outliers
 
-- Members: [balance-2v2-echo-pax-r37](../brainstorm/balance-2v2-echo-pax-r37.md), [pax-treenoc-team-step](../brainstorm/pax-treenoc-team-step.md), [pax-speed-10-vs-5](../brainstorm/pax-speed-10-vs-5.md), [2v2-time-over-regression](../in-progress/2v2-time-over-regression.md)
+- Members: [balance-2v2-echo-pax-r37](../brainstorm/balance-2v2-echo-pax-r37.md), [pax-treenoc-team-step](../brainstorm/pax-treenoc-team-step.md), [pax-speed-10-vs-5](../done/pax-speed-10-vs-5.md), [2v2-time-over-regression](../in-progress/2v2-time-over-regression.md)
 - Size: M
 - Shared files: src/core/sim/*, src/core/data/*, goldens, tests/fixtures/balance/baseline.json
 - Flags: SIM, PC (balance:compare)
