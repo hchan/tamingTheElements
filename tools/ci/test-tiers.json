@@ -106,7 +106,6 @@
     "terrain-chips-water.spec.ts": "P2",
     "tester-mode.spec.ts": "P1",
     "fight-hud-shots.spec.ts": "P2",
-    "no-touch-stick.spec.ts": "P2",
     "tour-fight-match.spec.ts": "P0",
     "tour-win.spec.ts": "P1",
     "tutorial.spec.ts": "P1",

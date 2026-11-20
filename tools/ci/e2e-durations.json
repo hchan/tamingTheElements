@@ -73,7 +73,6 @@
     "menu-team-radio.spec.ts": { "sec": 1, "tests": 1 },
     "move-backward.spec.ts": { "sec": 110, "tests": 5 },
     "move-wings-knees.spec.ts": { "sec": 43, "tests": 3 },
-    "no-touch-stick.spec.ts": { "sec": 11, "tests": 1 },
     "own-element-fx.spec.ts": { "sec": 37, "tests": 7 },
     "pad-deadzone.spec.ts": { "sec": 3, "tests": 1 },
     "parity/golden-paths.spec.ts": { "sec": 62, "tests": 13 },
