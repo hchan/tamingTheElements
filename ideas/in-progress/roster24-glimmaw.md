@@ -31,3 +31,5 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20 step S (no SIM_VERSION bump, no sim change): measured at SIM_VERSION 92 (full roster, arcade, ai-level 3; 1v1 16 seeds, 2v2 26 seeds, --seed default): Glimmaw 1v1 48.0, 2v2 54.6, both in the 0.45-0.55 band, so no tuning round was needed. The kit has no duplicate footprint (Lure Orb 28x28 range, Abyss Flash centred 100x100 melee; no other ability shares kind, box and damage), tick values are exact multiples of 20 ms (Lure Orb 60 ticks, Abyss Flash 300 cooldown, 12 recovery). Kit pinned in src/core/data/abilities-c.test.ts.
+  Not done: AI rule (none), hit strength and stun rows. The 2v2 rate is near the top of the band (54.6), so any later buff to Glimmaw should be re-measured.
