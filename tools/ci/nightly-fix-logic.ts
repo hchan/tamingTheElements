@@ -1,9 +1,17 @@
 // Nightly fix loop: pure logic (guardrails, prompts, triage, push preconditions, report). No fs, git, clock or claude here;
 // tools/ci/nightly-fix.ts does the I/O. Tests: tests/repo/nightly-fix.test.ts. Design: ideas/in-progress/nightly-fix-loop.md.
-import type { NightlyStatus, TestRef } from './nightly-status';
+import { isStale, type NightlyStatus, type TestRef } from './nightly-status';
+import { redact } from './redact';
 
 export const MAX_ROUNDS = 3;
 export const ROUND_TIMEOUT_MS = 25 * 60_000;
+export const RERUN_TIMEOUT_MS = 40 * 60_000;
+export const GATE_TIMEOUT_MS = 90 * 60_000;
+/** More unrecorded failures than this is a broken night, not something to fix by loop: report needs-human, no rounds. */
+export const MAX_FAILURES = 3;
+export const MAX_RUN_MS = 4 * 3600_000;
+export const STOP_HOUR = 22;
+export const LOCK_STALE_MS = 6 * 3600_000;
 /** Router exits after which the loop stops and reports (89 no runner, 94 unreachable, 95 busy, 96 refused). */
 export const STOP_EXITS: readonly number[] = [89, 94, 95, 96];
 
@@ -26,13 +34,15 @@ export interface FailureResult {
 const FORBIDDEN: readonly RegExp[] = [
   /^src\/core(\/|$)/, // includes SIM_VERSION (src/core/version.ts)
   /^tests\/fixtures(\/|$)/,
-  /^tools\/ci\/size-budget\.json$/,
+  /^tests\/repo(\/|$)/, // the repo guard tests
+  /^tools(\/|$)/, // all tooling (gates, router, size budget, nightly harness)
   /^docs\/REPO-MAP\.md$/,
   /^src\/game\/assets\/manifest[^/]*$/,
   /^(package\.json|pnpm-lock\.yaml|CLAUDE\.md)$/,
+  /^(eslint\.config\.[a-z]+|playwright[^/]*\.config\.[a-z]+|vitest[^/]*\.[a-z]+|vite\.config\.[a-z]+|\.dependency-cruiser\.cjs)$/,
+  /(^|\/)tsconfig[^/]*\.json$/,
   /^\.claude(\/|$)/,
   /^\.github(\/|$)/,
-  /^tools\/ci\/(nightly-[^/]*|known-red\.json|gate\.ts|e2e-route\.ts)$/,
   /(^|\/)(user\.properties|\.env[^/]*|id_[a-z0-9]+|[^/]*\.(pem|key|p12))$/i,
   /(^|\/)(credentials|secrets?)[^/]*$/i,
 ];
@@ -59,8 +69,58 @@ export function parsePorcelainZ(out: string): string[] {
   return paths.filter(Boolean);
 }
 
+/** Paths from a `-z` name list (`git diff --name-only -z`, `git ls-files -z`). */
+export const parseNulList = (out: string): string[] => out.split('\0').filter(Boolean);
+
+/** Added lines of a unified diff that switch a test off, focus it, expect it to fail, or add retries (that would fake a green). */
+const WEAKEN = /\.(skip|fixme|only)\s*\(|\btest\.fail\b|\bretries\b/;
+export function addsSkipMarkers(diff: string): string[] {
+  return diff.split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++') && WEAKEN.test(l)).map((l) => l.slice(1).trim().slice(0, 120));
+}
+
 // ---- when and how often ----
 export const shouldRun = (s: NightlyStatus | undefined): boolean => s?.state === 'red' && s.unrecorded.length > 0;
+/** A status is usable when it is not stale and (for collect-and-fix) was finished by this run's collect. */
+export function statusUsable(s: NightlyStatus, nowMs: number, notBefore?: string): boolean {
+  if (isStale(s, nowMs)) return false;
+  return notBefore === undefined || Date.parse(s.finishedAt) >= Date.parse(notBefore);
+}
+/** 4 h wall clock from the start, and never into the day (22:00 local). */
+export const deadlineReached = (startMs: number, now: Date): boolean => now.getTime() - startMs >= MAX_RUN_MS || now.getHours() >= STOP_HOUR;
+export const tooManyFailures = (n: number): boolean => n > MAX_FAILURES;
+
+export interface ChildResult {
+  readonly code: number;
+  readonly signal?: string | undefined;
+  readonly timedOut?: boolean | undefined;
+}
+/** Any non-zero exit, signal or timeout. */
+export const childFailed = (r: ChildResult): boolean => r.code !== 0 || !!r.signal || !!r.timedOut;
+/** Router re-run: a signal, a timeout or an exit other than 0/1 stops the whole loop and is never retried. */
+export const rerunStops = (r: ChildResult): boolean => !!r.signal || !!r.timedOut || stopsLoop(r.code);
+
+/** Green means the title really passed: every test of the spec ended `expected` with a `passed` result (not skipped). */
+export function titlePassed(json: unknown, ref: TestRef): boolean {
+  let seen = false;
+  let ok = true;
+  const same = (a: string, b: string): boolean => a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+  const walk = (n: { file?: string; specs?: { title?: string; file?: string; tests?: { status?: string; results?: { status?: string }[] }[] }[]; suites?: unknown[] }, file: string): void => {
+    const f = n.file ?? file;
+    for (const sp of n.specs ?? []) {
+      if (sp.title !== ref.title || !same(sp.file ?? f, ref.file)) continue;
+      seen = true;
+      const tests = sp.tests ?? [];
+      if (tests.length === 0) ok = false;
+      for (const t of tests) {
+        const last = (t.results ?? [])[(t.results ?? []).length - 1];
+        if (t.status !== 'expected' || last?.status !== 'passed') ok = false;
+      }
+    }
+    for (const c of n.suites ?? []) walk(c as typeof n, f);
+  };
+  for (const s of ((json ?? {}) as { suites?: unknown[] }).suites ?? []) walk(s as Parameters<typeof walk>[0], '');
+  return seen && ok;
+}
 export const roundAllowed = (roundsDone: number): boolean => roundsDone < MAX_ROUNDS;
 /** After a re-run exit other than green (0) or red (1) the whole loop stops (89/94/95/96 and anything unknown). */
 export const stopsLoop = (exit: number): boolean => STOP_EXITS.includes(exit) || (exit !== 0 && exit !== 1);
@@ -80,6 +140,12 @@ interface PwNode {
 }
 // eslint-disable-next-line no-control-regex
 const ANSI = /\u001b\[[0-9;]*m/g;
+/** Error text goes into the prompt and the report: no ANSI, no hosts or home paths (redact), no absolute paths. */
+export function scrub(s: string): string {
+  return redact(s.replace(ANSI, ''))
+    .replace(/(?<![\w.:/~-])\/(?:[\w.@+-]+\/)+[\w.@+-]*/g, '<path>')
+    .replace(/(?<![\w])[A-Za-z]:\\(?:[^\\\s]+\\)*[^\\\s]*/g, '<path>');
+}
 
 export function extractFailures(json: unknown, wanted: readonly TestRef[]): Failure[] {
   const found = new Map<string, Failure>();
@@ -89,8 +155,8 @@ export function extractFailures(json: unknown, wanted: readonly TestRef[]): Fail
       const res = (sp.tests ?? []).flatMap((t) => t.results ?? []).filter((r) => r.status === 'failed' || r.status === 'timedOut');
       const last = res[res.length - 1];
       if (!last) continue;
-      const msg = (last.errors?.[0]?.message ?? last.error?.message ?? '').replace(ANSI, '').slice(0, 1500);
-      const trace = last.attachments?.find((a) => a.name === 'trace')?.path ?? '';
+      const msg = scrub(last.errors?.[0]?.message ?? last.error?.message ?? '').slice(0, 1500);
+      const trace = (last.attachments?.find((a) => a.name === 'trace')?.path ?? '').split(/[\\/]/).pop() ?? '';
       found.set(`${sp.file ?? f}\0${sp.title ?? ''}`, { file: sp.file ?? f, title: sp.title ?? '', message: msg, tracePath: trace });
     }
     for (const c of n.suites ?? []) walk(c, f);
@@ -100,11 +166,28 @@ export function extractFailures(json: unknown, wanted: readonly TestRef[]): Fail
 }
 
 // ---- the headless claude call ----
-export const ALLOWED_TOOLS = ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash(git diff:*)', 'Bash(git status:*)', 'Bash(git log:*)', 'Bash(corepack pnpm lint:*)', 'Bash(corepack pnpm typecheck:*)', 'Bash(corepack pnpm exec vitest:*)'];
-export const DENIED_TOOLS = ['Bash(git push:*)', 'Bash(git commit:*)', 'Bash(git reset:*)', 'Bash(git checkout:*)', 'Bash(rm:*)', 'WebFetch', 'WebSearch'];
+// Sandbox: the repo's .claude/settings.json allows Bash(*) and user settings load by default, so an allowlist alone is not a fence.
+// Load no user or project settings, no MCP, no hooks (--safe-mode), and give the model only file tools (no Bash at all: the harness
+// runs lint, tests and the re-run). Spend is capped.
+export const TOOLS = ['Read', 'Edit', 'Write', 'Glob', 'Grep'];
+export const DENIED_TOOLS = ['Bash', 'WebFetch', 'WebSearch', 'Task'];
+export const MAX_BUDGET_USD = '5';
 
 export function claudeArgs(prompt: string): string[] {
-  return ['-p', prompt, '--allowedTools', ALLOWED_TOOLS.join(','), '--disallowedTools', DENIED_TOOLS.join(','), '--permission-mode', 'acceptEdits', '--max-turns', '40'];
+  return [
+    '-p', prompt,
+    '--setting-sources', 'local', '--strict-mcp-config', '--safe-mode',
+    '--tools', TOOLS.join(','), '--disallowedTools', DENIED_TOOLS.join(','),
+    '--permission-mode', 'acceptEdits', '--max-turns', '40', '--max-budget-usd', MAX_BUDGET_USD, '--no-session-persistence',
+  ];
+}
+
+const ENV_KEEP = /^(PATH|HOME|USER|LOGNAME|SHELL|LANG|LC_[A-Z]+|TERM|TMPDIR|XDG_[A-Z_]+|ANTHROPIC_[A-Z_]+|CLAUDE_CODE_OAUTH_TOKEN|NODE_OPTIONS)$/;
+/** Clean child env: an allowlist (no SSH_AUTH_SOCK, GITHUB_TOKEN, GIT_*), and pushes disabled for any git the child runs. */
+export function claudeEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(env)) if (v !== undefined && ENV_KEEP.test(k)) out[k] = v;
+  return { ...out, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'remote.origin.pushurl', GIT_CONFIG_VALUE_0: 'disabled:' };
 }
 
 export function buildPrompt(f: Failure, round: number, previous: string): string {
@@ -116,8 +199,8 @@ export function buildPrompt(f: Failure, round: number, previous: string): string
     f.tracePath ? `Playwright trace (on the PC run, may not be readable here): ${f.tracePath}` : '',
     previous ? `Your previous attempt did not turn it green. Router output of the re-run:\n${previous}` : '',
     'Find the cause (test timing or a missing wait, an app race, or a real regression) and make the smallest fix in the test or in src/ outside src/core.',
-    'Hard stops: never edit src/core, tests/fixtures (goldens, baselines), SIM_VERSION, tools/ci/*, docs/REPO-MAP.md, the asset manifest, package.json, lockfiles, .claude, .github or anything credential-like. If the fix needs one of those, change nothing and answer needs-human.',
-    'Do not commit, push, run browsers or edit known-red.json; the harness commits, re-runs the spec on the PC and records known reds.',
+    'Hard stops: never edit src/core, tests/fixtures (goldens, baselines), SIM_VERSION, tools/**, tests/repo/**, eslint/tsconfig/playwright/vitest/depcruise config, docs/REPO-MAP.md, the asset manifest, package.json, lockfiles, .claude, .github or anything credential-like. If the fix needs one of those, change nothing and answer needs-human.',
+    'You have file tools only (no shell). Do not edit known-red.json or add .skip/.fixme/.only/test.fail/retries; the harness commits, runs the checks and re-runs the spec on the PC.',
     'If you judge it a one-off environment flake (no code change is justified), change nothing and say so.',
     'End your answer with exactly one line: TRIAGE: {"verdict":"fixed|flaky|needs-human","reason":"<one sentence>"}',
   ]
@@ -149,7 +232,7 @@ export interface RoundInput {
 export function triage(i: RoundInput): { outcome: Outcome | 'retry'; reason: string } {
   if (i.forbidden.length) return { outcome: 'needs-human', reason: `diff touched forbidden paths: ${i.forbidden.join(', ')}` };
   if (i.agent === 'needs-human') return { outcome: 'needs-human', reason: 'the agent judged it needs a human' };
-  if (i.rerunExit === 0) return i.diffEmpty ? { outcome: 'flaky', reason: 'green on re-run with no code change' } : { outcome: 'fixed', reason: 'green on re-run after the fix' };
+  if (i.rerunExit === 0) return i.diffEmpty ? { outcome: 'flaky', reason: 'green on re-run with no code change (candidate known-red; the coordinator acks it)' } : { outcome: 'fixed', reason: 'green on re-run after the fix' };
   if (!roundAllowed(i.round)) return { outcome: 'unfixed', reason: `still red after ${String(MAX_ROUNDS)} rounds` };
   return { outcome: 'retry', reason: 'still red' };
 }
