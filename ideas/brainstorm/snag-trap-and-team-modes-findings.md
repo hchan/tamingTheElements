@@ -104,7 +104,7 @@ rokcore 41.3, cyclonius 35.2, lavax 22.0.
 - [control-streak-8s-investigation](control-streak-8s-investigation.md): longest no-control streak is 8.4 s; find what stacks past the 3 s cap.
 - [team-mode-3v3-spread](team-mode-3v3-spread.md): re-measured with random partners: still about 50 pp, from two outlier races.
 - [team-harness-random-partners](team-harness-random-partners.md): done (mode `partners`); the pair-synergy table needs more seeds.
-- [tag-swap-forced-vs-voluntary](tag-swap-forced-vs-voluntary.md): split tag-ins in fun-metrics and judge whether tag is overused.
+- [tag-swap-forced-vs-voluntary](../in-progress/tag-swap-forced-vs-voluntary.md): split tag-ins in fun-metrics and judge whether tag is overused.
 - [wispera-team-dominance](../done/wispera-team-dominance.md): wispera is on the winning roster 71 to 77% of the time in teams.
 - [lavax-team-weakness](lavax-team-weakness.md): lavax is 21 to 22% in teams and sinks any roster it joins.
 - [team-pair-synergy-more-seeds](team-pair-synergy-more-seeds.md): rerun `partners` at 200+ seeds to make the pair table readable.
