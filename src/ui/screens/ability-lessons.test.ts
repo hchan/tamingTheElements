@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { ARCADE_SNAG_SLOT, CHARACTERS, characterId } from '@core/index';
+import { ARCADE_SNAG_SLOT, CHARACTERS, characterId, isLegacyCharacter, isReleased } from '@core/index';
 import { DEFAULT_BINDINGS, rebind } from '../../game/platform/input/bindings';
 import { ABILITY_LESSONS, SNAG_LESSON, lessonsFor, promptFor } from './ability-lessons';
 
-/** Mirrors RELEASED_CHARACTERS in src/game/app/arcade-pick.ts (the UI layer may not import it). */
-const RELEASED = CHARACTERS.slice(0, 14);
+/** The legacy 14 plus RELEASED_ROSTER24 (src/core/data/release.ts). */
+const RELEASED = CHARACTERS.filter((c) => isLegacyCharacter(c.id) || isReleased(c.id));
 const BANNED = /\b(classic|arcade|ruleset|capture)\b/i;
 
 describe('ability lessons', () => {
   it('covers every ability of every released hero', () => {
-    expect(RELEASED).toHaveLength(14);
+    expect(RELEASED.length).toBeGreaterThanOrEqual(14);
     for (const c of RELEASED) {
       const lessons = lessonsFor(c.id);
       expect(lessons).toHaveLength(c.abilities.length);

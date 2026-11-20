@@ -10,6 +10,7 @@ import {
   RandomBot,
   SIM_VERSION,
   SimEventKind,
+  RELEASED_ROSTER24,
   characterId,
   collectCommands,
   createMatch,
@@ -34,8 +35,8 @@ describe('Arcade setup crowd-control flag', () => {
 });
 
 describe('Arcade Versus setup', () => {
-  it('offers the 12 playable races (no void characters) and defaults to Sindarosa vs Fiara, AI Normal', () => {
-    expect(ARCADE_RACES).toHaveLength(12);
+  it('offers the 12 legacy races plus any released roster24 hero (no void characters) and defaults to Sindarosa vs Fiara, AI Normal', () => {
+    expect(ARCADE_RACES).toHaveLength(12 + RELEASED_ROSTER24.size);
     for (const r of ARCADE_RACES) expect(CHARACTERS.find((c) => c.id === r)?.element).not.toBe('void');
     expect(DEFAULT_PICK).toEqual({ player: 'sindarosa', enemy: 'rokcore', level: 'normal' });
   });
