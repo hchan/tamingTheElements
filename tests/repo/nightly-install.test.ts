@@ -18,7 +18,7 @@ describe('nightly launchd template', () => {
       expect(text).toContain('/b&amp;c');
       expect(text).not.toMatch(/\{\{/);
     }
-    expect(JOBS.map((j) => `${String(j.hour)}:${String(j.minute)}`)).toEqual(['23:0', '7:30']);
+    expect(JOBS.map((j) => `${String(j.hour)}:${String(j.minute)}`)).toEqual(['23:0', '6:0']);
   });
   it('throws on an unfilled placeholder', () => {
     expect(() => render('{{NOPE}}', {})).toThrow(/unfilled/);
