@@ -29,7 +29,7 @@ export function seedForStage(seed: number, stage: string): number {
 }
 
 /** The stage of the run's current fight. */
-export const currentStage = (run: TourRun): TourStage => buildTour(run.hero, run.seed)[run.stage] as TourStage;
+export const currentStage = (run: TourRun): TourStage => buildTour(run.hero, run.seed, run.roster)[run.stage] as TourStage;
 
 /**
  * The Arcade pick of a stage: the hero team on the player's side, the stage's opponents (lead first) and AI level on the other.

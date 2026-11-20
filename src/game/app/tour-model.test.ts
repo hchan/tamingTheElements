@@ -83,7 +83,7 @@ describe('serialize and parse', () => {
       'nope',
       '[]',
       'null',
-      bad({ v: 2 }),
+      bad({ v: 3 }),
       bad({ seed: 1.5 }),
       bad({ stage: 9 }),
       bad({ continues: 4 }),
@@ -94,5 +94,30 @@ describe('serialize and parse', () => {
     ]) {
       expect(parseRun(raw)).toBeUndefined();
     }
+  });
+});
+
+describe('roster pin', () => {
+  it('startRun pins the roster and it survives a save round trip', () => {
+    const run = startRun(HERO, 5);
+    expect(run.roster?.length).toBeGreaterThan(3);
+    expect(parseRun(serializeRun(run))).toEqual(run);
+  });
+
+  it('a pinned roster drives the ladder instead of the live one', () => {
+    const run = startRun(HERO, 11);
+    const roster = run.roster ?? [];
+    expect(buildTour(HERO, 11, roster)).toEqual(buildTour(HERO, 11));
+    const dropped = buildTour(HERO, 11)[0]?.opponents[1] as CharacterId;
+    const smaller = roster.filter((id) => id !== dropped);
+    expect(JSON.stringify(buildTour(HERO, 11, smaller))).not.toBe(JSON.stringify(buildTour(HERO, 11, roster)));
+  });
+
+  it('v1 saves load without a roster and unusable rosters are rejected', () => {
+    const run = startRun(HERO, 5);
+    const v1 = JSON.stringify({ v: 1, seed: 5, hero: HERO, stage: 0, continues: 3, status: 'playing' });
+    expect(parseRun(v1)?.roster).toBeUndefined();
+    expect(parseRun(serializeRun({ ...run, roster: ['fiara', 'nope', 'rokcore'] as CharacterId[] }))).toBeUndefined();
+    expect(parseRun(serializeRun({ ...run, roster: HERO }))).toBeUndefined();
   });
 });

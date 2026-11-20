@@ -45,20 +45,24 @@ function rivalElement(lead: CharacterId): Element {
 }
 
 /** Builds the 9 stages for a hero team (3 heroes, lead first) and a seed. */
-export function buildTour(hero: readonly CharacterId[], seed: number): readonly TourStage[] {
+export function buildTour(
+  hero: readonly CharacterId[],
+  seed: number,
+  roster: readonly CharacterId[] = ARCADE_RACES,
+): readonly TourStage[] {
   if (hero.length !== TOUR_TEAM_SIZE) throw new RangeError('a tour team has 3 heroes');
   const rng = seedSfc32(seed >>> 0, 'tour');
   const rival = rivalElement(hero[0] as CharacterId);
   const locations = [...shuffle(rng, PLAYABLE_ELEMENTS), ...[0, 1, 2].map(() => rng.pick(PLAYABLE_ELEMENTS)), rival];
   const seen = new Set<string>();
   const stages = locations.map((location, index): TourStage => {
-    const leads = ARCADE_RACES.filter((r) => elementOf(r) === location);
+    const leads = roster.filter((r) => elementOf(r) === location);
     let opponents: CharacterId[] = [];
     for (let tries = 0; tries < 50; tries++) {
       const lead = rng.pick(leads);
       const others = shuffle(
         rng,
-        ARCADE_RACES.filter((r) => r !== lead),
+        roster.filter((r) => r !== lead),
       ).slice(0, TOUR_TEAM_SIZE - 1);
       opponents = [lead, ...others];
       if (!seen.has(opponents.join())) break;
@@ -76,6 +80,8 @@ const STATUSES: readonly TourStatus[] = ['playing', 'lost', 'over', 'won'];
 export interface TourRun {
   readonly seed: number;
   readonly hero: readonly CharacterId[];
+  /** Opponent pool pinned at run start, so a roster release does not re-roll a saved ladder; absent in v1 saves (current roster). */
+  readonly roster?: readonly CharacterId[];
   /** 0-based stage to fight next (stays 8 once the Void is beaten). */
   readonly stage: number;
   readonly continues: number;
@@ -86,6 +92,7 @@ export interface TourRun {
 export const startRun = (hero: readonly CharacterId[], seed: number): TourRun => ({
   seed: seed >>> 0,
   hero: [...hero],
+  roster: [...ARCADE_RACES],
   stage: 0,
   continues: TOUR_CONTINUES,
   status: 'playing',
@@ -105,7 +112,7 @@ export const useContinue = (run: TourRun): TourRun =>
 /** Ends the run after a loss. */
 export const gameOver = (run: TourRun): TourRun => (run.status === 'lost' ? { ...run, status: 'over' } : run);
 
-export const serializeRun = (run: TourRun): string => JSON.stringify({ v: 1, ...run });
+export const serializeRun = (run: TourRun): string => JSON.stringify({ v: 2, ...run });
 
 const isInt = (n: unknown, min: number, max: number): n is number =>
   typeof n === 'number' && Number.isInteger(n) && n >= min && n <= max;
@@ -121,12 +128,18 @@ export function parseRun(raw: string | null | undefined): TourRun | undefined {
   if (typeof o !== 'object' || o === null) return undefined;
   const r = o as Record<string, unknown>;
   const hero = r.hero;
-  if (r.v !== 1 || !isInt(r.seed, 0, 0xffffffff) || !isInt(r.stage, 0, TOUR_STAGES - 1) || !isInt(r.continues, 0, TOUR_CONTINUES)) {
+  if ((r.v !== 1 && r.v !== 2) || !isInt(r.seed, 0, 0xffffffff) || !isInt(r.stage, 0, TOUR_STAGES - 1) || !isInt(r.continues, 0, TOUR_CONTINUES)) {
     return undefined;
   }
   if (!Array.isArray(hero) || hero.length !== TOUR_TEAM_SIZE || new Set(hero).size !== TOUR_TEAM_SIZE) return undefined;
   if (!hero.every((h) => ARCADE_RACES.some((id) => id === h))) return undefined;
   const status = STATUSES.find((s) => s === r.status);
   if (status === undefined) return undefined;
-  return { seed: r.seed, hero: hero as CharacterId[], stage: r.stage, continues: r.continues, status };
+  const base = { seed: r.seed, hero: hero as CharacterId[], stage: r.stage, continues: r.continues, status };
+  if (r.v === 1) return base;
+  const roster = r.roster;
+  const known = (id: unknown): boolean => CHARACTERS.some((c) => c.id === id);
+  if (!Array.isArray(roster) || roster.length < TOUR_TEAM_SIZE || !roster.every(known)) return undefined;
+  if (!PLAYABLE_ELEMENTS.every((e) => roster.some((id) => elementOf(id as CharacterId) === e))) return undefined;
+  return { ...base, roster: roster as CharacterId[] };
 }
