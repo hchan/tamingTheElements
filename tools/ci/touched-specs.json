@@ -36,7 +36,7 @@
     {"area":"net","globs":["src/game/net/**","src/testing/net/**","src/game/app/online-*.ts","src/ui/styles/online-screen.css"],"specs":["online-quick.spec.ts"]},
     {"area":"arcade-app","globs":["src/game/app/arcade-*.ts","src/ui/screens/arcade-versus.ts","src/game/platform/arcade-setting.ts"],"specs":["arcade.spec.ts","arcade-local.spec.ts"]},
     {"area":"tour","globs":["src/game/app/tour*.ts","src/ui/screens/tour*.ts","src/ui/styles/tour-pick.css"],"specs":["tour.spec.ts","tour-fight-match.spec.ts","tour-win.spec.ts"]},
-    {"area":"touch","globs":["src/game/app/touch-*.ts","src/game/hud/touch-overlay.ts","src/game/platform/a11y/touch-layout.ts","src/ui/styles/touch-strike-gutter.css"],"specs":["no-touch-stick.spec.ts","fight-hud-shots.spec.ts","a11y-trap.spec.ts"]},
+    {"area":"touch","globs":["src/game/app/touch-*.ts","src/game/hud/touch-overlay.ts","src/game/platform/a11y/touch-layout.ts"],"specs":["no-touch-stick.spec.ts","fight-hud-shots.spec.ts","a11y-trap.spec.ts"]},
     {"area":"replay","globs":["src/game/replay/**","src/game/app/{replay-viewer,input-display}.ts","src/game/platform/storage/replay-store.ts","src/game/platform/record-setting.ts"],"specs":["playtest-replay.spec.ts","replay-input-display.spec.ts","parity/golden-paths.spec.ts"]},
     {"area":"viewport","globs":["src/game/boot/viewport.ts","src/ui/display-scale.ts"],"specs":["responsive.spec.ts","display-size.spec.ts"]},
     {"area":"styles","globs":["src/ui/styles/**"],"specs":["responsive.spec.ts","menu-team-radio.spec.ts"],"narrow":"stem"},

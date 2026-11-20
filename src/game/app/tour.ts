@@ -16,8 +16,6 @@ import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pi
 import { destroyGame, type GameHandle } from './game-handle';
 import { anySnag, firstRunSeen, isTouchFirst, markFirstRunSeen } from './first-run-hint';
 import { tourKeysDesktop, tourKeysTouch } from './tour-controls';
-import { touchStick } from './touch-stick';
-import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { locationName, openingRush, parseCompleteTeam, tourFight } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
@@ -282,7 +280,7 @@ export function tourScreen(deps: TourDeps): Screen {
         battle.replaceChildren(host);
         game = createGame(host, launch);
         host.append(tourStageChip(r.stage + 1, TOUR_STAGES, r.continues));
-        host.append(...inVisualOrder(buttons), touchStick(), touchStrikes());
+        host.append(...inVisualOrder(buttons));
       }))
       .catch((e: unknown) => {
         if (epoch !== mine) return;

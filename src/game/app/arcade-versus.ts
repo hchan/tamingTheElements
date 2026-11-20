@@ -8,8 +8,6 @@ import { getUiFlags, type UiFlags } from '../platform/flags';
 import { controlsHint, P2_BINDINGS } from '../input/local-two';
 import { getBindings } from '../platform/input/bindings';
 import { afterArenaCreate, anySnag, firstRunHint } from './first-run-hint';
-import { touchStick } from './touch-stick';
-import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
@@ -209,7 +207,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         if (pick.local) host.append(keysHint());
         const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)), ARCADE_SNAG_SLOT[pick.player], pick.partner !== undefined);
         if (firstRun) host.append(firstRun);
-        host.append(...inVisualOrder(buttons), touchStick(), touchStrikes());
+        host.append(...inVisualOrder(buttons));
       }))
       .catch((e: unknown) => {
         if (epoch !== mine) return;

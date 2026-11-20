@@ -21,7 +21,6 @@ const PARTS: readonly (readonly [string, string])[] = [
   ['10-picker-layout.css', '/* Unselect (team slots): empty placehol'],
   ['11-tour-splash.css', '/* Tour versus splash: two big portraits'],
   ['12-phone-landscape.css', '/* Short desktop windows (720p): a small'],
-  ['13-touch-stick.css', '/* Virtual move stick (src/game/app/touc'],
   ['14-online.css', '/* Play intro: one compact line of small'],
   ['15-picker-720p.css', '/* qa-r15: at a short desktop window (72'],
   ['16-settings-sections.css', '/* Settings sections (QA r24): collapsib'],
@@ -29,7 +28,6 @@ const PARTS: readonly (readonly [string, string])[] = [
   ['18-phone-targets.css', '/* Settings on a short viewport (qa-r25)'],
   ['19-tour-stage.css', '/* Tour stage card: scannable fact rows '],
   ['20-picker-small-phone.css', '/* QA r38 (667x375 phone landscape): the'],
-  ['21-touch-strikes.css', '/* Right-thumb attack control (src/game/'],
   ['22-online-live.css', '/* Online, connected and in a match: no '],
 ];
 

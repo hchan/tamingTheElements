@@ -2,8 +2,6 @@ import type { MatchSetup, Transport } from '@core/index';
 import { el } from '@ui/dom';
 import type { GameHandle } from './game-handle';
 import type { ArenaLaunch } from '../scenes/launch';
-import { touchStick } from './touch-stick';
-import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getUiFlags } from '../platform/flags';
 import { getPrefs } from '../platform/a11y/prefs';
@@ -75,6 +73,6 @@ export async function launchOnlineArena(o: OnlineArenaOptions): Promise<OnlineAr
     },
   };
   const game = createGame(holder, launch);
-  holder.append(...inVisualOrder(buttons), touchStick(), touchStrikes());
+  holder.append(...inVisualOrder(buttons));
   return { game, holder };
 }

@@ -20,10 +20,6 @@
   #arcadePick .vsSegmented {
     gap: 3px;
   }
-  /* The virtual stick sits just above the action bar (QA r38: in 2v2 and 3v3 the bar's first slots Blast / Flame / Tag were under it). */
-  #touchStick {
-    bottom: max(8px, calc(env(safe-area-inset-bottom) + 18vh));
-  }
 }
 
 /* QA r39 (667x375 phone landscape): the 2v2/3v3 picker stacked each side's hero cards in one column, pushing the partner below the Fight bar. The slots sit in a row (no stats/abilities lines; the preview card below keeps them), and the first-run card is see-through and click-through apart from Got it, so the fight shows behind it. */
