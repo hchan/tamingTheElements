@@ -54,8 +54,8 @@ test('Help: Back to top from the Controls section focuses the title, which is in
   await expect.poll(() => page.evaluate(`document.getElementById('helpTitle').getBoundingClientRect().top`)).toBeGreaterThanOrEqual(0);
 });
 
-// Plan r118/r119: at desktop size the Jump to chips form two rows of three, not 4 + 1.
-test('Help at 1280x720: the Jump to chips sit in two rows of three', async ({ page }) => {
+// QA r127: at desktop size the Jump to label sits on its own line, then the five chips share one row.
+test('Help at 1280x720: the Jump to label has its own line, then five chips in one row', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/?seed=7#help');
   await waitForRoute(page, '#help');
@@ -63,6 +63,6 @@ test('Help at 1280x720: the Jump to chips sit in two rows of three', async ({ pa
     `[...document.querySelectorAll('nav.helpJump > *')].map((e) => { const r = e.getBoundingClientRect(); return Math.round((r.top + r.bottom) / 2 / 30); })`,
   );
   const counts = [...new Set(tops)].map((t) => tops.filter((x) => x === t).length);
-  expect(counts).toEqual([3, 3]);
+  expect(counts).toEqual([1, 5]);
   if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/help-1280.png` });
 });
