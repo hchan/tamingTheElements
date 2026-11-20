@@ -326,5 +326,10 @@
  *    cooldown 500 -> 340 ms, up to 3 active, recovery 250 -> 150 ms, box 56x36 -> 48x34, hit strength forced light in HIT_STRENGTH_OVERRIDE) so it no longer
  *    repeats Talon Rake and Bristle Stomp (medium melee jabs); Cinder Spray is unchanged. Release set stays empty. Win rates move for Kindrel only.
  *    Re-record reason: a recorded Arcade match with Kindrel changes; every other golden changes only the simVersion header.
+ * 91: Arcade only (Classic hashes unchanged). Roster-24 step S for Brazgor, the kit de-dupe: Forge Gore stops repeating Wyrm Coil and Stoop (90x60 heavy
+ *    blows with 400 ms recovery) and becomes a slow overhead anvil blow (damage 25 -> 30, cooldown 1500 -> 2000 ms, recovery 400 -> 600 ms, box 90x60 -> 70x80);
+ *    Molten Hide is unchanged. Also Kindrel's Ember Bite recovery 150 -> 160 ms (a multiple of the 20 ms tick). Release set stays empty. Win rates move for
+ *    Brazgor and Kindrel only (full roster, level 3: 1v1 46.5 and 46.2, 2v2 47.3 and 48.5 percent, so no life retune).
+ *    Re-record reason: a recorded Arcade match with Brazgor or Kindrel changes; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 90;
+export const SIM_VERSION = 91;
