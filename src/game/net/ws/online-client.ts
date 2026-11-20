@@ -2,7 +2,8 @@ import { cleanRoomCode, ROOM_CODE_RE } from '../relay';
 import { linkQuality, medianRtt, type LinkQuality } from '../link-quality';
 import type { OnlineConfig } from './config';
 import { WebSocketTransport, type SocketLike } from './transport';
-import { decodeText, encodeText } from './text-codec';
+import { BINARY_TYPE, inboundBytes } from './inbound';
+import { encodeText } from './text-codec';
 import { decodeFrame } from './wire';
 
 /** Client of the relay service (docs/ONLINE-PROTOCOL.md section 3, 5, 7; docs/ONLINE-CLIENT.md). Network and clock are injected; nothing here throws. */
@@ -144,11 +145,6 @@ export function decodeLobby(b: Uint8Array): Lobby | undefined {
     }
     default: return { t: 'result-ack', matchId: d.getUint8(1), status: d.getUint8(2) };
   }
-}
-
-/** Bytes of a text message, `undefined` for a binary or non-base64 one (wire v3: frames are base64 text). */
-function bytesOf(data: unknown): Uint8Array | undefined {
-  return typeof data === 'string' ? decodeText(data) : undefined;
 }
 
 function hello(simVersion: number, resume: number): string {
@@ -319,6 +315,7 @@ export class OnlineClient {
         resolve(fail(NET));
         return;
       }
+      ws.binaryType = BINARY_TYPE;
       let done = false;
       const cancel = this.d.after(HELLO_TIMEOUT_MS, () => { finish(fail(NET)); });
       const finish = (r: OnlineResult<Dialled>): void => {
@@ -343,7 +340,7 @@ export class OnlineClient {
       });
       ws.addEventListener('message', (ev) => {
         if (done) { this.onMessage(ws, ev.data); return; }
-        const b = bytesOf(ev.data);
+        const b = inboundBytes(ev.data);
         const w = b && decodeLobby(b);
         const e = b && decodeFrame(b);
         if (w?.t === 'welcome') finish(w.ver === PROTOCOL_VERSION ? ok({ ws, sessionId: w.sessionId, resumed: w.resumed }) : fail({ kind: 'update-needed' }));
@@ -382,7 +379,7 @@ export class OnlineClient {
 
   private onMessage(ws: WsLike, data: unknown): void {
     if (ws !== this.hub.cur || this.stopped) return;
-    const b = bytesOf(data);
+    const b = inboundBytes(data);
     const w = b && decodeLobby(b);
     if (w) {
       this.lobby(w);
