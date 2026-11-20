@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CharacterId } from '@core/index';
-import { ARCADE_RACES, DEFAULT_PICK, RELEASED_CHARACTERS, arcadeRacesFor, roster24On, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
+import { CHARACTERS, RELEASED_ROSTER24, type CharacterId } from '@core/index';
+import { ARCADE_RACES, isReleasedHero, DEFAULT_PICK, arcadeRacesFor, roster24On, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
 
 describe('roster24 gate', () => {
   it('only the dev flag turns it on', () => {
@@ -10,7 +10,8 @@ describe('roster24 gate', () => {
     expect(roster24On('?ff=a, roster24')).toBe(true);
   });
   it('without the flag the pickers list only the released heroes; the flag adds the appended ones', () => {
-    expect(ARCADE_RACES.length).toBeLessThanOrEqual(RELEASED_CHARACTERS);
+    expect(ARCADE_RACES).toEqual(CHARACTERS.filter((c) => c.element !== 'void' && isReleasedHero(c.id)).map((c) => c.id));
+    expect(ARCADE_RACES).toHaveLength(12 + RELEASED_ROSTER24.size);
     expect(arcadeRacesFor('')).toEqual(ARCADE_RACES);
     expect(arcadeRacesFor('?ff=roster24').length).toBeGreaterThanOrEqual(ARCADE_RACES.length);
   });

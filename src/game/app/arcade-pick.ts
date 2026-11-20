@@ -1,4 +1,4 @@
-import { CHARACTERS, type CharacterId } from '@core/index';
+import { CHARACTERS, isLegacyCharacter, isReleased, type CharacterId } from '@core/index';
 
 /**
  * Arcade Versus picks (FUN-DESIGN WP 11 and WP 20), the part the picker needs at once (in the `arcade-versus` chunk): the
@@ -6,8 +6,8 @@ import { CHARACTERS, type CharacterId } from '@core/index';
  * loaded with the battle.
  */
 
-/** `CHARACTERS` entries before this index are released; later (appended) heroes stay hidden until their art passes review (roster-24 plan). */
-export const RELEASED_CHARACTERS = 14;
+/** A hero is released when it is one of the legacy 14 or in `RELEASED_ROSTER24` (src/core/data/release.ts); the other appended heroes stay hidden until released one by one (roster-24 plan). */
+export const isReleasedHero = (id: CharacterId): boolean => isLegacyCharacter(id) || isReleased(id);
 
 /** Dev and test builds only: `?ff=roster24` shows the unreleased heroes in the pickers (production never reads the URL). */
 export const roster24On = (search: string): boolean =>
@@ -15,7 +15,7 @@ export const roster24On = (search: string): boolean =>
 
 /** The races offered by the pickers for a URL query: the released heroes (the void characters are story-only), plus the unreleased ones behind `?ff=roster24`. */
 export const arcadeRacesFor = (search: string): readonly CharacterId[] =>
-  CHARACTERS.filter((c, i) => c.element !== 'void' && (i < RELEASED_CHARACTERS || roster24On(search))).map((c) => c.id);
+  CHARACTERS.filter((c) => c.element !== 'void' && (isReleasedHero(c.id) || roster24On(search))).map((c) => c.id);
 
 /** The released playable races (the two void characters are story-only). */
 export const ARCADE_RACES: readonly CharacterId[] = arcadeRacesFor('');

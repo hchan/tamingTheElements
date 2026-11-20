@@ -3,7 +3,7 @@ import { actionKeyLabel, type Bindings } from '../../game/platform/input/binding
 import { padButtonFor, padButtonLabel, type PadOverrides } from '../../game/platform/input/pad-bindings';
 
 /**
- * Per-ability "try it" lessons for the released heroes (the first RELEASED_CHARACTERS entries of CHARACTERS): one line on what
+ * Per-ability "try it" lessons for the released heroes (the legacy 14 plus RELEASED_ROSTER24): one line on what
  * the ability does, one tip to practise it, plus the key and pad prompt for the ability's box. Words only; data and helpers,
  * no UI yet. Heroes whose kit carries Snag (ARCADE_SNAG_SLOT) get the Snag lesson on that box instead of the ability's own.
  */

@@ -72,3 +72,4 @@ export { GUARD_BREAK_STUN_TICKS, PARRY_STUN_TICKS, RecoveredReason, SNAG_IMMUNE_
 export { CcBucket, CcEnd, CcKind, CcResist, DAZE_GRACE_TICKS, DAZE_MASH_TICKS, DAZE_MIN_TICKS, DAZE_TICKS, DOWN_TICKS, ICED_TICKS, SILENCE_TICKS } from './data/arcade';
 export { RANGED } from './sim/systems/arcade/meter';
 export { SwapBlock, swapAllowed } from './sim/systems/swap';
+export * from './data/release';
