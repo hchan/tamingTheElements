@@ -11,6 +11,7 @@ import { drawRock } from './terrain-props';
 import { mountAmbient, type Ambient } from './terrain-ambient';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import { mountEarthLight, type EarthLight } from './earth-light';
+import { mountStageShade, type StageShade } from './stage-shade';
 import { arcadeHeroScale, visualBox, type Box } from '../views/hero-scale';
 import {
   CHIP_MARGIN, MAX_PARTICLES, MAX_PATCHES, SLOT_HOLD, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS, VOID_BACKDROP_TINT,
@@ -134,9 +135,9 @@ export function mountTerrainView(
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
   const tiles: TileFloor = mountTileFloor(arena, base, seed, TILES_DEPTH);
-  let airShade: Phaser.GameObjects.Rectangle | undefined;
   const stageArt: StageBackdrop = mountStageBackdrop(arena, base);
   const earthLight: EarthLight = mountEarthLight(arena);
+  const shade: StageShade = mountStageShade(arena, ARENA_W, ARENA_H, TILES_DEPTH + 0.05);
   /** True when the Void character is on the field (the Tour's last boss): its arena has no element scenery, only the void backdrop. */
   let voidFight = false;
   let voidChecked = false;
@@ -484,9 +485,6 @@ export function mountTerrainView(
     drawn.glow = glowAlpha(clock, drawn.alpha, reduced);
     p.floor.setAlpha(drawn.alpha);
     tiles.update(scenery, drawn.alpha);
-    // r30: the Air floor is near white, so pale fighters (Echo, Wispera) vanish on it: a soft indigo wash above the floor, below the fighters.
-    if (scenery === 4 && !airShade) airShade = arena.add.rectangle(0, 0, ARENA_W, ARENA_H, 0x2a3a66, 0.2).setOrigin(0, 0).setDepth(TILES_DEPTH + 0.05);
-    airShade?.setVisible(scenery === 4).setAlpha(drawn.alpha);
     earthLight.update(scenery, drawn.alpha, clock * TICK_MS, reduced, highContrast);
     stageArt.update(scenery, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
     p.ambient.update(scenery, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
@@ -501,6 +499,7 @@ export function mountTerrainView(
     updateView();
     bodies = 0;
     view.forEachCharacter(collect);
+    shade.update(scenery, drawn.alpha, highContrast, bodyBox, bodies);
     placeChips(p, count);
     chipNear.fill(0);
     view.forEachCharacter(near);
@@ -567,9 +566,9 @@ export function mountTerrainView(
     states.delete(arena);
     publishAvoid(undefined);
     tiles.destroy();
-    airShade?.destroy();
     stageArt.destroy();
     earthLight.destroy();
+    shade.destroy();
     if (parts) {
       parts.ambient.destroy();
       for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels, ...parts.chips]) o?.destroy();
