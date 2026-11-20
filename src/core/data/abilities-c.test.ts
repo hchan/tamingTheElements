@@ -44,4 +44,13 @@ describe('abilities-c tick values', () => {
     const mend = get('mycelium-mend');
     expect([mend?.heal, mend?.cooldownTicks]).toEqual([8, 1500]);
   });
+
+  it('pins the Nykra kit: Hoof Crash 20 damage, 50 cooldown ticks, 70x50 box; Kelp Lash 14 damage, 125 cooldown ticks, 130x30 box (no other ability shares box and damage; damage 18 or 17 and 13 pushed 1v1 or 2v2 out of band, see ideas/in-progress/roster24-nykra.md)', () => {
+    const hoof = get('hoof-crash');
+    expect([hoof?.damage, hoof?.cooldownTicks]).toEqual([20, 50]);
+    expect([hoof?.w, hoof?.h]).toEqual([70, 50]);
+    const kelp = get('kelp-lash');
+    expect([kelp?.damage, kelp?.cooldownTicks]).toEqual([14, 125]);
+    expect([kelp?.w, kelp?.h]).toEqual([130, 30]);
+  });
 });

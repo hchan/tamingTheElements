@@ -31,3 +31,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20 step S (no SIM_VERSION bump, no sim change): re-measured at SIM_VERSION 92 (full roster, arcade, ai-level 3; 1v1 16 seeds, 2v2 26 seeds, --seed default): Nykra 1v1 52.4, 2v2 59.7 (confirmed out of band). The kit already has no duplicate footprint (Hoof Crash 70x50, Kelp Lash 130x30; no other ability shares a box), tick values are exact multiples of 20 ms (Hoof Crash 50 ticks, Kelp Lash 125).
+  Three tuning rounds on Nykra's own abilities only (1v1 / 2v2): Hoof Crash 20 -> 17: 42.1 / 52.7 (1v1 out); Hoof Crash 18: 48.4 / 55.5 (2v2 out by 0.5); Hoof Crash 18 + Kelp Lash 13: 44.3 / 54.0 (1v1 out by 0.7). The damage lever is steep (about 3.4 pp per damage point in 1v1, about 2.3 in 2v2) and the 1v1 and 2v2 bands do not overlap with damage alone. All reverted; kit pinned in src/core/data/abilities-c.test.ts. Best tried: Hoof Crash 18 / Kelp Lash 14 (48.4 / 55.5) and 18 / 13 (44.3 / 54.0).
+  Untried ideas for the next S (needs a lever that hits 2v2 harder than 1v1): Hoof Crash maxActive 2 -> 1, a longer Kelp Lash cooldown, hit strength or stun rows, or an AI rule (Nykra has none; ability usage not measured). Other out-of-band heroes in the 2v2 run (not touched): cyclonius 66.9, echo 57.0, vortigal 42.3, rokcore 39.5, treenoc 42.5.
+  Not done: AI rule, hit strength rows.
