@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ROUND_INTRO_TICKS, RoundPhase, SimEventKind, type SimEvent } from '@core/index';
 import { announcementsFor, type Announcement } from '../a11y/announcer';
 import {
-  BANNER_IN_MS, FIGHT_BANNER_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TICK_MS, TIMER_X, bannerScale, pipPairCentre, PIP_R, pips,
+  BANNER_IN_MS, FIGHT_BANNER_TICKS, FIGHT_CUT_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TICK_MS, TIMER_X, bannerScale, pipPairCentre, PIP_R, pips,
   timerLabel, timerStyle, type RoundSink,
 } from './round-announcer';
 
@@ -37,6 +37,28 @@ const last = <T>(xs: readonly T[]): T | undefined => xs[xs.length - 1];
 describe('FIGHT! banner length', () => {
   it('is gone within 0.6 s so it never overlaps the first hit', () => {
     expect(FIGHT_BANNER_TICKS * TICK_MS).toBeLessThanOrEqual(600);
+  });
+});
+
+describe('FIGHT! banner contact cut', () => {
+  it('a first hit while FIGHT! is up ends it FIGHT_CUT_TICKS later; a hit after it ran out, or a later one, changes nothing', () => {
+    const f = fake();
+    const a = new RoundAnnouncer(f.sink);
+    a.consume([ev(91, SimEventKind.fight)]);
+    a.consume([ev(100, SimEventKind.hitConfirmed)]);
+    expect(last(f.banners)).toEqual({ main: 'FIGHT!', sub: '', from: 91, until: 100 + FIGHT_CUT_TICKS });
+    const n = f.banners.length;
+    a.consume([ev(101, SimEventKind.hitConfirmed)]);
+    expect(f.banners).toHaveLength(n);
+    // A hit late in the banner (inside the cut window) leaves it alone.
+    const g = fake();
+    const b = new RoundAnnouncer(g.sink);
+    b.consume([ev(91, SimEventKind.fight), ev(91 + FIGHT_BANNER_TICKS - 2, SimEventKind.hitConfirmed)]);
+    expect(g.banners).toHaveLength(1);
+    // Hits during other banners are ignored.
+    b.consume([ev(300, SimEventKind.ko, { team: 1 }), ev(301, SimEventKind.hitConfirmed)]);
+    expect(last(g.banners)?.main).toBe('K.O.');
+    expect(g.banners).toHaveLength(2);
   });
 });
 
