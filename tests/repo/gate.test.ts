@@ -15,6 +15,7 @@ import {
   pushVerify,
   refusal,
   routerArgv,
+  runPassed,
   runConcurrent,
   summaryLine,
   treeKey,
@@ -261,5 +262,19 @@ describe('runConcurrent', () => {
     process.env['FAIL'] = 'test';
     const res = await runConcurrent(dir, ['lint', 'test'], true, () => undefined, run());
     expect(res.map((r) => r.code)).toEqual([0, 1]);
+  });
+});
+
+describe('runPassed', () => {
+  it('passes on exit 0 and on a PUSH OK verdict with a failing exit', () => {
+    expect(runPassed(0, '')).toBe(true);
+    expect(runPassed(1, 'x\nVERDICT: PUSH OK: no new repeating P0/P1 red\nreport: y\n')).toBe(true);
+  });
+  it('fails on BLOCKED, HOLD, NO VERDICT and a missing verdict line', () => {
+    expect(runPassed(1, 'VERDICT: BLOCKED: 1 new repeating red(s)')).toBe(false);
+    expect(runPassed(1, 'VERDICT: HOLD: 1 new red(s)')).toBe(false);
+    expect(runPassed(1, 'VERDICT: NO VERDICT: the run did not finish')).toBe(false);
+    expect(runPassed(1, 'PUSH OK mentioned mid-line, no verdict')).toBe(false);
+    expect(runPassed(1, '')).toBe(false);
   });
 });
