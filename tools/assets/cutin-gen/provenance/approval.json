@@ -1,0 +1,20 @@
+{
+  "_sources": [
+    "art session .scratch/batch-r8/approval-cutin-r24.json (abyssor, durrok, glimmaw, kindrel, quarrak, umbrel, vortigal, zephra)",
+    "art session .scratch/batch-r8/approval-r24-cutin-a.json (hyalia, brazgor)",
+    "art session .scratch/batch-r8/approval-r24-cutin-b-wm3.json (nykra)",
+    "art session .scratch/fetch-649e/approval.json (ouroth, darkened 30% on install)"
+  ],
+  "cutin_r24_abyssor": {"approved": "cutin_r24_abyssor_50093_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_brazgor": {"approved": "cutin_r24_brazgor_53010_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_durrok": {"approved": "cutin_r24_durrok_50060_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_glimmaw": {"approved": "cutin_r24_glimmaw_50053_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_hyalia": {"approved": "cutin_r24_hyalia_53030_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_kindrel": {"approved": "cutin_r24_kindrel_50003_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_nykra": {"approved": "cutin_r24_nykra_53072_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_ouroth": {"approved": "cutin_r28_ouroth_50172_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_quarrak": {"approved": "cutin_r24_quarrak_50022_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_umbrel": {"approved": "cutin_r24_umbrel_50112_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_vortigal": {"approved": "cutin_r24_vortigal_50101_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+  "cutin_r24_zephra": {"approved": "cutin_r24_zephra_50072_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true}
+}
