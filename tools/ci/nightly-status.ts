@@ -72,7 +72,9 @@ export function parseResults(json: unknown): Results {
 
 /** Failed tests not covered by a known-red entry (same file, title contains the entry's substring). */
 export function unrecordedFailures(failed: readonly TestRef[], known: readonly KnownRed[]): TestRef[] {
-  return failed.filter((t) => !known.some((k) => t.file === k.file && t.title.includes(k.titleIncludes)));
+  // Playwright reports the file relative to testDir ('x.spec.ts'); known-red.json uses 'tests/e2e/x.spec.ts'. Same spec either way.
+  const same = (a: string, b: string): boolean => a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+  return failed.filter((t) => !known.some((k) => same(t.file, k.file) && t.title.includes(k.titleIncludes)));
 }
 
 /** Map a router exit code to a state. Only a completed run with results can be pass or red; everything else is not-run. */

@@ -14,11 +14,15 @@ describe('nightly launchd template', () => {
     for (const job of JOBS) {
       const text = render(tmpl, varsFor(job, { repo: '/r', corepack: '/c/corepack', path: '/a:/b&c', home: '/h', log: '/l.log' }));
       expect(text).toContain(`<string>${job.subcommand}</string>`);
+      expect(text).toContain(`<string>${job.script}</string>`);
       expect(text).toContain(`<integer>${String(job.hour)}</integer>`);
       expect(text).toContain('/b&amp;c');
       expect(text).not.toMatch(/\{\{/);
     }
     expect(JOBS.map((j) => `${String(j.hour)}:${String(j.minute)}`)).toEqual(['23:0', '6:0']);
+  });
+  it('chains the 06:00 collect job into the fix loop', () => {
+    expect(JOBS.find((j) => j.hour === 6)).toMatchObject({ script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix' });
   });
   it('throws on an unfilled placeholder', () => {
     expect(() => render('{{NOPE}}', {})).toThrow(/unfilled/);
