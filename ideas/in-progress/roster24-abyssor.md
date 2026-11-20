@@ -31,3 +31,5 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20 step S (no SIM_VERSION bump, no sim change): re-measured at SIM_VERSION 92 (full roster, arcade, ai-level 3, default seeds): Abyssor 1v1 47.8, 2v2 52.2, both in band 0.45-0.55, so no tuning. The kit already has no duplicate footprint (Tentacle Lash 160x30 is the only 160 box, Kelp Lash is 130x30; Abyssal Pull is the only body pull), tick values are exact multiples of 20 ms (Lash cd 60 ticks, delay 15; Pull cd 300). Kit pinned in src/core/data/abilities-c.test.ts.
+  Not done: AI rule, hit strength rows.
