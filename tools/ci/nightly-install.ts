@@ -1,5 +1,5 @@
 /**
- * Install or remove the two launchd LaunchAgents of the nightly e2e (submit 23:00; 06:00 collect, then the fix loop via nightly-fix.ts collect-and-fix). Paths (repo, corepack, PATH,
+ * Install or remove the three launchd LaunchAgents of the nightly e2e (submit 23:00; 02:00 collect with retries until 04:30, then the fix and full re-run cycles via nightly-fix.ts collect-and-fix; 07:00 read-only report). Paths (repo, corepack, PATH,
  * HOME) are filled into tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl here, at install time; nothing machine-specific is committed.
  * `pnpm nightly:install [--dry-run] [--uninstall]`. launchd runs a missed calendar job once on wake.
  */
@@ -11,13 +11,14 @@ import { join, resolve } from 'node:path';
 export interface Job {
   readonly label: string;
   readonly script: string;
-  readonly subcommand: 'submit' | 'collect' | 'collect-and-fix';
+  readonly subcommand: 'submit' | 'collect' | 'collect-and-fix' | 'report';
   readonly hour: number;
   readonly minute: number;
 }
 export const JOBS: readonly Job[] = [
   { label: 'dev.tte.nightly-e2e-submit', script: 'tools/ci/nightly-e2e.ts', subcommand: 'submit', hour: 23, minute: 0 },
-  { label: 'dev.tte.nightly-e2e-collect', script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix', hour: 6, minute: 0 },
+  { label: 'dev.tte.nightly-e2e-collect', script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix', hour: 2, minute: 0 },
+  { label: 'dev.tte.nightly-e2e-report', script: 'tools/ci/nightly-fix.ts', subcommand: 'report', hour: 7, minute: 0 },
 ];
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

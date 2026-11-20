@@ -2,10 +2,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { fix, main, type FixDeps, type FixRun } from '../../tools/ci/nightly-fix';
+import { fix, main, report, type FixDeps, type FixRun } from '../../tools/ci/nightly-fix';
 import {
-  addsSkipMarkers, buildPrompt, childFailed, claudeArgs, claudeEnv, deadlineReached, DENIED_TOOLS, noPushEnv, extractFailures, finalState, forbiddenTouched, isForbiddenPath, MAX_ROUNDS,
-  parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
+  addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, collectUnfinished, deadlineFor, deadlineReached, DENIED_TOOLS, noPushEnv,
+  extractFailures, finalState, forbiddenTouched, FULL_RUN_MS, isForbiddenPath, judgeFullRun, MAX_FULL_CYCLES, MAX_ROUNDS, parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops,
+  retargets, retryAllowed, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
   type PushInput,
 } from '../../tools/ci/nightly-fix-logic';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
@@ -82,8 +83,75 @@ describe('rounds, stops and green', () => {
     expect(statusUsable(s, t, '2026-11-20T05:30:00.000Z')).toBe(true);
     const noon = new Date(2026, 10, 20, 12, 0, 0);
     expect(deadlineReached(noon.getTime(), noon)).toBe(false);
-    expect(deadlineReached(noon.getTime() - 4 * 3600_000, noon)).toBe(true);
+    expect(deadlineReached(noon.getTime() - 6 * 3600_000, noon)).toBe(true);
     expect(deadlineReached(noon.getTime(), new Date(2026, 10, 20, 22, 0, 0))).toBe(true);
+  });
+});
+
+describe('cycle timing: deadline, retry wait, round and full-run budgets', () => {
+  const at = (h: number, m = 0): Date => new Date(2026, 10, 20, h, m, 0);
+  it('a night run (before 07:00) stops at 07:00 the same morning, a daytime run at 22:00', () => {
+    expect(deadlineFor(at(2))).toEqual(at(7));
+    expect(deadlineFor(at(6, 59))).toEqual(at(7));
+    expect(deadlineFor(at(12))).toEqual(at(22));
+    expect(deadlineFor(at(23)).getTime()).toBe(at(23).getTime());
+    expect(deadlineReached(at(2).getTime(), at(6, 59))).toBe(false);
+    expect(deadlineReached(at(2).getTime(), at(7))).toBe(true);
+  });
+  it('no round or full run starts that cannot finish before the deadline', () => {
+    const start = at(2).getTime();
+    expect(canStartRound(start, at(6, 40))).toBe(true);
+    expect(canStartRound(start, at(6, 41))).toBe(false);
+    expect(canStartFullRun(start, at(5, 30))).toBe(true);
+    expect(canStartFullRun(start, at(5, 31))).toBe(false);
+    expect(FULL_RUN_MS).toBe(90 * 60_000);
+  });
+  it('child timeouts are capped at the time left (at least a second)', () => {
+    const start = at(2).getTime();
+    expect(capTimeout(25 * 60_000, start, at(6, 50))).toBe(10 * 60_000);
+    expect(capTimeout(25 * 60_000, start, at(3))).toBe(25 * 60_000);
+    expect(capTimeout(25 * 60_000, start, at(8))).toBe(1000);
+  });
+  const pending = pendingStatus(SHA, 'raw-1', 's');
+  const busy = { ...pending, state: 'not-run' as const, exit: 95, reason: 'PC busy' };
+  it('unfinished = pending, or not-run for PC busy/unreachable; pass, red and other not-run are finished', () => {
+    expect(collectUnfinished(pending)).toBe(true);
+    expect(collectUnfinished(busy)).toBe(true);
+    expect(collectUnfinished({ ...busy, exit: 94 })).toBe(true);
+    expect(collectUnfinished({ ...busy, exit: 97 })).toBe(false);
+    expect(collectUnfinished({ ...busy, state: 'red' })).toBe(false);
+    expect(collectUnfinished(undefined)).toBe(false);
+  });
+  it('retries every 20 min while the next try starts by 04:30, never later', () => {
+    const start = at(2);
+    expect(retryAllowed(busy, start, at(2))).toBe(true);
+    expect(retryAllowed(busy, start, at(4, 10))).toBe(true);
+    expect(retryAllowed(busy, start, at(4, 11))).toBe(false);
+    expect(retryAllowed({ ...busy, state: 'red' }, start, at(2))).toBe(false);
+    expect(retryAllowed(busy, at(23), new Date(2026, 10, 21, 2, 0))).toBe(true);
+    expect(retryAllowed(busy, at(23), new Date(2026, 10, 21, 4, 20))).toBe(false);
+  });
+  it('MAX_FULL_CYCLES is 2', () => {
+    expect(MAX_FULL_CYCLES).toBe(2);
+  });
+});
+
+describe('judging a full re-run', () => {
+  const t = (title: string) => ({ file: 'menu.spec.ts', title });
+  const known = [{ file: 'tests/e2e/menu.spec.ts', titleIncludes: 'known' }];
+  it('a red absent from the pre-fix nightly is new (collateral); one that was red before is remaining', () => {
+    const v = judgeFullRun({ passed: 5, failed: [t('opens'), t('collateral')], flaky: [] }, [t('opens')], []);
+    expect(v.newReds).toEqual([t('collateral')]);
+    expect(v.remaining).toEqual([t('opens')]);
+  });
+  it('flaky and known-red never count as new reds', () => {
+    const v = judgeFullRun({ passed: 5, failed: [t('a known one')], flaky: [t('wobbly')] }, [t('opens')], known);
+    expect(v).toEqual({ newReds: [], remaining: [] });
+  });
+  it('only a red whose fix did not hold is chased again', () => {
+    const r = (title: string, outcome: 'fixed' | 'flaky' | 'needs-human' | 'unfixed') => ({ ...t(title), outcome, rounds: 1, reason: '' });
+    const v = { newReds: [], remaining: [t('a'), t('b'), t('c'), t('d')] };
+    expect(retargets(v, [r('a', 'fixed'), r('b', 'flaky'), r('c', 'needs-human'), r('d', 'unfixed')])).toEqual([t('a')]);
   });
 });
 
@@ -196,6 +264,17 @@ interface Scenario {
   commitCode?: number;
   failures?: number;
   env?: Record<string, string>;
+  /** Titles that fail in the Nth full run (0-based); a run without an entry is all green. */
+  fullReds?: string[][];
+  /** Titles that are flaky (passed on retry) in every full run. */
+  fullFlaky?: string[];
+  /** Exit of the full run's submit and of its attach (default 0 and 0/1 by reds). */
+  fullSubmit?: number;
+  fullAttach?: number;
+  /** Start of the fake clock (default noon); `sleep` advances it. */
+  clock?: Date;
+  /** Exit codes of the collect step's attach, one per try; the last repeats; a code of 1 writes a red result for `opens`. */
+  collectCodes?: number[];
 }
 
 describe('nightly-fix command (fake runner)', () => {
@@ -203,7 +282,11 @@ describe('nightly-fix command (fake runner)', () => {
   let out: string;
   let calls: string[];
   let envs: Record<string, Record<string, string | undefined>>;
+  let sleeps: number[];
+  let clock: Date;
   beforeEach(() => {
+    sleeps = [];
+    clock = NOON();
     mkdirSync(resolve('.scratch'), { recursive: true });
     dir = mkdtempSync(join(resolve('.scratch'), 'nightly-fix-test-'));
     out = '';
@@ -229,11 +312,17 @@ describe('nightly-fix command (fake runner)', () => {
     let originCalls = 0;
     let reruns = 0;
     let commits = 0;
+    let fullRuns = 0;
+    let collects = 0;
     return {
       env: sc.env ?? {},
       repo: join(dir, 'repo'),
       statusDir: join(dir, 'gate'),
-      now: NOON,
+      now: () => (sc.clock ? clock : NOON()),
+      sleep: (ms) => {
+        sleeps.push(ms);
+        clock = new Date(clock.getTime() + ms);
+      },
       run: (cmd, args, _cwd, env) => {
         const line = [cmd, ...args].join(' ');
         calls.push(line);
@@ -241,6 +330,23 @@ describe('nightly-fix command (fake runner)', () => {
         if (cmd === 'claude') {
           envs['claude'] = env;
           return { ...ok('TRIAGE: {"verdict":"fixed","reason":"waits for the menu"}'), ...sc.claude };
+        }
+        if (cmd === 'corepack' && line.includes('--pc-detach')) return ok(`queued raw-9 in cpu-full\n`, sc.fullSubmit ?? 0);
+        if (cmd === 'corepack' && line.includes('--pc-cancel')) return ok();
+        if (cmd === 'corepack' && line.includes('--pc-attach')) {
+          const to = env['PLAYWRIGHT_JSON_OUTPUT_FILE'];
+          const spec = (title: string, status: string, last: string) => ({ title, file: 'menu.spec.ts', tests: [{ status, results: [{ status: last, errors: [{ message: 'boom' }] }] }] });
+          if (line.includes('raw-9')) {
+            const reds = sc.fullReds?.[fullRuns] ?? [];
+            fullRuns++;
+            const specs = [spec('other passing', 'expected', 'passed'), ...reds.map((x) => spec(x, 'unexpected', 'failed')), ...(sc.fullFlaky ?? []).map((x) => spec(x, 'flaky', 'passed'))];
+            if (to) writeFileSync(to, JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs }] }));
+            return ok('', sc.fullAttach ?? (reds.length ? 1 : 0));
+          }
+          const code = sc.collectCodes ? (sc.collectCodes[Math.min(collects, sc.collectCodes.length - 1)] ?? 0) : 0;
+          collects++;
+          if (to && code === 1) writeFileSync(to, JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs: [spec('opens', 'unexpected', 'failed')] }] }));
+          return ok('', code);
         }
         if (cmd === 'corepack' && line.includes('e2e-route.ts')) {
           reruns++;
@@ -288,8 +394,11 @@ describe('nightly-fix command (fake runner)', () => {
   };
   const go = (sc: Scenario = {}): number => {
     writeRed(sc.failures);
-    return fix(deps(sc), false);
+    if (sc.clock) clock = sc.clock;
+    return fix(deps(sc), false, sc.clock ? { startMs: sc.clock.getTime() } : {});
   };
+  const fullRunCalls = (): string[] => calls.filter((c) => c.includes('--pc-detach'));
+  const kept = (): boolean => calls.some((c) => c.startsWith('git branch -f nightly-fix-kept/2026-11-20 nightly-fix/2026-11-20'));
 
   it('does nothing without a red status with unrecorded failures', () => {
     expect(fix(deps(), false)).toBe(0);
@@ -304,6 +413,7 @@ describe('nightly-fix command (fake runner)', () => {
     expect(out).toContain('tests/e2e/menu.spec.ts');
     expect(out).toContain('--pc');
     expect(out).toContain('(no force)');
+    expect(out).toContain('FULL e2e');
     expect(out).toContain('--restricted');
     expect(calls).toEqual([]);
   });
@@ -355,15 +465,98 @@ describe('nightly-fix command (fake runner)', () => {
     expect(calls.filter((c) => c.startsWith('git worktree remove')).length).toBeGreaterThan(1);
     expect(calls.some((c) => c.startsWith('git branch -D nightly-fix/2026-11-20'))).toBe(true);
   });
+  it('gate:push red keeps the fixes on the kept branch too', () => {
+    go({ gate: 1 });
+    expect(kept()).toBe(true);
+  });
   it('gate:push red: no push', () => {
     go({ gate: 1 });
     expect(pushes()).toEqual([]);
     expect(status().blockers.join(' ')).toContain('gate:push failed');
   });
-  it('re-run red on the merged tree: no push and no gate run', () => {
-    go({ rerunRedFrom: 2 });
+  it('a green full run of the fixed tree: one full run, then gate:push and one plain push', () => {
+    go();
+    expect(fullRunCalls()).toHaveLength(1);
+    const full = calls.filter((c) => c.includes('e2e-route.ts'));
+    expect(full.some((c) => c.includes('--full') && c.includes('--pc-detach'))).toBe(true);
+    expect(full.some((c) => c.includes('--pc-attach raw-9'))).toBe(true);
+    expect(full.every((c) => !/--local|--mac/.test(c))).toBe(true);
+    expect(calls.findIndex((c) => c.includes('--pc-attach raw-9'))).toBeLessThan(calls.findIndex((c) => c.includes('gate:push')));
+    expect(pushes()).toEqual(['git push origin HEAD:main']);
+    expect(kept()).toBe(false);
+  });
+  it('the full run goes through the queue without credentials, never forcing the Mac', () => {
+    go({ env: { SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't' } });
+    expect(envs['rerun']).not.toHaveProperty('SSH_AUTH_SOCK');
+    expect(calls.filter((c) => c.includes('e2e-route.ts')).some((c) => c.includes('TTE_ALLOW_MAC_E2E'))).toBe(false);
+  });
+  it('collateral: a new red in the full re-run means no push, needs-human, and the fixes stay on a kept local branch', () => {
+    go({ fullReds: [['collateral victim']] });
     expect(pushes()).toEqual([]);
     expect(calls.some((c) => c.includes('gate:push'))).toBe(false);
+    expect(status().state).toBe('needs-human');
+    expect(status().results.some((r) => r.outcome === 'needs-human' && r.reason.includes('collateral'))).toBe(true);
+    expect(status().blockers.join(' ')).toContain('new reds');
+    expect(kept()).toBe(true);
+    expect(fullRunCalls()).toHaveLength(1);
+  });
+  it('flaky specs in the full run do not block the push and are never chased', () => {
+    go({ fullFlaky: ['wobbly'] });
+    expect(pushes()).toEqual(['git push origin HEAD:main']);
+    expect(claudeCalls()).toHaveLength(1);
+  });
+  it('a fix that did not hold is chased once more, then a second full run decides (max 2 full runs)', () => {
+    go({ fullReds: [['opens'], ['opens']] });
+    expect(claudeCalls()).toHaveLength(2);
+    expect(fullRunCalls()).toHaveLength(MAX_FULL_CYCLES);
+    expect(pushes()).toEqual(['git push origin HEAD:main']); // opens was already red before: not a new red
+  });
+  it('a second cycle that comes back green pushes the twice-fixed tree', () => {
+    go({ fullReds: [['opens'], []] });
+    expect(claudeCalls()).toHaveLength(2);
+    expect(fullRunCalls()).toHaveLength(2);
+    expect(pushes()).toEqual(['git push origin HEAD:main']);
+    expect(status().results.filter((r) => r.outcome === 'fixed')).toHaveLength(1);
+  });
+  it('a collateral red in the second full run also blocks the push', () => {
+    go({ fullReds: [['opens'], ['opens', 'collateral victim']] });
+    expect(fullRunCalls()).toHaveLength(2);
+    expect(pushes()).toEqual([]);
+    expect(kept()).toBe(true);
+  });
+  it('the full run did not finish (attach exit 95): nothing pushed, the full job is cancelled, fixes kept', () => {
+    go({ fullAttach: 95 });
+    expect(pushes()).toEqual([]);
+    expect(calls.some((c) => c.includes('--pc-cancel raw-9'))).toBe(true);
+    expect(status().blockers.join(' ')).toContain('did not finish');
+    expect(kept()).toBe(true);
+  });
+  it('no job id from the full submit: nothing pushed', () => {
+    go({ fullSubmit: 95 });
+    expect(pushes()).toEqual([]);
+    expect(status().blockers.join(' ')).toContain('did not finish');
+  });
+  it('too little time before 07:00 for a full run: fixes are kept, no full run starts, no push', () => {
+    go({ clock: new Date(2026, 10, 20, 5, 45, 0) });
+    expect(claudeCalls()).toHaveLength(1);
+    expect(fullRunCalls()).toEqual([]);
+    expect(pushes()).toEqual([]);
+    expect(status().blockers.join(' ')).toContain('not enough time');
+    expect(kept()).toBe(true);
+  });
+  it('past the hard stop: no round starts at all', () => {
+    go({ clock: new Date(2026, 10, 20, 6, 50, 0) });
+    expect(claudeCalls()).toEqual([]);
+    expect(fullRunCalls()).toEqual([]);
+    expect(pushes()).toEqual([]);
+    expect(status().results[0]).toMatchObject({ outcome: 'unfixed' });
+  });
+  it('flaky and known-red specs never start a fix round: a status with no unrecorded failure does nothing', () => {
+    const flakyOnly = finishStatus(pendingStatus(SHA, 'raw-1', 's'), 0, { passed: 5, failed: [], flaky: [{ file: 'menu.spec.ts', title: 'wobbly' }] }, [], new Date(2026, 10, 20, 6, 0, 0).toISOString(), 'PC');
+    mkdirSync(join(dir, 'gate'), { recursive: true });
+    writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(flakyOnly));
+    expect(fix(deps(), false)).toBe(0);
+    expect(calls).toEqual([]);
   });
   it('origin moved during the run: no push', () => {
     go({ originMoves: true });
@@ -454,5 +647,63 @@ describe('nightly-fix command (fake runner)', () => {
     expect(status().state).toBe('needs-human');
     expect(status().blockers.join(' ')).not.toContain('/Users/bob');
     expect(existsSync(join(dir, 'gate', 'nightly-fix.lock'))).toBe(false);
+  });
+
+  describe('collect-and-fix at 02:00', () => {
+    const night = (): Date => new Date(2026, 10, 20, 2, 0, 0);
+    const submitted = (): void => {
+      mkdirSync(join(dir, 'gate'), { recursive: true });
+      writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(pendingStatus(SHA, 'raw-1', new Date(2026, 10, 19, 23, 0, 0).toISOString())));
+    };
+    const collectAttaches = (): string[] => calls.filter((c) => c.includes('--pc-attach raw-1'));
+    it('waits 20 min and retries while the PC is busy, then fixes once the run is collected', () => {
+      submitted();
+      clock = night();
+      expect(main(['collect-and-fix'], deps({ clock: night(), collectCodes: [95, 95, 1] }))).toBe(0);
+      expect(collectAttaches()).toHaveLength(3);
+      expect(sleeps).toEqual([20 * 60_000, 20 * 60_000]);
+      expect(out).toContain('retrying in 20 min');
+      expect(claudeCalls()).toHaveLength(1);
+      expect(fullRunCalls()).toHaveLength(1);
+      expect(status().state).toBe('fixed-pushed');
+    });
+    it('keeps retrying until 04:30, then gives up without a fix round (no skip-the-night crash)', () => {
+      submitted();
+      clock = night();
+      expect(main(['collect-and-fix'], deps({ clock: night(), collectCodes: [95] }))).toBe(0);
+      expect(collectAttaches()).toHaveLength(8);
+      expect(clock.getTime()).toBeLessThanOrEqual(new Date(2026, 10, 20, 4, 30, 0).getTime());
+      expect(claudeCalls()).toEqual([]);
+      expect(pushes()).toEqual([]);
+    });
+    it('a finished green run needs no retry and no fix', () => {
+      submitted();
+      clock = night();
+      expect(main(['collect-and-fix'], deps({ clock: night(), collectCodes: [0] }))).toBe(0);
+      expect(sleeps).toEqual([]);
+      expect(claudeCalls()).toEqual([]);
+    });
+    it('dry run collects nothing and sleeps never', () => {
+      submitted();
+      expect(main(['collect-and-fix', '--dry-run'], deps({ clock: night() }))).toBe(0);
+      expect(sleeps).toEqual([]);
+      expect(calls).toEqual([]);
+    });
+  });
+
+  describe('07:00 morning report', () => {
+    it('writes a read-only report from the nightly and fix status, and notes a live lock', () => {
+      writeRed();
+      writeFileSync(join(dir, 'gate', 'nightly-fix.lock'), 'x');
+      expect(report(deps())).toBe(0);
+      const md = readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8');
+      expect(md).toContain('RED');
+      expect(md).toContain('may still be running');
+      expect(calls).toEqual([]);
+    });
+    it('exists even with no status at all', () => {
+      expect(main(['report'], deps())).toBe(0);
+      expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toContain('no status recorded');
+    });
   });
 });

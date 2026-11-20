@@ -1,26 +1,30 @@
 /**
  * Nightly fix loop (runs after `nightly:collect` when the status is red with unrecorded failures):
  *   pnpm nightly:fix [--dry-run]            fix loop only (needs a fresh collected red status)
- *   pnpm nightly:collect-and-fix [--dry-run] collect, then the fix loop (what the 06:00 LaunchAgent runs)
+ *   nightly-fix.ts collect-and-fix          collect (retry every 20 min until 04:30 while the 23:00 full run is unfinished), then the fix loop (the 02:00 LaunchAgent)
+ *   nightly-fix.ts report                   read-only morning report to tte-gate/nightly-morning-report.md (the 07:00 LaunchAgent)
  * Per failure: a sandboxed headless `claude -p` round (file tools only, no user/project settings, see nightly-fix-logic.ts) in a
  * fresh worktree from origin/main (.scratch/nightly-fix-wt), then a re-run of that spec only via the router (`--pc`: PC only, never
- * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). At most 3 rounds, at most 3 failures, 4 h / 22:00 cap, one run
- * at a time (lock file). Outcomes: fixed (commit), flaky (a candidate in the report only; known-red acks are the coordinator's),
- * needs-human. Forbidden paths and test-weakening edits are checked on the diff against the base, in code. Push only if every
- * precondition in nightly-fix-logic.ts `pushBlockers` holds (merge --no-ff in a second worktree, conflict-marker grep, re-run
- * green, gate:push, origin unmoved); plain `git push origin HEAD:main`, never forced. Report: tte-gate/nightly-fix-*.
+ * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). At most 3 rounds, at most 3 failures, one run at a time (lock file).
+ * Cycle: collect -> fix -> if a fix was applied, merge --no-ff in a second worktree and run a FULL e2e of that tree via the router
+ * (PC only) -> judge -> fix reds that were fixed but still fail -> at most 2 full re-runs. Hard stop 07:00 for a night run (22:00 by day, 6 h max):
+ * no round or full run starts that cannot finish. Flaky and known-red specs are reported, never chased. A new red in a re-run (collateral)
+ * means no push: needs-human, the fixes kept on the local branch nightly-fix-kept/<date>. Outcomes: fixed (commit), flaky, needs-human.
+ * Push only if every precondition in nightly-fix-logic.ts `pushBlockers` holds (latest FULL run on the pushed tree has no new reds, conflict-marker
+ * grep, gate:push, origin unmoved); plain `git push origin HEAD:main`, never forced. Report: tte-gate/nightly-fix-*.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
-import { collect, readStatus, type Deps, type RunResult } from './nightly-e2e';
+import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, buildPrompt, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState, forbiddenTouched, GATE_TIMEOUT_MS,
-  LOCK_STALE_MS, MAX_FAILURES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath,
-  statusUsable, titlePassed, tooManyFailures, triage, type FailureResult, type FixState, type FixStatus,
+  addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState,
+  forbiddenTouched, FULL_RUN_MS, GATE_TIMEOUT_MS, judgeFullRun, LOCK_STALE_MS, MAX_FAILURES, MAX_FULL_CYCLES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers,
+  retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, tooManyFailures, triage,
+  type Failure, type FailureResult, type FixState, type FixStatus, type PushInput,
 } from './nightly-fix-logic';
-import { unrecordedFailures } from './nightly-status';
+import { describeStatus, parseRawId, parseResults, pendingStatus, unrecordedFailures, type Results } from './nightly-status';
 import { redact } from './redact';
 
 export interface FixRun extends RunResult {
@@ -30,10 +34,14 @@ export interface FixRun extends RunResult {
 type Env = Readonly<Record<string, string | undefined>>;
 export interface FixDeps extends Omit<Deps, 'run'> {
   run: (cmd: string, args: readonly string[], cwd: string, env: Env, timeoutMs?: number) => FixRun;
+  /** Block for `ms` (the collect retry wait); injected so tests do not wait. */
+  sleep: (ms: number) => void;
 }
 export interface FixOpts {
   /** collect-and-fix: the status must have been finished by this run's collect (finishedAt >= this). */
   readonly notBefore?: string;
+  /** The loop's start (default: now); the hard stop and round budgets count from here. */
+  readonly startMs?: number;
 }
 interface Ref {
   file: string;
@@ -87,13 +95,13 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
       return 2;
     }
   }
-  if (dry) return fixInner(d, true, opts, [], { prepared: false });
+  if (dry) return fixInner(d, true, opts, [], { prepared: false, keep: false });
   if (!acquireLock(d)) {
     d.out('nightly:fix: another run holds the lock; nothing to do\n');
     return 0;
   }
   const results: FailureResult[] = [];
-  const life = { prepared: false };
+  const life = { prepared: false, keep: false };
   try {
     return fixInner(d, false, opts, results, life);
   } catch (e) {
@@ -103,13 +111,16 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
   } finally {
     if (life.prepared) {
       d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, FIX_WT)], d.repo, d.env);
-      d.run('git', ['branch', '-D', `nightly-fix/${d.now().toISOString().slice(0, 10)}`], d.repo, d.env);
+      const br = `nightly-fix/${d.now().toISOString().slice(0, 10)}`;
+      // Unpushed fixes (collateral red, no time, gate failed) stay reachable on a local branch for the human.
+      if (life.keep) d.run('git', ['branch', '-f', `nightly-fix-kept/${d.now().toISOString().slice(0, 10)}`, br], d.repo, d.env);
+      d.run('git', ['branch', '-D', br], d.repo, d.env);
     }
     rmSync(lockPath(d.statusDir), { force: true });
   }
 }
 
-function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResult[], life: { prepared: boolean }): number {
+function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResult[], life: { prepared: boolean; keep: boolean }): number {
   const st = readStatus(d.statusDir);
   if (!shouldRun(st) || !st) {
     d.out(`nightly:fix: nothing to do (${st ? `${st.state}, ${String(st.unrecorded.length)} unrecorded` : 'no status'})\n`);
@@ -134,7 +145,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const mergeWt = resolve(d.repo, MERGE_WT);
   const stamp = d.now().toISOString().slice(0, 10);
   const branch = `nightly-fix/${stamp}`;
-  const startMs = d.now().getTime();
+  const startMs = opts.startMs ?? d.now().getTime();
   const done = (pushed: boolean, blockers: string[]): number => {
     writeFixStatus(d, st.sha, results, pushed, blockers);
     return 0;
@@ -146,7 +157,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     for (const f of failures) {
       d.out(`--- ${f.file}: ${f.title}\n  claude ${claudeArgs('<prompt>').slice(2).join(' ')}\n  re-run: corepack ${rerunArgs(f.file).join(' ')} (PC only)\n${buildPrompt(f, 1, '')}\n`);
     }
-    d.out(`  push: merge --no-ff ${branch} in ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, re-run, corepack pnpm gate:push, git push origin HEAD:main (no force)\n`);
+    d.out(`  push: merge --no-ff ${branch} in ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, then a FULL e2e of the merged tree via the router (PC only; max ${String(MAX_FULL_CYCLES)} cycles, none after the 07:00 hard stop), corepack pnpm gate:push, git push origin HEAD:main (no force), only if the latest full run has no new reds\n`);
     return 0;
   }
   if (tooManyFailures(failures.length)) {
@@ -179,6 +190,29 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail };
   };
 
+  /** Full suite on the merged tree: detach-submit then attach through the router (PC only). */
+  const fullRun = (cwd: string): { results?: Results; json?: unknown; why: string } => {
+    const env = { ...noPushEnv(d.env), TTE_E2E_VIA_QUEUE: '1' };
+    const route = (a: string[], timeout: number, extra: Record<string, string> = {}): FixRun =>
+      sh(cwd, 'corepack', ['pnpm', 'exec', 'tsx', 'tools/ci/e2e-route.ts', ...a], timeout, { ...env, ...extra });
+    const sub = route(['run', '--full', '--pc-detach'], 10 * 60_000);
+    const id = parseRawId(`${sub.stdout}\n${sub.stderr}`);
+    if (sub.code !== 0 || !id) return { why: sub.code === 0 ? 'no job id from the router' : `submit exit ${String(sub.code)}` };
+    const jsonOut = join(d.statusDir, `nightly-fix-full-${String(++seq)}.json`);
+    rmSync(jsonOut, { force: true });
+    const at = route(['run', '--pc-attach', id], capTimeout(FULL_RUN_MS, startMs, d.now()), { PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
+    if ((at.code !== 0 && at.code !== 1) || at.signal || at.timedOut) {
+      route(['run', '--pc-cancel', id], 5 * 60_000); // best effort: leave nothing running
+      return { why: at.timedOut ? 'timed out at the hard stop' : `attach exit ${String(at.code)}` };
+    }
+    try {
+      const json = JSON.parse(readFileSync(jsonOut, 'utf8')) as unknown;
+      return { results: parseResults(json), json, why: '' };
+    } catch {
+      return { why: 'no results.json' };
+    }
+  };
+
   if (git(d.repo, 'fetch', 'origin', 'main').code !== 0) return done(false, ['git fetch failed']);
   const base = git(d.repo, 'rev-parse', 'origin/main').stdout.trim();
   const shaOnOrigin = git(d.repo, 'merge-base', '--is-ancestor', st.sha, 'origin/main').code === 0;
@@ -193,121 +227,208 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     git(fixWt, 'reset', '--hard', to);
     git(fixWt, 'clean', '-ffdx', '-e', 'node_modules'); // ignored files too (settings.local.json), never node_modules
   };
-  let stopped = '';
-  for (const f of todo) {
-    const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
-      results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
-    };
-    if (stopped) {
-      put('unfixed', 0, stopped);
-      continue;
-    }
-    const head0 = git(fixWt, 'rev-parse', 'HEAD').stdout.trim();
-    let previous = '';
-    let rounds = 0;
-    for (;;) {
-      if (deadlineReached(startMs, d.now())) {
-        stopped = 'wall-clock deadline reached (4 h or 22:00); stopping';
-        put('unfixed', rounds, stopped);
-        reset(head0);
-        break;
+  const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `origin/main..${branch}`).stdout.trim() || '0');
+  /** One fix pass over `todo` (existing per-failure rounds); returns why it stopped early, or ''. A later result for a spec replaces its earlier one. */
+  const fixPass = (todo: readonly Failure[]): string => {
+    let stopped = '';
+    for (const f of todo) {
+      const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
+        const at = results.findIndex((r) => r.file === f.file && r.title === f.title);
+        if (at >= 0) results.splice(at, 1);
+        results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
+      };
+      if (stopped) {
+        put('unfixed', 0, stopped);
+        continue;
       }
-      rounds++;
-      const marker = join(d.statusDir, `nightly-fix-marker-${String(rounds)}`);
-      writeFileSync(marker, '');
-      const c = sh(fixWt, 'claude', claudeArgs(buildPrompt(f, rounds, previous)), ROUND_TIMEOUT_MS, claudeEnv(d.env));
-      if (childFailed(c)) {
-        stopped = `claude failed (exit ${String(c.code)}${c.signal ? `, ${c.signal}` : ''}${c.timedOut ? ', timed out' : ''}); stopping, nothing is recorded`;
-        put('unfixed', rounds, stopped);
-        reset(head0);
-        break;
-      }
-      if (git(fixWt, 'rev-parse', 'HEAD').stdout.trim() !== head0) {
-        put('needs-human', rounds, 'the agent moved HEAD');
-        reset(head0);
-        break;
-      }
-      // Ignored files escape the diff: list everything written since the marker (outside .git and node_modules).
-      const found = sh(fixWt, 'find', ['.', '-type', 'f', '-newer', marker, '-not', '-path', './.git/*', '-not', '-path', './node_modules/*']);
-      const written = found.code === 0 ? found.stdout.split('\n').map((x) => x.trim()).filter(Boolean) : ['<find failed>'];
-      if (git(fixWt, 'add', '-A').code !== 0) {
-        put('unfixed', rounds, 'git add failed');
-        reset(head0);
-        break;
-      }
-      const names = parseNulList(git(fixWt, 'diff', '--cached', '--name-only', '--no-renames', '-z', head0).stdout);
-      const forbidden = forbiddenTouched([...names, ...written]);
-      const weak = forbidden.length ? [] : addsSkipMarkers(git(fixWt, 'diff', '--cached', '-U0', head0).stdout);
-      if (weak.length) {
-        put('needs-human', rounds, `diff adds skip/fixme/only/test.fail/retries: ${weak.join(' | ')}`);
-        reset(head0);
-        break;
-      }
-      let green = false;
-      if (!forbidden.length) {
-        const r = rerun(fixWt, f);
-        previous = r.tail;
-        if (r.stop) {
-          stopped = `router exit ${String(r.code)}: the re-run could not complete; stopping`;
+      const head0 = git(fixWt, 'rev-parse', 'HEAD').stdout.trim();
+      let previous = '';
+      let rounds = 0;
+      for (;;) {
+        if (deadlineReached(startMs, d.now()) || !canStartRound(startMs, d.now())) {
+          stopped = 'too close to the hard stop (07:00 for a night run, 22:00 by day) for another round; stopping';
           put('unfixed', rounds, stopped);
           reset(head0);
           break;
         }
-        green = r.green;
-      }
-      const t = triage({ round: rounds, forbidden, agent: parseTriage(c.stdout).verdict, diffEmpty: names.length === 0, rerunExit: green ? 0 : 1 });
-      if (t.outcome === 'retry') continue;
-      if (t.outcome === 'fixed') {
-        const ok = git(fixWt, 'commit', '-m', `nightly-fix: ${slug(f.title)}`, '-m', `Fixes ${specPath(f.file)}: green on the PC re-run.\n\n${TRAILER}`).code === 0;
-        if (!ok) {
-          put('unfixed', rounds, 'git commit failed');
+        rounds++;
+        const marker = join(d.statusDir, `nightly-fix-marker-${String(rounds)}`);
+        writeFileSync(marker, '');
+        const c = sh(fixWt, 'claude', claudeArgs(buildPrompt(f, rounds, previous)), capTimeout(ROUND_TIMEOUT_MS, startMs, d.now()), claudeEnv(d.env));
+        if (childFailed(c)) {
+          stopped = `claude failed (exit ${String(c.code)}${c.signal ? `, ${c.signal}` : ''}${c.timedOut ? ', timed out' : ''}); stopping, nothing is recorded`;
+          put('unfixed', rounds, stopped);
           reset(head0);
           break;
         }
-      } else reset(head0); // flaky (a candidate in the report only), needs-human, unfixed: drop the diff
-      put(t.outcome, rounds, t.reason);
+        if (git(fixWt, 'rev-parse', 'HEAD').stdout.trim() !== head0) {
+          put('needs-human', rounds, 'the agent moved HEAD');
+          reset(head0);
+          break;
+        }
+        // Ignored files escape the diff: list everything written since the marker (outside .git and node_modules).
+        const found = sh(fixWt, 'find', ['.', '-type', 'f', '-newer', marker, '-not', '-path', './.git/*', '-not', '-path', './node_modules/*']);
+        const written = found.code === 0 ? found.stdout.split('\n').map((x) => x.trim()).filter(Boolean) : ['<find failed>'];
+        if (git(fixWt, 'add', '-A').code !== 0) {
+          put('unfixed', rounds, 'git add failed');
+          reset(head0);
+          break;
+        }
+        const names = parseNulList(git(fixWt, 'diff', '--cached', '--name-only', '--no-renames', '-z', head0).stdout);
+        const forbidden = forbiddenTouched([...names, ...written]);
+        const weak = forbidden.length ? [] : addsSkipMarkers(git(fixWt, 'diff', '--cached', '-U0', head0).stdout);
+        if (weak.length) {
+          put('needs-human', rounds, `diff adds skip/fixme/only/test.fail/retries: ${weak.join(' | ')}`);
+          reset(head0);
+          break;
+        }
+        let green = false;
+        if (!forbidden.length) {
+          const r = rerun(fixWt, f);
+          previous = r.tail;
+          if (r.stop) {
+            stopped = `router exit ${String(r.code)}: the re-run could not complete; stopping`;
+            put('unfixed', rounds, stopped);
+            reset(head0);
+            break;
+          }
+          green = r.green;
+        }
+        const t = triage({ round: rounds, forbidden, agent: parseTriage(c.stdout).verdict, diffEmpty: names.length === 0, rerunExit: green ? 0 : 1 });
+        if (t.outcome === 'retry') continue;
+        if (t.outcome === 'fixed') {
+          const ok = git(fixWt, 'commit', '-m', `nightly-fix: ${slug(f.title)}`, '-m', `Fixes ${specPath(f.file)}: green on the PC re-run.\n\n${TRAILER}`).code === 0;
+          if (!ok) {
+            put('unfixed', rounds, 'git commit failed');
+            reset(head0);
+            break;
+          }
+        } else reset(head0); // flaky (a candidate in the report only), needs-human, unfixed: drop the diff
+        put(t.outcome, rounds, t.reason);
+        break;
+      }
+    }
+    return stopped;
+  };
+
+  // Cycles: fix -> (fixes applied) full e2e on the merged tree via the router (PC only) -> judge -> fix what did not hold. Max MAX_FULL_CYCLES.
+  const known = loadKnownRed(fixWt);
+  const blockers: string[] = [];
+  let verified = false; // the latest full run was on the current merge tree and has no new reds
+  let queue: readonly Failure[] = todo;
+  for (let cycle = 1; cycle <= MAX_FULL_CYCLES && queue.length > 0; cycle++) {
+    const before = ahead();
+    const stopped = fixPass(queue);
+    queue = [];
+    if (ahead() === before) {
+      if (stopped) blockers.push(stopped);
+      break; // nothing new to verify
+    }
+    if (!canStartFullRun(startMs, d.now())) {
+      blockers.push('not enough time before the hard stop for a full re-run of the fixed tree; fixes kept on a local branch');
+      break;
+    }
+    const m = buildMerge(d, { branch, mergeWt, base, shaOnOrigin, results }, prep, git);
+    if (m.length) {
+      blockers.push(...m);
+      verified = false;
+      break;
+    }
+    const fr = fullRun(mergeWt);
+    if (!fr.results) {
+      blockers.push(`the full re-run did not finish (${fr.why}); nothing pushed`);
+      verified = false;
+      break;
+    }
+    const v = judgeFullRun(fr.results, st.failed, known);
+    if (v.newReds.length > 0) {
+      for (const t of v.newReds) results.push({ file: t.file, title: t.title, outcome: 'needs-human', rounds: 0, reason: `new red in the full re-run of the fixed tree (collateral of a fix): ${cycle === 1 ? 'cycle 1' : 'cycle 2'}` });
+      blockers.push('a full re-run of the fixed tree shows new reds; not pushed, the fixes stay on a local branch');
+      verified = false;
+      break;
+    }
+    verified = true;
+    d.out(`nightly:fix: full re-run ${String(cycle)} has no new reds (${String(v.remaining.length)} still open)\n`);
+    queue = fr.json === undefined ? [] : extractFailures(fr.json, retargets(v, results));
+    if (stopped) {
+      blockers.push(stopped);
       break;
     }
   }
 
-  const count = git(fixWt, 'rev-list', '--count', `origin/main..${branch}`);
-  if (count.code !== 0) return done(false, ['git rev-list failed']);
-  if (count.stdout.trim() === '0') return done(false, stopped ? [stopped] : ['no fix commits to push']);
-  if (deadlineReached(startMs, d.now())) return done(false, ['wall-clock deadline reached before the merge steps; nothing pushed']);
-  const blockers = integrate(d, { branch, mergeWt, base, shaOnOrigin, results }, prep, sh, git, rerun);
+  const count = ahead();
+  life.keep = count > 0;
+  if (count === 0) return done(false, blockers.length ? blockers : ['no fix commits to push']);
+  if (!verified) return done(false, blockers.length ? blockers : ['fixes were not verified by a full re-run; nothing pushed']);
+  blockers.length = 0;
+  blockers.push(...finalPush(d, { mergeWt, base, shaOnOrigin, startMs }, git, sh));
   if (blockers.length === 0 && git(mergeWt, 'push', 'origin', 'HEAD:main').code !== 0) blockers.push('git push failed (not forced)');
+  if (blockers.length === 0) life.keep = false;
   git(d.repo, 'worktree', 'remove', '--force', mergeWt);
   git(d.repo, 'branch', '-D', `${branch}-merge`);
   return done(blockers.length === 0, blockers);
 }
 
-/** Merge --no-ff into a fresh main-based worktree and run every push precondition (cheap ones first); empty = ready to push. */
-function integrate(
+/** Merge --no-ff into a fresh main-based worktree and check the merged diff and markers; empty = the tree is ready for a full run. */
+function buildMerge(
   d: FixDeps,
   o: { branch: string; mergeWt: string; base: string; shaOnOrigin: boolean; results: FailureResult[] },
   prep: (wt: string, br: string) => boolean,
-  sh: (cwd: string, cmd: string, args: string[], timeout?: number, env?: Env) => FixRun,
   git: (cwd: string, ...a: string[]) => FixRun,
-  rerun: (cwd: string, f: Ref) => { green: boolean },
 ): string[] {
-  const noEnvOverride = !BLOCKING_ENV.some((k) => d.env[k]);
-  const fail = (partial: Partial<Parameters<typeof pushBlockers>[0]>): string[] =>
-    pushBlockers({ hasCommits: true, shaOnOrigin: o.shaOnOrigin, mergeOk: true, forbidden: [], markersClean: true, gatePushOk: true, rerunGreen: true, originUnmoved: true, noEnvOverride, ...partial });
   if (!prep(o.mergeWt, `${o.branch}-merge`)) return ['could not prepare the merge worktree'];
-  const fixed = o.results.filter((r) => r.outcome === 'fixed');
-  const what = fixed.map((r) => slug(r.title)).join(', ').slice(0, 80);
+  const what = o.results.filter((r) => r.outcome === 'fixed').map((r) => slug(r.title)).join(', ').slice(0, 80);
   if (git(o.mergeWt, 'merge', '--no-ff', o.branch, '-m', mergeSubject(what)).code !== 0) {
     git(o.mergeWt, 'merge', '--abort');
-    return fail({ mergeOk: false });
+    return pushBlockers(pushInput(d, o.shaOnOrigin, { mergeOk: false }));
   }
   const forbidden = forbiddenTouched(parseNulList(git(o.mergeWt, 'diff', '--name-only', '--no-renames', '-z', `${o.base}..HEAD`).stdout));
   const markersClean = git(o.mergeWt, 'grep', '-nE', '^(<<<<<<<|>>>>>>>) ').code === 1;
-  if (forbidden.length || !markersClean) return fail({ forbidden, markersClean });
-  const rerunGreen = fixed.every((r) => rerun(o.mergeWt, r).green);
-  const gatePushOk = rerunGreen && sh(o.mergeWt, 'corepack', ['pnpm', 'gate:push'], GATE_TIMEOUT_MS, noPushEnv(d.env)).code === 0;
+  return forbidden.length || !markersClean ? pushBlockers(pushInput(d, o.shaOnOrigin, { forbidden, markersClean })) : [];
+}
+
+const pushInput = (d: FixDeps, shaOnOrigin: boolean, partial: Partial<PushInput>): PushInput => ({
+  hasCommits: true, shaOnOrigin, mergeOk: true, forbidden: [], markersClean: true, gatePushOk: true, rerunGreen: true, originUnmoved: true,
+  noEnvOverride: !BLOCKING_ENV.some((k) => d.env[k]), ...partial,
+});
+
+/** After a verified full run: the cheap-last preconditions (gate:push, origin unmoved, time left); empty = push. */
+function finalPush(
+  d: FixDeps,
+  o: { mergeWt: string; base: string; shaOnOrigin: boolean; startMs: number },
+  git: (cwd: string, ...a: string[]) => FixRun,
+  sh: (cwd: string, cmd: string, args: string[], timeout?: number, env?: Env) => FixRun,
+): string[] {
+  if (deadlineReached(o.startMs, d.now())) return ['hard stop reached before gate:push; nothing pushed'];
+  const gatePushOk = sh(o.mergeWt, 'corepack', ['pnpm', 'gate:push'], capTimeout(GATE_TIMEOUT_MS, o.startMs, d.now()), noPushEnv(d.env)).code === 0;
   git(d.repo, 'fetch', 'origin', 'main');
   const originUnmoved = git(d.repo, 'rev-parse', 'origin/main').stdout.trim() === o.base;
-  return fail({ rerunGreen, gatePushOk, originUnmoved });
+  return pushBlockers(pushInput(d, o.shaOnOrigin, { gatePushOk, originUnmoved }));
+}
+
+/** Collect, waiting and retrying while the 23:00 full run is unfinished (PC busy/unreachable or still pending), until the 04:30 cutoff. */
+function collectWithRetry(d: FixDeps, start: Date): void {
+  for (;;) {
+    const prev = readStatus(d.statusDir);
+    collect(d);
+    const now = readStatus(d.statusDir);
+    // Only a collect that really attached (the status was pending) can be retried; a not-run status from a failed submit has no job to wait for.
+    if (prev?.state !== 'pending' || !prev.rawId || !retryAllowed(now, start, d.now())) return;
+    writeFileSync(statusPath(d.statusDir), `${JSON.stringify(pendingStatus(prev.sha, prev.rawId, prev.startedAt), null, 2)}\n`);
+    d.out(`nightly:fix: the full run is not finished (${now?.reason ?? 'pending'}); retrying in ${String(RETRY_WAIT_MS / 60_000)} min (until 04:30)\n`);
+    d.sleep(RETRY_WAIT_MS);
+  }
+}
+
+/** Read-only morning report (the 07:00 job): the nightly status plus the fix result, written to nightly-morning-report.md. */
+export function report(d: FixDeps): number {
+  const lines = describeStatus(readStatus(d.statusDir), d.now().getTime());
+  lines.push(...describeFix(readFixStatus(d.statusDir)));
+  if (existsSync(lockPath(d.statusDir))) lines.push('nightly fix loop: lock file present, the loop may still be running (or crashed; the lock goes stale after 12 h)');
+  mkdirSync(d.statusDir, { recursive: true });
+  writeFileSync(join(d.statusDir, 'nightly-morning-report.md'), `# Nightly morning report (${d.now().toISOString()})\n\n${lines.join('\n')}\n`);
+  for (const l of lines) d.out(`${l}\n`);
+  return 0;
 }
 
 export function main(argv: readonly string[], d: FixDeps): number {
@@ -315,12 +436,14 @@ export function main(argv: readonly string[], d: FixDeps): number {
   const dry = args.includes('--dry-run');
   const cmd = args.find((a) => !a.startsWith('--'));
   if (cmd === 'collect-and-fix') {
-    const notBefore = d.now().toISOString();
-    const c = dry ? 0 : collect(d);
-    return Math.max(c, fix(d, dry, { notBefore }));
+    const start = d.now();
+    const notBefore = start.toISOString();
+    if (!dry) collectWithRetry(d, start);
+    return fix(d, dry, { notBefore, startMs: start.getTime() });
   }
+  if (cmd === 'report') return report(d);
   if (cmd === 'run' || cmd === undefined) return fix(d, dry);
-  d.err('usage: nightly-fix.ts [run|collect-and-fix] [--dry-run]\n');
+  d.err('usage: nightly-fix.ts [run|collect-and-fix|report] [--dry-run]\n');
   return 2;
 }
 
@@ -342,7 +465,8 @@ function realDeps(): FixDeps {
     }
   };
   const common = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: repo, encoding: 'utf8' }).stdout.trim();
-  return { env: process.env, repo, statusDir: join(common, 'tte-gate'), now: () => new Date(), run, out: (s) => process.stdout.write(s), err: (s) => process.stderr.write(s) };
+  const sleep = (ms: number): void => void Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  return { env: process.env, repo, statusDir: join(common, 'tte-gate'), now: () => new Date(), run, sleep, out: (s) => process.stdout.write(s), err: (s) => process.stderr.write(s) };
 }
 
 if (process.argv[1]?.endsWith('nightly-fix.ts')) {
