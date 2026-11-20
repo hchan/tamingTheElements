@@ -10,7 +10,8 @@
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, validateStatus, type KnownRed, type NightlyStatus } from './nightly-status';
+import { loadKnownRed } from './known-red';
+import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, validateStatus, type NightlyStatus } from './nightly-status';
 
 type Env = Readonly<Record<string, string | undefined>>;
 export interface RunResult {
@@ -50,15 +51,6 @@ function writeStatus(dir: string, s: NightlyStatus): void {
   const hp = historyPath(dir);
   const old = existsSync(hp) ? readFileSync(hp, 'utf8').split('\n').filter(Boolean) : [];
   writeFileSync(hp, `${appendHistory(old, s).join('\n')}\n`);
-}
-
-function loadKnownRed(repo: string): KnownRed[] {
-  try {
-    const v = JSON.parse(readFileSync(join(repo, 'tools/ci/known-red.json'), 'utf8')) as { entries?: KnownRed[] } | KnownRed[];
-    return Array.isArray(v) ? v : (v.entries ?? []);
-  } catch {
-    return [];
-  }
 }
 
 const router = (repo: string): string => join(repo, 'tools/ci/e2e-route.ts');
