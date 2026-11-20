@@ -7,8 +7,8 @@ import { resolutionOf } from '../boot/viewport';
  * Phaser side of the Arcade stage hazard (systems/arcade/hazard.ts; ideas/brainstorm/stage-selection-hazards.md). The Arena
  * mounts it in every Arcade match (a lazy chunk) and it draws `RenderArcade.hazard`: during the warning a pulsing outline
  * of the box with a faint fill that firms up as the strike nears; once it strikes, the element's look (a lava column, a
- * fallen rock, drifting tide or gust chevrons). No words: the warning is shape and motion as well as colour (the outline,
- * the chevrons' direction). Reduced motion holds the pulse steady and stops the chevrons scrolling. One Graphics pair, one
+ * fallen rock, drifting tide or gust chevrons). The warning is shape and motion as well as colour (the outline,
+ * the chevrons' direction) plus one short countdown chip. Reduced motion holds the pulse steady and stops the chevrons scrolling. One Graphics pair, one
  * `postupdate` listener, removed with the scene.
  */
 /** The warning chip sits above the fighters so a fighter standing in the box never hides the word. */
@@ -34,7 +34,7 @@ export interface HazardMarker {
   readonly dir: number;
   /** The outline alpha drawn this frame. */
   readonly alpha: number;
-  /** Chevrons drawn (tide and gust), 0 for the others. */
+  /** Direction marks drawn this frame (chevrons: every warning, and the tide and gust strikes), 0 otherwise. */
   readonly chevrons: number;
   /** The warning chip text this frame (e.g. `LAVA 2s`), '' once it strikes. */
   readonly label: string;
@@ -132,14 +132,9 @@ function tideCountdown(g: Gfx, x: number, y: number, w: number, h: number, dir: 
   g.fillStyle(0xffffff, 0.95 * alpha).fillRect(dir > 0 ? bx + fill - 4 : bx + bw - fill, by - 3, 4, bh + 6);
 }
 
-/** Warning progress 0..1 as `warnLeft` runs down from `warnTotal` (the countdown the rockfall shadow and the fire fill follow). */
+/** Warning progress 0..1 as `warnLeft` runs down from `warnTotal` (the countdown the rockfall ring and the fire fill follow). */
 export function warnProgress(warnLeft: number, warnTotal: number): number {
   return 1 - Math.min(1, Math.max(0, warnLeft / Math.max(1, warnTotal)));
-}
-
-/** Radius of the falling-rock shadow: grows from a quarter of the box's half-width to the full square as the strike nears. */
-export function shadowRadius(progress: number, halfW: number): number {
-  return halfW * (0.25 + 0.75 * Math.min(1, Math.max(0, progress)));
 }
 
 /** Short on-screen warning word per hazard kind (index 0 unused): fire lava lane, water tide, earth rockfall, air gust. */
@@ -168,6 +163,47 @@ export function dustLook(age: number, reduced: boolean): { t: number; alpha: num
 
 /** Eight compass steps (no trig) used for the rockfall dust puffs and debris. */
 const DUST_DIRS: readonly (readonly [number, number])[] = [[1, 0], [0.7, 0.7], [0, 1], [-0.7, 0.7], [-1, 0], [-0.7, -0.7], [0, -1], [0.7, -0.7]];
+
+/** Bright warning core per hazard kind (index 0 unused): white-hot on lava, plain white on stone. The fire and earth warn marks sit on this over a dark rim. */
+export const WARN_CORE: readonly number[] = [0xffffff, 0xfff4e6, 0xbfe4f2, 0xffffff, 0xf2f6f8];
+
+/** Alpha of a warn glyph: never below 0.6 so the blink dip (outline alpha 0.19 at worst) cannot make it fade into the floor. */
+export function dangerGlyphAlpha(alpha: number): number {
+  return 0.6 + 0.4 * Math.min(1, alpha / 0.8);
+}
+
+/** Y positions of a column of marks `gap` apart inside [top, top + h), scrolled by `shift` (wraps within one gap; fixed when 0). */
+export function columnMarks(top: number, h: number, gap: number, shift: number): number[] {
+  const out: number[] = [];
+  if (gap <= 0) return out;
+  for (let cy = top + (((shift % gap) + gap) % gap); cy < top + h; cy += gap) out.push(cy);
+  return out;
+}
+
+/** Hot amber-red of the rockfall ground warning (distinct from the lava orange). */
+export const EARTH_WARN = 0xff5a1f;
+
+/** Rockfall ground pulse alpha 0.5..1 (a triangle wave, 24 ticks = about 2 Hz at 50 Hz, under the 3 flashes a second limit); steady 0.75 under reduced motion. Pure. */
+export function earthPulse(tick: number, reduced: boolean): number {
+  if (reduced) return 0.75;
+  const ph = (tick % 24) / 24;
+  return 0.5 + 0.5 * (ph < 0.5 ? ph * 2 : 2 - ph * 2);
+}
+
+const ROCK_CHEVRON_STYLE = [[8, 0x0a0806, 0.7], [4, 0xffd9b0, 0.9]] as const;
+
+/** A row of 5 big (28 px) falling-rock chevrons centred on `cx` over `span` px at `y`, dark rim under an amber-white core; `drop` slides them down 0..23 px. Returns 5. */
+function rockChevrons(g: Gfx, cx: number, y: number, span: number, pa: number, drop: number): number {
+  const arm = 14;
+  for (const [lw, c, a] of ROCK_CHEVRON_STYLE) {
+    g.lineStyle(lw, c, a * Math.max(0.9, pa));
+    for (let i = 0; i < 5; i++) {
+      const mx = cx - span / 2 + (span * i) / 4;
+      g.lineBetween(mx - arm, y + drop - arm * 0.6, mx, y + drop + arm * 0.6).lineBetween(mx, y + drop + arm * 0.6, mx + arm, y + drop - arm * 0.6);
+    }
+  }
+  return 5;
+}
 
 const states = new WeakMap<Phaser.Scene, () => readonly HazardMarker[]>();
 
@@ -201,6 +237,18 @@ function chevronPass(g: Gfx, x: number, y: number, w: number, h: number, dir: nu
       count();
     }
   }
+}
+
+/** A column of ^ (`up`) or v marks at `xc` inside [y, y + h): dark rim under a bright core, scrolling via `shift`; returns how many. */
+function vChevrons(g: Gfx, xc: number, y: number, h: number, up: boolean, shift: number, core: number, alpha: number): number {
+  const arm = 12;
+  const ys = columnMarks(y + arm, h - 2 * arm, 64, shift);
+  const d = up ? -1 : 1;
+  for (const [lw, c, a] of [[9, 0x0a0806, 0.5 * alpha], [5, core, 0.9 * alpha]] as const) {
+    g.lineStyle(lw, c, a);
+    for (const cy of ys) g.lineBetween(xc - arm, cy - d * arm * 0.6, xc, cy + d * arm * 0.6).lineBetween(xc, cy + d * arm * 0.6, xc + arm, cy - d * arm * 0.6);
+  }
+  return ys.length;
 }
 
 export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
@@ -287,36 +335,36 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         edgeArrows(g, x, y, w, h, dir, light, gale ? 0.75 * alpha : alpha, gale);
         drawn = chevrons(g, x, y, w, h, dir, shift, light, (gale ? 0.32 : 0.5) * alpha, false);
       } else {
-        // r21: a filled warning tint that firms with the countdown (dark red on lava, pale dust on stone), so the box never reads as a thin outline on a busy floor.
+        // Fire and earth warnings (r21): the fire tint firms with the countdown, the earth ring grows with it, so neither reads as a thin outline on a busy floor.
         const pr = warnProgress(warnLeft, warnTotal);
         if (kind === 1) {
+          const core = WARN_CORE[kind] ?? 0xffffff;
+          const ga = dangerGlyphAlpha(alpha);
+          // The chevrons point up, so they scroll up (dir -1).
+          const shift = chevronShift(tick, -1, 64, reduced);
           g.fillStyle(0x3a0c06, (0.3 + 0.3 * pr) * alpha).fillRect(x, y, w, h);
-          g.fillStyle(0xf4d4b0, 0.55 * alpha).fillRect(x, y, w, 5).fillRect(x, y + h - 5, w, 5).fillRect(x, y, 5, h).fillRect(x + w - 5, y, 5, h);
-          // A countdown tick: a pale bar filling up the lane's centre.
+          // Dark rim under white-hot bars and two columns of rising chevrons: the lava lane reads as danger, not decoration.
+          for (const [lw, c, a] of [[9, 0x0a0806, 0.5 * ga], [4, core, 0.9 * ga]] as const) g.lineStyle(lw, c, a).strokeRect(x + 4, y + 4, w - 8, h - 8);
           g.fillStyle(0x0a0806, 0.5 * alpha).fillRect(x + w / 2 - 6, y + 10, 12, h - 20);
-          g.fillStyle(0xf4d4b0, 0.85 * alpha).fillRect(x + w / 2 - 4, y + h - 10 - (h - 20) * pr, 8, (h - 20) * pr);
-        } else {
-          g.fillStyle(0xe8d8b0, (0.3 + 0.2 * pr) * Math.max(alpha, 0.7)).fillRect(x, y, w, h);
-          g.lineStyle(8, 0x0d0a07, 0.6).strokeRect(x, y, w, h);
-          g.lineStyle(4, 0xf0e4c8, 0.95).strokeRect(x + 4, y + 4, w - 8, h - 8);
-          // The falling shadow: a dark disc that grows to fill the square, ringed in pale dust.
-          const r = shadowRadius(pr, w / 2);
-          g.fillStyle(0x0d0a07, 0.4 + 0.3 * pr).fillCircle(x + w / 2, y + h / 2, r);
-          g.lineStyle(3, 0xf0e4c8, 0.8 * alpha).strokeCircle(x + w / 2, y + h / 2, r);
-          g.lineStyle(4, 0xf0e4c8, 0.75 * alpha);
-          for (const [cx, cy, sx, sy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]] as const) {
-            g.lineBetween(cx, cy, cx + sx * 26, cy).lineBetween(cx, cy, cx, cy + sy * 26);
-          }
-        }
-        if (kind === 1) {
+          g.fillStyle(core, 0.9 * ga).fillRect(x + w / 2 - 4, y + h - 10 - (h - 20) * pr, 8, (h - 20) * pr);
+          drawn = vChevrons(g, x + w * 0.25, y, h, true, shift, core, Math.min(1, ga * 1.1)) + vChevrons(g, x + w * 0.75, y, h, true, shift + 32, core, Math.min(1, ga * 1.1));
           // A lane that runs off the camera edge: chevrons on the border point at the hidden part (steady, so safe under reduced motion).
-          const view = arena.cameras.main.worldView;
-          for (const cue of edgeCues(view, { x, y, w, h })) edgeChevron(g, view, cue, 0xf4d4b0, Math.max(alpha, 0.8));
-        }
-        // Earth only: a cross-hatch of warning stripes. (Fire's diagonal hatch and glow column read as a stray sun-beam, so fire has neither.)
-        if (kind === 3) {
-          g.lineStyle(2, 0xf0e4c8, 0.5 * alpha);
-          for (let d = 0; d < w + h; d += 28) g.lineBetween(x + Math.max(0, d - h), y + Math.min(h, d), x + Math.min(w, d), y + Math.max(0, d - w));
+          const cam = arena.cameras.main.worldView;
+          for (const cue of edgeCues(cam, { x, y, w, h })) edgeChevron(g, cam, cue, core, Math.max(alpha, 0.8));
+        } else {
+          // Earth (art-director): the warning lies on the ground, never over the fighter: a hot amber-red disc and ring about 1.6x the
+          // fighter's width on the floor line, pulsing 0.5..1 at about 2 Hz, with large falling-rock chevrons above the fighter's head (the sprite is taller than the box, so 100 px above the box top).
+          const pa = earthPulse(tick, reduced);
+          const cx = x + w / 2;
+          const cy = y + h - 10;
+          const rw = w * 1.6 * (0.85 + 0.15 * pr); // the ring closes in on its full size as the strike nears (time-to-impact cue)
+          const rh = rw * 0.34;
+          g.fillStyle(EARTH_WARN, 0.25 * pa).fillEllipse(cx, cy, rw, rh);
+          g.lineStyle(9, 0x0a0806, 0.7 * pa).strokeEllipse(cx, cy, rw, rh);
+          g.lineStyle(3, EARTH_WARN, pa).strokeEllipse(cx, cy, rw, rh);
+          drawn = rockChevrons(g, cx, y - 100, rw * 0.8, pa, reduced ? 0 : tick % 24);
+          const cam = arena.cameras.main.worldView;
+          for (const cue of edgeCues(cam, { x, y, w, h })) edgeChevron(g, cam, cue, EARTH_WARN, Math.max(alpha, 0.8));
         }
       }
     } else {
@@ -396,7 +444,8 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       glow.fillStyle(0xf0e4c8, 0.18 * dust.alpha).fillCircle(cx, cy, Math.min(w, h) * 0.45);
     }
     if (kind === 3 && warnLeft <= 0 && tick === strikeTick && !reduced) arena.cameras.main.shake(140, 0.004);
-    chip(warnLeft > 0 ? hazardLabel(kind, warnLeft) : '', x, y, w, alpha);
+    // The rockfall chip rides the stage-edge band like TIDE and GUST (the clamp), so it never covers the ground marks.
+    chip(warnLeft > 0 ? hazardLabel(kind, warnLeft) : '', x, kind === 3 ? -1e6 : y, w, alpha);
     markers.push({ kind, phase: warnLeft > 0 ? 'warn' : 'active', x, y, w, h, dir, alpha, chevrons: drawn, label: warnLeft > 0 ? hazardLabel(kind, warnLeft) : '' });
   };
 
