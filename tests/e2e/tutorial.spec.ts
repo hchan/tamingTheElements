@@ -33,6 +33,41 @@ test('practice shows lesson 1 with a ring, walks the lessons and finishes', asyn
   await expect(page.locator('#tutorialRing')).toBeHidden();
   await sim(page, { kind: 'hit', ability: 3 });
   await sim(page, { kind: 'hit', ability: 3 });
+  await expect(title).toContainText('Lesson 5');
+  await expect(page.locator('#tutorialRing')).toBeVisible();
+  await sim(page, { kind: 'weather', stage: 0 });
+  await expect(title).toContainText('Lesson 6');
+  await expect(page.locator('#tutorialRing')).toBeVisible();
+  await sim(page, { kind: 'cleanse', stage: 0 });
+  await expect(title).toContainText('Lesson 7');
+  await expect(page.locator('#tutorialRing')).toBeVisible();
+  // Guard: the lesson watches the real Guard slot light up (held key), so hold the guard key in the live sim.
+  await page.keyboard.down('KeyQ');
+  await page.evaluate('window.__TTE__.arena.step(30)');
+  await expect.poll(async () => (await title.innerText()).includes('Lesson 8'), { timeout: 5000, message: 'holding Guard moves the lesson on' }).toBe(true);
+  await page.keyboard.up('KeyQ');
+  const card = page.locator('#tutorialCard');
+  expect(await card.innerText()).toMatch(/double damage/);
+  await sim(page, { kind: 'hit', ability: 3 });
+  await expect(title).toContainText('Lesson 8');
+  await sim(page, { kind: 'patch', stage: 1 });
+  await sim(page, { kind: 'hit', ability: 3 });
+  // Each new patch lesson restarts the fight on its own stage.
+  await expect(title).toContainText('Lesson 9');
+  await expect(card).toContainText('heals');
+  await waitForArena(page);
+  await page.evaluate(PAST_BANNER);
+  await sim(page, { kind: 'patch', stage: 2 });
+  await expect(title).toContainText('Lesson 10');
+  await expect(card).toContainText('faster');
+  await waitForArena(page);
+  await page.evaluate(PAST_BANNER);
+  await sim(page, { kind: 'patch', stage: 4 });
+  await expect(title).toContainText('Lesson 11');
+  await expect(card).toContainText('rocks block');
+  await waitForArena(page);
+  await page.evaluate(PAST_BANNER);
+  await sim(page, { kind: 'blocked', stage: 3 });
   await expect(page.locator('#tutorialSkip')).toHaveText('Back to Help');
   expect(await page.locator('#tutorialCard').innerText()).not.toMatch(BANNED);
 

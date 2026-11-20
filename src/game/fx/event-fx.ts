@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
-import { simEventBridge } from './sim-event-bridge';
+import { lessonBridge, simEventBridge } from './sim-event-bridge';
 import { smoothKindForDef } from './ability-smooth';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
@@ -173,7 +173,7 @@ export class EventFx {
 
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
-      const k = e.kind;
+      const k = e.kind; lessonBridge(e);
       if (k === SimEventKind.superStarted) { this.superId = e['superId'] ?? 0; if (this.deduper.firstSeen(e)) simEventBridge(e); }
       if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
       if (!this.deduper.firstSeen(e)) continue;
