@@ -166,3 +166,46 @@ Verdict (mine, not an owner verdict):
 - zephra: clear improvement and the first usable storm read. Dark blue-black wolves with glowing blue lightning veins and a spiky mane, one head, four legs, mostly right-facing in a side-on stance. Still fur and muscle, not a cloud body, but the lightning is part of the body. Best: zephra_3 (cfg 7.0, most lightning, strong pose; signature mark bottom right to erase), zephra_5 (cfg 7.5, bright glow, wide stance), zephra_1 (clean, shadow strip). Reject zephra_4 (standing werewolf, faces left), zephra_2 (faces left, thin pose).
 - vortigal: fail again. Bald eagles with white/black plumage; only cloud wisps, light streaks or smoke around them. vortigal_1 (cream wispy feather tips, cloud swirl background) and vortigal_6 (pale cloud puffs under) are the nearest to "wind spirit"; vortigal_5 is the most ghostly (pale grey, trailing wisp feathers) but is a perched grey bird. Body is not wind or cloud in any of the 6. Needs the overlay approach or ControlNet/LoRA.
 - glimmaw: partial. Now a proper deep-sea fish with huge toothed jaws, teal body, and for the first time a stalk on the head: glimmaw_1 (cfg 6.5) has a thin stalk ending in a small pink-purple lure bulb, an open-jaw anglerfish pose, best pick; glimmaw_6 (cfg 8) has a tall stalk with no visible bulb; glimmaw_5 has thin spines/whiskers. The lure is small and barely glowing (no clear glow) so it would need to be painted or composited. glimmaw_2/_3 are piranha-like with no stalk, glimmaw_4 is a thin fish with a looped tendril (no lure). Facing: left in _1, mixed elsewhere; flip as needed.
+
+- 2026-11-19 Quarrak p2 REVISE (human faces, busy backgrounds; 0/4). p3b queued as g-20261119130454-5598 (faceless boulder head, no fingers, plain grey bg, seeds 51108-11; queue .scratch/plans/quarrak-p3b-queue.json). If <3/4 clean: img2img from 51107 silhouette at denoise 0.45 (rule 13).
+
+- 2026-11-19 plate_earth r5 REVISE (0/4, busy grey rock texture). r6 queued from .scratch/plans/plate-earth-r6-queue.json (framed bronze-brown panel, seeds 45210-13); fallback img2img from bd_plate_fire_r2_45153 at ~0.6.
+
+- 2026-11-19 hero_quarrak: p3b 51111 APPROVED by art-director (fetch-5598/approval.json; hidden hero, no release). plate_earth r6 REVISE (parchment look); r7 queued, bronze/iron plate template, seeds 45220-23.
+
+- 2026-11-19 plate_earth r7 REVISE (copper reads as fire). r8 queued (.scratch/plans/plate-earth-r8-queue.json, umber iron + moss/olive patina, seeds 45222,45223,45230,45231). Quarrak p4 REVISE (none beats 51111); 51111 stays reference.
+- 2026-11-19 art-director APPROVED hero_ouroth p2b 51205 (.scratch/ouroth-p2-all/approval.json; hidden hero, no release, crop with padding) and bd_plate_earth r8 45222 (fetch-a848/approval.json). Status rings REVISE (see ideas/brainstorm/status-effect-ring-art.md). Queued water/air plates r1 on the r8 template (.scratch/plans/plate-wateair-r1-queue.json) and Ouroth p2c.
+
+- 2026-11-19: Ouroth p2c: 51211 best but has a signature squiggle and tight margins (art-director REVISE); p2d queued with signature negatives and margin prompt, seeds 51211-14. 51205 stays the pick.
+
+- 2026-11-19 art-director: air plate 45311 APPROVED (keying/frame step still needed); water r1 REVISE -> bd_plate_water_r2 queued (seeds 45330-33). Wispera r1 REJECTED (wraith redesign); i2i from shipped wisperaLarge queued (hero_wispera_i2i_r2, 52010-13), side-by-side needed before ship.
+
+- 2026-11-19 (r3 review): fire plate seed 45322 APPROVED (bd_plate_fire_r1). Water r2 REVISE -> bd_plate_water_r3 queued (seeds 45360-63). Ouroth p2d REVISE (signature scribble on 51212/51213) -> hero_ouroth_p2e queued at 1152 (seeds 51212, 51213, 51220, 51221); 51205 stays the pick. Wispera i2i r2 (52010-13) under review.
+- 2026-11-19: Wispera i2i r2 seed 52011 APPROVED (4.2) by art-director, condition: luminance-key to alpha, rescale to shipped orb size, check on an arena screenshot; fallback 52012. Not in public/.
+- 2026-11-19 (r4): fire r1b all REVISE-not-needed (keep 45322); water r2b rejected; water r3 best 45363 (3.5) -> bd_plate_water_r4 queued seeds 45363-67. If r4 fails: ControlNet rim mask (rule 13).
+
+- 2026-11-19 r5 verdicts (art-director): water r4 REVISE (45364 interior crop x420-1200,y90-560 usable; crop saved `.scratch/batch-r5/water_45364_crop_1536x640.png`); Ouroth p2e REJECT (51205 stays); Wispera r3 REJECT (r2 52011 stays). Water r5 queued (seeds 45380-83, "seamless top-down dark teal water surface..."). Water is 5 rounds: if r5 and r4b fail, change method (CC0 water texture + regrade, or procedural Phaser layer, rule 13).
+- 2026-11-19 r6: fire r2 REJECT (45322 stays); water r4b REVISE, 45371 crop [228,95,1308,545] used as i2i init (strengths .35/.5, seeds 45400-01) queued; rule 13 method change.
+
+## Progress note 2026-11-19 (plates r7)
+- Water plate: `.scratch/batch-r7/water_45381_graded2.png` APPROVED (4.2) via regrade; i2i method dropped (rule 13). Needs keying/frame script before integration.
+- Fire plate: r3 (basalt, red veins) all REJECT (reads as earth). r4 45422 APPROVED (4.0); 45420 REVISE (regrade hot pixels x0.7, centre dim 20%); 45421/45423 REJECT. r5 (4 seeds, muted prompt) queued g-20261119140957-9cb0. Verdicts: `.scratch/batch-r7/approval-fire-r3r4.json`.
+- Splash: fire/water/air team backdrops r1 running g-20261119140854-8fb3 (seeds 45430-41).
+- Fire plate r5: 45452 APPROVED (4, near tie with r4 45422; crop ~40 px top/left frayed edge); 45450 hard reject (frame). r6 queued g-20261119142256-4b10.
+- Splash teams r1 APPROVED: fire 45432, water 45436, air 45439 (45440 has fake signature, crop bottom 5%).
+- Menu hall 45462 APPROVED (4); versus arena 45467 APPROVED (4; grade cooler). Per-element versus arenas r1 running g-20261119142239-853a.
+
+## Progress 2026-11-19 (art-director verdicts, nothing in public/)
+- Versus arenas: fire 45470, water 45474, earth 45480, air 45492 (needs warm grade); neutral 45467.
+- Fire plate r6 45495 (4.0); r7 REVISE (rust-like, 45530 best 3.5); r8 queued (45580-83, thin lava veins, dark top third).
+- Results: victory 45500, defeat 45506. Loading 45512 (4.5). Help 45522 (4.5, backup 45521).
+- Select backdrop 45541 (4.0, backup 45543). Lobby 45550 (4.0, backup 45551).
+- Still needed per slot: tools/ keying/frame/crop script, side-by-side vs shipped, gate, /full-review.
+
+Progress 2026-11-19 (later): art-director APPROVE settings 45531, training 45542, online 45571, shop 45560 (all 4/5, backdrops, nothing in public/). Fire plate r8 REVISE (flat, pink); r9 queued seeds 45610-13 with broad molten seams prompt; if it fails, method change: i2i on r6 45495 at ~0.35.
+
+- 2026-11-19: art-director approved pause backdrop r2 45703 (beats r1 45600). Fire plate i2i (45800/45801) and r10 (45630-33) REJECT; r6 45495 stays the pick. Queued r11 (45640-43: r6 wording + "thin orange-red molten veins glowing inside cracks"); if it fails, switch method: r10 charred basalt base + masked r6 glow overlay (~15%). Credits 45591, tutorial 45622 approved earlier. Title r1 (45900-03) and codex r1 (46000-03) queued.
+- 2026-11-19 (later): fire r11 REJECT (neuron/web); r12 queued. Title r1 REVISE (45902 best, brazier too central) -> title r2 queued (45902,45904-06, brazier far left). Codex r1 REVISE (46001 best) -> codex r2 queued (map wall, table far right). Montage r1 queued.
+
+- 2026-11-19 art-director verdicts (.scratch/batch-r8/approval-f12-montage-title2-codex2.json): fire r12 all REJECT (r6 45495 stays; r13 and r14 queued); montage 46102 APPROVE 4.5; title 45904 APPROVE 4; codex 46011 APPROVE 4 (add "oil painting, visible brushwork" next round). Title r3 queued (brazier low-left). Approved ones still need tools/ crop script, side-by-side vs shipped, gate and /full-review before public/.
+- 2026-11-19 fire r13/r14, title r3: no approvals (45661 only usable as unlit base). Queued fire r15 (charred basalt, narrow cracks) and title r4 (castle/brazier lower-left).

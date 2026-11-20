@@ -14,3 +14,6 @@ Why: the menu and select screens are the first thing players see and read bland 
 - GPU-suitable: yes for the art stills (see [remote-gpu-offload](remote-gpu-offload.md)); the screen logic and montage timing are render-only (no sim change) and need no GPU.
 - Owner-gated: yes for the art (show a contact sheet first, as with roster24); the layout and reveal logic are pre-approved.
 - Player-facing text: Play, Versus, Online, Settings, Help only; never Classic, Arcade, ruleset or Capture (Snag).
+
+## Progress note (2026-11-19)
+Missing element variants (earth first) queued from .scratch/plans/splash-next-queue.json (11 prompts x 4 seeds, round 2 of 2).

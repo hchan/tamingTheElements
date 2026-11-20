@@ -15,5 +15,11 @@ Cause: the bottleneck is approval yield and turnaround, not 4060 speed (weather 
 11. **Merge approved work.** Art-director-approved uncommitted worktrees (trap decal, telegraph, icons) get gate + /full-review next, then commit and merge locally (art-autonomy rule 4); no waiting for a commit ask. Do not leave them idle.
 12. **Fewer check-ins.** The keep-fed check only needs action when running+queued < 2 or a job finished; otherwise answer in one line.
 13. **Two failed rounds on a slot = change method, not seeds.** Ladder: free CC0 asset + regrade, then i2i/ControlNet from a silhouette, then procedural Phaser particles. Record rounds per slot in the yield ledger (`tools/assets/roster24-art/yield-ledger.py`). Evidence: families reusing an approved template pass 60-100%; new families start at 0; hurl_rock, lure_orb, skitter failed 4 rounds (plan: .scratch/plans/art-yield-plan.md).
+14. **Method defaults (owner, 2026-11-19, permanent).** Measured yield was about 1 batch in 3. To raise it:
+    - **New slot with an approved neighbour:** start i2i/ControlNet from that approved image (denoise 0.3-0.45), not t2i. New slot with no neighbour: t2i, 4 seeds, once.
+    - **Put the art-director's recurring negatives in the first prompt** (no people, no lightning, no tiny fire, no cold blue, no cartoon look, no monochrome fog) and keep the director's REVISE prompt text; change the prompt, not only the seeds.
+    - **Stop t2i after two failed rounds on a slot** and take the rule 13 ladder. Stuck slots (hurl_rock, lure_orb, skitter, slow, hoof_crash, talon_rake) go straight to the ladder.
+    - **Never iterate an approved slot.** Two i2i rounds on approved montage 46102 and title 45932 only degraded them (director, 2026-11-19). Re-run an approved slot only for a stated defect, or when the director asks for a clearly better result; do not queue more rounds to fill the 4060.
+    - **Keep-fed fills with unapproved slots**, never repeats of approved ones.
 
 See also: [art-autonomy.md](art-autonomy.md) (art-director approves; owner delegated).

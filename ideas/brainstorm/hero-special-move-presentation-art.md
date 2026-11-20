@@ -13,3 +13,6 @@ Why: supers currently share a generic presentation (see [qa-r3-super-cinematic-h
 - Dependencies: links to [sf-super-cinematics](sf-super-cinematics.md) (super and tag cinematics, the camera and timing layer) and [roster24-ability-icons-fx-weather-art](roster24-ability-icons-fx-weather-art.md) (ability art); final hero art ([roster24-art-redo](roster24-art-redo.md)). Render-only; any sim timing change needs a SIM_VERSION bump and one sim agent at a time.
 - GPU-suitable: yes for stills and cut-in portraits; animation and effects are Phaser-side.
 - Owner-gated: yes (art look; show a sheet first).
+
+## Progress note (2026-11-19)
+Per-hero super cut-in backdrops queued: job g-20261119161632-b7a1 (12 heroes x 4 seeds, .scratch/plans/next-queue-b.json). Fetch, prefilter, art-director next.
