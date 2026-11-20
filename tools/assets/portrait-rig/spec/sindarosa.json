@@ -1,12 +1,12 @@
 {
  "source": "public/assets/img/map/sindarosaLarge.png",
- "frame": 240,
- "box": [20, 24, 200, 200],
+ "frame": 280,
+ "box": [40, 44, 200, 200],
  "res": 2,
  "feet": [260, 388],
  "matte": { "minIsland": 40, "band": 2, "fringeLum": 35 },
  "rim": { "color": [255, 186, 120], "dir": [-0.5, -0.87], "strength": 0.32, "width": 1.6 },
- "shadow": { "rx": 96, "ry": 12, "alpha": 70, "dx": -6, "dy": 2 },
+ "shadow": { "rx": 118, "ry": 12, "alpha": 70, "dx": -22, "dy": 2 },
  "bones": [
   { "id": "root", "head": [260, 388] },
   { "id": "torso", "parent": "root", "head": [255, 300], "feather": 22,
@@ -35,9 +35,10 @@
   [[360, 40], [400, 40], [400, 330], [350, 330]]
  ] },
  "dirOffsets": {
-  "SE": { "body": { "sx": 94 }, "neck": { "dy": 4 } },
+  "E": { "tail": { "sx": 135 }, "neck": { "sx": 112 }, "head": { "sx": 89 } },
+  "SE": { "body": { "sx": 94 }, "tail": { "sx": 118, "rot": -2 }, "neck": { "dy": 4, "sx": 106 }, "head": { "sx": 94 } },
   "S": { "body": { "sx": 86 }, "neck": { "dy": 6 } },
   "N": { "body": { "sx": 86 }, "neck": { "dy": -6 } },
-  "NE": { "body": { "sx": 94 }, "neck": { "dy": -4 } }
+  "NE": { "body": { "sx": 94 }, "tail": { "sx": 118, "rot": -2 }, "neck": { "dy": -4, "sx": 106 }, "head": { "sx": 94 } }
  }
 }
