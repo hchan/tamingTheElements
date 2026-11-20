@@ -87,6 +87,22 @@ describe('rig bake (tools/assets/bake-rig.ts)', () => {
     expect(decodePng(res.outputs.get('fiara/hurt/SE/01.png') ?? new Uint8Array()).data).not.toEqual(key.data);
   });
 
+  it('bakes an action only for its own `dirs` subset (default: all rig dirs) and counts the key check against it', () => {
+    const files = withRig((r) => (r.actions.cast = { frames: 4, dirs: ['E'] }));
+    const res = bakeRigs(files);
+    expect(res.errors).toEqual([]);
+    const png = [...res.outputs.keys()].filter((p) => p.endsWith('.png'));
+    expect(png.filter((p) => p.includes('/cast/'))).toEqual([0, 1, 2, 3].map((f) => `fiara/cast/E/0${String(f)}.png`));
+    expect(png.filter((p) => p.includes('/idle/')).some((p) => p.includes('/SE/'))).toBe(true);
+    expect(JSON.parse(res.lock ?? '{}')).toMatchObject({ rigs: { fiara: { outputs: { 'fiara/cast/E/03.png': expect.any(String) as unknown } } } });
+    // Without `dirs` the same action bakes for every rig dir.
+    const all = bakeRigs(withRig((r) => (r.actions.cast = { frames: 4 })));
+    expect([...all.outputs.keys()].filter((p) => p.includes('/cast/SE/'))).toHaveLength(4);
+    // A key for a direction outside the action's subset is rejected.
+    const withKey = new Map(files).set('fiara/keys/cast/SE/00.png', files.get('fiara/keys/hurt/E/01.png') ?? new Uint8Array());
+    expect(bakeRigs(withKey).errors.join('\n')).toMatch(/keys\/cast\/SE\/00\.png: key for a frame the rig does not bake/);
+  });
+
   it('merges an `extends` variant over an abstract _base (parts by id, actions by name) and bakes only the concrete rig', () => {
     const files = fixture();
     const base = fixtureRig();
@@ -120,6 +136,8 @@ describe('rig bake (tools/assets/bake-rig.ts)', () => {
     ['duplicate id', () => withRig((r) => r.parts.push({ id: 'arm' })), /duplicate part id arm/],
     ['unknown parent', () => withRig((r) => r.parts[1] && (r.parts[1].parent = 'torso')), /part arm: unknown parent torso/],
     ['parent cycle', () => withRig((r) => r.parts[0] && (r.parts[0].parent = 'arm')), /parent cycle/],
+    ['action dir outside the rig dirs', () => withRig((r) => (r.actions.cast = { frames: 4, dirs: ['N'] })), /actions\.cast\.dirs: N is not one of the rig's dirs/],
+    ['mirrored action dir', () => withRig((r) => (r.actions.cast = { frames: 4, dirs: ['W'] })), /actions\.cast\.dirs\[0\]: W is mirrored from E at runtime/],
     ['unknown action', () => withRig((r) => (r.actions.jump = { frames: 4 })), /actions\.jump: unknown action/],
     ['curve for an unknown part', () => withRig((r) => (r.actions.idle = { frames: 4, curves: { leg: { rot: [0, 0, 0, 0] } } })), /curves: unknown part leg/],
     ['part png missing', () => withRig((r) => r.parts[0] && (r.parts[0].png = 'nope.png')), /part body: parts\/nope\.png not found in fiara/],

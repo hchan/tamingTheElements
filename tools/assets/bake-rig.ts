@@ -101,6 +101,8 @@ export interface RigAction {
    * is key j byte for byte. 1 takes today's code path unchanged.
    */
   readonly sub?: number;
+  /** Subset of the rig's `dirs` this action is baked for (default: all of them), e.g. `["E"]` for a row only one facing shows. */
+  readonly dirs?: readonly Dir[];
   /**
    * part or bone id -> channel -> one integer per frame: rot degrees clockwise, dx/dy pixels (art pixels with `res`), sx/sy percent
    * (default 100); parts of ss2 rigs also take alpha and bright.
@@ -252,6 +254,10 @@ export function parseRig(where: string, text: string, errors: string[]): RigJson
       {
         frames: check((v) => v === n, `the sheet spec has ${String(n)} frames for ${a}`),
         sub: num(1, MAX_SUB),
+        dirs: list((v, path) => {
+          const e = typeof v === 'string' ? dirError(v) : 'expected a direction name';
+          if (e !== undefined) bad(path, e);
+        }, true),
         curves: map(() => undefined, () => curve, 'part id'),
         deform: map(() => undefined, () => deform, 'part id'),
       },
@@ -370,6 +376,9 @@ function resolveRig(name: string, raws: ReadonlyMap<string, RigJson | undefined>
   if (dirs === undefined) e('dirs: required');
   if (parts.length === 0) e('parts: at least one part is required');
   if (Object.keys(actions).length === 0) e('actions: at least one action is required');
+  for (const [a, act] of Object.entries(actions)) {
+    for (const d of act.dirs ?? []) if (!(dirs ?? []).includes(d)) e(`actions.${a}.dirs: ${d} is not one of the rig's dirs`);
+  }
   const ids = new Set(parts.map((p) => p.id));
   for (const p of parts) {
     for (const f of ['png', 'pivot', 'at'] as const) if (p[f] === undefined) e(`part ${p.id}: ${f} is required`);
@@ -1055,7 +1064,7 @@ export function bakeRigs(files: SourceFiles): BakeResult {
       if (!k) continue;
       const [action, dir] = (k[1] as string).split('/') as [Action, Dir];
       const act = r.actions[action];
-      if (act === undefined || !r.dirs.includes(dir) || Number(k[2]) >= act.frames) errors.push(`${name}/${rel}: key for a frame the rig does not bake`);
+      if (act === undefined || !(act.dirs ?? r.dirs).includes(dir) || Number(k[2]) >= act.frames) errors.push(`${name}/${rel}: key for a frame the rig does not bake`);
       else {
         const img = decode(`${name}/${rel}`, bytes, r.frame);
         if (img) keys.set(`${action}/${dir}/${k[2] as string}`, img);
@@ -1076,6 +1085,7 @@ export function bakeRigs(files: SourceFiles): BakeResult {
       }
       if (errors.length > n0) break;
       for (const [action, key] of Object.entries(r.actions) as [Action, RigAction][]) {
+        if (key.dirs !== undefined && !key.dirs.includes(dir)) continue;
         const loop = LOOPING.has(action);
         const k = key.sub ?? 1;
         const act = expandAction(key, loop);

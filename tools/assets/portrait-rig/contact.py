@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", "..", ".."))
-ACTIONS = ["idle", "walk", "cast", "hurt", "guard", "dash", "ko", "victory", "tagIn"]
+ACTIONS = ["idle", "walk", "cast", "hurt", "guard", "dash", "ko", "victory", "tagIn", "walkBack"]  # rows a hero does not bake (or bakes for fewer dirs) are skipped
 
 
 def main(argv):
