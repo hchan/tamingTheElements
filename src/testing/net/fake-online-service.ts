@@ -19,8 +19,17 @@ export const ctor = (make: (url: string) => WsLike): OnlineDeps['WebSocket'] => 
 
 type Listener = (ev: never) => void;
 
+/** What FakeService needs of one connection's server side: TestWs here, a real socket in src/testing/net/ws-int. */
+export interface ServedWs {
+  readonly readyState: number;
+  /** Sends one frame to the client. */
+  serve(bytes: Uint8Array): void;
+  /** Closes with `code`. */
+  drop(code: number): void;
+}
+
 /** In-memory WebSocket whose "server" is the FakeService. */
-export class TestWs implements WsLike {
+export class TestWs implements WsLike, ServedWs {
   readyState = 0;
   readonly sent: Uint8Array[] = [];
   private readonly listeners = new Map<string, Listener[]>();
@@ -93,8 +102,8 @@ export class FakeService {
   inputDelay = 2;
   batchEvery = 1;
   relay: FakeRelay | undefined;
-  private readonly queue: TestWs[] = [];
-  private readonly slots = new Map<TestWs, number>();
+  private readonly queue: ServedWs[] = [];
+  private readonly slots = new Map<ServedWs, number>();
 
   constructor(private readonly clock: { ms: number }) {}
 
@@ -112,21 +121,29 @@ export class FakeService {
 
   makeSocket = (url: string): WsLike => new TestWs(url, this);
 
-  accept(ws: TestWs): void {
-    const t = decodeURIComponent(ws.url.split('ticket=')[1] ?? '');
+  /** Ticket check of a socket open: true (and the ticket is used up) when `url` carries a live, unused ticket and no refusal is pending. */
+  admit(url: string): boolean {
+    const t = decodeURIComponent(url.split('ticket=')[1] ?? '');
     const born = this.issued.get(t);
     if (this.refuseSockets > 0 || born === undefined || this.used.has(t) || this.clock.ms - born > 60_000) {
       if (this.refuseSockets > 0) this.refuseSockets--;
+      return false;
+    }
+    this.used.add(t);
+    return true;
+  }
+
+  accept(ws: TestWs): void {
+    if (!this.admit(ws.url)) {
       ws.emit('error');
       ws.drop(1006);
       return;
     }
-    this.used.add(t);
     ws.readyState = 1;
     ws.emit('open');
   }
 
-  onFrame(ws: TestWs, b: Uint8Array): void {
+  onFrame(ws: ServedWs, b: Uint8Array): void {
     switch (b[0]) {
       case 0x01: {
         const d = new DataView(b.buffer);
@@ -147,7 +164,7 @@ export class FakeService {
         for (let i = this.queue.length - 1; i >= 0; i--) if (this.queue[i]?.readyState !== 1) this.queue.splice(i, 1);
         this.queue.push(ws);
         if (this.queue.length === 2) {
-          const [p, q] = this.queue.splice(0, 2) as [TestWs, TestWs];
+          const [p, q] = this.queue.splice(0, 2) as [ServedWs, ServedWs];
           this.startMatch(p, q);
         }
         break;
@@ -163,7 +180,7 @@ export class FakeService {
   }
 
   /** A new match for the pair (queue match or rematch): next matchId, slots 0 and 1. */
-  startMatch(p: TestWs, q: TestWs): void {
+  startMatch(p: ServedWs, q: ServedWs): void {
     this.matchNo++;
     this.slots.set(p, 0);
     this.slots.set(q, 1);
@@ -172,10 +189,10 @@ export class FakeService {
   }
 
   /** Match frames go through the FakeRelay: first socket is side a, second side b. */
-  private pass(ws: TestWs, b: Uint8Array): void {
+  private pass(ws: ServedWs, b: Uint8Array): void {
     const r = this.relay;
     if (!r) return;
-    const side = [r.a, r.b][this.sockets.filter((s) => s.readyState === 1 && this.slots.has(s)).indexOf(ws)];
+    const side = [r.a, r.b][this.sockets.filter((s) => s.readyState === 1 && this.slots.has(s)).indexOf(ws as TestWs)];
     side?.send(encodeText(b));
   }
 
