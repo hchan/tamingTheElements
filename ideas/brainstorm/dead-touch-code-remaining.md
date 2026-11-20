@@ -22,3 +22,9 @@ Note: the Arcade touch buttons are also exercised by desktop e2e flows (arcade-c
 - tests/repo/portrait-play-css.test.ts, touch-css.test.ts, touch-strike-gutter-css.test.ts
 
 Done so far: touch-stick and touch-strike removed (47d73bc1). Remaining items above still imported; rework viewport first.
+
+Update 2026-11-20 (phone-removal WP): removed portrait-play.css (+ its test, import) and main/20-picker-small-phone.css. NOT removed, entangled:
+- src/game/boot/portrait-play.ts is imported by 10 files (presentation, viewport, arena-pan, super-view, action-bar-view, round-view, tag-view, Hud, tall-fills, first-run-hint) and holds the tall-view layout maths (deckFor, isPortraitPlay); needs viewport rework first. Portrait mode still sets html[data-portrait-play] but now has no CSS.
+- main/12-phone-landscape.css opens with a desktop 720p block (max-height 800px), so it is mixed; main/18-phone-targets.css has pointer:coarse rules that may serve the desktop touch-button overlay. Split by block before deleting; update tools/ci/split-main-css.ts, tests/repo/main-css-partials.test.ts (line 75 anchors on 18-phone-targets), the REPO-MAP partial count.
+
+Update 2026-11-20 (phone-drop-2): the touch-button overlay was NOT removed. touchButtons/watchTouch/inVisualOrder/isMeleeRace (touch-controls.ts) are wired into arcade-versus, online-arena and tour; the overlay (touch-overlay.ts via action-bar-view) is the mouse/click path for Super/Weather/Trap/Charge/Tag/Run on desktop, and arcade, arcade-trap, arcade-weather, arcade-local e2e specs drive button.touchBtn. touch-layout.ts feeds Settings (button size/side). Removing it is a feature removal plus e2e rewrite (more than 15 files), so needs an owner call on whether mouse-clickable ability buttons go. Only the phone/portrait words in the tier title rule were dropped.

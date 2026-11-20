@@ -27,7 +27,6 @@ const PARTS: readonly (readonly [string, string])[] = [
   ['17-tour-victory.css', '/* World Tour victory (qa-r25): a mystic'],
   ['18-phone-targets.css', '/* Settings on a short viewport (qa-r25)'],
   ['19-tour-stage.css', '/* Tour stage card: scannable fact rows '],
-  ['20-picker-small-phone.css', '/* QA r38 (667x375 phone landscape): the'],
   ['22-online-live.css', '/* Online, connected and in a match: no '],
 ];
 
