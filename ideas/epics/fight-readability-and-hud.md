@@ -26,7 +26,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md): QA r41: fight polish (desktop 1280x720). Verified from r40: ghost trail shows on Sindarosa fading (2v2-hit.png, translucent red trail plus ring and FADE 2s chip);
 - [qa-r30-round-banner-contrast](../brainstorm/qa-r30-round-banner-contrast.md): ROUND 2 banner is washed out. The big grey ROUND 2 with fighter names has low contrast on the fire stage.
 - [fight-banner-contact-cut](../in-progress/fight-banner-contact-cut.md): FIGHT! banner: cut it short on first contact. The FIGHT! banner now shows for 30 ticks (0.6 s, FIGHT_BANNER_TICKS).
-- [hud-numbers-wide-view-projection](../brainstorm/hud-numbers-wide-view-projection.md): HUD damage numbers and the TAG! call project with the 1280 frame on wide views. Hud.ts (damage numbers, ~l630) and tag-view.ts (~l258) project world points into HUD_FRAME (0..1280).
+- [hud-numbers-wide-view-projection](../in-progress/hud-numbers-wide-view-projection.md): HUD damage numbers and the TAG! call project with the 1280 frame on wide views. Hud.ts (damage numbers, ~l630) and tag-view.ts (~l258) project world points into HUD_FRAME (0..1280).
 - [tag-call-position-wide-view](../brainstorm/tag-call-position-wide-view.md): TAG! call position on the wide view. On the panned wide camera the TAG! call can sit away from the incoming hero.
 - [unified-action-bar](../in-progress/unified-action-bar.md) (in progress): One consistent action bar. Owner: "needs to be consistent ... NO icons on the right please.
 - [qa-action-bar-readability](../in-progress/qa-action-bar-readability.md) (in progress): QA: action bar labels are tiny and the bar shifts between heroes. In 77 px slots the 'Weather 3%' and 'Super 2%' text is about 9 px, and the Trap and Cleanse icons are murky.
@@ -52,7 +52,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-1 Floating text lanes
 
-- Members: [callout-pop-limits](../brainstorm/callout-pop-limits.md), [combo-counter-anchoring](../done/combo-counter-anchoring.md), [qa-stale-damage-numbers](../brainstorm/qa-stale-damage-numbers.md), [tag-call-position-wide-view](../brainstorm/tag-call-position-wide-view.md), [hud-numbers-wide-view-projection](../brainstorm/hud-numbers-wide-view-projection.md)
+- Members: [callout-pop-limits](../brainstorm/callout-pop-limits.md), [combo-counter-anchoring](../done/combo-counter-anchoring.md), [qa-stale-damage-numbers](../brainstorm/qa-stale-damage-numbers.md), [tag-call-position-wide-view](../brainstorm/tag-call-position-wide-view.md), [hud-numbers-wide-view-projection](../in-progress/hud-numbers-wide-view-projection.md)
 - Size: M
 - Shared files: src/game/fx/pop-lanes.ts, event-fx.ts, Hud.ts
 - Flags: needs browser/e2e
