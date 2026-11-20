@@ -116,14 +116,14 @@ interface Ctx {
   peers: Peer[];
 }
 
-async function connect(c: Ctx): Promise<Peer> {
-  const p = new Peer(await c.adapter.connect(), c.env);
+async function connect(c: Ctx, sameIdentityAs?: Peer): Promise<Peer> {
+  const p = new Peer(await c.adapter.connect(sameIdentityAs === undefined ? undefined : { sameIdentityAs: sameIdentityAs.client }), c.env);
   c.peers.push(p);
   return p;
 }
 /** Connect and HELLO; returns the peer and its WELCOME. */
-async function join(c: Ctx, sim = c.env.sim, resume = 0): Promise<[Peer, Rx<'welcome'>]> {
-  const p = await connect(c);
+async function join(c: Ctx, sim = c.env.sim, resume = 0, sameIdentityAs?: Peer): Promise<[Peer, Rx<'welcome'>]> {
+  const p = await connect(c, sameIdentityAs);
   await p.send({ t: 'hello', ver: PROTOCOL_VERSION, simVersion: sim, resumeSession: resume });
   return [p, await p.take('welcome')];
 }
@@ -530,7 +530,7 @@ const resume: ConformanceCase[] = [
     await a.client.close();
     const ps = (await b.take('peerStatus')).frame;
     eq([ps.event, ps.graceMs], [PeerStatusEvent.disconnected, 10000], 'peer status');
-    const [a2, w] = await join(c, c.env.sim, sidA);
+    const [a2, w] = await join(c, c.env.sim, sidA, a);
     eq([w.frame.resumed, w.frame.sessionId], [1, sidA], 'resumed welcome');
     const ms = (await a2.take('matchStart')).frame;
     eq([ms.matchId, ms.seed, ms.slot], [ma.frame.matchId, ma.frame.seed, ma.frame.slot], 'same match, seed, slot');

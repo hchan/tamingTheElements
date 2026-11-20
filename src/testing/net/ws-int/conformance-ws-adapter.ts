@@ -62,6 +62,8 @@ export interface WsConformanceOptions {
    * when a socket closes with 1000 after an ERROR frame, report the close as 4000 + the error code's low byte, so the cases check the ERROR frame.
    */
   readonly advisoryClose?: boolean;
+  /** API Gateway routes by message body and may never pass a binary message on: leave `sendBinary` out so that case skips. */
+  readonly noBinary?: boolean;
   readonly deps?: WsConformanceDeps;
 }
 
@@ -102,8 +104,10 @@ export function createWsConformance(o: WsConformanceOptions): {
     return (await res.json()) as Record<string, unknown>;
   };
 
-  const open = async (): Promise<ConformanceClient> => {
-    const session = (await post('/session', { kind: 'guest' }))['session'];
+  const sessions = new WeakMap<ConformanceClient, string>();
+  const open = async (same?: ConformanceClient): Promise<ConformanceClient> => {
+    const reused = same === undefined ? undefined : sessions.get(same);
+    const session = reused ?? (await post('/session', { kind: 'guest' }))['session'];
     if (typeof session !== 'string' || session === '') throw new Error('/session: no session token');
     const url = (await post('/ticket', undefined, session))['url'];
     if (typeof url !== 'string' || !url.startsWith('wss://')) throw new Error('/ticket: no wss url');
@@ -147,19 +151,21 @@ export function createWsConformance(o: WsConformanceOptions): {
       if (wait > 0) await sleep(wait);
       last = now();
     };
-    return {
+    const client: ConformanceClient = {
       sendText: async (t) => { await pace(); ws.send(t); },
-      sendBinary: async (b) => { await pace(); ws.send(b); },
+      ...(o.noBinary === true ? {} : { sendBinary: async (b: Uint8Array): Promise<void> => { await pace(); ws.send(b); } }),
       onText: (cb) => { onText = cb; for (const t of early.splice(0)) cb(t); },
       onClose: (cb) => { onClose = cb; if (closed !== undefined) cb(closed); },
       close: () => { ws.close(); },
     };
+    sessions.set(client, session);
+    return client;
   };
 
   const adapter: ConformanceAdapter = {
-    connect: async () => {
+    connect: async (opts) => {
       try {
-        const c = await open();
+        const c = await open(opts?.sameIdentityAs);
         stats.connected++;
         return c;
       } catch (e) {
@@ -192,6 +198,7 @@ export async function runConformanceCli(argv: readonly string[], env: Readonly<R
         only: { type: 'string' },
         'strict-text': { type: 'boolean', default: false },
         'advisory-close': { type: 'boolean', default: false },
+        'no-binary': { type: 'boolean', default: false },
       },
     }));
   } catch (e) {
@@ -207,7 +214,7 @@ export async function runConformanceCli(argv: readonly string[], env: Readonly<R
   const only = values.only?.split(',').map((s) => s.trim()).filter((s) => s !== '');
   if (only !== undefined && !conformanceCases.some((c) => only.some((p) => c.id.startsWith(p)))) return bad(`relay:conformance: --only matches no case; groups: ${groupsOf().join(', ')}`);
 
-  const { adapter, hooks, stats } = createWsConformance({ baseUrl, timeoutMs, settleMs, strictText: values['strict-text'], advisoryClose: values['advisory-close'], ...(deps === undefined ? {} : { deps }) });
+  const { adapter, hooks, stats } = createWsConformance({ baseUrl, timeoutMs, settleMs, strictText: values['strict-text'], advisoryClose: values['advisory-close'], noBinary: values['no-binary'], ...(deps === undefined ? {} : { deps }) });
   const report: ConformanceReport = await runAll(adapter, hooks, only === undefined ? {} : { only });
   const delivery: Delivery = { text: stats.text, binary: stats.binary, notices: stats.notices };
   const connections = { ok: stats.connected, failed: stats.connectFailures };
