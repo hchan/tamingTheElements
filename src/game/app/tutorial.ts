@@ -18,6 +18,7 @@ import { advance, currentStep, initialProgress, isFinished, TUTORIAL_STEPS, type
 export const SIM_EVENT = 'tte:sim-event';
 /** How often the ring follows the action bar (CSS px can change on resize). */
 const RING_POLL_MS = 100;
+const EVENT_KINDS: ReadonlySet<string> = new Set(['super', 'weather', 'cleanse', 'patch', 'patchLeft', 'heal', 'blocked']);
 
 /** The part of the Arena's action bar the ring needs (a narrow view of a private member; the bar already exposes both). */
 interface BarProbe {
@@ -50,7 +51,7 @@ export function mountTutorial(container: HTMLElement): void {
   const refresh = (): void => {
     const step = currentStep(progress);
     overlay?.setLesson(step ?? null, progress.index, TUTORIAL_STEPS.length);
-    if (isFinished(progress)) overlay?.showDone('You know the basics: attack, abilities, the Super and elements. Pick a hero in Versus to try them for real.');
+    if (isFinished(progress)) overlay?.showDone('You know the basics: attack, abilities, the Super, elements, Weather, Cleanse, Guard and the four terrain patches. Pick a hero in Versus to try them for real.');
   };
 
   const place = (): void => {
@@ -58,6 +59,10 @@ export function mountTutorial(container: HTMLElement): void {
     const canvas = canvasHost?.querySelector('canvas');
     if (!overlay || !bar || !canvas || !step?.target) {
       overlay?.setRing(null);
+      return;
+    }
+    if (step.id === 'guard' && bar.currentSlots.some((s) => s.kind === 'guard' && s.highlight)) {
+      feed({ kind: 'guard' });
       return;
     }
     const slots = bar.screenSlots();
@@ -72,13 +77,20 @@ export function mountTutorial(container: HTMLElement): void {
     overlay.setRing(ringBox(slot, { left: c.left, top: c.top, width: c.width, height: c.height }, p));
   };
 
-  const onSim = (e: Event): void => {
-    const d = (e as CustomEvent<{ kind: string; ability?: number }>).detail;
-    const ev: TutorialEvent | undefined = d.kind === 'hit' ? { kind: 'hit', ability: d.ability ?? -1 } : d.kind === 'super' ? { kind: 'super' } : undefined;
-    if (!ev) return;
+  /** One more event for the lessons; a lesson on another scene restarts the fight there (the progress is kept). */
+  const feed = (ev: TutorialEvent): void => {
+    const before = currentStep(progress)?.scene;
     progress = advance(progress, ev);
     refresh();
     place();
+    const after = currentStep(progress)?.scene;
+    if (after !== undefined && after !== before) startBattle();
+  };
+
+  const onSim = (e: Event): void => {
+    const d = (e as CustomEvent<{ kind: string; ability?: number }>).detail;
+    const ev: TutorialEvent | undefined = d.kind === 'hit' ? { kind: 'hit', ability: d.ability ?? -1 } : EVENT_KINDS.has(d.kind) ? ({ kind: d.kind } as TutorialEvent) : undefined;
+    if (ev) feed(ev);
   };
 
   const leave = (): void => {
@@ -104,7 +116,7 @@ export function mountTutorial(container: HTMLElement): void {
     void import('../boot/phaser-config')
       .then(({ createGame }) => {
         if (epoch !== mine) return;
-        const launch = tutorialLaunch(flags.seed ?? (Date.now() >>> 0), {
+        const launch = tutorialLaunch(flags.seed ?? (Date.now() >>> 0), currentStep(progress)?.scene ?? 'fire', {
           onRestart: () => { if (epoch === mine) startBattle(); },
           // The foe never fights back, so a finished match only means the lessons are not done yet: go again, progress kept.
           onResult: () => { if (epoch === mine && !isFinished(progress)) startBattle(); },
