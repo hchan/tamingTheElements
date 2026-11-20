@@ -83,7 +83,7 @@ case "$cmd" in
   fg) need_id; cd "$d" && mkdir -p out && set -o pipefail && bash job.sh 2>&1 | tee out/output.log; exit $? ;;
   status) need_id; if [ -f "$d/status.json" ]; then cat "$d/status.json"; else echo '{"state":"unknown","rc":1}'; fi ;;
   follow)
-    need_id; off=$3; hb=$4; [ -n "$hb" ] || hb=60; log=$d/out/output.log; idle=0; dead=0; nopid=0
+    need_id; off=$3; hb=$4; [ -n "$hb" ] || hb=60; lp=$TTE_LOST_POLLS; [ -n "$lp" ] || lp=100; log=$d/out/output.log; idle=0; dead=0; nopid=0
     while :; do
       fin=0; is_final && fin=1
       if [ -f "$log" ]; then
@@ -94,8 +94,18 @@ case "$cmd" in
       pid=$(cat "$d/pid" 2>/dev/null)
       if [ -z "$pid" ]; then nopid=$((nopid + 1)); else nopid=0; fi
       if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then dead=$((dead + 1)); else dead=0; fi
-      if [ $dead -ge 4 ] || [ $nopid -ge 600 ]; then
-        printf '{"state":"lost","rc":93,"result":"error"}\n' > "$d/status.json"; echo "job $id lost (process gone, no final status)" >&2; exit 93
+      if [ $dead -ge $lp ] || [ $nopid -ge 600 ]; then
+        is_final && exit 0
+        other=""
+        for j in $(ls -1 "$J" 2>/dev/null); do
+          [ "$j" = "$id" ] && continue
+          case "$(jget "$J/$j/status.json" state)" in running|syncing) p2=$(cat "$J/$j/pid" 2>/dev/null); [ -n "$p2" ] && kill -0 "$p2" 2>/dev/null && other="$other $j" ;; esac
+        done
+        echo "last log: $(tail -n 3 "$log" 2>/dev/null | tr '\n' '|')" >&2
+        echo "host: $(grep MemAvailable /proc/meminfo 2>/dev/null | tr -s ' ') load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null)" >&2
+        if [ -n "$other" ]; then echo "job $id lost (process gone, no final status) while overlapping with:$other; likely killed by memory pressure or that job" >&2
+        else echo "job $id lost (process gone, no final status); nothing else of ours was running (WSL restart or OOM kill?)" >&2; fi
+        printf '{"state":"lost","rc":93,"result":"error"}\n' > "$d/status.json"; exit 93
       fi
       sleep 0.3; idle=$((idle + 1))
       if [ $((idle * 3)) -ge $((hb * 10)) ]; then
