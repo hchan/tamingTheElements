@@ -78,4 +78,18 @@ describe('abilities-c tick values', () => {
       expect(twins.map((t) => t.id), a.id).toEqual([]);
     }
   });
+
+  it('pins the Durrok kit: Tusk Gore 22 damage, 3000 ms cooldown, 80x50 box, 180 px lunge; Bristle Stomp 15 damage, 70x40 box (no other ability shares kind, box and damage with either)', () => {
+    const gore = get('tusk-gore');
+    const stomp = get('bristle-stomp');
+    if (!gore || !stomp) throw new Error('Durrok abilities missing');
+    expect([gore.damage, gore.w, gore.h, gore.lungePx]).toEqual([22, 80, 50, 180]);
+    expect([stomp.damage, stomp.w, stomp.h]).toEqual([15, 70, 40]);
+    for (const mine of [gore, stomp]) {
+      const twins = ALL_ABILITIES.filter(
+        (a) => a.id !== mine.id && a.kind === mine.kind && a.w === mine.w && a.h === mine.h && a.damage === mine.damage,
+      );
+      expect(twins.map((a) => a.id)).toEqual([]);
+    }
+  });
 });
