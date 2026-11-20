@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Roster24 Brazgor kit de-dupe (step S, `SIM_VERSION` 91): Forge Gore becomes a slow overhead anvil blow (30 damage, 2 s cooldown, 600 ms recovery, 70x80 box) and Kindrel's Ember Bite recovery is 160 ms. Arcade only; the release set stays empty. Re-record reason: a recorded Arcade match with either hero changes.
+- Roster24 Ouroth kit de-dupe (step S, `SIM_VERSION` 92): Wyrm Coil box 90x60 -> 80x70 (stays the only grab-throw) and Scorch Breath box 130x50 -> 110x70 (a short tall gout, no longer a third wide sweep). Abyss Flash recovery 250 -> 240 ms (13 -> 12 ticks); the 240 ms change was not shipped for Hoof Crash, Kelp Lash and Bristle Stomp (it moved Durrok out of the win-rate band). Arcade only; the release set stays empty. Re-record reason: a recorded Arcade match with Ouroth or Glimmaw changes.
+
+- Roster24 Brazgor kit de-dupe (step S, `SIM_VERSION` 91): Forge Gore becomes a slow overhead anvil blow (30 damage, 2 s cooldown, 600 ms recovery, 70x80 box) and Kindrel's Ember Bite recovery is 160 ms (tick-neutral: 8 ticks either way). Arcade only; the release set stays empty. Re-record reason: a recorded Arcade match with either hero changes.
 
 - Ability icons (ART-ICONS): six 64 px icons (hurl_rock, lure_orb, skitter, slow, hoof_crash, talon_rake) in `public/assets/img/hud/ability-icons/`, adapted from Painterly Spell Icons by J. W. Bjerk (CC-BY 3.0, credit in `CREDITS.txt`), art-director approved, with the generator and installer in `tools/assets/icon-gen/`. Not wired to the HUD yet. Art only: no sim, golden or `SIM_VERSION` change.
 

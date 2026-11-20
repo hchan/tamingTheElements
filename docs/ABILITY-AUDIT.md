@@ -36,8 +36,8 @@ Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not 
 | Durrok | Bristle Stomp | melee | 15 dmg, 0.8 s cd, short stomp | New hero, see Forge Gore | Generated art |
 | Zephra (air, ranged) | Static Mote | range | 8 dmg, 0.4 s cd, speed 10, max 3 | New hero, see Forge Gore | Generated art |
 | Zephra | Skitter | buff | no damage, hops 140 px backward (lunge-only cast) | New hero, see Forge Gore | Generated art |
-| Ouroth (fire, melee) | Wyrm Coil | melee | roster-24 batch 3: 22 dmg, 2.5 s cd, a grab: beats Guard and Parry, holds then throws the foe 160 px | New hero, fitted in SIM_VERSION 74 | Generated art, see fx batch k (b3) |
-| Ouroth | Scorch Breath | melee | 14 dmg, 1.8 s cd, a long 130 px jet, with flag withOverTime leaves Burn (burning 18) | New hero, see Wyrm Coil | Generated art |
+| Ouroth (fire, melee) | Wyrm Coil | melee | roster-24 batch 3: 22 dmg, 2.5 s cd, 80x70 box (SIM_VERSION 92), a grab: beats Guard and Parry, holds then throws the foe 160 px | New hero, fitted in SIM_VERSION 74 | Generated art, see fx batch k (b3) |
+| Ouroth | Scorch Breath | melee | 14 dmg, 1.8 s cd, a short tall 110x70 gout (SIM_VERSION 92 de-dupe), with flag withOverTime leaves Burn (burning 18) | New hero, see Wyrm Coil | Generated art |
 | Abyssor (water, melee) | Tentacle Lash | melee | 18 dmg, 1.2 s cd, 160 px reach | New hero, see Wyrm Coil | Generated art |
 | Abyssor | Abyssal Pull | range | 8 dmg, 6 s cd, speed 14, stops at 280 px and drags the foe 120 px toward Abyssor | New hero, see Wyrm Coil | Generated art |
 | Vortigal (air, melee) | Stoop | melee | 22 dmg, 3.5 s cd, a 200 px diving lunge | New hero, see Wyrm Coil | Generated art |

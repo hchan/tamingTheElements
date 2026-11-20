@@ -328,8 +328,14 @@
  *    Re-record reason: a recorded Arcade match with Kindrel changes; every other golden changes only the simVersion header.
  * 91: Arcade only (Classic hashes unchanged). Roster-24 step S for Brazgor, the kit de-dupe: Forge Gore stops repeating Wyrm Coil and Stoop (90x60 heavy
  *    blows with 400 ms recovery) and becomes a slow overhead anvil blow (damage 25 -> 30, cooldown 1500 -> 2000 ms, recovery 400 -> 600 ms, box 90x60 -> 70x80);
- *    Molten Hide is unchanged. Also Kindrel's Ember Bite recovery 150 -> 160 ms (a multiple of the 20 ms tick). Release set stays empty. Win rates move for
+ *    Molten Hide is unchanged. Also Kindrel's Ember Bite recovery 150 -> 160 ms (tick-neutral: 8 ticks either way). Release set stays empty. Win rates move for
  *    Brazgor and Kindrel only (full roster, level 3: 1v1 46.5 and 46.2, 2v2 47.3 and 48.5 percent, so no life retune).
  *    Re-record reason: a recorded Arcade match with Brazgor or Kindrel changes; every other golden changes only the simVersion header.
+ * 92: Arcade only (Classic hashes unchanged). Roster-24 step S for Ouroth, the kit de-dupe: Wyrm Coil stays the only grab-throw but its box is 90x60 -> 80x70
+ *    (no longer the Stoop footprint); Scorch Breath stops being a third wide sweep next to Kelp Lash and Tentacle Lash (box 130x50 -> 110x70, damage and cooldown
+ *    unchanged). Same bump: Abyss Flash recovery 250 -> 240 ms (13 -> 12 ticks); Hoof Crash, Kelp Lash and Bristle Stomp stay 250 ms
+ *    (250 -> 240 ms for Bristle Stomp pushed Durrok out of band, 55.7 percent). Kindrel's Ember Bite 160 ms is tick-neutral (8 ticks either way). Release set stays empty.
+ *    Win rates: see ideas/in-progress/roster24-ouroth.md.
+ *    Re-record reason: a recorded Arcade match with Ouroth or Glimmaw changes; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 91;
+export const SIM_VERSION = 92;
