@@ -20,7 +20,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [mvc-3v3-select-and-regen](../brainstorm/mvc-3v3-select-and-regen.md)
 - [mvc-match-end-rules](../brainstorm/mvc-match-end-rules.md)
 - [mvc-training-mode-assists](../brainstorm/mvc-training-mode-assists.md)
-- [tag-swap-forced-vs-voluntary](../brainstorm/tag-swap-forced-vs-voluntary.md)
+- [tag-swap-forced-vs-voluntary](../in-progress/tag-swap-forced-vs-voluntary.md)
 - [team-mode-3v3-spread](../brainstorm/team-mode-3v3-spread.md)
 
 ## Filed 2026-11-17 (round-note filing and cross-listing)
@@ -35,7 +35,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### MV-1 Assist, tag and counter core
 
-- Members: [mvc-assists-and-tag](../brainstorm/mvc-assists-and-tag.md), [mvc-variable-assist](../brainstorm/mvc-variable-assist.md), [mvc-variable-counter](../brainstorm/mvc-variable-counter.md), [tag-swap-forced-vs-voluntary](../brainstorm/tag-swap-forced-vs-voluntary.md), [mvc-snapback](../brainstorm/mvc-snapback.md)
+- Members: [mvc-assists-and-tag](../brainstorm/mvc-assists-and-tag.md), [mvc-variable-assist](../brainstorm/mvc-variable-assist.md), [mvc-variable-counter](../brainstorm/mvc-variable-counter.md), [tag-swap-forced-vs-voluntary](../in-progress/tag-swap-forced-vs-voluntary.md), [mvc-snapback](../brainstorm/mvc-snapback.md)
 - Size: L
 - Shared files: src/core/sim/* (team, tag), src/core/data/*, src/core/index.ts
 - Flags: SIM, PC

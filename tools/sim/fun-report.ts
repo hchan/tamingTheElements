@@ -107,6 +107,7 @@ export function formatFunReport(r: FunReport): string {
     `  lead changes       median ${String(o.medianLeadChanges)}`,
     `  counter-hit rate   ${(o.counterHitRate * 100).toFixed(1)}%; cap recoveries juggle ${String(o.jugglecapRecoveries)}, stun ${String(o.stuncapRecoveries)}`,
     `  dash/tag/super/clash/defence  ${[o.dashes, o.tags, o.supers, o.clashes, o.defence].join('/')} (zero until their work packages land)`,
+    `  tags forced by a KO/voluntary  ${String(o.koTags)}/${String(o.tags - o.koTags)}`,
     `  guard/parry/perfect dodge/weather  ${[o.guards, o.parries, o.dodges, o.weathers].join('/')}`,
     `  weather per match  ${(o.weathers / Math.max(1, o.matches)).toFixed(2)}; first cast in a round, median ranged ${o.medianFirstWeatherRanged.toFixed(1)} s, melee ${o.medianFirstWeatherMelee.toFixed(1)} s`,
     `  traps placed/on a foe/timed out/puddle dried up/doused  ${[o.trapsPlaced, o.trapHits, o.trapTimeouts, o.trapPuddleDryups, o.trapDouses].join('/')}`,

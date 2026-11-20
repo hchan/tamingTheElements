@@ -55,6 +55,19 @@ describe('fun-metrics reducer', () => {
     expect([m.guards, m.parries, m.dodges, m.weathers]).toEqual([1, 1, 1, 1]);
   });
 
+  it('splits tag-ins into forced (the hero was knocked out) and voluntary', () => {
+    const m = reduceFunMetrics(
+      [
+        ev(10, 54),
+        { ...ev(20, SimEventKind.died, { team: 0 }), sourceId: 3 },
+        ev(21, 52, { from: 3, to: 4, team: 0, entrance: 0 }), // forced
+        ev(30, 52, { from: 4, to: 3, team: 0, entrance: 1 }), // voluntary
+      ],
+      meta,
+    );
+    expect([m.tags, m.koTags]).toEqual([2, 1]);
+  });
+
   it('counts traps placed and how they ended: on a foe, timed out, doused (WP 39c)', () => {
     const m = reduceFunMetrics(
       [

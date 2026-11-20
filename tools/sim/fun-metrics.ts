@@ -49,6 +49,8 @@ export interface FunMetrics {
   /** Counts of the rest of the Arcade kinds (zero until their work packages land). */
   readonly dashes: number;
   readonly tags: number;
+  /** The part of `tags` that replaced a KO'd hero (a forced swap); `tags - koTags` are voluntary. */
+  readonly koTags: number;
   readonly supers: number;
   readonly clashes: number;
   readonly defence: number;
@@ -93,8 +95,9 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   const combos: number[] = [];
   const dmg: Record<string, number> = {};
   const recovered: [number, number, number] = [0, 0, 0];
-  const count = { dashes: 0, tags: 0, supers: 0, clashes: 0, defence: 0, guards: 0, parries: 0, dodges: 0, weathers: 0,
+  const count = { dashes: 0, tags: 0, koTags: 0, supers: 0, clashes: 0, defence: 0, guards: 0, parries: 0, dodges: 0, weathers: 0,
     trapsPlaced: 0, trapHits: 0, trapTimeouts: 0, trapPuddleDryups: 0, trapDouses: 0 };
+  const dead = new Set<number>(); // heroes KO'd this round: a tag from one of them is forced
   let diff = 0; // damage dealt by team 0 minus team 1
   let lead = 0;
   let leadChanges = 0;
@@ -106,6 +109,7 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
         firstFight ??= e.tick;
         roundHit = false;
         roundWeather = false;
+        dead.clear();
         break;
       case SimEventKind.roundEnded:
         roundSeconds.push(r3((e.tick - fightTick) / TICKS_PER_SECOND));
@@ -144,8 +148,12 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
       case K.dashed:
         count.dashes++;
         break;
+      case SimEventKind.died:
+        dead.add(e.sourceId);
+        break;
       case K.tagIn:
         count.tags++;
+        if (dead.delete(e['from'] ?? -1)) count.koTags++;
         break;
       case SimEventKind.superStarted:
         count.supers++;
@@ -245,6 +253,7 @@ export interface FunSummary {
   readonly stuncapRecoveries: number;
   readonly dashes: number;
   readonly tags: number;
+  readonly koTags: number;
   readonly supers: number;
   readonly clashes: number;
   readonly defence: number;
@@ -299,6 +308,7 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     stuncapRecoveries: sum((m) => m.recovered[2]),
     dashes: sum((m) => m.dashes),
     tags: sum((m) => m.tags),
+    koTags: sum((m) => m.koTags),
     supers: sum((m) => m.supers),
     clashes: sum((m) => m.clashes),
     defence: sum((m) => m.defence),
