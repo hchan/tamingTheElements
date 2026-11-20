@@ -7,6 +7,8 @@ import { decodeFrame } from './wire';
 
 /** Client of the relay service (docs/ONLINE-PROTOCOL.md section 3, 5, 7; docs/ONLINE-CLIENT.md). Network and clock are injected; nothing here throws. */
 export const PROTOCOL_VERSION = 3;
+/** Error code "relay resting" (`ErrorCode.resting` in src/core/relay/constants.ts; game code cannot import the relay package, a ws-int test pins the two equal). */
+export const RESTING_CODE = 0x000b;
 export const PING_MS = 2000;
 /** [choice] Wait for WELCOME this long. */
 export const HELLO_TIMEOUT_MS = 10_000;
@@ -258,7 +260,7 @@ export class OnlineClient {
       // Body missing or not JSON: callers validate the fields they need.
     }
     const retry = num(json['retryAfterSec']) || Number.parseInt(res.headers.get('Retry-After') ?? '', 10) || 0;
-    if (res.status === 503 || num(json['code']) === 0x000b) return fail(this.rest(retry));
+    if (num(json['code']) === RESTING_CODE) return fail(this.rest(retry));
     if (res.status < 200 || res.status > 299) return fail({ kind: 'server', code: num(json['code']), retryAfterSec: retry, status: res.status });
     return ok(json);
   }
@@ -352,7 +354,7 @@ export class OnlineClient {
 
   private errorFailure(code: number, retryAfterSec: number): OnlineFailure {
     if (code === 0x0003) return { kind: 'update-needed' };
-    if (code === 0x000b) return this.rest(retryAfterSec);
+    if (code === RESTING_CODE) return this.rest(retryAfterSec);
     return { kind: 'server', code, retryAfterSec, status: 0 };
   }
 
