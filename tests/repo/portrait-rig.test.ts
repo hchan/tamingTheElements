@@ -155,6 +155,23 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
       }
   });
 
+  // the same margin on the PACKED sheets (what the game draws and map-strips.py reads), so a longer tail or wing cannot be cut at the cell edge
+  it.each(HEROES)('%s: no packed sheet frame touches its cell edge (2 px)', (hero) => {
+    const entry = manifest.sheets.find((s) => s.sprite === hero);
+    const url = entry?.url;
+    if (!entry || !url) return;
+    const sheet = load(resolve(root, 'public/assets', url));
+    const frame = entry.frame ?? manifest.spec.frame;
+    for (const row of entry.rows)
+      row.frames.forEach(([fx, fy], i) => {
+        let min = frame;
+        for (let y = 0; y < frame; y++)
+          for (let x = 0; x < frame; x++)
+            if (alpha(sheet, fx + x, fy + y) >= 1) min = Math.min(min, x, y, frame - 1 - x, frame - 1 - y);
+        expect(min, `${row.key}#${String(i)} margin`).toBeGreaterThanOrEqual(2);
+      });
+  });
+
   it.each(HEROES)('%s: no clipping (2 px margin), steady feet in idle and walk, no halo', (hero) => {
     // the feet: columns within 40 px of the body's ground pivot (wing and tail tips that hang lower are free to move)
     const rig = JSON.parse(readFileSync(resolve(root, 'imgWorkArea/rigs', hero, 'rig.json'), 'utf8')) as { res: number; parts: { id: string; at: [number, number] }[] };

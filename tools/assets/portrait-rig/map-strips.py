@@ -20,6 +20,9 @@ CELL = 80
 # QA r66: the legacy Wispera was a translucent haze (mean alpha ~73) that dissolved into the HUD at 80 px, so it was lifted here. The redrawn
 # Wispera (WISPERA-R2) is opaque, so no hero needs a lift now. Format kept: hero -> (floor, gamma): alpha becomes 255*(a/255)**gamma, fainter than floor dropped.
 ALPHA_LIFT = {}
+SPILL_ALPHA = 32  # art fainter than this (soft contact shadow, glow falloff) does not widen the crop
+SPILL_TOL = 8  # px of spill past the box (in sheet px) that still counts as the box's own soft edge
+SPILL_LUT = [255 if v >= SPILL_ALPHA else 0 for v in range(256)]
 
 
 def entry_of(manifest, hero):
@@ -40,6 +43,21 @@ def strip(manifest, hero):
         raise SystemExit("%s: sheet has no idle/E row" % hero)
     sheet = Image.open(os.path.join(ROOT, "public/assets/img/sheets/%s.png" % hero)).convert("RGBA")
     out = Image.new("RGBA", (4 * CELL, CELL), (0, 0, 0, 0))
+    # crop rect = the box united with the art's real extent (alpha >= SPILL_ALPHA) over the four strip frames, so a longer tail or wing that
+    # spills past the box is not cut; the same rect for all four frames, still letterboxed. With no spill it is exactly the box.
+    x0, y0, x1, y1 = bx, by, bx + bw, by + bh
+    for i in range(4):
+        fx, fy = row["frames"][i % len(row["frames"])]
+        ext = sheet.crop((fx, fy, fx + frame, fy + frame)).getchannel("A").point(SPILL_LUT).getbbox()
+        if ext:
+            x0, y0, x1, y1 = min(x0, ext[0]), min(y0, ext[1]), max(x1, ext[2]), max(y1, ext[3])
+    # a side widens only when the art spills past the box by more than SPILL_TOL px: the baked boxes already carry 1-3 px of soft edge
+    # (shadow, anti-alias) below and above the body, and the strips must stay as they are
+    x0 = x0 if bx - x0 > SPILL_TOL else bx
+    y0 = y0 if by - y0 > SPILL_TOL else by
+    x1 = x1 if x1 - (bx + bw) > SPILL_TOL else bx + bw
+    y1 = y1 if y1 - (by + bh) > SPILL_TOL else by + bh
+    bx, by, bw, bh = x0, y0, x1 - x0, y1 - y0
     for i in range(4):
         fx, fy = row["frames"][i % len(row["frames"])]
         cell = sheet.crop((fx + bx, fy + by, fx + bx + bw, fy + by + bh))
