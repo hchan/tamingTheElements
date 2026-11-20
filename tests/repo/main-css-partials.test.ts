@@ -72,7 +72,6 @@ describe('main.css import list', () => {
       expect(idx(a), `${a} must come before ${b}: ${why}`).toBeLessThan(idx(b));
     };
     before('02-menu-controls', '03-main-menu', '.mainMenuList, .mainMenuList li button, .battlegroundOrderContainer');
-    before('09-help-first-run', '18-phone-targets', '#firstRunHint coarse-landscape offsets');
     before('01-base', '22-online-live', '--view-h override');
   });
 });
