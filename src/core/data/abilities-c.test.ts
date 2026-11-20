@@ -53,4 +53,20 @@ describe('abilities-c tick values', () => {
     expect([kelp?.damage, kelp?.cooldownTicks]).toEqual([14, 125]);
     expect([kelp?.w, kelp?.h]).toEqual([130, 30]);
   });
+
+  it('pins the Glimmaw kit: Lure Orb 14 damage at speed 6, 60 cooldown ticks, max 2, 28x28 box, hover 360 px for 80 ticks; Abyss Flash 6 damage, 300 cooldown ticks, 12 recovery ticks, centred 100x100 box (no other ability shares kind, box and damage; see ideas/in-progress/roster24-glimmaw.md)', () => {
+    const orb = get('lure-orb');
+    expect([orb?.damage, orb?.speed, orb?.cooldownTicks, orb?.maxActive]).toEqual([14, 6, 60, 2]);
+    expect([orb?.w, orb?.h]).toEqual([28 / 80, 28 / 80]);
+    expect([orb?.hoverStopPx, orb?.hoverLingerTicks]).toEqual([360, 80]);
+    const flash = get('abyss-flash');
+    expect([flash?.damage, flash?.cooldownTicks, flash?.delayAfterAttackTicks]).toEqual([6, 300, 12]);
+    expect([flash?.w, flash?.h, flash?.centred]).toEqual([100, 100, true]);
+    for (const a of [orb, flash].flatMap((x) => (x ? [x] : []))) {
+      const twins = ALL_ABILITIES.filter(
+        (o) => o.id !== a.id && o.kind === a.kind && o.w === a.w && o.h === a.h && o.damage === a.damage,
+      );
+      expect(twins.map((t) => t.id), a.id).toEqual([]);
+    }
+  });
 });
