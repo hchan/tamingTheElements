@@ -67,10 +67,10 @@ for (const [element, hero, stage] of CASES) {
     expect(warn.h).toBeGreaterThan(0);
     // Every stage's warning carries a short word and a countdown chip.
     expect(warn.label).toMatch(new RegExp(`^${LABELS[stage] ?? ''} [1-9]s$`));
-    if (stage === 2 || stage === 4) {
-      expect([-1, 1]).toContain(warn.dir);
-      expect(warn.chevrons).toBeGreaterThan(0);
-    }
+    if (stage === 2 || stage === 4) expect([-1, 1]).toContain(warn.dir);
+    // Every warning, fire and earth included, carries direction marks (chevrons) over a dark rim.
+    if (stage === 3) expect(warn.chevrons).toBe(5); // the rockfall row of falling-rock chevrons
+    else expect(warn.chevrons).toBeGreaterThan(0);
     // Half way into the warning, so the outline has firmed up for the shot.
     await page.evaluate(`window.__TTE__.arena.step(${String(stage === 3 ? 50 : 25)}, [0, 0])`); // the earth warning is 100 ticks, the rest 50
     await snap('warn');

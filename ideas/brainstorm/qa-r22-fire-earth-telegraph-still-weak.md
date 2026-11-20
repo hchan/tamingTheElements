@@ -8,3 +8,6 @@ added: 2026-11-14
 Fire lightning warn marks (d-fire-d-hazard-warn.png) are thin orange squiggles with a tiny triangle on an orange lava floor, and read as decoration, not danger. The earth rockfall warn (d-earth-d-hazard-warn.png, hazard rect 112 px at 392,364) was not visible in the view at all; the only clear pickup was the crystal trap. Water and air chevrons remain the good reference.
 
 Idea: for fire and earth add a filled pulsing ground disc with a hard bright ring in the stage complement colour (cyan on fire, white on earth) and a countdown number; show an edge arrow when the target is outside the pan.
+
+## Progress note (2026-11-20)
+Fire and earth warnings reworked in src/game/fx/hazard-view.ts (fire: rim + rising chevrons + edge cues; earth: amber-red floor ring, pulse about 2 Hz, falling chevrons, chip in the top band). Art-director APPROVE both (.scratch/hazard-warn/approval.json, sheet.png). Code and test review fixes applied; stage-hazards e2e 6/6 on the PC.

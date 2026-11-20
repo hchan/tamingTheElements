@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, dustLook, DUST_TICKS, shadowRadius, warnProgress } from './hazard-view';
+import { earthPulse, columnMarks, dangerGlyphAlpha, WARN_CORE, edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, dustLook, DUST_TICKS, warnProgress } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -16,6 +16,33 @@ describe('hazard view helpers', () => {
     expect(chevronShift(10, -1, 72, false)).toBe(52);
     expect(chevronShift(1000, 1, 72, false)).toBeLessThan(72);
     expect(chevronShift(10, 1, 72, true)).toBe(0);
+  });
+
+  it('warn glyphs stay bright through the blink dip and the fire core is near-white on every channel', () => {
+    expect(dangerGlyphAlpha(0.19)).toBeGreaterThanOrEqual(0.6);
+    expect(dangerGlyphAlpha(0.8)).toBeCloseTo(1);
+    expect(dangerGlyphAlpha(2)).toBeCloseTo(1);
+    const core = WARN_CORE[1] ?? 0;
+    for (const ch of [core >> 16, (core >> 8) & 255, core & 255]) expect(ch).toBeGreaterThanOrEqual(0xe0);
+  });
+
+  it('the rockfall ground pulse swings 0.5 to 1 about 2 Hz (under 3 flashes a second) and holds steady under reduced motion', () => {
+    const v = Array.from({ length: 24 }, (_, t) => earthPulse(t, false));
+    expect(Math.min(...v)).toBeCloseTo(0.5);
+    expect(Math.max(...v)).toBeCloseTo(1);
+    expect(earthPulse(24, false)).toBe(earthPulse(0, false));
+    expect(earthPulse(3, false)).toBeCloseTo(0.625); // mid-slope on the way up
+    expect(earthPulse(21, false)).toBeCloseTo(0.625); // and on the way down
+    for (const t of [0, 5, 9, 17]) expect(earthPulse(t, true)).toBe(0.75);
+  });
+
+  it('column marks stay inside the box, wrap within one gap and hold still at shift 0', () => {
+    const a = columnMarks(100, 200, 64, 0);
+    expect(a).toEqual([100, 164, 228, 292]);
+    expect(columnMarks(100, 200, 64, 70)[0]).toBe(106);
+    expect(columnMarks(100, 200, 64, -2)[0]).toBe(162);
+    expect(columnMarks(100, 200, 0, 5)).toEqual([]);
+    for (const y of columnMarks(100, 200, 64, 31)) expect(y >= 100 && y < 300).toBe(true);
   });
 
   it('each element hazard has its own muted colour', () => {
@@ -39,13 +66,10 @@ describe('hazard view helpers', () => {
 });
 
 describe('rockfall and fire telegraph helpers (r21)', () => {
-  it('the countdown runs 0 to 1 and the shadow grows with it', () => {
+  it('the countdown runs 0 to 1', () => {
     expect(warnProgress(50, 50)).toBe(0);
     expect(warnProgress(0, 50)).toBe(1);
     expect(warnProgress(99, 50)).toBe(0);
-    expect(shadowRadius(0, 88)).toBeCloseTo(22);
-    expect(shadowRadius(1, 88)).toBeCloseTo(88);
-    expect(shadowRadius(0.5, 88)).toBeGreaterThan(shadowRadius(0.2, 88));
   });
   it('the impact flashes (an outline and burst, not a filled box) for exactly the first 2 ticks of the strike', () => {
     expect([-1, 0, 1, 2, 3].map(impactFlash).map((a) => a > 0)).toEqual([false, true, true, false, false]);
