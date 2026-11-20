@@ -17,7 +17,7 @@ corepack pnpm assets:sheets                                                     
 
 - `spec/<hero>.json`: source portrait, frame and box, feet, matte clean-up, rim light, contact shadow, bones (head point, parent,
   feathered weight polygon in portrait px), glows (eyes, crystals, maw), the wave-deform mask and per-direction offsets.
-- `spec/<hero>.anim.json`: the nine actions (idle, walk, cast, hurt, guard, dash, ko, victory, tagIn) as integer curves per
+- `spec/<hero>.anim.json`: the nine actions (idle, walk, cast, hurt, guard, dash, ko, victory, tagIn; later `walkBack`, which sets `"dirs": ["E"]` so only that facing is baked) as integer curves per
   bone or part, plus optional wave/noise deforms. Motion stays small and weighty; values are integers (see `tools/assets/bake-rig.ts`).
 - `contact.py <hero> <out.png> [scale] [--dirs=E,SE] [actions...]`: a contact sheet of baked frames on a dark floor for review.
 - `bright-check.py <hero> <out.png> [scale] [key:idx ...]`: baked frames over a bright (air-stage) and a dark backdrop, enlarged, to
