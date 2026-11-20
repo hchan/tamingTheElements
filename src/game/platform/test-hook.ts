@@ -203,7 +203,7 @@ export interface ArenaProbe {
   grantStatus(id: number, status: number, ticks: number): void;
   /** Hero status effects drawn on the last frame (buff-debuff-animation). */
   ccFx(): Promise<{ heroes: readonly { id: number; kind: string; release: string; parts: number; segs: number; age: number; back: number; front: number }[]; parts: number; segs: number; rings: number; cracks: number; puffs: number; started: { ring: number; crack: number; puff: number; denied: number }; reduced: boolean; highContrast: boolean; tier: string } | undefined>;
-  statusFx(): Promise<{ loops: readonly { id: number; status: number }[]; bursts: readonly { id: number; status: number; age: number }[]; fades: readonly { id: number; status: number; age: number }[] } | undefined>;
+  statusFx(): Promise<{ loops: readonly { id: number; status: number }[]; bursts: readonly { id: number; status: number; age: number }[]; fades: readonly { id: number; status: number; age: number }[]; rings: readonly { id: number; status: number; scale: number }[] } | undefined>;
   cleanse(): Promise<{ active: readonly { id: number; element: string; age: number }[]; parts: number; reduced: boolean; started: number } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
   dangerZones(): Promise<readonly { id: number; x: number; y: number; w: number; h: number; alpha: number }[] | undefined>;
