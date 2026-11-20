@@ -14,7 +14,7 @@ root="${TTE_AGENT_OUTPUT_ROOT:-${TMPDIR:-/tmp}/claude-$(id -u)}"
 n=0
 for d in "$root"/*/"$sid"/tasks; do
   [ -d "$d" ] || continue
-  c=$(find -L "$d" -maxdepth 1 -type f -name 'agent-*.output' -mmin -3 2>/dev/null | wc -l)
+  c=$(find -L "$d" -maxdepth 1 -type f -name 'a*.output' -mmin -3 2>/dev/null | wc -l)
   n=$((n+c))
 done
 if [ "$n" -lt 2 ]; then
