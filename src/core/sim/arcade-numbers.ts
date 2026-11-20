@@ -97,7 +97,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   wispera: 650, // 632 before SIM_VERSION 86
   hyalia: 650,
   quarrak: 725,
-  kindrel: 650,
+  kindrel: 725, // 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
   nykra: 740,
   brazgor: 460,
   glimmaw: 670,

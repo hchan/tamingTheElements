@@ -36,6 +36,7 @@ export const HIT_STRENGTH_OVERRIDE: Readonly<Partial<Record<string, HitStrengthV
   // Roster-24 batch 1 (SIM_VERSION 72): knockback is strength-driven, so the push abilities are forced up a tier.
   'boulder-roll': HitStrength.heavy,
   'bell-pulse': HitStrength.medium,
+  'ember-bite': HitStrength.light, // roster-24 Kindrel: a rapid light chain, not a medium jab like Talon Rake and Bristle Stomp
   'forge-gore': HitStrength.heavy, // roster-24 B2: Brazgor's anvil blow
   // Roster-24 batch 3: the grab and the dive are heavy blows.
   'wyrm-coil': HitStrength.heavy,
