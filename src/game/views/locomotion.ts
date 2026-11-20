@@ -1,3 +1,4 @@
+import { walkTime } from '../assets/sheet-frames';
 import { tri } from './pose-anim';
 import { STRIDE_PX, type Pose } from './pose-math';
 
@@ -154,6 +155,13 @@ export function facesToward(face: number, px: number, foeX: number): boolean {
 /** Walk-row time (ms, mid-frame) of the reversed cycle after `phase` px walked at `stridePx` per frame. */
 export function walkTimeBack(phase: number, stridePx: number): number {
   return (WALK_FRAMES - 1 - (Math.floor(phase / stridePx) % WALK_FRAMES)) * 125 + 62.5;
+}
+
+/** Walk-row time: forward by distance, or the gait's reversed (or slowed) cycle while `backing` away. */
+export function walkTimeFor(sprite: string, phase: number, backing: boolean): number {
+  if (!backing) return walkTime(phase, STRIDE_PX);
+  const g = backGaitOf(sprite);
+  return g.reverse ? walkTimeBack(phase, g.stridePx) : walkTime(phase, g.stridePx);
 }
 
 /** Reversed legacy walk frame of `count` frames. */

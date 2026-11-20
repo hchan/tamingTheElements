@@ -128,11 +128,14 @@ function areaScale(img: Image, s: number): Image {
   return { width: w, height: h, data };
 }
 
+// walkBack is an optional, east-only row (backward-walk Phase 2): heroes without art for it keep the Phase 1 fallback.
+const REQUIRED_ACTIONS = ACTIONS.filter(([a]) => a !== 'walkBack');
+
 describe('portrait rigs (ADR-0020): baked frame QA', () => {
   const manifest = JSON.parse(readFileSync(SHEETS_MANIFEST_PATH, 'utf8')) as SheetsManifest;
 
   it.each(HEROES)('%s: every action in every baked direction, 240 px frames, a box, and all 8 directions resolve', (hero) => {
-    for (const [action] of ACTIONS)
+    for (const [action] of REQUIRED_ACTIONS)
       for (const dir of BAKED)
         for (let i = 0; i < framesIn(action); i++) {
           const f = frameFile(hero, action, dir, i);
@@ -143,7 +146,7 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
     const entry = manifest.sheets.find((s) => s.sprite === hero);
     expect(entry?.frame).toBe(HERO_FRAME);
     expect(entry?.box).toEqual(readSpec(hero).box);
-    for (const [action] of ACTIONS)
+    for (const [action] of REQUIRED_ACTIONS)
       for (const dir of DIRS) {
         const r = resolveRow(manifest, hero, action, dir);
         expect(r.source, `${action}/${dir}`).not.toBe('legacy');
@@ -156,7 +159,7 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
     const rig = JSON.parse(readFileSync(resolve(root, 'imgWorkArea/rigs', hero, 'rig.json'), 'utf8')) as { res: number; parts: { id: string; at: [number, number] }[] };
     const footX = Math.round((rig.parts.find((p) => p.id === 'body')?.at[0] ?? 0) / rig.res);
     expect(footX).toBeGreaterThan(40);
-    for (const [action] of ACTIONS)
+    for (const [action] of REQUIRED_ACTIONS)
       for (const dir of BAKED) {
         const feet: number[] = [];
         for (let i = 0; i < framesIn(action); i++) {
