@@ -2,7 +2,9 @@ import type Phaser from 'phaser';
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { embers, glowPair, hash01, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
+import { getPrefs } from '../platform/a11y/prefs';
 import { STATUS_LOOKS, StatusTracker, burstLook, expireLook, loopAlpha } from './status-fx';
+import { mountStatusRingView, statusRingDrawn, statusRingState } from './status-ring-view';
 
 /**
  * Hero-side status animation (idea buff-debuff-animation): an apply burst (a ring of ash and a shockwave), an expiry fade
@@ -14,6 +16,8 @@ const DEPTH = 6.2;
 const BENCHED_OR_DEAD = 16 | 32;
 /** Statuses whose loop is drawn by ability-aura-view. */
 const LOOP_ELSEWHERE = new Set([1, 2, 3]);
+/** Freeze, slow and tide read from the feet ring alone (art-director 2026-11-20) when it was drawn this frame (two-ring cap); the probe still lists their loops. */
+const RING_BODY_QUIET = new Set([5, 6, 9]);
 
 export interface StatusFxProbe {
   /** Loops drawn this frame. */
@@ -22,13 +26,16 @@ export interface StatusFxProbe {
   readonly bursts: readonly { id: number; status: number; age: number }[];
   /** Expiry fades live this frame. */
   readonly fades: readonly { id: number; status: number; age: number }[];
+  /** Feet rings drawn this frame (status-ring-view). */
+  readonly rings: readonly { id: number; status: number; scale: number }[];
 }
 
-const states = new WeakMap<Phaser.Scene, () => StatusFxProbe>();
+const states = new WeakMap<Phaser.Scene, () => Omit<StatusFxProbe, 'rings'>>();
 
 /** What was drawn on the last frame (test probe), or undefined before the view mounts or after teardown. */
 export function statusFxState(arena: Phaser.Scene): StatusFxProbe | undefined {
-  return states.get(arena)?.();
+  const s = states.get(arena)?.();
+  return s && { ...s, rings: statusRingState(arena)?.rings ?? [] };
 }
 
 interface Body {
@@ -53,7 +60,8 @@ export function mountStatusFxView(arena: Phaser.Scene, view: RenderView, reduceM
   let glowG: Phaser.GameObjects.Graphics | undefined;
   const tracker = new StatusTracker<Payload>();
   const lastBody = new Map<number, Body>();
-  let probe: StatusFxProbe = { loops: [], bursts: [], fades: [] };
+  let probe: Omit<StatusFxProbe, 'rings'> = { loops: [], bursts: [], fades: [] };
+  mountStatusRingView(arena, view, reduceMotion, () => getPrefs().highContrast);
 
   const draw = (): void => {
     const reduced = reduceMotion();
@@ -97,7 +105,7 @@ export function mountStatusFxView(arena: Phaser.Scene, view: RenderView, reduceM
       const a = loopAlpha(Number.isFinite(t.born) ? age : 99, t.expire - now, reduced);
       if (a <= 0) continue;
       loops.push({ id, status });
-      drawLoop(pair, gfx, glow, status, look.color, b, now, a, reduced, id);
+      if (!(RING_BODY_QUIET.has(status) && statusRingDrawn(arena)?.has(`${String(id)}:${String(status)}`))) drawLoop(pair, gfx, glow, status, look.color, b, now, a, reduced, id);
     }
 
     for (const gone of tracker.gone()) {
