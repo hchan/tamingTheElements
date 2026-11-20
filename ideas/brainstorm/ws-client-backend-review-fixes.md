@@ -36,3 +36,12 @@ Review verdict: approve, no blockers. Open minor items:
 - `reconnect()` ignores `retryAfterSec` on a plain 503; wait the larger of the backoff and `retryAfterSec * 1000`, capped at `BACKOFF_MAX_MS`.
 - Nits: comment at `online-client.ts:29` says "HTTP 503" (should say with body code 0x000B); consider requiring `res.status === 503` for the resting check; move the `binaryType` assignment inside the `try`.
 - Not yet done: plan test 2d (relay golden path in ASCII-binary mode) needs `relay-socket.int.test.ts`.
+
+## Item 4 closed: no change needed (2026-11-20)
+
+sct-27 confirmed the backend runs our vendored relay core: HELLO while resting closes with advisory 4011 and no ERROR frame
+(`src/core/relay/core.ts` ~282-284, the contract is already right); a live socket gets ERROR 0x000B with a retry hint on the
+resting tick, then a close. The client already treats a 4011 close and an ERROR 0x000B as resting
+(`online-client.ts` close-code hint, `online-client.test.ts` and `ws-int/online-client.int.test.ts` G4). The earlier
+"ERROR then 4011 on HELLO" proposal is dropped; changing it would need a new relay version and tarball on the backend side.
+Resting persists until a manual reset on the backend; the retry hint is seconds to midnight or a 3600 s estimate (sct-27).
