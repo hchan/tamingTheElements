@@ -408,10 +408,25 @@ async function runCommit(a: Args, cwd: string): Promise<number> {
 
 const lsTreeHead = (cwd: string): string => git(cwd, ['ls-tree', '-r', 'HEAD']);
 
-function runRouter(argv: string[], env: Record<string, string | undefined>, cwd: string): Promise<{ code: number; stderr: string }> {
+/** The router's verdict line (`VERDICT: ...`) from its output, if any. */
+export function verdictLine(output: string): string | undefined {
+  return output.split('\n').map((l) => l.trim()).filter((l) => l.startsWith('VERDICT:')).pop();
+}
+
+/** A router run passes on exit 0, or when the e2e reporter's verdict is PUSH OK (only P2, known or flaky reds). */
+export function runPassed(code: number, output: string): boolean {
+  return code === 0 || (verdictLine(output) ?? '').startsWith('VERDICT: PUSH OK');
+}
+
+function runRouter(argv: string[], env: Record<string, string | undefined>, cwd: string): Promise<{ code: number; stderr: string; stdout: string }> {
   return new Promise((done) => {
-    const child = spawn(argv[0] as string, argv.slice(1), { cwd, env: env as NodeJS.ProcessEnv, stdio: ['inherit', 'inherit', 'pipe'] });
+    const child = spawn(argv[0] as string, argv.slice(1), { cwd, env: env as NodeJS.ProcessEnv, stdio: ['inherit', 'pipe', 'pipe'] });
     let tail = '';
+    let outTail = '';
+    child.stdout.on('data', (d: Buffer) => {
+      process.stdout.write(d);
+      outTail = (outTail + d.toString()).slice(-65536);
+    });
     child.stderr.on('data', (d: Buffer) => {
       process.stderr.write(d);
       tail = (tail + d.toString()).slice(-65536);
@@ -423,7 +438,7 @@ function runRouter(argv: string[], env: Record<string, string | undefined>, cwd:
     child.on('close', (code, sig) => {
       process.off('SIGINT', hi);
       process.off('SIGTERM', ht);
-      done({ code: code ?? (sig === 'SIGINT' ? 130 : 143), stderr: tail });
+      done({ code: code ?? (sig === 'SIGINT' ? 130 : 143), stderr: tail, stdout: outTail });
     });
   });
 }
@@ -492,7 +507,8 @@ async function runPush(a: Args, cwd: string, env: Env): Promise<number> {
   const clean0 = !dirtyPaths(cwd).some((p) => isE2eRelevant(p, rules));
   const res = await runRouter(argv, childEnv(env), cwd);
   const ran = parseRanOn(res.stderr);
-  const pass = res.code === 0;
+  const pass = runPassed(res.code, `${res.stdout}\n${res.stderr}`);
+  const vline = verdictLine(`${res.stdout}\n${res.stderr}`);
   const clean1 = !dirtyPaths(cwd).some((p) => isE2eRelevant(p, rules));
   const fp1 = e2eFingerprint(lsTreeHead(cwd), rules);
   let why = '';
@@ -517,7 +533,8 @@ async function runPush(a: Args, cwd: string, env: Env): Promise<number> {
     });
   } else if (pass) console.log(`gate:push: not stamped (${why}); evidence, not a stamp`);
   console.log(summaryLine({ pass, specs: sel.specs.length, tests: sel.estTests, estSec: sel.estSec, ...(ran ? { ranOn: ran.line } : {}) }));
-  return res.code;
+  if (pass && res.code !== 0 && vline) console.log(`gate:push: router exit ${String(res.code)} accepted: ${vline}`);
+  return pass ? 0 : res.code;
 }
 
 export async function main(argv: string[], env: Env = process.env, cwd = process.cwd()): Promise<number> {
