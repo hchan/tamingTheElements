@@ -109,8 +109,12 @@ const STATUS_WORD: Readonly<Record<number, string>> = {
   [StatusId.iced]: 'ICED',
   [StatusId.downed]: 'DOWN',
   [StatusId.silenced]: 'SILENCED',
+  // Over time (flag withOverTime): burn and venom hurt, mend heals.
+  [StatusId.burning]: 'BURN',
+  [StatusId.venom]: 'VENOM',
+  [StatusId.mending]: 'MEND',
 };
-const HOSTILE_STATUS: ReadonlySet<number> = new Set([StatusId.tornado, StatusId.iceBlast, StatusId.superSlow, StatusId.dazed, StatusId.iced, StatusId.downed, StatusId.silenced]);
+const HOSTILE_STATUS: ReadonlySet<number> = new Set([StatusId.tornado, StatusId.iceBlast, StatusId.superSlow, StatusId.dazed, StatusId.iced, StatusId.downed, StatusId.silenced, StatusId.burning, StatusId.venom]);
 
 /** By `Weather` kind - 1: the word on the chip. */
 const WEATHER_WORD: readonly string[] = ['SUN', 'RAIN', 'SAND', 'GALE', 'ECLIPSE'];
