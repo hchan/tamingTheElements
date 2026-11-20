@@ -130,7 +130,9 @@ for (const vp of [
       await shot('band');
       // Once the band is gone the card still does not come back.
       await page.evaluate(`window.__TTE__.arena.step(30)`);
-      await page.waitForTimeout(400);
+      await expect
+        .poll(async () => (await probe(page)).alpha, { message: 'super band alpha fades out after step(30)' })
+        .toBeLessThanOrEqual(0.05);
       await expect(card).toHaveCount(0);
       expect((await probe(page)).alpha).toBeLessThanOrEqual(0.05);
       await shot('card-after');
