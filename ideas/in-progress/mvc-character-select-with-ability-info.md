@@ -18,3 +18,7 @@ Owner idea (2026-11-13): the main menu's character choice is a drop-down, which 
 ## Progress (2026-11-13)
 
 Done: `src/ui/screens/hero-info.ts` (descriptions from data), `hero-panel.ts` (grid and panel), Versus and Play pickers use them, visually hidden selects kept for tests. Not done: size stat (needs `data/size` exported from the menu barrel), lock-in animation and sound, random pick, online-versus selects.
+
+## Progress (2026-11-20)
+
+Done: the hero panel now has a Size stat (`1x`, `1.5x`, `0.7x`) from `data/size` (`sizeOfSlug`, `SIZE_ONE` exported from both core barrels; `sizeWord` in hero-info.ts, tested). Still not done: lock-in animation and sound, random pick, online-versus selects.

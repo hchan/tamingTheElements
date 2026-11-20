@@ -8,7 +8,9 @@ import {
   SNAG_NAME,
   describeAbility,
   HERO_STYLE,
+  SIZE_ONE,
   getCharacter,
+  sizeOfSlug,
 } from '@core/menu-index';
 import type { AbilityDef, AbilityDefB, CharacterId, HeroStyle } from '@core/menu-index';
 
@@ -155,6 +157,11 @@ function firstSentence(text: string): string {
   return (m ? m[0] : text).replace(/\s+/g, ' ').trim();
 }
 
+/** Body size as a multiplier word (`1x`, `1.5x`, `0.7x`); bigger heroes have more life and hit harder but walk slower. */
+export function sizeWord(size: number): string {
+  return `${String(size / SIZE_ONE)}x`;
+}
+
 export function heroProfile(id: CharacterId, life?: number): HeroProfile {
   const ch = getCharacter(id);
   const snag = ARCADE_SNAG_SLOT[id];
@@ -185,6 +192,7 @@ export function heroProfile(id: CharacterId, life?: number): HeroProfile {
     stats: [
       ['Life', String(life ?? ch.maxHealth)],
       ['Speed', String(ch.speed)],
+      ['Size', sizeWord(sizeOfSlug(id))],
       ['Alignment', ch.alignment],
     ],
     abilities,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A, ALL_ABILITIES, CHARACTERS, FIRE_BLAST_FALLOFF, HERO_STYLE, getCharacter } from '@core/menu-index';
+import { ABILITIES_A, ALL_ABILITIES, CHARACTERS, FIRE_BLAST_FALLOFF, HERO_STYLE, getCharacter, sizeOfSlug } from '@core/menu-index';
 import type { CharacterId } from '@core/menu-index';
-import { ELEMENT_ORDER, HERO_COLUMNS, describeAbilityLine, heroProfile, heroStyle, heroesByElement } from './hero-info';
+import { ELEMENT_ORDER, HERO_COLUMNS, describeAbilityLine, heroProfile, heroStyle, heroesByElement, sizeWord } from './hero-info';
 
 const PLAYABLE = CHARACTERS.slice(0, 14).filter((c) => ELEMENT_ORDER.includes(c.element)).map((c) => c.id);
 const FORBIDDEN = /classic|arcade|ruleset|capture/i;
@@ -36,8 +36,16 @@ describe('heroProfile', () => {
       expect(p.stats).toContainEqual(['Life', String(ch.maxHealth)]);
       expect(heroProfile(id, 123).stats).toContainEqual(['Life', '123']);
       expect(p.stats).toContainEqual(['Speed', String(ch.speed)]);
+      expect(p.stats).toContainEqual(['Size', sizeWord(sizeOfSlug(id))]);
       expect(p.abilities.length).toBeGreaterThan(0);
     }
+  });
+
+  it('words the size stat as a multiplier from the size data', () => {
+    expect(sizeWord(100)).toBe('1x');
+    expect(sizeWord(150)).toBe('1.5x');
+    expect(sizeWord(60)).toBe('0.6x');
+    expect(heroProfile('rokcore' as CharacterId).stats).toContainEqual(['Size', '2x']);
   });
 
   it('gives each ability a name, a key and a one-line description with its cooldown, and no retired words', () => {
