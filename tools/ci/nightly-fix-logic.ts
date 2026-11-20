@@ -1,6 +1,6 @@
 // Nightly fix loop: pure logic (guardrails, prompts, triage, push preconditions, report). No fs, git, clock or claude here;
 // tools/ci/nightly-fix.ts does the I/O. Tests: tests/repo/nightly-fix.test.ts. Design: ideas/in-progress/nightly-fix-loop.md.
-import { isStale, unrecordedFailures, type KnownRed, type NightlyStatus, type Results, type TestRef } from './nightly-status';
+import { isStale, parseResults, unrecordedFailures, type KnownRed, type NightlyStatus, type Results, type TestRef } from './nightly-status';
 import { redact } from './redact';
 
 export const MAX_ROUNDS = 3;
@@ -19,6 +19,8 @@ export const MAX_FULL_CYCLES = 2;
 /** Estimate of a full PC run plus collect; a full re-run is only started when this much time is left (an estimate: tune after the first real night). */
 export const FULL_RUN_MS = 90 * 60_000;
 /** A fix round (claude plus the spec re-run) is only started when this much time is left. */
+/** Budget for gate:push after a full run (its hard cap is GATE_TIMEOUT_MS, but it normally takes far less). */
+export const GATE_PUSH_ESTIMATE_MS = 15 * 60_000;
 export const MIN_ROUND_MS = 20 * 60_000;
 /** Collect retry: the 02:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
 export const RETRY_WAIT_MS = 20 * 60_000;
@@ -118,18 +120,20 @@ export function deadlineFor(start: Date): Date {
 export const deadlineReached = (startMs: number, now: Date): boolean => now.getTime() - startMs >= MAX_RUN_MS || now.getTime() >= deadlineFor(new Date(startMs)).getTime();
 const left = (now: Date, startMs: number): number => deadlineFor(new Date(startMs)).getTime() - now.getTime();
 export const canStartRound = (startMs: number, now: Date): boolean => left(now, startMs) >= MIN_ROUND_MS;
-export const canStartFullRun = (startMs: number, now: Date): boolean => left(now, startMs) >= FULL_RUN_MS;
+/** The full run plus the gate:push that follows it must both fit before the deadline. */
+export const canStartFullRun = (startMs: number, now: Date): boolean => left(now, startMs) >= FULL_RUN_MS + GATE_PUSH_ESTIMATE_MS;
 /** A child timeout never runs past the deadline (so nothing is left running after 07:00). */
 export const capTimeout = (ms: number, startMs: number, now: Date): number => Math.max(1000, Math.min(ms, left(now, startMs)));
 
 /** Collect found the 23:00 run unfinished (still pending, or the PC busy/unreachable): wait and retry instead of skipping the night. */
 export const collectUnfinished = (s: NightlyStatus | undefined): boolean => s?.state === 'pending' || (s?.state === 'not-run' && s.exit !== null && RETRY_EXITS.includes(s.exit));
-/** Retry only while the next try still starts by the cutoff (04:30 of the night the run began). */
+/** Retry only while the next try still starts by min(04:30 of the night the run began, a round's length before the hard stop). */
 export function retryAllowed(s: NightlyStatus | undefined, start: Date, now: Date): boolean {
   const cutoff = new Date(start);
   cutoff.setHours(RETRY_CUTOFF.hour, RETRY_CUTOFF.minute, 0, 0);
   if (start.getHours() >= MORNING_STOP_HOUR) cutoff.setDate(cutoff.getDate() + 1);
-  return collectUnfinished(s) && now.getTime() + RETRY_WAIT_MS <= cutoff.getTime();
+  const limit = Math.min(cutoff.getTime(), deadlineFor(start).getTime() - MIN_ROUND_MS);
+  return collectUnfinished(s) && now.getTime() + RETRY_WAIT_MS <= limit;
 }
 
 const sameSpec = (a: string, b: string): boolean => a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
@@ -144,6 +148,20 @@ export interface FullRunVerdict {
 export function judgeFullRun(r: Results, baseline: readonly TestRef[], known: readonly KnownRed[]): FullRunVerdict {
   const reds = unrecordedFailures(r.failed, known);
   return { newReds: reds.filter((t) => !baseline.some((b) => sameRef(b, t))), remaining: reds.filter((t) => baseline.some((b) => sameRef(b, t))) };
+}
+/** Why a full re-run cannot be trusted ('' = complete): fewer specs than the pre-fix nightly, an interrupted run, or more skipped tests than before. */
+export function fullRunIncomplete(post: unknown, r: Results, pre: unknown): string {
+  const stats = (j: unknown): { skipped: number; interrupted: number } => {
+    const s = ((j ?? {}) as { stats?: { skipped?: unknown; interrupted?: unknown } }).stats ?? {};
+    return { skipped: typeof s.skipped === 'number' ? s.skipped : 0, interrupted: typeof s.interrupted === 'number' ? s.interrupted : 0 };
+  };
+  const p = parseResults(pre);
+  const before = p.passed + p.failed.length + p.flaky.length;
+  const after = r.passed + r.failed.length + r.flaky.length;
+  if (after < before) return `${String(after)} specs ran, the pre-fix nightly had ${String(before)}`;
+  if (stats(post).interrupted > 0) return 'the run was interrupted';
+  if (stats(post).skipped > stats(pre).skipped) return `skipped tests rose from ${String(stats(pre).skipped)} to ${String(stats(post).skipped)}`;
+  return '';
 }
 /** Next fix cycle chases only a red whose earlier fix did not hold (outcome fixed): flaky, known-red, needs-human and unfixed specs are never chased. */
 export function retargets(v: FullRunVerdict, results: readonly FailureResult[]): TestRef[] {

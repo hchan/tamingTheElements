@@ -20,7 +20,7 @@ import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
   addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, GATE_TIMEOUT_MS, judgeFullRun, LOCK_STALE_MS, MAX_FAILURES, MAX_FULL_CYCLES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, LOCK_STALE_MS, MAX_FAILURES, MAX_FULL_CYCLES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers,
   retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, tooManyFailures, triage,
   type Failure, type FailureResult, type FixState, type FixStatus, type PushInput,
 } from './nightly-fix-logic';
@@ -42,6 +42,15 @@ export interface FixOpts {
   readonly notBefore?: string;
   /** The loop's start (default: now); the hard stop and round budgets count from here. */
   readonly startMs?: number;
+  /** The caller (collect-and-fix) already holds the lock; fix releases it. */
+  readonly lockHeld?: boolean;
+}
+interface Life {
+  prepared: boolean;
+  mergePrepared: boolean;
+  keep: boolean;
+  threw: boolean;
+  branch: string;
 }
 interface Ref {
   file: string;
@@ -95,32 +104,44 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
       return 2;
     }
   }
-  if (dry) return fixInner(d, true, opts, [], { prepared: false, keep: false });
-  if (!acquireLock(d)) {
+  if (dry) return fixInner(d, true, opts, [], { prepared: false, mergePrepared: false, keep: false, threw: false, branch: '' });
+  if (!opts.lockHeld && !acquireLock(d)) {
     d.out('nightly:fix: another run holds the lock; nothing to do\n');
     return 0;
   }
   const results: FailureResult[] = [];
-  const life = { prepared: false, keep: false };
+  const life: Life = { prepared: false, mergePrepared: false, keep: false, threw: false, branch: '' };
   try {
     return fixInner(d, false, opts, results, life);
   } catch (e) {
+    life.threw = true;
     const st = readStatus(d.statusDir);
     writeFixStatus(d, st?.sha ?? '', results, false, [`error: ${redact(e instanceof Error ? e.message : String(e)).slice(0, 300)}`], 'needs-human');
     return 1;
   } finally {
+    if (life.mergePrepared) {
+      d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, MERGE_WT)], d.repo, d.env);
+      if (life.branch) d.run('git', ['branch', '-D', `${life.branch}-merge`], d.repo, d.env);
+    }
     if (life.prepared) {
       d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, FIX_WT)], d.repo, d.env);
-      const br = `nightly-fix/${d.now().toISOString().slice(0, 10)}`;
-      // Unpushed fixes (collateral red, no time, gate failed) stay reachable on a local branch for the human.
-      if (life.keep) d.run('git', ['branch', '-f', `nightly-fix-kept/${d.now().toISOString().slice(0, 10)}`, br], d.repo, d.env);
+      const br = life.branch;
+      // After an exception keep the branch whenever it is ahead of origin/main.
+      if (life.threw && Number(d.run('git', ['rev-list', '--count', `origin/main..${br}`], d.repo, d.env).stdout.trim() || '0') > 0) life.keep = true;
+      // Unpushed fixes (collateral red, no time, gate failed) stay reachable on a local branch for the human; never overwrite an earlier kept branch.
+      if (life.keep) {
+        const base = `nightly-fix-kept/${br.slice('nightly-fix/'.length)}`;
+        let name = base;
+        for (let n = 2; n < 20 && d.run('git', ['branch', '--list', name], d.repo, d.env).stdout.trim(); n++) name = `${base}-${String(n)}`;
+        d.run('git', ['branch', name, br], d.repo, d.env);
+      }
       d.run('git', ['branch', '-D', br], d.repo, d.env);
     }
     rmSync(lockPath(d.statusDir), { force: true });
   }
 }
 
-function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResult[], life: { prepared: boolean; keep: boolean }): number {
+function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResult[], life: Life): number {
   const st = readStatus(d.statusDir);
   if (!shouldRun(st) || !st) {
     d.out(`nightly:fix: nothing to do (${st ? `${st.state}, ${String(st.unrecorded.length)} unrecorded` : 'no status'})\n`);
@@ -145,9 +166,10 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const mergeWt = resolve(d.repo, MERGE_WT);
   const stamp = d.now().toISOString().slice(0, 10);
   const branch = `nightly-fix/${stamp}`;
+  life.branch = branch;
   const startMs = opts.startMs ?? d.now().getTime();
-  const done = (pushed: boolean, blockers: string[]): number => {
-    writeFixStatus(d, st.sha, results, pushed, blockers);
+  const done = (pushed: boolean, blockers: string[], force?: FixState): number => {
+    writeFixStatus(d, st.sha, results, pushed, blockers, force);
     return 0;
   };
   if (dry) {
@@ -229,11 +251,18 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `origin/main..${branch}`).stdout.trim() || '0');
   /** One fix pass over `todo` (existing per-failure rounds); returns why it stopped early, or ''. A later result for a spec replaces its earlier one. */
+  const earlierFix = new Set<string>();
   const fixPass = (todo: readonly Failure[]): string => {
     let stopped = '';
     for (const f of todo) {
       const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
         const at = results.findIndex((r) => r.file === f.file && r.title === f.title);
+        // A later cycle's flaky/unfixed/needs-human never erases an earlier fix that is in the verified tree: it becomes a note.
+        if (at >= 0 && outcome !== 'fixed' && results[at]?.outcome !== undefined && earlierFix.has(`${f.file}\0${f.title}`)) {
+          const prev = results[at] as FailureResult;
+          results[at] = { ...prev, reason: redact(`${prev.reason}; later cycle: ${outcome}: ${reason}`).slice(0, 300) };
+          return;
+        }
         if (at >= 0) results.splice(at, 1);
         results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
       };
@@ -314,20 +343,40 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   // Cycles: fix -> (fixes applied) full e2e on the merged tree via the router (PC only) -> judge -> fix what did not hold. Max MAX_FULL_CYCLES.
   const known = loadKnownRed(fixWt);
   const blockers: string[] = [];
+  let forced: FixState | undefined;
+  const warn: string[] = []; // survive a successful push
   let verified = false; // the latest full run was on the current merge tree and has no new reds
+  let verifiedAhead = 0; // commits on the branch when that merge tree was built
+  let verifiedResults: FailureResult[] = [];
   let queue: readonly Failure[] = todo;
   for (let cycle = 1; cycle <= MAX_FULL_CYCLES && queue.length > 0; cycle++) {
     const before = ahead();
     const stopped = fixPass(queue);
+    const thisQueue = queue;
     queue = [];
     if (ahead() === before) {
-      if (stopped) blockers.push(stopped);
+      if (stopped) {
+        blockers.push(stopped);
+        warn.push(stopped);
+      }
       break; // nothing new to verify
     }
     if (!canStartFullRun(startMs, d.now())) {
-      blockers.push('not enough time before the hard stop for a full re-run of the fixed tree; fixes kept on a local branch');
+      const m = 'not enough time before the hard stop for a full re-run of the fixed tree; fixes kept on a local branch';
+      blockers.push(m);
+      if (verified) {
+        // The merge tree of the earlier cycle was verified; this cycle's commits are not in it and are not pushed.
+        results.splice(0, results.length, ...verifiedResults);
+        for (const t of thisQueue) {
+          const i = results.findIndex((r) => r.file === t.file && r.title === t.title);
+          const r = results[i];
+          if (r) results[i] = { ...r, reason: `${r.reason}; cycle ${String(cycle)} fix not pushed (no time for a full re-run), kept on nightly-fix-kept/${stamp}`.slice(0, 300) };
+        }
+        warn.push(m);
+      }
       break;
     }
+    life.mergePrepared = true;
     const m = buildMerge(d, { branch, mergeWt, base, shaOnOrigin, results }, prep, git);
     if (m.length) {
       blockers.push(...m);
@@ -340,33 +389,50 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       verified = false;
       break;
     }
+    const incomplete = fullRunIncomplete(fr.json, fr.results, json);
+    if (incomplete) {
+      blockers.push(`the full re-run ${String(cycle)} is incomplete (${incomplete}); not verified, nothing pushed, the fixes stay on a local branch`);
+      verified = false;
+      forced = 'needs-human';
+      break;
+    }
     const v = judgeFullRun(fr.results, st.failed, known);
     if (v.newReds.length > 0) {
-      for (const t of v.newReds) results.push({ file: t.file, title: t.title, outcome: 'needs-human', rounds: 0, reason: `new red in the full re-run of the fixed tree (collateral of a fix): ${cycle === 1 ? 'cycle 1' : 'cycle 2'}` });
+      for (const t of v.newReds) results.push({ file: t.file, title: t.title, outcome: 'needs-human', rounds: 0, reason: `new red in the full re-run of the fixed tree (collateral of a fix): cycle ${String(cycle)}` });
       blockers.push('a full re-run of the fixed tree shows new reds; not pushed, the fixes stay on a local branch');
       verified = false;
       break;
     }
     verified = true;
+    verifiedAhead = ahead();
     d.out(`nightly:fix: full re-run ${String(cycle)} has no new reds (${String(v.remaining.length)} still open)\n`);
     queue = fr.json === undefined ? [] : extractFailures(fr.json, retargets(v, results));
+    // The last full run decides: a fix whose spec is still red there did not hold.
+    for (const t of v.remaining) {
+      const i = results.findIndex((r) => r.outcome === 'fixed' && r.file === t.file && r.title === t.title);
+      const r = results[i];
+      if (r) {
+        earlierFix.add(`${r.file}\0${r.title}`);
+        results[i] = { ...r, outcome: 'unfixed', reason: `still red in full re-run ${String(cycle)}; ${r.reason}`.slice(0, 300) };
+      }
+    }
+    verifiedResults = results.map((r) => ({ ...r }));
     if (stopped) {
       blockers.push(stopped);
+      warn.push(stopped);
       break;
     }
   }
 
   const count = ahead();
   life.keep = count > 0;
-  if (count === 0) return done(false, blockers.length ? blockers : ['no fix commits to push']);
-  if (!verified) return done(false, blockers.length ? blockers : ['fixes were not verified by a full re-run; nothing pushed']);
-  blockers.length = 0;
-  blockers.push(...finalPush(d, { mergeWt, base, shaOnOrigin, startMs }, git, sh));
-  if (blockers.length === 0 && git(mergeWt, 'push', 'origin', 'HEAD:main').code !== 0) blockers.push('git push failed (not forced)');
-  if (blockers.length === 0) life.keep = false;
-  git(d.repo, 'worktree', 'remove', '--force', mergeWt);
-  git(d.repo, 'branch', '-D', `${branch}-merge`);
-  return done(blockers.length === 0, blockers);
+  if (count === 0) return done(false, blockers.length ? blockers : ['no fix commits to push'], forced);
+  if (!verified) return done(false, blockers.length ? blockers : ['fixes were not verified by a full re-run; nothing pushed'], forced);
+  const fp = finalPush(d, { mergeWt, base, shaOnOrigin, startMs }, git, sh);
+  if (fp.length === 0 && git(mergeWt, 'push', 'origin', 'HEAD:main').code !== 0) fp.push('git push failed (not forced)');
+  // Commits made after the verified merge (an unverified cycle) were not pushed: keep the branch for them.
+  if (fp.length === 0) life.keep = count > verifiedAhead;
+  return done(fp.length === 0, [...warn, ...fp]);
 }
 
 /** Merge --no-ff into a fresh main-based worktree and check the merged diff and markers; empty = the tree is ready for a full run. */
@@ -438,8 +504,18 @@ export function main(argv: readonly string[], d: FixDeps): number {
   if (cmd === 'collect-and-fix') {
     const start = d.now();
     const notBefore = start.toISOString();
-    if (!dry) collectWithRetry(d, start);
-    return fix(d, dry, { notBefore, startMs: start.getTime() });
+    if (dry) return fix(d, true, { notBefore, startMs: start.getTime() });
+    // The lock covers the collect wait too, so a manual run cannot overlap it.
+    if (!acquireLock(d)) {
+      d.out('nightly:fix: another run holds the lock; nothing to do\n');
+      return 0;
+    }
+    try {
+      collectWithRetry(d, start);
+      return fix(d, false, { notBefore, startMs: start.getTime(), lockHeld: true });
+    } finally {
+      rmSync(lockPath(d.statusDir), { force: true });
+    }
   }
   if (cmd === 'report') return report(d);
   if (cmd === 'run' || cmd === undefined) return fix(d, dry);
