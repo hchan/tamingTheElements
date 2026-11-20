@@ -43,6 +43,8 @@ export const GENERIC_TEXT = 'Something went wrong online. Try again.';
 export const RECONNECTING_PREFIX = 'Connection lost. Reconnecting';
 export const OPPONENT_AWAY_TEXT = "Your opponent's connection dropped. Waiting for them...";
 export const OPPONENT_LEFT_TEXT = 'Your opponent left.';
+/** Shown when the service's gateway sent a failure notice; the raw notice text is for logs, not for players. */
+export const GATEWAY_NOTICE_TEXT = 'The online service is having trouble. Hang on...';
 
 /** "Looking for an opponent... 0:12" (m:ss). */
 export function waitText(waitingSec: number): string {

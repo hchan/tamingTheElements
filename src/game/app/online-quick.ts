@@ -10,7 +10,7 @@ import { downloadReport } from './download';
 import { destroyGame } from './game-handle';
 import { launchOnlineArena, type OnlineArena } from './online-arena';
 import {
-  checkMatch, CHECKING_TEXT, CONNECTING_TEXT, endText, failureView, IDLE_TEXT, MATCHED_TEXT, netStatusText, OPPONENT_AWAY_TEXT,
+  checkMatch, CHECKING_TEXT, GATEWAY_NOTICE_TEXT, CONNECTING_TEXT, endText, failureView, IDLE_TEXT, MATCHED_TEXT, netStatusText, OPPONENT_AWAY_TEXT,
   OPPONENT_LEFT_TEXT, GENERIC_TEXT, reconnectText, rejectText, restStore, waitText, WAITING_PICK_TEXT, type QuickState,
 } from './online-quick-model';
 import { QuickSetup } from './online-quick-setup';
@@ -271,6 +271,9 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
           dropMatch();
           set('ended', OPPONENT_LEFT_TEXT);
         }
+        break;
+      case 'gateway-notice':
+        view?.say(GATEWAY_NOTICE_TEXT);
         break;
       case 'reconnecting':
         view?.say(reconnectText(e.attempt));
