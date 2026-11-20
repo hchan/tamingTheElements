@@ -22,7 +22,11 @@ export interface ConformanceClient {
 
 /** Opens a fresh connection (the ticket flow, if any, is the adapter's business). Each call is one independent socket. */
 export interface ConformanceAdapter {
-  connect(): Promise<ConformanceClient>;
+  /**
+   * `sameIdentityAs`: a client this adapter returned earlier; the new socket must act as the same player (a resume is refused for another
+   * identity). An adapter whose identity is not per connection may ignore it.
+   */
+  connect(opts?: { readonly sameIdentityAs?: ConformanceClient }): Promise<ConformanceClient>;
 }
 
 export interface ConformanceHooks {
