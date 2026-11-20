@@ -71,6 +71,31 @@ describe('relay:conformance runner', () => {
     expect(adv.code).toBe(CONF.exit.ok);
   });
 
+  it('--no-binary skips malformed.binary instead of sending a binary message', async () => {
+    const r = await run(['--only', 'malformed.binary', '--no-binary', ...FAST]);
+    const j = JSON.parse(r.out) as { report: { skipped: number; failed: number } };
+    expect([j.report.skipped, j.report.failed]).toEqual([1, 0]);
+  });
+
+  it('the resume reconnect reuses the first socket session token and mints no new session', async () => {
+    srv = await startWsServer({ backend: 'relay', delivery: 'text' });
+    const base = localDeps(srv);
+    const sessionPosts: string[] = [];
+    const ticketBearers: string[] = [];
+    const spy: typeof fetch = (input, init) => {
+      const path = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url).pathname;
+      if (path === '/session') sessionPosts.push(path);
+      if (path === '/ticket') ticketBearers.push(new Headers(init?.headers).get('Authorization') ?? '');
+      return (base.fetch ?? fetch)(input, init);
+    };
+    const code = await runConformanceCli(['--only', 'resume.within-grace', ...FAST], { [CONF.urlEnv]: BASE }, { out: () => undefined, err: () => undefined }, { ...base, fetch: spy });
+    expect(code).toBe(CONF.exit.ok);
+    // matched() opens two players (two sessions); the reconnect is a third socket on player A's token.
+    expect(sessionPosts).toHaveLength(2);
+    expect(ticketBearers).toHaveLength(3);
+    expect(ticketBearers[2]).toBe(ticketBearers[0]);
+  });
+
   it('exits 3 when no connection can be made', async () => {
     let out = '';
     const code = await runConformanceCli(

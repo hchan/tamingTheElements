@@ -552,7 +552,7 @@ const resume: ConformanceCase[] = [
     await b.take('peerStatus', (f) => f.event === PeerStatusEvent.disconnected);
     await hooks.advanceTime(10_001);
     await b.take('peerStatus', (f) => f.event === PeerStatusEvent.gone);
-    const [, w] = await join(c, c.env.sim, sidA);
+    const [, w] = await join(c, c.env.sim, sidA, a);
     eq(w.frame.resumed, 0, 'resumed');
   }),
 ];

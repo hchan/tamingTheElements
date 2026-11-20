@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import { decodeText } from '../../../core/relay';
+import { CLOSE_NORMAL, closeCodeFor, decodeText } from '../../../core/relay';
 import { decodeFrame } from '../../../core/relay/codec';
 import {
   conformanceCases,
@@ -121,7 +121,8 @@ export function createWsConformance(o: WsConformanceOptions): {
     const deliver = (t: string): void => {
       const bytes = decodeText(t);
       const f = bytes === undefined ? undefined : decodeFrame(bytes, 's2c');
-      if (f?.ok && f.frame.t === 'error') lastError = f.frame.code;
+      // Only an ERROR right before the close counts: any later frame means the socket went on.
+      lastError = f?.ok && f.frame.t === 'error' ? f.frame.code : undefined;
       if (onText) onText(t); else early.push(t);
     };
     ws.addEventListener('message', (ev) => {
@@ -137,7 +138,7 @@ export function createWsConformance(o: WsConformanceOptions): {
       }
     });
     ws.addEventListener('close', (ev) => {
-      closed = o.advisoryClose === true && ev.code === 1000 && lastError !== undefined ? 4000 + (lastError & 0xff) : ev.code;
+      closed = o.advisoryClose === true && ev.code === CLOSE_NORMAL && lastError !== undefined ? closeCodeFor(lastError) : ev.code;
       onClose?.(closed);
     });
     await new Promise<void>((resolve, reject) => {
