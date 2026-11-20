@@ -35,6 +35,29 @@ describe('E2eReporter', () => {
     expect(readFileSync(join(dir, 'report.md'), 'utf8')).toMatch(/^VERDICT: /);
   });
 
+  it('tolerates a minimal TestCase without location, tags or results, and warns nothing', () => {
+    mkdirSync(dir, { recursive: true });
+    process.env['TTE_REPORT_DIR'] = dir;
+    const writes: string[] = [];
+    const orig = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (c: string | Uint8Array): boolean => {
+      writes.push(String(c));
+      return true;
+    };
+    try {
+      const rep = new E2eReporter();
+      const t = { title: 'bare', outcome: () => 'unexpected' } as never;
+      rep.onBegin({ workers: 1, projects: [] } as never, { allTests: () => [t] } as never);
+      rep.onTestEnd(t, { status: 'failed', retry: 0, duration: 1 } as never);
+      rep.onEnd({ status: 'failed', duration: 1 } as never);
+    } finally {
+      process.stderr.write = orig;
+    }
+    expect(writes.filter((w) => w.startsWith('e2e-reporter:'))).toEqual([]);
+    const line = JSON.parse(readFileSync(join(dir, 'results.jsonl'), 'utf8').trim().split('\n').pop() ?? '{}') as { title: string; file: string };
+    expect(line).toMatchObject({ title: 'bare', file: '' });
+  });
+
   it('never throws out of a hook', () => {
     const rep = new E2eReporter();
     expect(() => { rep.onTestEnd({} as never, {} as never); }).not.toThrow();

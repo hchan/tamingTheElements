@@ -98,24 +98,24 @@ export default class E2eReporter implements Reporter {
 
   onTestEnd(test: TestCase, result: TestResult): void {
     try {
-      const file = relative(this.root, test.location.file);
+      const file = relative(this.root, test.location?.file ?? '');
       let tier: string = 'P1';
       try {
-        tier = this.tier(file, test.title, test.tags);
+        tier = this.tier(file, test.title ?? '', test.tags ?? []);
       } catch (e) {
         warn('tier', e);
       }
-      const attach = result.attachments.map((a) => a.path ?? '').filter(Boolean);
+      const attach = (result.attachments ?? []).map((a) => a.path ?? '').filter(Boolean);
       const line = {
         file,
         title: test.title,
-        tags: test.tags,
+        tags: test.tags ?? [],
         tier,
         retry: result.retry,
         status: result.status,
         durationMs: result.duration,
         error: firstLine(result.error?.message),
-        lastStep: lastStepOf(result.steps),
+        lastStep: lastStepOf(result.steps ?? []),
         attachments: attach,
       };
       appendFileSync(join(this.dir(), 'results.jsonl'), `${JSON.stringify(line)}\n`);
@@ -159,11 +159,12 @@ export default class E2eReporter implements Reporter {
   private rowOf(t: TestCase, dir: string): RunRow {
     const outcome = t.outcome();
     const o: Outcome = outcome === 'skipped' ? 'skipped' : outcome === 'expected' ? 'expected' : outcome === 'flaky' ? 'flaky' : 'unexpected';
-    const file = relative(this.root, t.location.file);
-    const bad = [...t.results].reverse().find((r) => r.status !== 'passed' && r.status !== 'skipped') ?? t.results[t.results.length - 1];
+    const file = relative(this.root, t.location?.file ?? '');
+    const results = t.results ?? [];
+    const bad = [...results].reverse().find((r) => r.status !== 'passed' && r.status !== 'skipped') ?? results[results.length - 1];
     let tier: 'P0' | 'P1' | 'P2' = 'P1';
     try {
-      tier = this.tier(file, t.title, t.tags);
+      tier = this.tier(file, t.title ?? '', t.tags ?? []);
     } catch (e) {
       warn('tier', e);
     }
@@ -172,16 +173,16 @@ export default class E2eReporter implements Reporter {
     const consoleErrors = attachments
       .filter((a) => /console|pageerror/i.test(a.name) && a.body)
       .flatMap((a) => (a.body?.toString('utf8') ?? '').split('\n').filter(Boolean));
-    if (consoleErrors.length === 0 && bad?.stderr.length) consoleErrors.push(...bad.stderr.map((s) => s.toString()).join('').split('\n').filter(Boolean).slice(-10));
+    if (consoleErrors.length === 0 && bad?.stderr?.length) consoleErrors.push(...(bad.stderr ?? []).map((s) => s.toString()).join('').split('\n').filter(Boolean).slice(-10));
     return {
       file,
-      line: t.location.line,
+      line: t.location?.line ?? 0,
       title: t.title,
-      tags: t.tags,
+      tags: t.tags ?? [],
       tier,
       outcome: o,
-      attempts: t.results.length,
-      lastStep: bad ? lastStepOf(bad.steps) : '',
+      attempts: results.length,
+      lastStep: bad ? lastStepOf(bad.steps ?? []) : '',
       error: firstLine(bad?.error?.message),
       trace: trace ? relative(dir, trace) : '',
       consoleErrors,
