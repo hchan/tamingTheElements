@@ -48,3 +48,18 @@ PASS, no regressions. Classic is pinned to LEGACY_CHARACTERS (14); fixtures, gol
 ## WP 0.4 done (2026-11-15, SIM_VERSION 69)
 
 The Arcade `RANGED` flag (`systems/arcade/meter.ts`) now follows `HERO_STYLE`: fiara, morblass and rokcore are ranged (no Charge, weather charge by casting), wispera is melee (Charge, weather charge by walking). The parity follow-ups above (D01, `Record<CharacterId, HeroStyle>`, `styleOfRace` throws) landed in the same commit. Numbers and the 2v2 noise note: docs/BALANCE.md "Arcade style-align (SIM_VERSION 69)". Open: `src/ui/screens/hero-info.ts` still has its own style table (`RELEASED_STYLE`, same values); point it at `HERO_STYLE`.
+
+## Per-hero files (2026-11-19)
+
+- [Kindrel (fire, melee, #1)](roster24-kindrel.md)
+- [Brazgor (fire, melee, #2)](roster24-brazgor.md)
+- [Ouroth (fire, melee, #3)](roster24-ouroth.md)
+- [Quarrak (earth, ranged, #4)](roster24-quarrak.md)
+- [Umbrel (earth, ranged, #5)](roster24-umbrel.md)
+- [Nykra (water, melee, #6)](roster24-nykra.md)
+- [Abyssor (water, melee, #7)](roster24-abyssor.md)
+- [Glimmaw (water, ranged, #8)](roster24-glimmaw.md)
+- [Durrok (earth, melee, #9)](roster24-durrok.md)
+- [Zephra (air, ranged, #10)](roster24-zephra.md)
+- [Hyalia (air, ranged, #11)](roster24-hyalia.md)
+- [Vortigal (air, melee, #12)](roster24-vortigal.md)
