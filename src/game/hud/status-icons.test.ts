@@ -175,6 +175,11 @@ describe('crowd-control chips (CA1)', () => {
     expect(collectStatusChips(viewWith({ arcade: { stunned: true, stunLeft: 30 } }), 0, 1, 'fire', 0, false, undefined, 20)[0]?.remaining).toBe(1);
   });
 
+  it('shows burn and venom as debuffs and mend as a buff, with seconds', () => {
+    const out = chips({ tick: 10, statuses: [{ id: StatusId.burning, startTick: 0, expireTick: 110 }, { id: StatusId.venom, startTick: 0, expireTick: 160 }, { id: StatusId.mending, startTick: 0, expireTick: 60 }] });
+    expect(out.map((c) => [c.label, c.hostile, c.secs, c.glyph])).toEqual([['BURN', true, 2, 'cross'], ['VENOM', true, 3, 'cross'], ['MEND', false, 1, 'plus']]);
+  });
+
   it('shows a hostile chip with a time and an icon for each crowd-control status', () => {
     const out = chips({ tick: 10, statuses: [{ id: StatusId.dazed, startTick: 0, expireTick: 110 }, { id: StatusId.iced, startTick: 0, expireTick: 60 }, { id: StatusId.downed, startTick: 0, expireTick: 60 }, { id: StatusId.silenced, startTick: 0, expireTick: 110 }, { id: StatusId.ccWard, startTick: 0, expireTick: 99 }] });
     expect(out.map((c) => [c.label, c.hostile, c.secs])).toEqual([['DAZED', true, 2], ['ICED', true, 1], ['DOWN', true, 1], ['SILENCED', true, 2]]);
