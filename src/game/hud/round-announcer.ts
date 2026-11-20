@@ -18,6 +18,8 @@ export const ROUND_EVENT_KINDS: readonly number[] = [
  * was still up when the first hit landed and its big letters sat under the damage number.
  */
 export const FIGHT_BANNER_TICKS = 30;
+/** A first hit during FIGHT! shortens it to end this many ticks later (0.12 s, the banner's fade-out), so it never sits over the action. */
+export const FIGHT_CUT_TICKS = 6;
 export const HOLD = Number.MAX_SAFE_INTEGER;
 export const TICK_MS = 20;
 /** Scale-in of a new banner: from 1 + BANNER_IN_SCALE down to 1 over BANNER_IN_MS (ease-out); none with reduced motion. */
@@ -45,6 +47,7 @@ export class RoundAnnouncer {
   private perfect = false;
   private main = '';
   private from = 0;
+  private fightUntil = 0;
 
   /** `sudden` reads the sim's sudden-death slot (RenderArcade.sudden); it is set before `roundStarted` is emitted. */
   constructor(
@@ -66,6 +69,12 @@ export class RoundAnnouncer {
 
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
+      // The first hit while FIGHT! is up ends it early (sim-neutral, HUD only).
+      if (e.kind === SimEventKind.hitConfirmed && this.main === 'FIGHT!' && e.tick < this.fightUntil - FIGHT_CUT_TICKS) {
+        this.fightUntil = e.tick + FIGHT_CUT_TICKS;
+        this.sink.banner('FIGHT!', '', this.from, this.fightUntil);
+        continue;
+      }
       if (!ROUND_EVENT_KINDS.includes(e.kind)) continue;
       if (e.tick < this.lastTick || (e.tick === this.lastTick && e.seq <= this.lastSeq)) continue;
       this.lastTick = e.tick;
@@ -77,6 +86,7 @@ export class RoundAnnouncer {
   private show(main: string, sub: string, tick: number, until: number): void {
     if (main !== this.main) this.from = tick;
     this.main = main;
+    this.fightUntil = until;
     this.sink.banner(main, sub, this.from, until);
   }
 
