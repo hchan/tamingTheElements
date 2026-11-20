@@ -1,7 +1,9 @@
 # First-run FIRST BLOOD hint is tiny at 1920x1080
 
-status: idea
+status: in-progress
 added: 2026-11-19
+
+Progress note (2026-11-20): base font-size of `.firstRunHint` is now `clamp(11px, 1.5vh, 24px)` in `src/ui/styles/main/09-help-first-run.css` (about 16px at 1080p; short windows keep 11px). Tests: CSS pin in `tests/repo/touch-css.test.ts`, e2e at 1920x1080 in `tests/e2e/first-run-hint.spec.ts` (passed on the PC, long gate).
 
 Severity: minor
 Size: S

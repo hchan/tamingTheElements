@@ -24,4 +24,10 @@ describe('first-run card vs the action bar', () => {
     expect(Number(m?.[1])).toBeGreaterThanOrEqual(11.11);
     expect(Number(m?.[2])).toBeGreaterThanOrEqual(8);
   });
+
+  it('scales its base font with the window height instead of a fixed 11px (qa-r125)', () => {
+    const start = css.indexOf('.firstRunHint {');
+    const block = css.slice(start, css.indexOf('}', start));
+    expect(block).toMatch(/font-size: clamp\(11px, [\d.]+vh, \d+px\);/);
+  });
 });

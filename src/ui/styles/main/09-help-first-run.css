@@ -63,7 +63,8 @@
   background: rgba(14, 12, 32, 0.62);
   color: #f6efe2;
   border: 1px solid #8a7658;
-  font-size: 11px;
+  /* Scales with the window height (about 16px at 1080p), never below the old 11px: it was tiny at 1920x1080 (qa-r125). */
+  font-size: clamp(11px, 1.5vh, 24px);
   line-height: 1.3;
   text-align: left;
   transition: opacity 1.5s;
