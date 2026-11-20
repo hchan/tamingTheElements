@@ -114,6 +114,7 @@
     "no-touch-stick.spec.ts": "P2",
     "tour-fight-match.spec.ts": "P0",
     "tour-win.spec.ts": "P1",
+    "tutorial.spec.ts": "P1",
     "tour.spec.ts": "P0",
     "trap-art.spec.ts": "P2",
     "versus-abilities.spec.ts": "P1",

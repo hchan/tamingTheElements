@@ -25,6 +25,7 @@ export interface HelpLink {
 export const HELP_LINKS: readonly HelpLink[] = [
   { label: 'Key Bindings', route: 'keyBindings' },
   { label: 'Guide', route: 'guide' },
+  { label: 'Practice', route: 'tutorial' },
   { label: 'Wiki', route: 'wiki' },
   { label: 'Watch the story', route: 'storyMode' },
   { label: 'About', route: 'about' },
