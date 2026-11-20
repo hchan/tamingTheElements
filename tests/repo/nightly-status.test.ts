@@ -41,6 +41,9 @@ describe('known-red matching', () => {
     expect(unrecordedFailures(failed, [{ file: 'online-versus.spec.ts', titleIncludes: 'connect through the Online Versus' }])).toEqual([failed[1]]);
     expect(unrecordedFailures(failed, [])).toEqual(failed);
   });
+  it('accepts the tests/e2e/ form of the known-red file (Playwright reports it relative to testDir)', () => {
+    expect(unrecordedFailures(failed, [{ file: 'tests/e2e/online-versus.spec.ts', titleIncludes: 'connect through the Online Versus' }])).toEqual([failed[1]]);
+  });
 });
 
 describe('states', () => {

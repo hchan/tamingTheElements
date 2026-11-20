@@ -1,5 +1,5 @@
 /**
- * Install or remove the two launchd LaunchAgents of the nightly e2e (submit 23:00, collect 06:00). Paths (repo, corepack, PATH,
+ * Install or remove the two launchd LaunchAgents of the nightly e2e (submit 23:00; 06:00 collect, then the fix loop via nightly-fix.ts collect-and-fix). Paths (repo, corepack, PATH,
  * HOME) are filled into tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl here, at install time; nothing machine-specific is committed.
  * `pnpm nightly:install [--dry-run] [--uninstall]`. launchd runs a missed calendar job once on wake.
  */
@@ -10,13 +10,14 @@ import { join, resolve } from 'node:path';
 
 export interface Job {
   readonly label: string;
-  readonly subcommand: 'submit' | 'collect';
+  readonly script: string;
+  readonly subcommand: 'submit' | 'collect' | 'collect-and-fix';
   readonly hour: number;
   readonly minute: number;
 }
 export const JOBS: readonly Job[] = [
-  { label: 'dev.tte.nightly-e2e-submit', subcommand: 'submit', hour: 23, minute: 0 },
-  { label: 'dev.tte.nightly-e2e-collect', subcommand: 'collect', hour: 6, minute: 0 },
+  { label: 'dev.tte.nightly-e2e-submit', script: 'tools/ci/nightly-e2e.ts', subcommand: 'submit', hour: 23, minute: 0 },
+  { label: 'dev.tte.nightly-e2e-collect', script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix', hour: 6, minute: 0 },
 ];
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -32,6 +33,7 @@ export function render(tmpl: string, vars: Readonly<Record<string, string>>): st
 export function varsFor(job: Job, o: { repo: string; corepack: string; path: string; home: string; log: string }): Record<string, string> {
   return {
     LABEL: job.label,
+    SCRIPT: job.script,
     SUBCOMMAND: job.subcommand,
     HOUR: String(job.hour),
     MINUTE: String(job.minute),

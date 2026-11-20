@@ -57,6 +57,8 @@
     "nightly:submit": "tsx tools/ci/nightly-e2e.ts submit",
     "nightly:collect": "tsx tools/ci/nightly-e2e.ts collect",
     "nightly:status": "tsx tools/ci/nightly-e2e.ts status",
+    "nightly:fix": "tsx tools/ci/nightly-fix.ts run",
+    "nightly:collect-and-fix": "tsx tools/ci/nightly-fix.ts collect-and-fix",
     "nightly:install": "tsx tools/ci/nightly-install.ts",
     "deploy:pages": "tsx tools/ci/deploy-pages.ts",
     "e2e:itch": "tsx tools/ci/e2e-route.ts itch",
