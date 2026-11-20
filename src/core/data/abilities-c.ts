@@ -5,7 +5,7 @@ import { abilityDefB as def, type AbilityDefB } from './abilities-b';
  * (the index is hashed: see abilities-order.test.ts). `hurl-rock` (Quarrak) is reused from set A. Melee sizes are pixels (as in set B); range and omni sizes are fractions of the character box (as in set A, px / 80).
  */
 export const ABILITIES_C: readonly AbilityDefB[] = [
-  def({ id: 'ember-bite', kind: 'melee', sprite: 'emberBite', cooldownMs: 500, maxActive: 2, damage: 12, delayAfterAttackMs: 250, w: 56, h: 36, description: 'A fast jab chain' }),
+  def({ id: 'ember-bite', kind: 'melee', sprite: 'emberBite', cooldownMs: 340, maxActive: 3, damage: 8, delayAfterAttackMs: 150, w: 48, h: 34, description: 'A rapid chain of light bites' }),
   def({ id: 'cinder-spray', kind: 'omni', sprite: 'cinderSpray', cooldownMs: 4000, maxActive: 1, damage: 8, speed: 6, w: 20 / 80, h: 20 / 80, description: 'A close ring of embers' }),
   def({ id: 'hoof-crash', kind: 'melee', sprite: 'hoofCrash', cooldownMs: 1000, maxActive: 2, damage: 20, delayAfterAttackMs: 250, w: 70, h: 50 }),
   def({ id: 'kelp-lash', kind: 'melee', sprite: 'kelpLash', cooldownMs: 2500, maxActive: 1, damage: 14, delayAfterAttackMs: 250, w: 130, h: 30, description: 'A long whip' }),

@@ -322,5 +322,9 @@
  *    scripted-ai/arcade.ts `runStep`; ArcadeView gains runIn, running, runAway; AI memory 20 -> 23 slots): a ranged hero runs away from a foe within 260 px
  *    and breaks the run past 520 px, cornered or stuck, a melee hero runs in from 200 px while its Charge is on cooldown. Win rates move by design.
  *    Re-record reason: AI behaviour change; goldens change only the simVersion header unless a recorded Arcade AI match uses Run; the Arcade balance baselines are re-recorded.
+ * 90: Arcade only (Classic hashes unchanged). Roster-24 step S for Kindrel, the kit de-dupe: Ember Bite becomes a rapid light chain (damage 12 -> 8,
+ *    cooldown 500 -> 340 ms, up to 3 active, recovery 250 -> 150 ms, box 56x36 -> 48x34, hit strength forced light in HIT_STRENGTH_OVERRIDE) so it no longer
+ *    repeats Talon Rake and Bristle Stomp (medium melee jabs); Cinder Spray is unchanged. Release set stays empty. Win rates move for Kindrel only.
+ *    Re-record reason: a recorded Arcade match with Kindrel changes; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 89;
+export const SIM_VERSION = 90;
