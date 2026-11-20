@@ -9,7 +9,6 @@ import {
   EntityFlag,
   applyArenaCheat,
   applyTickCheats,
-  benchRows,
   RandomBot,
   SIM_VERSION,
   SimEventKind,
@@ -42,8 +41,7 @@ import { CastDetector } from '../audio/cast-sounds';
 import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
 import type { AudioContextLike } from '../audio/audio-manager';
 import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
-import { KeyboardAgent } from '../input/keyboard-agent';
-import { P2_BINDINGS } from '../input/local-two';
+import type { KeyboardAgent } from '../input/keyboard-agent';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
 import { counted } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
@@ -54,17 +52,13 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
 /** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
 const ROLLBACK_WINDOW = 6;
-import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion, tagNotReady } from '../a11y/announcer';
-import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
-import { firstPad, nthPad } from '../input/gamepad';
-import { getBindings, type Bindings } from '../platform/input/bindings';
+import { Announcer, LOW_HEALTH, LowHealthWatch, announcementsFor, tagNotReady } from '../a11y/announcer';
+import type { PauseDialog } from '../a11y/pause-dialog';
 import { collectSide } from '../hud/bars';
 import { victimAnchor } from '../hud/combo-anchor';
-import { screenBox } from '../hud/screen-box';
 import { SwapFeedback } from './swap-feedback';
-import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
-import { ActionBarView } from '../hud/action-bar-view';
-import { labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
+import { mountArenaInput } from './arena-input';
+import type { ActionBarView } from '../hud/action-bar-view';
 import { Backdrop } from '../views/backdrop';
 import { createStageAmbient, type StageAmbient } from '../fx/stage-ambient-view';
 import { CLASSIC_SPRITE_SCALE, CharacterView, frozenTintOf, lerp, setBrightFloor } from '../views/character-view';
@@ -87,9 +81,6 @@ const END_DELAY_MS = 1200;
 
 /** Online: how often an ended session still answers its peer (one wall tick, as the driver would). */
 const LINGER_MS = 20;
-
-/** Legacy cheat keys (key-map CheatAction) to the tester cheats. */
-const CHEAT_KEYS = { cheatQ: 'win', cheatX: 'freezeEnemy', cheatC: 'captureWin' } as const satisfies Record<string, ArenaCheat>;
 
 const DEMO_SETUP: MatchSetup = {
   simVersion: SIM_VERSION,
@@ -246,81 +237,23 @@ export class Arena extends Phaser.Scene {
     );
 
     if (this.launch && !playback) {
-      const keyboard = new KeyboardAgent({
-        capturable: () => true,
-        bindings: getBindings(),
-        gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
-        // Legacy Shift-Q / X / C cheats exist only in tester mode (docs/TESTER-MODE.md).
-        cheatsEnabled: this.launch.tester !== undefined,
-        arcade,
-        tabRun: true, // bare Tab on the page or canvas is Run (Player 1 only; docs/ACCESSIBILITY.md)
-        // A swap sent on a tick where the game clock stood still (hit-stop, KO slow motion) is sent again on the next one.
-        clock: () => view.actionBar(0)?.tick ?? 0,
-        onSwap: (swaps) => { this.swapNotice?.noteSwap(swaps); },
-        onAction: (bits) => { this.swapNotice?.noteAction(bits); },
-        onEffect: (e) => {
-          if (e === 'pause') this.togglePause();
-          else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
-          else this.arenaCheat(CHEAT_KEYS[e]);
-        },
+      const input = mountArenaInput({
+        scene: this, launch: this.launch, world, view, arcade,
+        online: this.session !== undefined || this.launch.net !== undefined,
+        swapNotice: () => this.swapNotice,
+        audio: () => this.audio,
+        togglePause: () => { this.togglePause(); },
+        cheat: (c) => { this.arenaCheat(c); },
+        clicks: this.clicks,
+        cleanups: this.cleanups,
       });
-      this.keyboard = keyboard;
-      const tester = this.launch.tester;
-      this.pauseDialog = createPauseDialog({
-        onResume: () => { this.togglePause(); },
-        // A shared online match cannot be paused by one side: no Escape pause, no button.
-        ...(this.session || this.launch.net ? {} : { onPause: () => { this.togglePause(); } }),
-        ...(this.launch.onRestart ? { onRestart: this.launch.onRestart } : {}),
-        ...(tester ? { onTester: tester.openPanel } : {}),
-      });
-      if (tester) {
-        this.cleanups.push(
-          tester.session.attachArena({ cheat: (c) => { this.arenaCheat(c); }, bench: () => benchRows(world, 0), arcade: world.state.arcade.length > 0 }),
-        );
-      }
-      const live = createLiveRegion();
-      this.announcer = new Announcer((text, assertive) => { live.speak(text, assertive); }, () => performance.now());
-      this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
-      this.announcer.say(MATCH_START);
-      let second: KeyboardAgent | undefined;
-      if (this.launch.local2) {
-        // Player 2: its own keys and the second pad; pause, mute and cheats stay Player 1's (no onEffect, cheats off).
-        second = new KeyboardAgent({
-          capturable: () => true,
-          bindings: P2_BINDINGS,
-          gamepad: () => nthPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null, 1),
-          cheatsEnabled: false,
-          arcade,
-        });
-        this.cleanups.push(second.attach(counted(window)));
-      }
-      this.second = second;
-      this.agents = [this.launch.net?.agent ?? keyboard, second ?? this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
-      let labelled: { bindings: Bindings; labels: KeyLabels } | undefined;
-      const labels = (): KeyLabels => {
-        const b = keyboard.currentBindings();
-        if (labelled?.bindings !== b) labelled = { bindings: b, labels: labelsFromBindings(b) };
-        return labelled.labels;
-      };
-      this.actionBar = new ActionBarView(
-        this,
-        this.view,
-        (cmd) => {
-          this.clicks.push(cmd);
-          keyboard.press(cmd);
-        },
-        0,
-        labels,
-        true,
-        arcade ? () => screenBox(this) : undefined,
-        false,
-        wantsGroupedBar(window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test') ? groupSlots : undefined,
-      );
-      if (second) {
-        const p2Labels = shortLabels(labelsFromBindings(P2_BINDINGS));
-        this.actionBar2 = new ActionBarView(this, this.view, () => undefined, 1, () => p2Labels, true, arcade ? () => screenBox(this) : undefined, true);
-      }
-      this.cleanups.push(keyboard.attach(counted(window)));
+      this.keyboard = input.keyboard;
+      this.second = input.second;
+      this.pauseDialog = input.pauseDialog;
+      this.announcer = input.announcer;
+      this.agents = [this.launch.net?.agent ?? input.keyboard, input.second ?? this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
+      this.actionBar = input.actionBar;
+      this.actionBar2 = input.actionBar2;
     }
     if (this.session) {
       const session = this.session;
