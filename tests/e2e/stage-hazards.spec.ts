@@ -4,8 +4,6 @@ import { ARENA_READY, START, collectErrors } from './parity/helpers';
 // The stage hazard telegraph (stage-selection-hazards), in game on every element stage: the hero of that element calls its
 // weather to swap the stage, then the sim steps until the hazard warns. A shot of the warning and of the strike goes to the
 // test output dir (HAZARD_OUT keeps them elsewhere) for the grim-look review. The reduced-motion block checks the pulse holds.
-const VIEWPORT = process.env.HAZARD_VIEWPORT?.split('x').map(Number); // e.g. 844x390 for the phone shots
-if (VIEWPORT?.length === 2) test.use({ viewport: { width: VIEWPORT[0] ?? 1280, height: VIEWPORT[1] ?? 720 } });
 const WEATHER = 1 << 14;
 const INTRO = 91;
 const CASES: ReadonlyArray<readonly [string, string, number]> = [['fire', 'sindarosa', 1], ['water', 'curomo', 2], ['earth', 'rokcore', 3], ['air', 'echo', 4]];
