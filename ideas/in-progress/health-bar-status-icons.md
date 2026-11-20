@@ -18,3 +18,4 @@ Epic: [street-fighter-feel](../epics/street-fighter-feel.md)
 ## Progress
 
 - 2026-11-20: burn, venom (hostile) and mend (friendly) over-time statuses now get chips (`BURN`/`VENOM`/`MEND`), read from the existing status list; `isHostile` in buffs.ts updated. Test in status-icons.test.ts. Still open: a dedicated icon line-art for these three (art-free: could reuse CC_ICONS style), and a real-game screenshot of a burning hero.
+- 2026-11-20: real-game headless screenshot (Arcade, withOverTime, burn/venom/mend granted via grantStatus) shows chips `BURN 8s`, `VENOM 6s` (red, cross) and `MEND 4s` (green, plus) under the health bar, no overlap or defect; shot at .scratch/shots/ot-chips.png.
