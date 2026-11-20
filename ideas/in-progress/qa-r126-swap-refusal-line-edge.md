@@ -1,6 +1,6 @@
 # "Swap ready in 2.2s" refusal line hugs the left screen edge
 
-status: idea
+status: in-progress
 added: 2026-11-19
 
 Severity: cosmetic
@@ -11,3 +11,5 @@ Repro: ?manual=1&seed=7&ff=arcade#arcade, Team 2v2, Fight, step 91, hold 3 for o
 Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a84dea11ac10d7faf/.scratch/qa-r126/shots/43-tag-refused.png
 
 Suggested fix: give the refusal line a left inset of at least 24 px (match the bar inset) and a text shadow plate, or move it by the benched hero portrait where the TAG timer already shows, so one spot owns the cooldown message.
+
+Progress (2026-11-20): left inset raised from 4 to 24 design px (NOTICE_INSET_X in src/game/hud/swap-notice.ts), pin test added. The line already has the engraved outline from styleCombatText; no plate added.

@@ -1,7 +1,7 @@
 import { Cmd, SwapBlock } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { arcadeAvatar, AVATAR_SIZE, mainBar, sideOffset } from './bars';
-import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapRefusalLine, swapSeconds, swapSlotOf, SWAP_BUSY_LINE, SWAP_BUSY_TICKS, busySwapDue } from './swap-notice';
+import { NOTICE_INSET_X, NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapRefusalLine, swapSeconds, swapSlotOf, SWAP_BUSY_LINE, SWAP_BUSY_TICKS, busySwapDue } from './swap-notice';
 
 describe('swapRefusalLine', () => {
   const B = SwapBlock;
@@ -95,5 +95,11 @@ describe('busy swap line', () => {
     expect(busySwapDue(10, 13, 3)).toBe(false);
     expect(busySwapDue(10, 14, 3)).toBe(true);
     expect(busySwapDue(10, 5, 3)).toBe(false);
+  });
+});
+
+describe('NOTICE_INSET_X', () => {
+  it('keeps the refusal line at least 24 design px off the left screen edge (QA r126)', () => {
+    expect(NOTICE_INSET_X).toBeGreaterThanOrEqual(24);
   });
 });
