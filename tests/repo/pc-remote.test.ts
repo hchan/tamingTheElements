@@ -133,9 +133,24 @@ describe('pc-remote', () => {
     for (let i = 0; i < 50 && !existsSync(join(jobDir, 'pid')); i++) await wait(100);
     await wait(300);
     writeFileSync(join(jobDir, 'status.json'), '{"state":"running"}');
-    const st = await follow(remote, 'id-4', sink(), quiet);
+    process.env['TTE_LOST_POLLS'] = '3';
+    const err = sink();
+    const st = await follow(remote, 'id-4', sink(), { ...quiet, err });
     expect(st.state).toBe('lost');
     expect(exitCodeOf(st)).toBe(93);
+    expect(err.text()).toContain('nothing else of ours was running');
+  });
+
+  it('does not declare lost when the final status lands inside the grace window', async () => {
+    await submit(remote, 'id-4b', makeJob('exit 0'));
+    const jobDir = join(home, 'tte-offload/jobs/id-4b');
+    for (let i = 0; i < 50 && !existsSync(join(jobDir, 'pid')); i++) await wait(100);
+    await wait(300);
+    writeFileSync(join(jobDir, 'status.json'), '{"state":"running"}');
+    process.env['TTE_LOST_POLLS'] = '60';
+    setTimeout(() => { writeFileSync(join(jobDir, 'status.json'), '{"state":"done","rc":0,"result":"ok"}'); }, 1000);
+    const st = await follow(remote, 'id-4b', sink(), quiet);
+    expect(st.state).toBe('done');
   });
 
   it('passes through the PC busy exit 95 and frame exit 96 from the job status', async () => {
