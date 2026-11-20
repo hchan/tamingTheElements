@@ -1,4 +1,13 @@
 {
   "schema": 1,
-  "entries": []
+  "entries": [
+    {
+      "file": "tests/e2e/perf.spec.ts",
+      "titleIncludes": "stepped battle frame time under SwiftShader",
+      "tier": "P2",
+      "firstSeen": "2026-11-20",
+      "idea": "ideas/brainstorm/perf-spec-frame-time-flaky-under-load.md",
+      "status": "open"
+    }
+  ]
 }
