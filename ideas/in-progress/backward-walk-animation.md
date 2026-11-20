@@ -27,3 +27,11 @@ Owner idea (2026-11-14): heroes need a real animation for walking backwards. Mov
 - Tests: `locomotion.test.ts`, `pose-layer.test.ts`, `tests/e2e/move-backward.spec.ts` (probe `arena.sheets()` now reports `back`).
 - Screenshot strips in `~/claudetmp/shots/backward-walk/strip-*.png` were not informative (the crop caught a crystal effect over the hero); the e2e probe asserts the frame order instead. Gait constants were not tuned by eye.
 - Phase 2: see `ideas/brainstorm/backward-walk-baked-rows.md`.
+
+## Progress: scoping 2026-11-20
+
+- Phase 1 (pose-layer transform, per-hero `BACK_GAIT` table, tests, e2e probe) is already landed; the open question "pose-layer vs baked frames" is answered: transform now, baked later.
+- What remains is Phase 2, `ideas/brainstorm/backward-walk-baked-rows.md`: a baked "walk-back" row per hero.
+- Size: large and risky. It needs the rig/bake pipeline (tools/), a change to `assets/sheet-spec.ts` (WALK_FRAMES pin), regenerated sheets and atlas manifest, size-budget edits, and art-director approval of new art, i.e. art generation plus shared files. More than 8 files.
+- The other open item (per-hero tuning by eye with screenshot strips) is subjective art tuning; the earlier strips were not informative, so it needs a better capture method first.
+- Decision: no build in this pass, nothing small left to implement. Next step is an Opus planner for Phase 2 (rig/bake plan, sheet-spec change, manifest and budget impact).
