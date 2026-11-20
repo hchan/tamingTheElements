@@ -365,12 +365,6 @@
     "waitForTimeout": 0,
     "expects": 5
   },
-  "online-leave.spec.ts": {
-    "poll": 0,
-    "waitForFunction": 1,
-    "waitForTimeout": 0,
-    "expects": 10
-  },
   "own-element-fx.spec.ts": {
     "poll": 1,
     "waitForFunction": 1,

@@ -48,8 +48,6 @@
     "ai:stalemates": "tsx tools/sim/stalemate-probe.ts",
     "ai:wallpin": "tsx tools/sim/wall-pin-probe.ts",
     "size:check": "tsx tools/ci/size-check.ts",
-    "relay": "tsx tools/signal-relay/server.ts",
-    "soak:webrtc": "tsx tools/ci/browser-slot.ts -- tsx tools/ci/webrtc-soak.ts",
     "e2e:flake": "tsx tools/ci/e2e-route.ts flake",
     "ci:local": "tsx tools/ci/local-ci.ts",
     "e2e:durations": "tsx tools/ci/e2e-durations.ts",

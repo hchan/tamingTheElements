@@ -87,7 +87,7 @@ describe('save migration', () => {
     expect(migrate(r.value)).toEqual(r);
   });
 
-  it('turnServer (online relay) is optional: absent after migration, preserved when present', () => {
+  it('an old save with a turnServer field still loads (retired setting, kept as an unknown key)', () => {
     for (const [path, raw] of Object.entries(files)) {
       const r = migrate(unwrap(raw));
       expect(r.ok && 'turnServer' in r.value, path).toBe(false);

@@ -7,7 +7,7 @@ compares hashes but never simulates. This page is the overview with diagrams; th
 - browser client: [ONLINE-CLIENT.md](ONLINE-CLIENT.md)
 - relay package and conformance suite: [RELAY-PACKAGE.md](RELAY-PACKAGE.md)
 - measurement harness: [ONLINE-MEASURE.md](ONLINE-MEASURE.md)
-- session, rollback and the WebRTC path: [NETCODE.md](NETCODE.md); determinism contract: [DETERMINISM.md](DETERMINISM.md)
+- session and rollback: [NETCODE.md](NETCODE.md); determinism contract: [DETERMINISM.md](DETERMINISM.md)
 
 Every number carries a label. **[fact]** is read from the code or a doc that quotes it; **[choice]** is a value the spec fixes; **[estimate]** is
 reasoned and not measured; **[measurement]** comes from the local harness on a virtual clock (not from any real network). Hosts are placeholders
@@ -20,7 +20,7 @@ Goals:
 
 - Two players, one match, the same result on both screens. Only inputs travel (a `Command` is 4 bytes on the wire (17 bits) [fact]); state never does.
 - The sim stays pure: the network is an input source, so a lost or late packet costs a stall or a rollback, never a divergence.
-- The transport is replaceable behind one small interface, so WebRTC and WebSocket share the session, codec and handshake.
+- The transport is replaceable behind one small interface, so any adapter shares the session, codec and handshake.
 - The relay is a transport-agnostic state machine over two seams (`Store`, `Sender`), so any host can run it and the repo never knows which.
 - Players see plain words: "Play", "Versus", "Online"; failures are friendly ("The game is resting", "Update needed").
 
@@ -39,7 +39,6 @@ flowchart TD
   SIM["Sim (src/core/sim): pure 50 Hz step"]
   SES["Session (src/core/net): LockstepSession, Packet codec, handshake"]
   TR["Transport contract: send / receive bytes"]
-  RTC["WebRTC adapter (src/game/net)"]
   WS["WebSocketTransport (src/game/net/ws)"]
   CLI["OnlineClient (src/game/net/ws)"]
   RC["Relay core (src/core/relay): RelayCore, codec, ReorderBuffer"]
@@ -84,8 +83,7 @@ flowchart LR
   SEND -->|binary frames| T1
 ```
 
-Today no menu entry or Arena wiring uses the online client; the client, transport, relay core and harness are built and tested, and the WebRTC path
-is the one players can reach [fact: ONLINE-CLIENT status].
+Online play is WebSocket only: the quick match screen (`VITE_ONLINE_URL` builds) uses the client, transport and relay core described here [fact: ONLINE-CLIENT status].
 
 ## 3. Lockstep and rollback
 
@@ -141,23 +139,19 @@ Both transports honour it, so the session, packet codec and determinism rules ar
 flowchart TD
   SES["LockstepSession"] --> IF["Transport: send / receive"]
   SES --> CP["ControlPipe: reliable setup messages"]
-  IF --> A1["WebRTC input channel: unordered, no retransmit"]
-  CP --> A2["WebRTC control channel: reliable, ordered"]
   IF --> B1["WebSocketTransport: BATCH frames + reorder buffer"]
   CP --> B2["ControlLink: SETUP frames, ctlSeq and ackCtl"]
-  A1 --> P2P["Peer to peer, STUN and optional TURN"]
-  A2 --> P2P
   B1 --> RLY["Relay over one WebSocket per player"]
   B2 --> RLY
 ```
 
-| Aspect | WebRTC path | WebSocket relay path |
-|---|---|---|
-| Topology | peer to peer; signalling by copied code or the small room relay in `tools/signal-relay/` | client to relay to client |
-| Input channel | datagram-like, drops stale data | BATCH frames; the reorder buffer drops duplicates and skips gaps |
-| Control channel | second reliable channel | `SETUP` frames with `ctlSeq` / `ackCtl` |
-| Fails when | strict NAT without TURN | relay unreachable or resting |
-| Status | reachable by players ([NETCODE.md](NETCODE.md)) | client and relay built and tested, not yet in the menu |
+| Aspect | WebSocket relay path |
+|---|---|
+| Topology | client to relay to client |
+| Input channel | BATCH frames; the reorder buffer drops duplicates and skips gaps |
+| Control channel | `SETUP` frames with `ctlSeq` / `ackCtl` |
+| Fails when | relay unreachable or resting |
+| Status | the only online path; quick match screen in `VITE_ONLINE_URL` builds |
 
 ## 5. Guest login, ticket and connect
 
@@ -226,7 +220,7 @@ sequenceDiagram
 ```
 
 Room rules [fact: `src/core/relay/rooms-rules.ts`]: 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I), life 10 minutes, at most 2000
-rooms in one store (a host adapter may set its own cap [estimate]), codes upper-cased before lookup. The WebRTC signalling relay keeps its own copy (`tools/signal-relay/rooms.ts`); `tests/repo/room-code-rules-drift.test.ts` keeps the two equal [fact]. A connection that is already queued or in a room gets ERROR `busy`.
+rooms in one store (a host adapter may set its own cap [estimate]), codes upper-cased before lookup. The browser client keeps its own copy (`src/game/net/relay.ts`); `tests/repo/room-code-rules-drift.test.ts` keeps the two equal [fact]. A connection that is already queued or in a room gets ERROR `busy`.
 
 ## 7. Match lifecycle
 
@@ -300,7 +294,6 @@ Constants [fact: `constants.ts`]: hold at most 8 frames, skip after 40 ms (2 tic
 every input the peer has not acked.
 
 | | Merged code today | Target, landing in WP-ONLINE-FIX |
-|---|---|---|
 | Numbered frames | BATCH, PAUSE, HASH, DESYNC, RESULT share one per-sender counter that starts at 0 and is not reset per match [fact: `WebSocketTransport.nextSeq`] | only BATCH and PAUSE carry seq; HASH, DESYNC and RESULT are idempotent, matched by `matchId` and retried |
 | Match counter | `MATCH_START.matchId` is 0 for every match [fact: `RelayCore.startMatch`] | a counting `matchId`, from 1 per pair; each rematch increments it |
 | Seq reset | counter continues across a reconnect | counter resets per match, so a new match starts at 0 |
@@ -537,7 +530,6 @@ flowchart LR
 ```
 
 | Quantity | Value | Label |
-|---|---|---|
 | Messages per second per match, batchEvery 1 / 2 / 3 | 204.1 / 104.0 / 70.6 | measurement (local harness, virtual clock, `typical` profile) |
 | Same, batchEvery 3 | about 67, arithmetic on BATCH frames only | estimate (the 3.6 msgs/s gap is PING, HASH and RESULT) |
 | One-way latency through a hosted backend | 90 to 120 ms | estimate, never measured |
@@ -585,7 +577,6 @@ flowchart TD
 ## 19. Open questions
 
 | # | Question | Owner |
-|---|---|---|
 | 1 | Does the chosen backend deliver sends in order, and does it drop frames silently? If so, SETUP and RESULT lean on sender retries | backend adapter owner |
 | 2 | Latency budget: 90 to 120 ms one way [estimate] plus `batchEvery` 3 against rollback window 6; may force `inputDelay` 4 or `batchEvery` 2 | netcode owner, after a real measurement |
 | 3 | Message billing at about 67 msgs/s per match [estimate] and per-connection rate limits | backend adapter owner |
@@ -596,8 +587,8 @@ flowchart TD
 | 8 | Per-match state across invocations needs a store; check its cost per match | backend adapter owner |
 | 9 | Kill switch scope: let a running match finish (current rule: until the match ends or 60 s) or cut it | product owner |
 | 10 | Origins and the itch build: both origins allowed, same base URL baked into each build | release owner |
-| 11 | Wiring: the Arena and menu do not use the online client yet; HASH, RESULT and DESYNC senders are called only by the harness | client owner |
-| 12 | Retirement of the WebRTC path once the relay path is proven | product owner |
+| 11 | Wiring: quick match wires the Arena and menu to the online client; check whether HASH, RESULT and DESYNC senders are still called only by the harness | client owner |
+| 12 | ~~Retirement of the WebRTC path~~ done: WebRTC is removed, Online is WebSocket only | product owner |
 
 ## 20. Where the code is
 
@@ -606,7 +597,7 @@ flowchart TD
 | Session, packet, handshake, `Transport` | `src/core/net/` |
 | Relay core, codec, store seams, reorder buffer, conformance | `src/core/relay/` |
 | WebSocket transport, control link, client, config | `src/game/net/ws/` |
-| WebRTC adapters and signalling | `src/game/net/`, `tools/signal-relay/` |
+| Room-code rules for the browser client | `src/game/net/relay.ts` |
 | Online quick match screen (`VITE_ONLINE_URL` builds), route switch | `src/game/app/online-quick*.ts`, `online-route.ts`, `online-arena.ts` (see [ONLINE-CLIENT.md](ONLINE-CLIENT.md) "Screen") |
 | Measurement harness | `src/testing/net/online-measure.ts`, `tools/online-measure.ts` |
 | Package build | `packages/relay/`, `tools/relay-package/` |

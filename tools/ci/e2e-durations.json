@@ -74,11 +74,6 @@
     "move-backward.spec.ts": { "sec": 110, "tests": 5 },
     "move-wings-knees.spec.ts": { "sec": 43, "tests": 3 },
     "no-touch-stick.spec.ts": { "sec": 11, "tests": 1 },
-    "online-copy-paste.spec.ts": { "sec": 2, "tests": 1 },
-    "online-leave.spec.ts": { "sec": 55, "tests": 2 },
-    "online-match.spec.ts": { "sec": 524, "tests": 4 },
-    "online-relay.spec.ts": { "sec": 17, "tests": 2 },
-    "online-versus.spec.ts": { "sec": 104, "tests": 8 },
     "own-element-fx.spec.ts": { "sec": 37, "tests": 7 },
     "pad-deadzone.spec.ts": { "sec": 3, "tests": 1 },
     "parity/golden-paths.spec.ts": { "sec": 62, "tests": 13 },
@@ -120,7 +115,6 @@
     "versus-desktop-grid.spec.ts": { "sec": 5, "tests": 2 },
     "versus-hero-pick.spec.ts": { "sec": 12, "tests": 4 },
     "versus-stage-pick.spec.ts": { "sec": 50, "tests": 5 },
-    "weather-particles.spec.ts": { "sec": 76, "tests": 2 },
-    "webrtc-peer.spec.ts": { "sec": 5, "tests": 1 }
+    "weather-particles.spec.ts": { "sec": 76, "tests": 2 }
   }
 }

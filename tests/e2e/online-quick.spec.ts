@@ -8,7 +8,7 @@ import { InMemoryStore } from '../../src/core/relay/testing';
 // is set (docs/ONLINE-CLIENT.md): Find on both, matched, hero pick, Ready on both, the arena starts. The online service is
 // the real RelayCore (src/core/relay) behind a Playwright interception of the placeholder host (HTTP /session and /ticket, and the
 // WebSocket), so nothing leaves the machine and no real address is involved. The spec builds its own bundle with the variable set
-// (the shared e2e build must stay unconfigured, because the other Online specs drive the WebRTC screen), so it is self-contained.
+// so it is self-contained.
 //
 // Run (the coordinator, on the PC): corepack pnpm e2e -- tests/e2e/online-quick.spec.ts
 
@@ -124,10 +124,9 @@ test('two pages find each other, pick heroes and start the arena', async ({ brow
   }
   const [a, b] = pages as [Page, Page];
 
-  // The build is configured: the guest-first quick match, not the WebRTC screen.
+  // The build is configured: the guest-first quick match.
   for (const p of pages) {
     await expect(p.locator('#quickFind')).toBeVisible({ timeout: 30_000 });
-    await expect(p.locator('#onlineRoleHost')).toHaveCount(0);
   }
 
   // Queued (the second Find completes the pair), then matched with the hero pick.

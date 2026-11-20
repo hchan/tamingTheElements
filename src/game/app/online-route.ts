@@ -1,25 +1,15 @@
 import type { ScreenFactory } from '@ui/screens/screen';
-import { onlineConfig, type OnlineConfig } from '../net/ws/config';
 import { lazyScreen } from './lazy-screen';
 
 /**
- * The Online menu route. A build with an online service configured (VITE_ONLINE_URL, read only by `onlineConfig`) opens the
- * guest-first quick match; any other build keeps the existing peer-to-peer Online screen unchanged. Both screens stay in their own
- * lazy chunks, so the menu entry loads neither.
+ * The Online menu route: always the guest-first quick match, in its own lazy chunk so the menu entry loads nothing. A build with
+ * no online service configured (VITE_ONLINE_URL, read only by `onlineConfig`) shows the quick match's "not available" message.
  */
-export function onlineRoute(config: OnlineConfig = onlineConfig()): ScreenFactory {
-  if (config.configured) {
-    return lazyScreen(
-      () => import('./online-quick'),
-      'Online',
-      (a, c) => { a.mountQuickMatch(c); },
-      (a) => { a.unmountQuickMatch(); },
-    );
-  }
+export function onlineRoute(): ScreenFactory {
   return lazyScreen(
-    () => import('./online-versus'),
+    () => import('./online-quick'),
     'Online',
-    (a, c) => { a.mountOnline(c); },
-    (a) => { a.unmountOnline(); },
+    (a, c) => { a.mountQuickMatch(c); },
+    (a) => { a.unmountQuickMatch(); },
   );
 }

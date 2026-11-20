@@ -1,8 +1,7 @@
 # Online protocol (WebSocket relay)
 
-Wire spec for online play through a relay server over one WebSocket per player. Status: **implemented** by `src/core/relay` (relay) and `src/game/net/ws` (client); this document is the contract both follow. It replaces
-the WebRTC path later; until then the WebRTC path described in [WEBRTC-PLAN.md](WEBRTC-PLAN.md) and [NETCODE.md](NETCODE.md) (data channels, SDP codes,
-STUN/TURN, the optional signalling relay in `tools/signal-relay/`) stays as it is. Only the transport changes: the lockstep/rollback session, the
+Wire spec for online play through a relay server over one WebSocket per player. Status: **implemented** by `src/core/relay` (relay) and `src/game/net/ws` (client); this document is the contract both follow. It replaced
+the retired WebRTC path ([WEBRTC-PLAN.md](WEBRTC-PLAN.md), history only). The transport is the only seam: the lockstep/rollback session, the
 `Packet` codec, the handshake and the determinism rules ([DETERMINISM.md](DETERMINISM.md)) are reused unchanged. Hosts and URLs below are placeholders
 (`relay.example.invalid`); the real backend address is never written in the repo.
 
@@ -16,7 +15,7 @@ proposes). Estimates must be verified before anything depends on them.
   frame carries a sender-assigned `seq` (u32); the receiver reorders and drops duplicates (section 6). The existing `Transport` contract is already
   "unreliable, unordered, duplicates allowed" [fact: `src/core/net/transport.ts`], so a late or missing frame costs a stall or a rollback, never a desync.
 - **Reliability.** TCP never loses frames while the socket lives, but it blocks everything behind a delayed segment (head-of-line blocking, section 8).
-- **Trust.** The relay is not a simulator. It sees inputs and hashes only. Both clients simulate everything (WEBRTC-PLAN trust model [fact]); the
+- **Trust.** The relay is not a simulator. It sees inputs and hashes only. Both clients simulate everything (trust model in [NETCODE.md](NETCODE.md) [fact]); the
   server uses the hash checkpoints and the result submission only to detect disagreement.
 - **Integers** are big-endian (matches `packet.ts` `DataView` calls [fact]). Frames are WebSocket **text** messages holding the frame's bytes as **base64** (standard alphabet, `=` padding, RFC 4648 section 4, no line breaks, no URL-safe variant), in both directions. A binary message is a protocol error (ERROR `0x0001 bad-frame`). Why: API Gateway closes a client's binary frame with 1003. Base64 adds about a third to the size [estimate: 4 chars per 3 bytes]; the largest frame (410 bytes) is about 548 characters. Sizes in section 4 are the decoded byte sizes.
 
@@ -119,7 +118,7 @@ Details:
   a disagreement gives `2`, and the server stores neither as a win. A hash divergence found by the relay arrives as an **unsolicited** RESULT_ACK `2` with the real `matchId` and no preceding RESULT; a RESULT whose peer is gone or swept also gets RESULT_ACK `2`. The client treats every RESULT_ACK of the current match alike: it stops the RESULT retry, leaves the in-match state and emits it, so the app reads `status 2` as the end of the match. The server does no simulation; a replay upload for verification with
   `tools/replay-verify.ts` logic (`parseReplay` + `playReplay`, hash per 50 ticks plus `finalHash`) is a later option [fact for the verifier, design for the upload].
 - **Room code.** 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I) [fact: `rooms.ts` `CODE_ALPHABET`, `CODE_LENGTH`]. Room life 10 min
-  [fact: `ROOM_TTL_MS`], a room holds host and one guest, at most 2000 rooms [fact: `MAX_ROOMS`; the hosted backend sets its own cap, estimate]. The relay core keeps its own copy of these rules (`src/core/relay/rooms-rules.ts`, held equal to `tools/signal-relay/rooms.ts` by `tests/repo/room-code-rules-drift.test.ts`); the signalling relay's messages (`host`/`join`/`sig`) were JSON text and are replaced by the frames here.
+  [fact: `ROOM_TTL_MS`], a room holds host and one guest, at most 2000 rooms [fact: `MAX_ROOMS`; the hosted backend sets its own cap, estimate]. The relay core keeps its own copy of these rules (`src/core/relay/rooms-rules.ts`, held equal to the browser client's copy in `src/game/net/relay.ts` by `tests/repo/room-code-rules-drift.test.ts`).
 - **MATCH_START** fixes everything both sides must agree on: the shared `seed`, slot (0 = host/first joiner = side 0), `inputDelay` (2 by default, adaptive
   up to 4 in the session [fact]) and `batchEvery`. Rosters still go through SETUP (the existing handshake, `MatchSetup` equality check [fact]) before tick 0.
 - **Heartbeat.** PING every 2 s [choice]; the client keeps the last 5 round trips and grades the link with `link-quality.ts` (median, `>=100 ms` fair,
@@ -207,7 +206,7 @@ burst-after-stall behaviour of TCP; a WebSocket-style netsim mode that holds all
 | Sim rate | 50 ticks/s | fact |
 | Batch size | 12 + 2n + 8m bytes, max 172 | fact |
 | Typical batch | n about 4-8 unacked inputs, m = 1-4 hashes: about 30-60 bytes plus 5 frame bytes | estimate |
-| Today's WebRTC send rate | one packet per `update`, 50/s per side | fact: `sendPacket` in `session.ts` |
+| Send rate (as measured on the retired WebRTC path) | one packet per `update`, 50/s per side | fact: `sendPacket` in `session.ts` |
 | Billed messages, 1 batch per tick | 2 players x 50/s x (1 in + 1 out) = 200 msgs/s per match | estimate (arithmetic) |
 | Billed messages with `batchEvery = 3` | 2 x 16.7 x 2 = **about 67 msgs/s per match** | **estimate**, cost model unverified |
 | One-way latency through the relay | **90-120 ms** typical | **estimate**, to measure per region (client to backend to client) |
@@ -234,8 +233,8 @@ Input is 2 bytes per tick, so `batchEvery = 3` still fits 64 inputs with large m
 8. **Server-side hash/result checks** need the server to hold per-match state across invocations (a store). The backend may offer only a small key-value store; check the cost per match.
 9. **Kill switch scope.** `resting` stops new sessions immediately; whether in-progress matches are allowed to finish is a policy choice (above: after the match or 60 s).
 10. **Region and CORS.** Cross-origin HTTPS from the Pages origin and the itch.io origin; both origins must be allowed, and the itch build needs the same base URL baked in.
-11. **WebRTC removal.** Until it is removed, the two transports must coexist: the `Transport` seam (`send`/`receive`) is the only join point, so a `WebSocketTransport` adapter that wraps and unwraps the
-    `0x40` frame (adding and checking `seq`) is the natural, small change; the control side (`SETUP`, rematch) replaces the `control` data channel.
+11. **WebRTC removal.** Done: WebRTC is removed and the `Transport` seam (`send`/`receive`) has one adapter, `WebSocketTransport`, which wraps and unwraps the
+    `0x40` frame (adding and checking `seq`); the control side (`SETUP`, rematch) carries setup and rematch.
 
 
 ## Relay decisions the client follows (WP-ONLINE-FIX-CLIENT)

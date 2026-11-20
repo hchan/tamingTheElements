@@ -164,7 +164,7 @@ export function defaultScreens(): ScreenTable {
     replay: placeholderScreen('Replay viewer'),
     // The app wires the lazy Arcade Versus screen (src/game/app/main.ts); it is opt-in (Settings or `?ff=arcade`).
     arcade: placeholderScreen('Versus'),
-    // The app wires the lazy online screen (src/game/app/online-versus.ts).
+    // The app wires the lazy online screen (src/game/app/online-quick.ts).
     online: placeholderScreen('Online'),
     // The app wires the lazy World Tour screen (src/game/app/tour.ts); opt-in like Arcade.
     tour: placeholderScreen('Play'),

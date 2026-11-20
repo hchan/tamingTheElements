@@ -23,5 +23,5 @@ Source: read-only review of `src/game/net/ws/*` against the backend (2026-11-19)
 9. 429 without a code: generic message. 10. Clock-skew margin on session expiry. 11. Code 9 ERROR in play is ignored (probably fine).
 
 ## Notes
-- Each needs a test in the integration layer (see the WebRTC-removal plan, `.scratch/plans/webrtc-removal.md`); sequence after the removal merge to avoid two agents in `online-client.ts`.
+- Each needs a test in the integration layer (the WebRTC removal has merged, so `online-client.ts` is free).
 - Estimate: item 1 is small (one condition plus tests); do it first.

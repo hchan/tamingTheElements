@@ -33,9 +33,9 @@ describe('@smoke set', () => {
     for (const s of specs) expect(s.tests.map((t) => t.projectName), s.title).toEqual(['chromium']);
   });
 
-  it('covers the core path: boot, menu, versus, online connect, desktop viewports', () => {
+  it('covers the core path: boot, menu, versus, desktop viewports (online has no @smoke spec: the quick-match spec builds its own bundle and takes minutes)', () => {
     const files = new Set(specs.map((s) => s.file));
-    for (const f of ['smoke.spec.ts', 'arcade.spec.ts', 'versus-hero-pick.spec.ts', 'online-versus.spec.ts', 'responsive.spec.ts', 'match-end.spec.ts', 'pause-menu.spec.ts']) {
+    for (const f of ['smoke.spec.ts', 'arcade.spec.ts', 'versus-hero-pick.spec.ts', 'responsive.spec.ts', 'match-end.spec.ts', 'pause-menu.spec.ts']) {
       expect(files, f).toContain(f);
     }
   });
