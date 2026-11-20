@@ -279,7 +279,7 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 
 ### Tiered gate (`tools/ci/gate.ts`)
 
-- `pnpm gate:commit` (T1, Mac, target under 5 min, no browser): lint, typecheck, depcruise, test, test:dom, test:legacy, build, size:check. lint and test run concurrently (buffered output printed in step order, the other is killed on the first failure; eslint caches in `.scratch/eslintcache`, keyed on file content and config), the rest in sequence. Fail-fast; `--keep-going`, `--force` (ignore a stamp), `--json`, `--no-stamp`, `--hook` (for a pre-push hook: keyed on HEAD, quiet). Exit 0 pass, 1 a step failed, 2 usage or hook refusal.
+- `pnpm gate:commit` (T1, Mac, target under 5 min, no browser): lint, typecheck, depcruise, test, test:dom, test:legacy, build, size:check. lint and test run concurrently (buffered output printed in step order, the other is killed on the first failure; eslint caches in `.scratch/eslintcache`, keyed on file content and config; `gate:commit` lints only files changed vs the merge-base with main plus dirty ones, and everything for `--full`, `gate:push`, `--hook` or a change to eslint.config.*, tsconfig*, package.json or pnpm-lock.yaml), the rest in sequence. Fail-fast; `--keep-going`, `--full`, `--force` (ignore a stamp), `--json`, `--no-stamp`, `--hook` (for a pre-push hook: keyed on HEAD, quiet). Exit 0 pass, 1 a step failed, 2 usage or hook refusal.
 - Pre-push hook docs-only rule (`.claude/hooks/pre-push-local-ci.sh`): for a plain `git push [origin [HEAD|<current branch>]]` whose range `origin/main...HEAD` (renames split into delete + add) touches only `.claude/`, `docs/`, `ideas/` or `*.md`, the hook runs `pnpm exec vitest run tests/repo` instead of `gate:commit` (many repo tests read those trees), then `gate:push --verify` as usual, and prints which rule applied. Any other change runs `gate:commit --hook` then `gate:push --verify`.
 - `pnpm gate:push` (T2): T1 (reused through its stamp), then `@smoke` plus the specs `tools/ci/touched-specs.ts` selects, run through the e2e router (PC first, Mac fallback only for short runs). Flags: `--base <ref>`, `--budget <s>`, `--max-tests <n>`, `--dry-run` (selection and router argv, runs nothing), `--verify` (no browser: passes when no e2e-relevant file changed since `origin/main` or a passing push stamp exists). It refuses (exit 2) when `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` is set or no PC is configured; the router's own exit codes (89, 94, 95, 96) are passed through and never retried. A run counts as passed on router exit 0 or when the router output has a `VERDICT: PUSH OK` line (only P2, known or flaky reds), in which case `gate:push` exits 0 and writes the stamp; BLOCKED, HOLD, NO VERDICT or no verdict line stay failures. Over about 8 min: Bash `run_in_background`.
 - Stamps are JSON files in `<git common dir>/tte-gate/` (shared by all worktrees), keyed by tree id (T1) or by a hash of the e2e-relevant blobs in HEAD (T2). `.claude/agent-memory`, `tools/ci/e2e-durations.json`, `tools/ci/long-gate-status.json` and `ideas/brainstorm/long-gate-*.md` do not change a T1 key. A stamp is convenience evidence, not proof; the newest 200 per kind are kept.
@@ -321,3 +321,54 @@ suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full
   job once on wake). `--dry-run` prints them, `--uninstall` removes them.
 - Tests: `tests/repo/nightly-status.test.ts` (pure logic), `tests/repo/nightly-e2e-cli.test.ts` (fake runner),
   `tests/repo/nightly-install.test.ts` (template has no host, user path or key). The live submit/attach path is untested until the first real night.
+
+### Nightly runbook (diagnose and fix)
+
+**How it runs.** Two LaunchAgents, `dev.tte.nightly-e2e-submit` (23:00, runs `nightly-e2e.ts submit`) and `dev.tte.nightly-e2e-collect` (07:30, runs `collect`), installed by `pnpm nightly:install` from `tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl` into `~/Library/LaunchAgents/<label>.plist`. Submit works in the detached worktree `.scratch/nightly-wt` (created on first use, then `git checkout --detach --force <sha>`); collect only reads the PC job.
+
+**Where state lives**
+
+| What | Path |
+|---|---|
+| Latest status | `<git common dir>/tte-gate/nightly-status.json` (`git rev-parse --path-format=absolute --git-common-dir`) |
+| Last 60 runs | `<git common dir>/tte-gate/nightly-history.jsonl` |
+| Script output (both phases) | `<git common dir>/tte-gate/nightly.log` |
+| Collected Playwright JSON | `<git common dir>/tte-gate/nightly-results.json` |
+| launchd stdout/stderr | `~/Library/Logs/dev.tte.nightly-e2e-submit.log`, `~/Library/Logs/dev.tte.nightly-e2e-collect.log` |
+
+**Reading the status** (`pnpm nightly:status`, always exits 0; the JSON also has `reason`, `exit`, `rawId`, `ranOn`)
+
+- `pass`: full run finished, no failures (`flaky` may still list tests that passed on retry).
+- `red`: finished with failures. `failed` lists file and title; `unrecorded` is the subset not covered by `tools/ci/known-red.json`. Those are the ones to act on.
+- `pending`: submitted, not collected. Normal between 23:00 and 07:30. If it is still pending the next day, collect did not run or could not finish: run `pnpm nightly:collect`.
+- `not-run`: nothing was learned, never read it as pass. `reason` says why: `git fetch failed`, `could not prepare the nightly worktree`, `no job id from the router`, `submit failed`, or the router exit code below.
+- Exit codes recorded in `exit`: 89 not routed to the PC, 93 PC job lost (closed browser or `state lost`; also what an overlapping run can cause), 94 PC unreachable, 95 PC busy, 96 PC refused the job, 97 PC not set up (run `pnpm gpu:setup`), 130 cancelled. Any other code shows as `router exit N`; 0 or 1 without a `results.json` shows `no results.json`.
+- **Stale:** a status whose `finishedAt` (or `startedAt`) is over 36 h old prints `STALE` and counts as `not-run`. It means a night was missed (Mac asleep or off, agents not installed, submit never reached the PC). Warning only; nothing blocks a push on it yet.
+- `nightly-e2e.ts` exits 2 (and runs nothing) if `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` is set in its environment. There is no Mac fallback by design.
+
+**Diagnosis commands**
+
+```sh
+corepack pnpm nightly:status                                  # what was recorded, with stale warning
+tail -n 60 "$(git rev-parse --path-format=absolute --git-common-dir)/tte-gate/nightly.log"
+tail -n 40 ~/Library/Logs/dev.tte.nightly-e2e-submit.log ~/Library/Logs/dev.tte.nightly-e2e-collect.log
+launchctl list | grep tte                                     # loaded? (second column = last exit status)
+launchctl print gui/$(id -u)/dev.tte.nightly-e2e-submit       # schedule, program, last exit
+launchctl kickstart -k gui/$(id -u)/dev.tte.nightly-e2e-submit   # run it now (same for -collect)
+corepack pnpm pc:probe                                        # PC health, load, whether a full run holds it
+corepack pnpm gpu:status                                      # job server queue; gpu:log shows a job's output
+```
+
+`launchctl kickstart -k` restarts the job if it is already running; `pnpm nightly:submit` and `pnpm nightly:collect` run the same code in the foreground when you want to watch it.
+
+**Fixes for the common failures**
+
+- **`not-run`, `PC not set up` (97) or `no job id from the router`, or the router says it would run locally:** `git config tte.remote` is missing in the checkout that launchd runs (worktrees do not always inherit it). Set `git config tte.remote <ssh-alias>` in the main checkout (never write the host, IP, user or key into the repo), then `pnpm gpu:setup` if the job server is missing, then kickstart submit.
+- **`PC unreachable` (94) or `PC busy` (95):** run `pnpm pc:probe`. If the PC or its WSL has gone idle or asleep, wake it with `pnpm gpu:status`, then retry. If another session's job holds it, wait: never kill another session's job. The status stays `not-run`; kickstart submit once the PC is free, then collect.
+- **Mac asleep at 23:00:** launchd runs a missed calendar job once on wake, but that can be late and the Mac is also needed at 07:30 for collect. The job lives on the PC, so a late collect is fine (`pnpm nightly:collect`). To keep the Mac awake overnight use System Settings, Battery (or Energy) "prevent automatic sleeping on power adapter", or run `caffeinate -i -t 28800 &` before leaving; `pmset -g log | grep -i -E "sleep|wake"` shows what the Mac did.
+- **Stale lock (a router or PC job lock left from a killed run):** `pnpm pc:probe` and `pnpm gpu:status` show whether a job is really running. If nothing is running and submit keeps reporting busy or refused, cancel only your own dead job through `pnpm gpu:cancel`, and see [.claude/rules/gpu-pc.md](../.claude/rules/gpu-pc.md) for the exit codes. Do not delete files on the PC by hand.
+- **Dirty or broken `.scratch/nightly-wt`** (`could not prepare the nightly worktree`): it is a throwaway detached checkout. From the repo root run `git worktree remove --force .scratch/nightly-wt` (or, if git no longer knows it, `rm -rf .scratch/nightly-wt && git worktree prune`), then kickstart submit, which recreates it. Never edit files in it.
+- **Agents missing or wrong path (repo moved, corepack changed):** `pnpm nightly:install --dry-run` prints the rendered plists, `pnpm nightly:install` (re)installs both (it boots out the old ones first), `pnpm nightly:install --uninstall` removes them (`--dry-run` with it only prints). Paths for the repo, corepack and `PATH` are fixed at install time, so reinstall after moving the checkout or upgrading node.
+- **`pending` forever:** the PC job may be gone. Run `pnpm nightly:collect`; if it records `not-run` with 93, treat the night as lost and resubmit with `pnpm nightly:submit`.
+
+**After a red night.** Every failure is fixed or recorded in `tools/ci/known-red.json` (with an `ideas/` file) before the next push; the full push rule, the single re-run and the `pnpm e2e:flake` stress run are in "Pushing after a full run" above. A `not-run` or stale night is not a verdict: re-run it, do not treat it as green.

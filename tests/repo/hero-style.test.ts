@@ -20,6 +20,15 @@ describe('roster split and hero style (roster WP 0.2)', () => {
     expect(styles.filter((x) => x === 'ranged')).toHaveLength(7);
   });
 
+  it('the final split is 3 melee and 3 ranged in every element, over all 24 heroes', () => {
+    for (const element of ['fire', 'water', 'air', 'earth']) {
+      const styles = CHARACTERS.filter((c) => c.element === element).map((c) => HERO_STYLE[c.id]);
+      expect(styles, element).toHaveLength(6);
+      expect(styles.filter((x) => x === 'melee'), element).toHaveLength(3);
+      expect(styles.filter((x) => x === 'ranged'), element).toHaveLength(3);
+    }
+  });
+
   it('the Arcade RANGED flag equals HERO_STYLE for every styled hero (roster WP 0.4)', () => {
     for (const [i, c] of CHARACTERS.entries()) {
       const style = HERO_STYLE[c.id];

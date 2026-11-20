@@ -23,15 +23,43 @@
   font: inherit;
   cursor: pointer;
 }
-/* Desktop and tablet: the label plus five chips need more than the 44em page, so lay them out as a grid of three columns (two rows of three). */
+/* Desktop and tablet: the label on its own line, left aligned with the panel, then the five chips in equal columns; the page-link row below shares the same grid (qa-r127: ragged 2/3/5 rows). */
 @media (min-width: 521px) and (min-height: 501px), (min-width: 521px) and (orientation: portrait) {
   #menu .helpJump {
     display: grid;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: repeat(5, 1fr);
+    align-items: stretch;
+    justify-items: stretch;
+  }
+  #menu ul.helpLinks {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5em;
+    padding: 0;
+    margin: 0 0 1em;
+    list-style: none;
+  }
+  #menu .helpLinks li,
+  #menu .helpLinks li a.menuButton {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
     justify-content: center;
+    text-align: center;
+  }
+  #menu .helpLinks li a.menuButton {
+    height: 100%;
+  }
+  #menu .helpJumpBtn,
+  #menu .helpLinks li a.menuButton {
+    font-size: 0.85em;
   }
   #menu .helpJumpLabel {
-    justify-self: end;
+    grid-column: 1 / -1;
+  }
+  #menu .helpJumpBtn {
+    padding-inline: 0.5em;
+    text-align: center;
   }
 }
 #menu .helpJumpBtn:hover,

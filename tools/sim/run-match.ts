@@ -16,6 +16,7 @@ import { kitKindOf } from '../../src/core/agents/scripted-ai/index';
 import type { AbilityDefB } from '../../src/core/data/abilities-b';
 import { arcadePlayfield } from '../../src/core/data/arcade';
 import { CHARACTERS, getCharacter, LEGACY_RACES } from '../../src/core/data/characters';
+import { isReleased } from '../../src/core/data/release';
 import { ELEMENTS, type Element, elementRelation } from '../../src/core/data/elements';
 import { characterId } from '../../src/core/data/ids';
 import type { AbilityDef } from '../../src/core/data/types';
@@ -37,6 +38,8 @@ import { formatStyleSummary, type StyleSummary, styleSummary } from './style-sum
 /** The 12 playable races (the dummy target and the Eternal Void boss are excluded). */
 /** The roster the tournament and the partner offsets run over by default: the legacy 12 (`--roster legacy`), so Classic numbers never move. */
 export const RACES: readonly string[] = LEGACY_RACES.map((id) => id as string);
+/** The legacy 12 plus the released roster24 heroes (`--roster released`); equal to RACES while RELEASED_ROSTER24 is empty. */
+export const RELEASED_RACES: readonly string[] = [...RACES, ...CHARACTERS.filter((c) => c.element !== 'void' && isReleased(c.id)).map((c) => c.id)];
 /** Every non-void hero of the full roster (`--roster full`); equal to RACES until the roster grows. */
 export const FULL_RACES: readonly string[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
 /** Elements of the 12 races, in the order of the matrix rows and columns. */
@@ -775,8 +778,8 @@ export function main(argv: readonly string[]): number {
       ...(values['no-traps'] === true ? { noTraps: true } : {}),
       ...(values.cc === true ? { cc: true } : {}),
     };
-    if (values.roster !== undefined && values.roster !== 'legacy' && values.roster !== 'full') throw new Error(`--roster must be legacy|full, got "${values.roster}"`);
-    const roster = values.roster === 'full' ? FULL_RACES : RACES;
+    if (values.roster !== undefined && values.roster !== 'legacy' && values.roster !== 'full' && values.roster !== 'released') throw new Error(`--roster must be legacy|released|full, got "${values.roster}"`);
+    const roster = values.roster === 'full' ? FULL_RACES : values.roster === 'released' ? RELEASED_RACES : RACES;
     if (values.tournament === true) {
       const t = runTournament(base, roster, values.style === true);
       console.log(values.json === true ? JSON.stringify(t, null, 2) : formatTournament(t));
@@ -790,8 +793,8 @@ export function main(argv: readonly string[]): number {
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--cc] [--roster legacy|full] [--json]');
-    console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--roster legacy|full] [--style] [--json]');
+    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--cc] [--roster legacy|released|full] [--json]');
+    console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--roster legacy|released|full] [--style] [--json]');
     return 2;
   }
 }

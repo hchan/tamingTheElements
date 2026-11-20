@@ -25,3 +25,14 @@ Source: read-only review of `src/game/net/ws/*` against the backend (2026-11-19)
 ## Notes
 - Each needs a test in the integration layer (the WebRTC removal has merged, so `online-client.ts` is free).
 - Estimate: item 1 is small (one condition plus tests); do it first.
+
+## Netcode review follow-ups (2026-11-19, after items 1 and 2 merged)
+
+Review verdict: approve, no blockers. Open minor items:
+
+- Harness test in `src/testing/net/online-client.test.ts` that asserts `binaryType === 'arraybuffer'` and text, binary, text frame order; rename the old "binary is malformed" test at line 176.
+- Docs `ONLINE-CLIENT.md:55` and `ONLINE-PROTOCOL.md:20` still say binary is malformed; document that the client also accepts base64 text in a binary frame (the relay never sends one). Fix the comment at `transport.ts:156`.
+- Add a conformance case for the HTTP resting body `{"code":11,"retryAfterSec":n}` on a 503 (the resting check now depends on the body).
+- `reconnect()` ignores `retryAfterSec` on a plain 503; wait the larger of the backoff and `retryAfterSec * 1000`, capped at `BACKOFF_MAX_MS`.
+- Nits: comment at `online-client.ts:29` says "HTTP 503" (should say with body code 0x000B); consider requiring `res.status === 503` for the resting check; move the `binaryType` assignment inside the `try`.
+- Not yet done: plan test 2d (relay golden path in ASCII-binary mode) needs `relay-socket.int.test.ts`.

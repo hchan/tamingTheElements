@@ -7,7 +7,7 @@ import { InMemoryStore } from '../../../core/relay/testing';
 import { decodeText, encodeText } from '../../../game/net/ws/text-codec';
 import { encodeFrame, type Frame } from '../../../game/net/ws/wire';
 import { BASE, FakeService, type ServedWs } from '../fake-online-service';
-import { ANY_PORT, GatewayNotice, LCG, LOOPBACK_HOST, RELAY_CLOCK_START_MS, type GatewayPhrase } from './constants';
+import { ANY_PORT, GatewayNotice, LCG, LOOPBACK_HOST, RELAY_CLOCK_START_MS } from './constants';
 
 /** A real `ws` server on loopback for the OnlineClient and the relay (docs/ONLINE-CLIENT.md). Hermetic: loopback, port 0, no real names. */
 
@@ -56,7 +56,7 @@ export class ServerConn implements ServedWs {
   sendFrame(f: Frame): void { this.sendBytes(encodeFrame(f)); }
   serve(bytes: Uint8Array): void { this.sendBytes(bytes); }
   /** A gateway-style failure notice, never produced by RelayCore. `plain`: the bare phrase; `json`: a message with a connectionId and requestId. */
-  sendNotice(form: 'plain' | 'json', phrase: GatewayPhrase = GatewayNotice.internal, binary = false): void {
+  sendNotice(form: 'plain' | 'json', phrase: string = GatewayNotice.internal, binary = false): void {
     const text = form === 'plain' ? phrase : JSON.stringify({ message: phrase, connectionId: this.id, requestId: `req-${String(this.sent)}` });
     this.write(binary ? Buffer.from(text, 'utf8') : text, binary);
   }

@@ -1,0 +1,83 @@
+{
+  "licence": "CC-BY 3.0",
+  "icons": {
+    "hurl_rock": {
+      "url": "img/hud/ability-icons/hurl_rock.png",
+      "w": 64,
+      "h": 64,
+      "sha256": "18700690e8773968205e3cd797481fe1b2b79577feb2e3caa99c67aa03b081b5",
+      "pack_icon": "rock-orange-3",
+      "approval": {
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/approval.json"
+      }
+    },
+    "lure_orb": {
+      "url": "img/hud/ability-icons/lure_orb.png",
+      "w": 64,
+      "h": 64,
+      "sha256": "7db2dc4291bf87a80bd880bbaea9e0397ca4f80403d6649f95f0e6779477981a",
+      "pack_icon": "light-eerie-3",
+      "approval": {
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/approval.json"
+      }
+    },
+    "skitter": {
+      "url": "img/hud/ability-icons/skitter.png",
+      "w": 64,
+      "h": 64,
+      "sha256": "fdd7550def16dbcf8c954e3a87e57c9b00a9859ef9fe947cecf11d0f6ae98daa",
+      "pack_icon": "haste-sky-3",
+      "approval": {
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/approval.json"
+      }
+    },
+    "slow": {
+      "url": "img/hud/ability-icons/slow.png",
+      "w": 64,
+      "h": 64,
+      "sha256": "fb896f76d500e6ede5a679f0c90b90b9c00f43764c1780bfe54cfb55f10ffa0e",
+      "pack_icon": "fog-sky-3",
+      "approval": {
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/approval.json"
+      }
+    },
+    "hoof_crash": {
+      "url": "img/hud/ability-icons/hoof_crash.png",
+      "w": 64,
+      "h": 64,
+      "sha256": "3ad414eb393f8bd36c2f6d0b5db84c94f09464202e96d24743c8f91cca81fe4d",
+      "pack_icon": "wild-orange-3",
+      "approval": {
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/approval.json"
+      }
+    },
+    "talon_rake": {
+      "url": "img/hud/ability-icons/talon_rake.png",
+      "w": 64,
+      "h": 64,
+      "sha256": "ba4519962383ae097f5f43873f432db06bf76d20d5d4cee2c1f2b5996baaa066",
+      "pack_icon": "slice-orange-3",
+      "approval": {
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/approval.json"
+      }
+    }
+  }
+}

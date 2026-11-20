@@ -1,0 +1,5 @@
+Ability icons: adapted (regraded to the action-bar look, 64 px, bronze border) from OpenGameArt "Painterly Spell Icons" parts 1-4.
+J. W. Bjerk (eleazzaar) -- www.jwbjerk.com/art -- find this and other open art at: http://opengameart.org
+Pack pages: https://opengameart.org/content/painterly-spell-icons-part-1 (parts 1-4)
+Licence: CC-BY 3.0 (http://creativecommons.org/licenses/by/3.0/). Changes were made.
+See tools/assets/icon-gen/README.md.

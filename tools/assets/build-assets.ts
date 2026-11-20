@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { ORACLE_WAR, ORACLE_PRIVATE, oracleAvailable } from '../../src/testing/legacy/oracle';
+import { characterId } from '../../src/core/data/ids';
+import { isReleased } from '../../src/core/data/release';
 import manifest from '../../src/game/assets/manifest.generated.json' with { type: 'json' };
 
 const root = resolve(import.meta.dirname, '../..');
@@ -30,8 +32,10 @@ export const REDRAWN: ReadonlyMap<string, string> = new Map([
   ['img/map/wisperaLarge.png', 'tools/assets/wispera-art (owner-picked "Refined 2", 2026-11-16)'],
 ]);
 
-/** The 12 unreleased Roster 24 heroes (behind `?ff=roster24`). Their map art is repo-owned (tools/assets/roster24-art, SDXL-Turbo, licence terms an open owner question): never copied from the legacy tree, and a missing file fails the build. */
+/** The 12 Roster 24 heroes (unreleased ones behind `?ff=roster24`, released ones in RELEASED_ROSTER24; the art is repo-owned either way). Their map art is repo-owned (tools/assets/roster24-art, SDXL-Turbo, licence terms an open owner question): never copied from the legacy tree, and a missing file fails the build. */
 export const ROSTER24_HEROES: readonly string[] = ['kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra', 'ouroth', 'abyssor', 'vortigal', 'umbrel'];
+/** The Roster 24 heroes not yet in RELEASED_ROSTER24 (src/core/data/release.ts). Released ones keep repo-owned art (ROSTER24_HEROES), they just leave this list. */
+export const UNRELEASED_ROSTER24_HEROES: readonly string[] = ROSTER24_HEROES.filter((h) => !isReleased(characterId(h)));
 export const isRoster24Url = (url: string): boolean => ROSTER24_HEROES.some((h) => url === `img/map/${h}.png` || url === `img/map/${h}Large.png`);
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');

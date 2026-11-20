@@ -451,14 +451,14 @@ export class CharacterView {
       this.aura = this.scene.add.image(0, 0, key).setTint(AURA_TINT);
     }
     const pale = brightFloor && BRIGHT_PALE.has(this.spriteName);
-    // Wispera is a small translucent mist: a wider, denser dark pool so it holds a silhouette on the pale ice (QA r22).
+    // Wispera is a small translucent mist: a wider, denser dark pool so it holds a silhouette on the pale ice (QA r22); Echo, a near-white tornado, gets a milder version (QA r129).
     const wisp = pale && this.spriteName === 'wispera';
     this.aura
       .setVisible(true)
       .setDepth(this.image.depth - 0.3)
-      .setAlpha(pale ? Math.min(1, BRIGHT_AURA_ALPHA * (wisp ? 1.4 : 1)) * (ghost ? 0.8 : 1) : ghost ? AURA_ALPHA * 0.5 : AURA_ALPHA)
+      .setAlpha(pale ? Math.min(1, BRIGHT_AURA_ALPHA * (wisp ? 1.4 : 1.25)) * (ghost ? 0.8 : 1) : ghost ? AURA_ALPHA * 0.5 : AURA_ALPHA)
       .setPosition(x + w / 2, y + h * 0.52)
-      .setDisplaySize(w * (pale ? (wisp ? 1.7 : 1.4) : 1.3), h * (pale ? (wisp ? 1.55 : 1.3) : 1.22));
+      .setDisplaySize(w * (pale ? (wisp ? 1.7 : 1.6) : 1.3), h * (pale ? (wisp ? 1.55 : 1.45) : 1.22));
   }
 
   /**

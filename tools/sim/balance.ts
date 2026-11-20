@@ -5,7 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, RACES, runTournament, type TournamentSummary } from './run-match';
+import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, RACES, RELEASED_RACES, runTournament, type TournamentSummary } from './run-match';
 import { formatStyleDeltas, type StyleSummary, styleGateFindings } from './style-summary';
 
 /** Parameters of the full tournament recorded in the baseline. Changing them means re-recording the baseline. */
@@ -122,7 +122,7 @@ export function main(argv: readonly string[]): number {
     const baselinePath = values.baseline ?? (tag ? ARCADE_2V2_BASELINE_PATH : arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
     const tolerance = values.tolerance === undefined ? DEFAULT_TOLERANCE : Number(values.tolerance);
     if (!Number.isFinite(tolerance) || tolerance < 0) throw new Error('--tolerance must be a non-negative number');
-    const current = toReport(runTournament(params, RACES, true), params);
+    const current = toReport(runTournament(params, arcade ? RELEASED_RACES : RACES, true), params);
     if (values.record === true) {
       mkdirSync(dirname(baselinePath), { recursive: true });
       writeFileSync(baselinePath, `${JSON.stringify(current, null, 2)}\n`);

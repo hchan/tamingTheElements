@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-19
 ---
 # Echo is a pale tornado on the pale air floor
@@ -12,3 +12,5 @@ Repro: Versus, Echo vs Pax, call Weather (or pick Air arena) and stand Echo mid-
 Screenshot: .scratch/qa-r129/12-stage-air-action.png (worktree agent-aeae2f1feca74a80e)
 
 Suggested fix: a thin dark indigo rim or contact shadow under Echo, or darken the air floor a step around fighters.
+
+Progress: fixed 2026-11-19 (r127 fix pass), screenshots in the worktree .scratch/r127fix/.

@@ -1,0 +1,38 @@
+{
+  "hurl_rock": {
+    "approved": "rock-orange-3",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "lure_orb": {
+    "approved": "light-eerie-3",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "skitter": {
+    "approved": "haste-sky-3",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "slow": {
+    "approved": "fog-sky-3",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "hoof_crash": {
+    "approved": "wild-orange-3",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "talon_rake": {
+    "approved": "slice-orange-3",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  }
+}

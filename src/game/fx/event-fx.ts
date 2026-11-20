@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
+import { simEventBridge } from './sim-event-bridge';
 import { smoothKindForDef } from './ability-smooth';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
@@ -173,13 +174,12 @@ export class EventFx {
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
       const k = e.kind;
-      if (k === SimEventKind.superStarted) this.superId = e['superId'] ?? 0;
+      if (k === SimEventKind.superStarted) { this.superId = e['superId'] ?? 0; if (this.deduper.firstSeen(e)) simEventBridge(e); }
       if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
       if (!this.deduper.firstSeen(e)) continue;
       if (k === SimEventKind.damage || k === SimEventKind.hitConfirmed) this.opts.sfx?.('hit', this.opts.elementOf?.(e['attacker'] ?? -1) ?? 'void');
       if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1, e['amount'] ?? 5, e['attacker'] ?? -1);
-      else if (k === SimEventKind.hitConfirmed) this.arcadeHit(e);
-      else this.hitStop(e);
+      else if (k === SimEventKind.hitConfirmed) { simEventBridge(e); this.arcadeHit(e); } else this.hitStop(e);
     }
   }
 

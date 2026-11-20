@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ability icons (ART-ICONS): six 64 px icons (hurl_rock, lure_orb, skitter, slow, hoof_crash, talon_rake) in `public/assets/img/hud/ability-icons/`, adapted from Painterly Spell Icons by J. W. Bjerk (CC-BY 3.0, credit in `CREDITS.txt`), art-director approved, with the generator and installer in `tools/assets/icon-gen/`. Not wired to the HUD yet. Art only: no sim, golden or `SIM_VERSION` change.
+
 - Relay wire v3 (RELAY-V3): `@tamingtheelements/relay` 1.0.0, `PROTOCOL_VERSION` 3 (a MAJOR change; v2 clients and relays do not interoperate). The close code after an ERROR frame is advisory and the frame is the authority. A handshake never answers ticket-invalid or resting: the client fetches one fresh ticket and retries once on any pre-WELCOME failure, and resting reaches a connecting client only as HTTP 503 (HELLO while resting closes 4011 with no frame). /ticket returns `{ticket, url}` with the full `wss://` address and `VITE_ONLINE_URL` is the HTTP base only. Every frame is base64 text in both directions (`encodeText`/`decodeText`; `handle(conn, text, ctx)`, `Sender.send(conn, text)`); a binary message is bad-frame with advisory close 4001. New conformance cases: `malformed.binary` and `wire.text.*`. No sim change: `SIM_VERSION` and goldens unchanged.
 
 - Wispera redraw (WISPERA-R2): her portrait, rig, 155 baked frames, sheet atlas and HUD strip are the owner-picked "Refined 2" (md5 fda087d6783593314aa211d79a97ceb0). Art only: no sim, golden or `SIM_VERSION` change. The bake locks and Wispera sheets were regenerated because their source changed; no other hero frames changed. Her Halo test limit is 0.12 (`HALO_MAX`).
