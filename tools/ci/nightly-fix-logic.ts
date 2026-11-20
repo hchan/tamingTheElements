@@ -11,7 +11,8 @@ export const GATE_TIMEOUT_MS = 90 * 60_000;
 export const MAX_FAILURES = 3;
 export const MAX_RUN_MS = 4 * 3600_000;
 export const STOP_HOUR = 22;
-export const LOCK_STALE_MS = 6 * 3600_000;
+/** Above the worst-case run (4 h of rounds plus the merge re-runs and gate:push), so a live run is never taken over. */
+export const LOCK_STALE_MS = 12 * 3600_000;
 /** Router exits after which the loop stops and reports (89 no runner, 94 unreachable, 95 busy, 96 refused). */
 export const STOP_EXITS: readonly number[] = [89, 94, 95, 96];
 
@@ -50,9 +51,11 @@ const FORBIDDEN: readonly RegExp[] = [
 export function normalizePath(p: string): string {
   return p.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/{2,}/g, '/');
 }
+/** First layer: only tests/e2e and src may change (the denylist above is the second layer). Everything else (.npmrc, .pnpmfile.cjs, public/, visual baselines...) is rejected. */
+const ALLOWED: readonly RegExp[] = [/^tests\/e2e\//, /^src\//];
 export function isForbiddenPath(p: string): boolean {
   const n = normalizePath(p);
-  return n.startsWith('/') || n.split('/').includes('..') || FORBIDDEN.some((re) => re.test(n));
+  return n.startsWith('/') || n.split('/').includes('..') || !ALLOWED.some((re) => re.test(n)) || FORBIDDEN.some((re) => re.test(n));
 }
 export function forbiddenTouched(paths: readonly string[]): string[] {
   return paths.filter(isForbiddenPath);
@@ -73,9 +76,15 @@ export function parsePorcelainZ(out: string): string[] {
 export const parseNulList = (out: string): string[] => out.split('\0').filter(Boolean);
 
 /** Added lines of a unified diff that switch a test off, focus it, expect it to fail, or add retries (that would fake a green). */
-const WEAKEN = /\.(skip|fixme|only)\s*\(|\btest\.fail\b|\bretries\b/;
+const WEAKEN = /\.(skip|fixme|only|fails|todo)\s*\(|\b(xit|xdescribe|xtest)\s*\(|\btest\.fail\b|\btest\.describe\.configure\b|\bretries\b/;
+const EXPECT = /\bexpect(\.soft|\.poll)?\s*\(/;
 export function addsSkipMarkers(diff: string): string[] {
-  return diff.split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++') && WEAKEN.test(l)).map((l) => l.slice(1).trim().slice(0, 120));
+  const lines = diff.split('\n');
+  const added = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+  const out = added.filter((l) => WEAKEN.test(l)).map((l) => l.slice(1).trim().slice(0, 120));
+  const removedExpect = lines.filter((l) => l.startsWith('-') && !l.startsWith('---') && EXPECT.test(l)).length;
+  if (removedExpect > 0 && !added.some((l) => EXPECT.test(l))) out.push(`removes ${String(removedExpect)} expect( line(s) and adds none`);
+  return out;
 }
 
 // ---- when and how often ----
@@ -85,7 +94,7 @@ export function statusUsable(s: NightlyStatus, nowMs: number, notBefore?: string
   if (isStale(s, nowMs)) return false;
   return notBefore === undefined || Date.parse(s.finishedAt) >= Date.parse(notBefore);
 }
-/** 4 h wall clock from the start, and never into the day (22:00 local). */
+/** 4 h wall clock from the start, and never past 22:00 local (keeps the PC free for the 23:00 full run). */
 export const deadlineReached = (startMs: number, now: Date): boolean => now.getTime() - startMs >= MAX_RUN_MS || now.getHours() >= STOP_HOUR;
 export const tooManyFailures = (n: number): boolean => n > MAX_FAILURES;
 
@@ -172,17 +181,26 @@ export function extractFailures(json: unknown, wanted: readonly TestRef[]): Fail
 export const TOOLS = ['Read', 'Edit', 'Write', 'Glob', 'Grep'];
 export const DENIED_TOOLS = ['Bash', 'WebFetch', 'WebSearch', 'Task'];
 export const MAX_BUDGET_USD = '5';
+export const DENY_RULES = ['Edit(node_modules/**)', 'Write(node_modules/**)', 'Edit(.claude/**)', 'Write(.claude/**)', 'Edit(.git/**)', 'Write(.git/**)'];
 
 export function claudeArgs(prompt: string): string[] {
   return [
-    '-p', prompt,
-    '--setting-sources', 'local', '--strict-mcp-config', '--safe-mode',
+    '-p', prompt, '--model', 'sonnet',
+    // --restricted ignores user, project AND local settings (settings.local.json is gitignored and would escape the diff checks),
+    // confines the file tools to the cwd and drops the command-running tools; --settings only adds the deny rules below.
+    '--restricted', '--strict-mcp-config', '--safe-mode', '--settings', JSON.stringify({ permissions: { deny: DENY_RULES } }),
     '--tools', TOOLS.join(','), '--disallowedTools', DENIED_TOOLS.join(','),
-    '--permission-mode', 'acceptEdits', '--max-turns', '40', '--max-budget-usd', MAX_BUDGET_USD, '--no-session-persistence',
+    '--permission-mode', 'acceptEdits', '--permission-prompts', 'none', '--max-turns', '40', '--max-budget-usd', MAX_BUDGET_USD, '--no-session-persistence',
   ];
 }
 
 const ENV_KEEP = /^(PATH|HOME|USER|LOGNAME|SHELL|LANG|LC_[A-Z]+|TERM|TMPDIR|XDG_[A-Z_]+|ANTHROPIC_[A-Z_]+|CLAUDE_CODE_OAUTH_TOKEN|NODE_OPTIONS)$/;
+/** Env for the re-run and gate:push children: no credentials, pushes disabled. Only the final push gets the real env. */
+export function noPushEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(env)) if (v !== undefined && !/^(SSH_AUTH_SOCK|GITHUB_TOKEN|GH_TOKEN|GIT_.*)$/.test(k)) out[k] = v;
+  return { ...out, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'remote.origin.pushurl', GIT_CONFIG_VALUE_0: 'disabled:' };
+}
 /** Clean child env: an allowlist (no SSH_AUTH_SOCK, GITHUB_TOKEN, GIT_*), and pushes disabled for any git the child runs. */
 export function claudeEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string> {
   const out: Record<string, string> = {};

@@ -17,7 +17,7 @@ import { loadKnownRed } from './known-red';
 import { collect, readStatus, type Deps, type RunResult } from './nightly-e2e';
 import {
   addsSkipMarkers, buildPrompt, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState, forbiddenTouched, GATE_TIMEOUT_MS,
-  LOCK_STALE_MS, MAX_FAILURES, mergeSubject, parseNulList, parseTriage, pushBlockers, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath,
+  LOCK_STALE_MS, MAX_FAILURES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath,
   statusUsable, titlePassed, tooManyFailures, triage, type FailureResult, type FixState, type FixStatus,
 } from './nightly-fix-logic';
 import { unrecordedFailures } from './nightly-status';
@@ -87,24 +87,29 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
       return 2;
     }
   }
-  if (dry) return fixInner(d, true, opts, []);
+  if (dry) return fixInner(d, true, opts, [], { prepared: false });
   if (!acquireLock(d)) {
     d.out('nightly:fix: another run holds the lock; nothing to do\n');
     return 0;
   }
   const results: FailureResult[] = [];
+  const life = { prepared: false };
   try {
-    return fixInner(d, false, opts, results);
+    return fixInner(d, false, opts, results, life);
   } catch (e) {
     const st = readStatus(d.statusDir);
     writeFixStatus(d, st?.sha ?? '', results, false, [`error: ${redact(e instanceof Error ? e.message : String(e)).slice(0, 300)}`], 'needs-human');
     return 1;
   } finally {
+    if (life.prepared) {
+      d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, FIX_WT)], d.repo, d.env);
+      d.run('git', ['branch', '-D', `nightly-fix/${d.now().toISOString().slice(0, 10)}`], d.repo, d.env);
+    }
     rmSync(lockPath(d.statusDir), { force: true });
   }
 }
 
-function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResult[]): number {
+function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResult[], life: { prepared: boolean }): number {
   const st = readStatus(d.statusDir);
   if (!shouldRun(st) || !st) {
     d.out(`nightly:fix: nothing to do (${st ? `${st.state}, ${String(st.unrecorded.length)} unrecorded` : 'no status'})\n`);
@@ -163,7 +168,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string } => {
     const jsonOut = join(d.statusDir, `nightly-fix-rerun-${String(++seq)}.json`);
     rmSync(jsonOut, { force: true });
-    const r = sh(cwd, 'corepack', rerunArgs(f.file), RERUN_TIMEOUT_MS, { ...d.env, PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
+    const r = sh(cwd, 'corepack', rerunArgs(f.file), RERUN_TIMEOUT_MS, { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
     let passed = false;
     try {
       passed = titlePassed(JSON.parse(readFileSync(jsonOut, 'utf8')) as unknown, f);
@@ -178,6 +183,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const base = git(d.repo, 'rev-parse', 'origin/main').stdout.trim();
   const shaOnOrigin = git(d.repo, 'merge-base', '--is-ancestor', st.sha, 'origin/main').code === 0;
   if (!shaOnOrigin) return done(false, ['the nightly ran on commits that are not on origin/main; fix locally']);
+  life.prepared = true;
   if (!prep(fixWt, branch)) return done(false, ['could not prepare the fix worktree']);
   const active = unrecordedFailures(st.failed, loadKnownRed(fixWt));
   const todo = failures.filter((f) => active.some((a) => a.file === f.file && a.title === f.title));
@@ -185,7 +191,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
 
   const reset = (to: string): void => {
     git(fixWt, 'reset', '--hard', to);
-    git(fixWt, 'clean', '-fd');
+    git(fixWt, 'clean', '-ffdx', '-e', 'node_modules'); // ignored files too (settings.local.json), never node_modules
   };
   let stopped = '';
   for (const f of todo) {
@@ -207,6 +213,8 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
         break;
       }
       rounds++;
+      const marker = join(d.statusDir, `nightly-fix-marker-${String(rounds)}`);
+      writeFileSync(marker, '');
       const c = sh(fixWt, 'claude', claudeArgs(buildPrompt(f, rounds, previous)), ROUND_TIMEOUT_MS, claudeEnv(d.env));
       if (childFailed(c)) {
         stopped = `claude failed (exit ${String(c.code)}${c.signal ? `, ${c.signal}` : ''}${c.timedOut ? ', timed out' : ''}); stopping, nothing is recorded`;
@@ -219,13 +227,16 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
         reset(head0);
         break;
       }
+      // Ignored files escape the diff: list everything written since the marker (outside .git and node_modules).
+      const found = sh(fixWt, 'find', ['.', '-type', 'f', '-newer', marker, '-not', '-path', './.git/*', '-not', '-path', './node_modules/*']);
+      const written = found.code === 0 ? found.stdout.split('\n').map((x) => x.trim()).filter(Boolean) : ['<find failed>'];
       if (git(fixWt, 'add', '-A').code !== 0) {
         put('unfixed', rounds, 'git add failed');
         reset(head0);
         break;
       }
       const names = parseNulList(git(fixWt, 'diff', '--cached', '--name-only', '--no-renames', '-z', head0).stdout);
-      const forbidden = forbiddenTouched(names);
+      const forbidden = forbiddenTouched([...names, ...written]);
       const weak = forbidden.length ? [] : addsSkipMarkers(git(fixWt, 'diff', '--cached', '-U0', head0).stdout);
       if (weak.length) {
         put('needs-human', rounds, `diff adds skip/fixme/only/test.fail/retries: ${weak.join(' | ')}`);
@@ -262,6 +273,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const count = git(fixWt, 'rev-list', '--count', `origin/main..${branch}`);
   if (count.code !== 0) return done(false, ['git rev-list failed']);
   if (count.stdout.trim() === '0') return done(false, stopped ? [stopped] : ['no fix commits to push']);
+  if (deadlineReached(startMs, d.now())) return done(false, ['wall-clock deadline reached before the merge steps; nothing pushed']);
   const blockers = integrate(d, { branch, mergeWt, base, shaOnOrigin, results }, prep, sh, git, rerun);
   if (blockers.length === 0 && git(mergeWt, 'push', 'origin', 'HEAD:main').code !== 0) blockers.push('git push failed (not forced)');
   git(d.repo, 'worktree', 'remove', '--force', mergeWt);
@@ -274,7 +286,7 @@ function integrate(
   d: FixDeps,
   o: { branch: string; mergeWt: string; base: string; shaOnOrigin: boolean; results: FailureResult[] },
   prep: (wt: string, br: string) => boolean,
-  sh: (cwd: string, cmd: string, args: string[], timeout?: number) => FixRun,
+  sh: (cwd: string, cmd: string, args: string[], timeout?: number, env?: Env) => FixRun,
   git: (cwd: string, ...a: string[]) => FixRun,
   rerun: (cwd: string, f: Ref) => { green: boolean },
 ): string[] {
@@ -292,7 +304,7 @@ function integrate(
   const markersClean = git(o.mergeWt, 'grep', '-nE', '^(<<<<<<<|>>>>>>>) ').code === 1;
   if (forbidden.length || !markersClean) return fail({ forbidden, markersClean });
   const rerunGreen = fixed.every((r) => rerun(o.mergeWt, r).green);
-  const gatePushOk = rerunGreen && sh(o.mergeWt, 'corepack', ['pnpm', 'gate:push'], GATE_TIMEOUT_MS).code === 0;
+  const gatePushOk = rerunGreen && sh(o.mergeWt, 'corepack', ['pnpm', 'gate:push'], GATE_TIMEOUT_MS, noPushEnv(d.env)).code === 0;
   git(d.repo, 'fetch', 'origin', 'main');
   const originUnmoved = git(d.repo, 'rev-parse', 'origin/main').stdout.trim() === o.base;
   return fail({ rerunGreen, gatePushOk, originUnmoved });
@@ -319,6 +331,8 @@ function realDeps(): FixDeps {
     // Every child runs in its own process group with a wall-clock cap (group-run.ts kills the whole group on timeout).
     const r = spawnSync(process.execPath, ['--import', 'tsx', helper, cwd, String(timeoutMs ?? 2 * 3600_000), cmd, ...args], {
       cwd: repo, env: env as NodeJS.ProcessEnv, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      timeout: (timeoutMs ?? 2 * 3600_000) + 30_000, // grace over group-run's own cap, so a hung helper cannot hang the loop
+      killSignal: 'SIGKILL',
     });
     try {
       const o = JSON.parse(r.stdout.trim().split('\n').pop() ?? '') as { code: number; signal: string | null; timedOut: boolean; error: string; stdout: string; stderr: string };

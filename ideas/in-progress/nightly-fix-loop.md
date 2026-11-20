@@ -15,6 +15,8 @@ Report: `<git common dir>/tte-gate/nightly-fix-status.json` and `nightly-fix-rep
 
 Install (owner runs it; not run by the agent): `corepack pnpm nightly:install` (preview with `--dry-run`).
 
-Progress note / not verified live: the real `claude -p` flags (`--setting-sources`, `--tools`, `--safe-mode`, `--max-budget-usd`, `--permission-mode acceptEdits`), group-run.ts with real children, the PC re-run JSON copy for `run --pc`, the `pnpm install` in a fresh worktree, the PC re-run and the push path have only run against fakes. First real night: run `pnpm nightly:fix --dry-run` first, then watch `nightly.log`.
+Progress note / not verified live: the real `claude -p` flags (`--restricted`, `--tools`, `--safe-mode`, `--max-budget-usd`, `--permission-mode acceptEdits`), group-run.ts with real children, the PC re-run JSON copy for `run --pc`, the `pnpm install` in a fresh worktree, the PC re-run and the push path have only run against fakes. First real night: run `pnpm nightly:fix --dry-run` first, then watch `nightly.log`.
 
 Also fixed: `unrecordedFailures` matched `tests/e2e/x.spec.ts` (known-red.json) against Playwright's `x.spec.ts` with `===`, so a known-red entry never matched; it now accepts either form.
+
+Second review fixes (2026-11-20): `--restricted` replaces `--setting-sources local` (settings.local.json is gitignored), allowlist of changeable paths (tests/e2e, src), written-file scan since a marker, `git clean -ffdx -e node_modules`, no credentials and no push for re-runs and gate:push, wider test-weakening check, deadline checked before integrate, fix worktree and branch removed in finally.

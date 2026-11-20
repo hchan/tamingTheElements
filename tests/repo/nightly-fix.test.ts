@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fix, main, type FixDeps, type FixRun } from '../../tools/ci/nightly-fix';
 import {
-  addsSkipMarkers, buildPrompt, childFailed, claudeArgs, claudeEnv, deadlineReached, DENIED_TOOLS, extractFailures, finalState, forbiddenTouched, isForbiddenPath, MAX_ROUNDS,
+  addsSkipMarkers, buildPrompt, childFailed, claudeArgs, claudeEnv, deadlineReached, DENIED_TOOLS, noPushEnv, extractFailures, finalState, forbiddenTouched, isForbiddenPath, MAX_ROUNDS,
   parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
   type PushInput,
 } from '../../tools/ci/nightly-fix-logic';
@@ -17,17 +17,19 @@ describe('forbidden paths', () => {
     'tools/ci/nightly-fix.ts', 'tools/ci/known-red.json', 'tools/gen/anything.ts', 'tests/repo/docs.test.ts', 'eslint.config.js', 'tsconfig.json', 'src/game/tsconfig.app.json',
     'playwright.config.ts', 'playwright.pages.config.ts', 'vitest.config.ts', 'vite.config.ts', '.dependency-cruiser.cjs',
     'war/WEB-INF/user.properties', '.env.local', 'keys/id_ed25519', 'x/server.pem', 'config/credentials.json',
+    '.npmrc', '.pnpmfile.cjs', '.gitleaksignore', '.gitignore', '.gitattributes', 'public/assets/a.png', 'tests/visual/__baselines__/a.png', 'docs/TESTING.md', 'tests/browser/a.test.ts',
+    '.claude/settings.local.json', 'node_modules/x/index.js', 'README.md',
     '../outside.ts', '/etc/passwd', './src//core/x.ts',
   ])('blocks %s', (p) => {
     expect(isForbiddenPath(p)).toBe(true);
   });
-  it.each(['tests/e2e/menu.spec.ts', 'src/game/scenes/menu.ts', 'tests/e2e/helpers/wait.ts', 'src/corex/a.ts', 'docs/TESTING.md', 'tests/browser/a.test.ts'])('allows %s', (p) => {
+  it.each(['tests/e2e/menu.spec.ts', 'src/game/scenes/menu.ts', 'tests/e2e/helpers/wait.ts', 'src/corex/a.ts', 'src/game/a.ts'])('allows %s', (p) => {
     expect(isForbiddenPath(p)).toBe(false);
   });
   it('lists only the offenders and reads -z lists (renames, untracked)', () => {
     const out = ' M tests/e2e/a.spec.ts\0?? src/core/new.ts\0R  b.ts\0src/core/old.ts\0';
     expect(parsePorcelainZ(out)).toEqual(['tests/e2e/a.spec.ts', 'src/core/new.ts', 'b.ts', 'src/core/old.ts']);
-    expect(forbiddenTouched(parsePorcelainZ(out))).toEqual(['src/core/new.ts', 'src/core/old.ts']);
+    expect(forbiddenTouched(parsePorcelainZ(out))).toEqual(['src/core/new.ts', 'b.ts', 'src/core/old.ts']);
     expect(parseNulList('a\0b c\0')).toEqual(['a', 'b c']);
   });
 });
@@ -66,6 +68,9 @@ describe('rounds, stops and green', () => {
   });
   it('rejects diffs that weaken the test', () => {
     for (const l of ['+  test.skip(true);', '+test.fixme(', '+ it.only(', '+  test.fail();', '+ retries: 2,']) expect(addsSkipMarkers(`--- a\n+++ b\n${l}`)).toHaveLength(1);
+    for (const l of ['+ it.fails("x", () => {', '+ test.todo("x")', '+ xit("x", f)', '+ xdescribe("x", f)', '+ test.describe.configure({ mode: "serial" });']) expect(addsSkipMarkers(l)).toHaveLength(1);
+    expect(addsSkipMarkers('- expect(a).toBe(1);\n+ await go();')).toHaveLength(1);
+    expect(addsSkipMarkers('- expect(a).toBe(1);\n+ expect(a).toBe(2);')).toEqual([]);
     expect(addsSkipMarkers('+++ b/x.skip(\n- test.skip(\n+ await page.waitForSelector(".x");')).toEqual([]);
   });
   it('status usable: fresh, and for collect-and-fix collected this run; deadline 4 h or 22:00', () => {
@@ -118,7 +123,12 @@ describe('prompt, triage line, sandbox and env', () => {
   it('claude is sandboxed: no user or project settings, file tools only, budget cap, no shell', () => {
     const a = claudeArgs('p');
     expect(a.slice(0, 2)).toEqual(['-p', 'p']);
-    expect(a[a.indexOf('--setting-sources') + 1]).toBe('local');
+    expect(a).toContain('--restricted');
+    expect(a).not.toContain('--setting-sources');
+    expect(a[a.indexOf('--permission-prompts') + 1]).toBe('none');
+    expect(a[a.indexOf('--model') + 1]).toBe('sonnet');
+    const deny = (JSON.parse(a[a.indexOf('--settings') + 1] ?? '{}') as { permissions: { deny: string[] } }).permissions.deny;
+    expect(deny).toEqual(expect.arrayContaining(['Edit(node_modules/**)', 'Write(node_modules/**)', 'Edit(.claude/**)', 'Write(.claude/**)']));
     expect(a).toContain('--strict-mcp-config');
     expect(a).toContain('--max-budget-usd');
     expect(a).not.toContain('--allowedTools');
@@ -130,6 +140,11 @@ describe('prompt, triage line, sandbox and env', () => {
     const e = claudeEnv({ PATH: '/bin', HOME: '/h', SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't', GIT_DIR: 'x', ANTHROPIC_API_KEY: 'k' });
     expect(e).toMatchObject({ PATH: '/bin', HOME: '/h', ANTHROPIC_API_KEY: 'k', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'remote.origin.pushurl', GIT_CONFIG_VALUE_0: 'disabled:' });
     for (const k of ['SSH_AUTH_SOCK', 'GITHUB_TOKEN', 'GIT_DIR']) expect(e).not.toHaveProperty(k);
+  });
+  it('re-run and gate env: no credentials, pushes disabled', () => {
+    const e = noPushEnv({ PATH: '/bin', SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't', GH_TOKEN: 'g', GIT_ASKPASS: 'a' });
+    expect(e).toMatchObject({ PATH: '/bin', GIT_CONFIG_KEY_0: 'remote.origin.pushurl', GIT_CONFIG_VALUE_0: 'disabled:' });
+    for (const k of ['SSH_AUTH_SOCK', 'GITHUB_TOKEN', 'GH_TOKEN', 'GIT_ASKPASS']) expect(e).not.toHaveProperty(k);
   });
   it('specPath adds tests/e2e once', () => {
     expect(specPath('a.spec.ts')).toBe('tests/e2e/a.spec.ts');
@@ -168,6 +183,8 @@ const NOON = (): Date => new Date(2026, 10, 20, 12, 0, 0);
 interface Scenario {
   claude?: Partial<FixRun>;
   names?: string;
+  /** Files `find` reports as written since the marker (ignored files included). */
+  written?: string;
   diff?: string;
   mergedNames?: string;
   rerunCode?: number;
@@ -227,6 +244,7 @@ describe('nightly-fix command (fake runner)', () => {
         }
         if (cmd === 'corepack' && line.includes('e2e-route.ts')) {
           reruns++;
+          envs['rerun'] = env;
           const code = sc.rerunCode ?? (sc.rerunRedFrom !== undefined && reruns >= sc.rerunRedFrom ? 1 : 0);
           const to = env['PLAYWRIGHT_JSON_OUTPUT_FILE'];
           if (to && code === 0) {
@@ -235,7 +253,11 @@ describe('nightly-fix command (fake runner)', () => {
           }
           return ok('', code);
         }
-        if (cmd === 'corepack' && line.includes('gate:push')) return ok('', sc.gate ?? 0);
+        if (cmd === 'corepack' && line.includes('gate:push')) {
+          envs['gate'] = env;
+          return ok('', sc.gate ?? 0);
+        }
+        if (cmd === 'find') return ok(sc.written ?? '');
         if (cmd !== 'git') return ok();
         switch (args[0]) {
           case 'rev-parse':
@@ -282,7 +304,7 @@ describe('nightly-fix command (fake runner)', () => {
     expect(out).toContain('tests/e2e/menu.spec.ts');
     expect(out).toContain('--pc');
     expect(out).toContain('(no force)');
-    expect(out).toContain('--setting-sources local');
+    expect(out).toContain('--restricted');
     expect(calls).toEqual([]);
   });
   it('refuses with a Mac override in the environment', () => {
@@ -312,6 +334,26 @@ describe('nightly-fix command (fake runner)', () => {
     expect(commit).toContain('nightly-fix: opens');
     expect(calls.some((c) => c.startsWith('git branch -D'))).toBe(true);
     expect(existsSync(join(dir, 'gate', 'nightly-fix.lock'))).toBe(false);
+  });
+  it('re-run and gate:push run without credentials and with pushes disabled', () => {
+    go({ env: { SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't' } });
+    for (const k of ['rerun', 'gate']) {
+      expect(envs[k]).not.toHaveProperty('SSH_AUTH_SOCK');
+      expect(envs[k]).not.toHaveProperty('GITHUB_TOKEN');
+      expect(envs[k]).toMatchObject({ GIT_CONFIG_VALUE_0: 'disabled:' });
+    }
+  });
+  it('an ignored file written outside the allowlist (settings.local.json): no commit, no re-run, needs-human', () => {
+    go({ written: './.claude/settings.local.json\n' });
+    expect(calls.some((c) => c.startsWith('git commit') || c.includes('e2e-route.ts'))).toBe(false);
+    expect(pushes()).toEqual([]);
+    expect(status().state).toBe('needs-human');
+  });
+  it('reset cleans ignored files but keeps node_modules; the fix worktree and branch are removed afterwards', () => {
+    go({ written: './.npmrc\n' });
+    expect(calls).toContain('git clean -ffdx -e node_modules');
+    expect(calls.filter((c) => c.startsWith('git worktree remove')).length).toBeGreaterThan(1);
+    expect(calls.some((c) => c.startsWith('git branch -D nightly-fix/2026-11-20'))).toBe(true);
   });
   it('gate:push red: no push', () => {
     go({ gate: 1 });
