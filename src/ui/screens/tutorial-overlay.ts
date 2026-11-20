@@ -58,7 +58,7 @@ export function tutorialOverlay(o: OverlayOptions): TutorialOverlay {
   card.setAttribute('role', 'region');
   card.setAttribute('aria-label', 'How to play');
   card.style.cssText =
-    'position:absolute;left:50%;top:84px;transform:translateX(-50%);max-width:min(560px,92%);padding:10px 14px;background:rgba(10,10,14,.88);border:2px solid #d9b24c;border-radius:6px;pointer-events:auto;font-size:14px;line-height:1.35';
+    'position:absolute;left:50%;top:94px;transform:translateX(-50%);max-width:min(560px,92%);padding:10px 14px;background:rgba(10,10,14,.88);border:2px solid #d9b24c;border-radius:6px;pointer-events:auto;font-size:14px;line-height:1.35';
   const step = el('p', undefined, '');
   step.id = 'tutorialStep';
   step.style.cssText = 'margin:0 0 2px;font-size:11px;opacity:.8';
