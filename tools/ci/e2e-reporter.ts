@@ -9,6 +9,7 @@ import { join, relative, resolve } from 'node:path';
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult, TestStep } from '@playwright/test/reporter';
 import { classify, renderMarkdown, verdict } from './e2e-report';
 import type { IdeaText, KnownEntry, Outcome, RunRow } from './e2e-report';
+import { loadKnownRed } from './known-red';
 import { loadTiers, tierOf } from './test-tiers';
 import type { TierData } from './test-tiers';
 
@@ -49,12 +50,7 @@ function ideasOpen(root: string): IdeaText[] {
 }
 
 function knownRed(root: string): KnownEntry[] {
-  try {
-    const v = JSON.parse(readFileSync(join(root, 'tools/ci/known-red.json'), 'utf8')) as { entries?: KnownEntry[] } | KnownEntry[];
-    return Array.isArray(v) ? v : (v.entries ?? []);
-  } catch {
-    return [];
-  }
+  return loadKnownRed(root);
 }
 
 export default class E2eReporter implements Reporter {

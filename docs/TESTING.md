@@ -316,7 +316,7 @@ suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full
 
 - Health: every PC job samples `health.csv` (ts, load1, free RAM, GPU, nproc) every 30 s and writes `nproc` to `run-summary.txt`; both are copied into `out/` so they are fetched, and the router prints a one-line load/nproc summary (use it to pick a worker count).
 - Status: `<git common dir>/tte-gate/nightly-status.json` (shared by all worktrees; `nightly-history.jsonl` keeps 60 runs, `nightly.log` the output).
-  States: `pass`, `red` (failed tests listed by file and title; `unrecorded` = not covered by `tools/ci/known-red.json` when that file exists),
+  States: `pass`, `red` (failed tests listed by file and title; `unrecorded` = not covered by `tools/ci/known-red.json`, loaded tolerantly by `tools/ci/known-red.ts`: `{"schema": 1, "entries": [...]}`, each entry `{file, titleIncludes, tier, firstSeen, idea, status}` with `status` `open` or `fixed` (fixed entries no longer match); `tests/repo/known-red.test.ts` checks the schema and that every `idea` file exists; the list is empty until a red reproduces),
   `not-run` (PC unreachable/busy/not set up/lost/cancelled, exits 93 94 95 96 97 130; nothing was learned, never pass), `pending`.
 - A status older than 36 h counts as `not-run`. Stale and not-run only warn (owner, 2026-11-19); nothing blocks a push yet.
 - Schedule: `pnpm nightly:install` renders `tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl` into two LaunchAgents in
