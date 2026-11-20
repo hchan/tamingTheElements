@@ -33,12 +33,13 @@ const withLicense = (sprite: string, files: [string, Uint8Array][]): SourceFiles
   new Map([...files, [`${sprite}/license.txt`, new TextEncoder().encode('CC0, owner drawn\n')]]);
 
 describe('sprite sheet spec', () => {
-  it('has 9 actions x 8 directions with unique canonical row indices and an atlas limit phones can load', () => {
-    expect(ACTIONS.map(([a]) => a)).toEqual(['idle', 'walk', 'cast', 'hurt', 'guard', 'dash', 'ko', 'victory', 'tagIn']);
+  it('has 10 actions x 8 directions with unique canonical row indices and an atlas limit phones can load', () => {
+    expect(ACTIONS.map(([a]) => a)).toEqual(['idle', 'walk', 'cast', 'hurt', 'guard', 'dash', 'ko', 'victory', 'tagIn', 'walkBack']);
     expect(DIRS).toHaveLength(8);
-    expect(ALL_ROWS).toHaveLength(72);
-    expect(ALL_ROWS.map((r) => r.index)).toEqual(Array.from({ length: 72 }, (_, i) => i));
+    expect(ALL_ROWS).toHaveLength(80);
+    expect(ALL_ROWS.map((r) => r.index)).toEqual(Array.from({ length: 80 }, (_, i) => i));
     expect(rowIndex('walk', 'E')).toBe(8);
+    expect(rowIndex('walkBack', 'E')).toBe(72);
     expect(ATLAS_MAX).toBeLessThanOrEqual(2048);
     expect(ALL_ROWS.every((r) => r.frames >= 1 && r.frames * FRAME <= ATLAS_MAX)).toBe(true);
   });

@@ -1050,6 +1050,31 @@ describe('backward walk (idea backward-walk-animation, Phase 1)', () => {
     expect(west.img.rotation).toBeGreaterThan(0);
   });
 
+  it('a baked walkBack row plays forward by distance with no back lean; without it the reversed walk row is the fallback', () => {
+    const baked = sheetsWith([['idle', 'E'], ['walk', 'E'], ['walkBack', 'E']], 'pax');
+    const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: baked });
+    const names = run(h, 150, 20);
+    expect(names.every((n) => n.startsWith('walkBack/E#'))).toBe(true);
+    expect(ascending(order(names))).toBe(true);
+    expect(backOf(h)).toBeGreaterThan(0.9);
+    expect(h.img.rotation).toBe(0);
+    // Walking toward the foe still uses the walk row.
+    const fwd = harness({ arcade: true, foeX: 600, vx: 2, sprite: 'pax', sheets: baked });
+    expect(run(fwd, 150, 20).every((n) => n.startsWith('walk/E#'))).toBe(true);
+    // No walkBack row: Phase 1 (reversed walk row plus the lean).
+    const old = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: rows });
+    const oldNames = run(old, 150, 20);
+    expect(oldNames.every((n) => n.startsWith('walk/E#'))).toBe(true);
+    expect(descending(order(oldNames))).toBe(true);
+    expect(old.img.rotation).toBeLessThan(0);
+  });
+
+  it('a baked walkBack row keeps its frames under reduced motion', () => {
+    const h = harness({ arcade: true, reduced: true, foeX: 600, vx: -2, sprite: 'pax', sheets: sheetsWith([['idle', 'E'], ['walk', 'E'], ['walkBack', 'E']], 'pax') });
+    expect(run(h, 150, 20).every((n) => n.startsWith('walkBack/E#'))).toBe(true);
+    expect(h.img.rotation).toBe(0);
+  });
+
   it('a backing winged hero stays finite (no double flap blow-up)', () => {
     const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'sindarosa', sheets: sheetsWith([['idle', 'E'], ['walk', 'E']], 'sindarosa') });
     for (let i = 0; i < 150; i++) h.step(16);

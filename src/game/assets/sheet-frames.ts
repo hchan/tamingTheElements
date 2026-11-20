@@ -34,6 +34,7 @@ export const FRAME_TIMING: Readonly<Record<Action, { readonly ms: number; readon
   ko: { ms: 175, loop: false },
   victory: { ms: 225, loop: true },
   tagIn: { ms: 80, loop: false },
+  walkBack: { ms: 125, loop: true },
 };
 
 /** Frame index of `action` at `t` ms into it: loops, or holds the last frame. */

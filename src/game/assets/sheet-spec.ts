@@ -36,6 +36,8 @@ export const ACTIONS = [
   ['ko', 4],
   ['victory', 4],
   ['tagIn', 4],
+  // Last, so no existing row index or atlas frame moves. Baked for the east side only (backing away shows only E/W); played forward by distance.
+  ['walkBack', 4],
 ] as const;
 export type Action = (typeof ACTIONS)[number][0];
 /** Where per-frame PNGs live: `<SOURCE_DIR>/<sprite>/<action>/<dir>/<NN>.png` (NN = 00-based, zero padded) plus `<sprite>/license.txt`. */

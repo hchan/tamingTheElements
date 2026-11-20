@@ -19,7 +19,7 @@ import { SheetBook } from './pose-sheets';
 import { boxSpanX, fitToBox, frameBox, type SpanX } from './hero-scale';
 import { idleLookOf } from '../platform/idle-look';
 import { applyIdleMotif } from './idle-motif';
-import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeBack } from './locomotion';
+import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeFor } from './locomotion';
 import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
 import { fireBlastFxStrength } from '../fx/fire-blast-fade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
@@ -195,6 +195,8 @@ export class PoseLayer {
   /** Backward walk (Arcade): the eased amount, the foe's side while backing (+1 east, -1 west) and each character's sim x this frame. */
   private readonly back = new Float64Array(SLOTS);
   private readonly backSide = new Int8Array(SLOTS).fill(1);
+  /** 1 while the baked `walkBack` row (Phase 2, played forward by distance) is shown: its art carries the lean, so no procedural back cue. */
+  private readonly bakedBack = new Uint8Array(SLOTS);
   private readonly simX = new Float64Array(SLOTS);
   // Per projectile slot.
   private readonly pid = new Int32Array(SLOTS).fill(-1);
@@ -478,6 +480,7 @@ export class PoseLayer {
 
     // A sheet row when the character has one (its own art carries the walk, idle and lean), else the legacy art: the walk
     // cycle by distance walked (all views), the facing, and the procedural lean and bob for 8-way movement and aim.
+    this.bakedBack[i] = 0;
     const sheet = this.book.has(c.sprite) ? this.sheetFrame(c, i, face, walking || m > 0.05) : undefined;
     const sprite = MAP_SPRITES[c.sprite];
     if (sheet) {
@@ -525,7 +528,7 @@ export class PoseLayer {
     this.mRot[i] = p.rot - r0;
     this.mOy[i] = p.oy - o0;
     this.mAlpha[i] = a0 === 0 ? 1 : p.alpha / a0;
-    applyBackGait(p, gait, m * b, this.backSide[i] ?? 1, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
+    applyBackGait(p, gait, this.bakedBack[i] === 1 ? 0 : m * b, this.backSide[i] ?? 1, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
     if (!this.reduced) {
       const e = this.edge[i] ?? 0;
       if (e !== 0) {
@@ -622,16 +625,13 @@ export class PoseLayer {
     if (k !== 0 && age < (POSE_MS[k] ?? 0)) return this.book.frame(c.sprite, KIND_ACTION[k] ?? 'idle', face, age);
     if (this.victoryTeam === c.team) return this.book.frame(c.sprite, 'victory', face, this.animMs - this.victoryAt);
     if (g > 0.05) return this.book.frame(c.sprite, 'guard', face, g * GUARD_ROW_MS);
-    if (walking) return this.book.frame(c.sprite, 'walk', face, this.walkT(c.sprite, i));
+    if (walking) {
+      const bk = (this.back[i] ?? 0) > 0.5;
+      const baked = bk ? this.book.frame(c.sprite, 'walkBack', face, walkTime(this.phase[i] ?? 0, backGaitOf(c.sprite).stridePx)) : undefined;
+      this.bakedBack[i] = baked ? 1 : 0;
+      return baked ?? this.book.frame(c.sprite, 'walk', face, walkTimeFor(c.sprite, this.phase[i] ?? 0, bk));
+    }
     return this.book.frame(c.sprite, 'idle', face, this.animMs + i * 370);
-  }
-
-  /** Walk-row time: forward by distance, or the gait's reversed (or slowed) cycle while backing away. */
-  private walkT(sprite: string, i: number): number {
-    const ph = this.phase[i] ?? 0;
-    if ((this.back[i] ?? 0) <= 0.5) return walkTime(ph, STRIDE_PX);
-    const g = backGaitOf(sprite);
-    return g.reverse ? walkTimeBack(ph, g.stridePx) : walkTime(ph, g.stridePx);
   }
 
   /**
