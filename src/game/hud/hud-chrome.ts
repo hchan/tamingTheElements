@@ -8,6 +8,9 @@ export interface HudChromeContext {
   readonly add: { graphics(): Phaser.GameObjects.Graphics };
 }
 
+/** Scrim overdraw each side of the 1280 frame (px): the HUD camera on a wide view shows x from 640 - viewW/2, so the band must reach past 0..1280. */
+export const SCRIM_OVERSCAN = 400;
+
 /** HUD backdrop chrome: the Arcade top scrim (depth 96) and the low-life edge grain (depth 97), both under the HUD layers (98+). */
 export class HudChrome {
   private scrim: Phaser.GameObjects.Graphics | undefined;
@@ -18,12 +21,12 @@ export class HudChrome {
   /** Arcade: a dark top band over the crowd (the terrain owns it), fading out down to the floor. */
   drawScrim(): void {
     const g = this.ctx.add.graphics().setDepth(96);
-    g.fillStyle(0x14122a, 0.8).fillRect(0, 0, HUD_WIDTH, SLIM_H + 2);
+    g.fillStyle(0x14122a, 0.8).fillRect(-SCRIM_OVERSCAN, 0, HUD_WIDTH + 2 * SCRIM_OVERSCAN, SLIM_H + 2);
     // Dense over the crowd band (about y 115-180), a short fade into the floor at about y 182.
     // Lighter and shorter than before: the crowd shows through under the HUD instead of a dead dark band.
-    g.fillStyle(0x14122a, 0.38).fillRect(0, SLIM_H + 2, HUD_WIDTH, SCRIM_BOTTOM - SLIM_H - 2);
-    for (let i = 0; i < 8; i++) g.fillStyle(0x14122a, 0.34 * (1 - i / 8)).fillRect(0, 100 + i * 8, HUD_WIDTH, 8);
-    g.fillStyle(0x0a0818, 0.7).fillRect(0, SLIM_H + 1, HUD_WIDTH, 1);
+    g.fillStyle(0x14122a, 0.38).fillRect(-SCRIM_OVERSCAN, SLIM_H + 2, HUD_WIDTH + 2 * SCRIM_OVERSCAN, SCRIM_BOTTOM - SLIM_H - 2);
+    for (let i = 0; i < 8; i++) g.fillStyle(0x14122a, 0.34 * (1 - i / 8)).fillRect(-SCRIM_OVERSCAN, 100 + i * 8, HUD_WIDTH + 2 * SCRIM_OVERSCAN, 8);
+    g.fillStyle(0x0a0818, 0.7).fillRect(-SCRIM_OVERSCAN, SLIM_H + 1, HUD_WIDTH + 2 * SCRIM_OVERSCAN, 1);
     this.scrim = g;
   }
 
