@@ -224,7 +224,7 @@
   "first-run-hint.spec.ts": {
     "poll": 1,
     "waitForFunction": 4,
-    "waitForTimeout": 1,
+    "waitForTimeout": 0,
     "expects": 19
   },
   "floor-backgrounds.spec.ts": {
