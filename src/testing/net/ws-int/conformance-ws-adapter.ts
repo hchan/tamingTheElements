@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util';
 import { decodeText } from '../../../core/relay';
+import { decodeFrame } from '../../../core/relay/codec';
 import {
   conformanceCases,
   runAll,
@@ -56,6 +57,11 @@ export interface WsConformanceOptions {
   readonly settleMs: number;
   /** Binary ASCII frames fail the case instead of being passed on as text. */
   readonly strictText: boolean;
+  /**
+   * A gateway cannot let the backend pick the close code (API Gateway closes with 1000), and the wire spec calls the code advisory:
+   * when a socket closes with 1000 after an ERROR frame, report the close as 4000 + the error code's low byte, so the cases check the ERROR frame.
+   */
+  readonly advisoryClose?: boolean;
   readonly deps?: WsConformanceDeps;
 }
 
@@ -107,7 +113,13 @@ export function createWsConformance(o: WsConformanceOptions): {
     let onClose: ((c: number) => void) | undefined;
     const early: string[] = [];
     let closed: number | undefined;
-    const deliver = (t: string): void => { if (onText) onText(t); else early.push(t); };
+    let lastError: number | undefined;
+    const deliver = (t: string): void => {
+      const bytes = decodeText(t);
+      const f = bytes === undefined ? undefined : decodeFrame(bytes, 's2c');
+      if (f?.ok && f.frame.t === 'error') lastError = f.frame.code;
+      if (onText) onText(t); else early.push(t);
+    };
     ws.addEventListener('message', (ev) => {
       const data: unknown = ev.data;
       if (typeof data === 'string') {
@@ -120,7 +132,10 @@ export function createWsConformance(o: WsConformanceOptions): {
         deliver(o.strictText ? '' : Buffer.from(data as ArrayBuffer).toString('latin1'));
       }
     });
-    ws.addEventListener('close', (ev) => { closed = ev.code; onClose?.(ev.code); });
+    ws.addEventListener('close', (ev) => {
+      closed = o.advisoryClose === true && ev.code === 1000 && lastError !== undefined ? 4000 + (lastError & 0xff) : ev.code;
+      onClose?.(closed);
+    });
     await new Promise<void>((resolve, reject) => {
       const cap = setTimeout(() => { reject(new Error('websocket open timed out')); }, o.timeoutMs);
       ws.addEventListener('open', () => { clearTimeout(cap); resolve(); });
@@ -176,6 +191,7 @@ export async function runConformanceCli(argv: readonly string[], env: Readonly<R
         'settle-ms': { type: 'string', default: String(CONF.defaultSettleMs) },
         only: { type: 'string' },
         'strict-text': { type: 'boolean', default: false },
+        'advisory-close': { type: 'boolean', default: false },
       },
     }));
   } catch (e) {
@@ -191,7 +207,7 @@ export async function runConformanceCli(argv: readonly string[], env: Readonly<R
   const only = values.only?.split(',').map((s) => s.trim()).filter((s) => s !== '');
   if (only !== undefined && !conformanceCases.some((c) => only.some((p) => c.id.startsWith(p)))) return bad(`relay:conformance: --only matches no case; groups: ${groupsOf().join(', ')}`);
 
-  const { adapter, hooks, stats } = createWsConformance({ baseUrl, timeoutMs, settleMs, strictText: values['strict-text'], ...(deps === undefined ? {} : { deps }) });
+  const { adapter, hooks, stats } = createWsConformance({ baseUrl, timeoutMs, settleMs, strictText: values['strict-text'], advisoryClose: values['advisory-close'], ...(deps === undefined ? {} : { deps }) });
   const report: ConformanceReport = await runAll(adapter, hooks, only === undefined ? {} : { only });
   const delivery: Delivery = { text: stats.text, binary: stats.binary, notices: stats.notices };
   const connections = { ok: stats.connected, failed: stats.connectFailures };

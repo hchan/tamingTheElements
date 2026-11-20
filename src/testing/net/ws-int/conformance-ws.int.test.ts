@@ -28,8 +28,8 @@ function localDeps(s: WsServer): WsConformanceDeps {
   return { fetch: (input, init) => fetch(map(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, LOCAL_HTTP_SCHEME), init), WebSocket: Local };
 }
 
-async function run(args: readonly string[], delivery: Delivery = 'text'): Promise<{ code: number; out: string; err: string }> {
-  srv = await startWsServer({ backend: 'relay', delivery });
+async function run(args: readonly string[], delivery: Delivery = 'text', closeCodeOverride?: number): Promise<{ code: number; out: string; err: string }> {
+  srv = await startWsServer({ backend: 'relay', delivery, ...(closeCodeOverride === undefined ? {} : { closeCodeOverride }) });
   let out = '';
   let err = '';
   const code = await runConformanceCli(args, { [CONF.urlEnv]: BASE }, { out: (l) => { out += `${l}\n`; }, err: (l) => { err += `${l}\n`; } }, localDeps(srv));
@@ -59,6 +59,16 @@ describe('relay:conformance runner', () => {
   it('--strict-text turns binary delivery into case failures (exit 1)', async () => {
     const r = await run(['--only', 'hello', '--strict-text', ...FAST], 'ascii-binary');
     expect(r.code).toBe(CONF.exit.caseFailed);
+  });
+
+  it('a gateway that closes with 1000 fails the close-code cases, and --advisory-close checks the ERROR frame instead', async () => {
+    const GATEWAY_CLOSE = 1000; // [contract] API Gateway closes with 1000
+    const plain = JSON.parse((await run(['--only', 'malformed', ...FAST], 'text', GATEWAY_CLOSE)).out) as { report: { failed: number } };
+    expect(plain.report.failed).toBeGreaterThan(0);
+    await srv?.close();
+    const adv = await run(['--only', 'malformed', '--advisory-close', ...FAST], 'text', GATEWAY_CLOSE);
+    expect((JSON.parse(adv.out) as { report: { failed: number } }).report.failed).toBe(0);
+    expect(adv.code).toBe(CONF.exit.ok);
   });
 
   it('exits 3 when no connection can be made', async () => {

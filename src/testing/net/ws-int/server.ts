@@ -29,6 +29,8 @@ export interface ServerOptions {
   readonly backend: 'fake' | 'relay';
   readonly delivery?: Delivery;
   readonly relayOptions?: RelayOptions;
+  /** Close every relay-initiated close with this code, like a gateway that cannot pick one (API Gateway closes with 1000). */
+  readonly closeCodeOverride?: number;
 }
 
 export class ServerConn implements ServedWs {
@@ -104,7 +106,7 @@ export class WsServer {
     if (opts.backend === 'relay') {
       const sender: Sender = {
         send: (id, text) => { this.conns.find((c) => c.id === id)?.sendEncoded(text); },
-        close: (id, code) => { this.conns.find((c) => c.id === id)?.close(code); },
+        close: (id, code) => { this.conns.find((c) => c.id === id)?.close(opts.closeCodeOverride ?? code); },
       };
       const store = new InMemoryStore(() => this.clock.ms);
       this.relay = { core: new RelayCore(store, sender, opts.relayOptions), store, setResting: (s) => { this.resting = s === null ? undefined : { retryAfterSec: s }; } };
