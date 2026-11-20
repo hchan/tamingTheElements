@@ -53,4 +53,13 @@ describe('abilities-c tick values', () => {
     expect([kelp?.damage, kelp?.cooldownTicks]).toEqual([14, 125]);
     expect([kelp?.w, kelp?.h]).toEqual([130, 30]);
   });
+
+  it('pins the Abyssor kit: Tentacle Lash 18 damage, 60 cooldown ticks, 160x30 box (no other ability has a 160 box; Kelp Lash is 130x30); Abyssal Pull 8 damage at speed 14, 300 cooldown ticks, stops at 280 px, pulls 120 px (the only body pull)', () => {
+    const lash = get('tentacle-lash');
+    expect([lash?.damage, lash?.cooldownTicks]).toEqual([18, 60]);
+    expect([lash?.w, lash?.h]).toEqual([160, 30]);
+    const pull = get('abyssal-pull');
+    expect([pull?.damage, pull?.speed, pull?.cooldownTicks]).toEqual([8, 14, 300]);
+    expect([pull?.hoverStopPx, pull?.pullPx]).toEqual([280, 120]);
+  });
 });
