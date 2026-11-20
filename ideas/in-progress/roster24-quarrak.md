@@ -31,3 +31,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20 step S (no SIM_VERSION bump, no sim change): re-measured at SIM_VERSION 92 (full roster, arcade, ai-level 3; 1v1 16 seeds, 2v2 26 seeds): Quarrak 1v1 45.7, 2v2 53.2, both in band 0.45-0.55, so no life retune. The kit already has no duplicate footprint: Hurl Rock 35x35 at 25 ticks (90 in Arcade), Boulder Roll 64x48 at 175 ticks, speed 4 (unique); Hurl Rock only shares damage 40 and speed 8 with Sonar Blast (20x20, 30 ticks).
+  Three tuning rounds tried to separate it (Hurl Rock speed 8 -> 7): speed 7 / 40 dmg: 1v1 44.3 (out); speed 7 / 44 dmg: 1v1 45.9, 2v2 56.2 (out); speed 7 / 42 dmg: 1v1 46.7, 2v2 56.4 (out). All reverted. Kit stays as is; tick pins for the Quarrak kit added in src/core/data/abilities-c.test.ts. Hurl Rock stays 40 / speed 8.
+  Win rates at the unchanged kit (1v1 / 2v2): Quarrak 45.7 / 53.2; others unchanged by this step. Out of band, not touched: 1v1 abyssor 56.7, hyalia 42.1, and legacy heroes; 2v2 nykra 59.7, vortigal 42.3 (also cyclonius 66.9, echo 57.0, ishimi 43.6, rokcore 39.5, sindarosa 44.6, treenoc 42.5).
+  Not done: AI rule (Hurl Rock and Boulder Roll usage not measured), hit strength rows (Boulder Roll is already heavy).
