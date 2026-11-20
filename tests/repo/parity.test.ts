@@ -83,6 +83,11 @@ describe('docs/PARITY.md', () => {
     expect(missing.map((r) => r.id)).toEqual([]);
   });
 
+  it('rows U12, U14 and U15 stay decided (intentional divergence), not open', () => {
+    const status = (id: string) => rows.find((r) => r.id === id)?.status;
+    expect(['U12', 'U14', 'U15'].map(status)).toEqual(['intentional divergence', 'intentional divergence', 'intentional divergence']);
+  });
+
   it('mentions every known-bug slug from KNOWN-BUGS.md and every KNOWN-BUG tag in the code', () => {
     const fromTable = [...knownBugs.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1] as string);
     const fromCode = ['src', 'tests'].flatMap((d) =>

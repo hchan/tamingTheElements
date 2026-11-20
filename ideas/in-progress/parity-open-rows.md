@@ -1,5 +1,5 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-12
 ---
 
@@ -9,6 +9,7 @@ Each open row in docs/PARITY.md needs a named passing test or an intentional-div
 
 ## Progress
 
+- 2026-11-20: verified in docs/PARITY.md that no row is `open`; added a guard test in `tests/repo/parity.test.ts` pinning U12, U14, U15 as intentional divergence. Remaining: owner sign-off at WP 96.
 - 2026-11-14: only 3 rows were actually `open` (U12, U14, U15; C25 and U11 already `matches`). All three are now `intentional divergence`:
   U12 gained `tests/repo/assets-manifest.test.ts` (every character has a map sprite, every element a background, files on disk);
   U15 gained a source pin in `tests/repo/parity.test.ts` for the 1200 ms beat; U14 already cites `bindings.test.ts`.

@@ -25,7 +25,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [release-itch-pages](../brainstorm/release-itch-pages.md)
 - [repo-housekeeping](../brainstorm/repo-housekeeping.md)
 - [docs-refresh](../done/docs-refresh.md)
-- [parity-open-rows](../brainstorm/parity-open-rows.md)
+- [parity-open-rows](../in-progress/parity-open-rows.md)
 - [polish-backlog](../brainstorm/polish-backlog.md)
 - [sf-versus-join-in](../brainstorm/sf-versus-join-in.md)
 
@@ -63,7 +63,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### OR-3 Housekeeping and parity rows
 
-- Members: [repo-housekeeping](../brainstorm/repo-housekeeping.md), [parity-open-rows](../brainstorm/parity-open-rows.md), [polish-backlog](../brainstorm/polish-backlog.md)
+- Members: [repo-housekeeping](../brainstorm/repo-housekeeping.md), [parity-open-rows](../in-progress/parity-open-rows.md), [polish-backlog](../brainstorm/polish-backlog.md)
 - Size: S
 - Shared files: docs/REPO-MAP.md, docs/PARITY.md, small src cleanups
 - Flags: no sim change; deleting Classic sim code is owner-gated
