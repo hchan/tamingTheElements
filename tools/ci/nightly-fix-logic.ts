@@ -1,6 +1,6 @@
 // Nightly fix loop: pure logic (guardrails, prompts, triage, push preconditions, report). No fs, git, clock or claude here;
 // tools/ci/nightly-fix.ts does the I/O. Tests: tests/repo/nightly-fix.test.ts. Design: ideas/in-progress/nightly-fix-loop.md.
-import { isStale, type NightlyStatus, type TestRef } from './nightly-status';
+import { isStale, parseResults, unrecordedFailures, type KnownRed, type NightlyStatus, type Results, type TestRef } from './nightly-status';
 import { redact } from './redact';
 
 export const MAX_ROUNDS = 3;
@@ -9,8 +9,24 @@ export const RERUN_TIMEOUT_MS = 40 * 60_000;
 export const GATE_TIMEOUT_MS = 90 * 60_000;
 /** More unrecorded failures than this is a broken night, not something to fix by loop: report needs-human, no rounds. */
 export const MAX_FAILURES = 3;
-export const MAX_RUN_MS = 4 * 3600_000;
+/** Absolute cap of one run; the real stop is `deadlineFor` (07:00 for a night run, 22:00 for a manual daytime run). */
+export const MAX_RUN_MS = 6 * 3600_000;
 export const STOP_HOUR = 22;
+/** Local hour of the hard stop for a run that starts after midnight (the owner's morning; nothing starts after it that cannot finish). */
+export const MORNING_STOP_HOUR = 7;
+/** Full re-runs after fixing (fix, full e2e on the fixed tree, collect, fix again): at most this many. */
+export const MAX_FULL_CYCLES = 2;
+/** Estimate of a full PC run plus collect; a full re-run is only started when this much time is left (an estimate: tune after the first real night). */
+export const FULL_RUN_MS = 90 * 60_000;
+/** A fix round (claude plus the spec re-run) is only started when this much time is left. */
+/** Budget for gate:push after a full run (its hard cap is GATE_TIMEOUT_MS, but it normally takes far less). */
+export const GATE_PUSH_ESTIMATE_MS = 15 * 60_000;
+export const MIN_ROUND_MS = 20 * 60_000;
+/** Collect retry: the 02:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
+export const RETRY_WAIT_MS = 20 * 60_000;
+export const RETRY_CUTOFF = { hour: 4, minute: 30 } as const;
+/** Router exits recorded by collect that mean the PC job is not finished or not reachable yet (94 unreachable, 95 busy). */
+export const RETRY_EXITS: readonly number[] = [94, 95];
 /** Above the worst-case run (4 h of rounds plus the merge re-runs and gate:push), so a live run is never taken over. */
 export const LOCK_STALE_MS = 12 * 3600_000;
 /** Router exits after which the loop stops and reports (89 no runner, 94 unreachable, 95 busy, 96 refused). */
@@ -94,8 +110,63 @@ export function statusUsable(s: NightlyStatus, nowMs: number, notBefore?: string
   if (isStale(s, nowMs)) return false;
   return notBefore === undefined || Date.parse(s.finishedAt) >= Date.parse(notBefore);
 }
-/** 4 h wall clock from the start, and never past 22:00 local (keeps the PC free for the 23:00 full run). */
-export const deadlineReached = (startMs: number, now: Date): boolean => now.getTime() - startMs >= MAX_RUN_MS || now.getHours() >= STOP_HOUR;
+/** Hard stop for a run that began at `start`: 07:00 same morning for a night run, 22:00 for a daytime run (keeps the PC free for the 23:00 full run), none left for a run that starts at or after 22:00. */
+export function deadlineFor(start: Date): Date {
+  const d = new Date(start);
+  if (start.getHours() < MORNING_STOP_HOUR) d.setHours(MORNING_STOP_HOUR, 0, 0, 0);
+  else if (start.getHours() < STOP_HOUR) d.setHours(STOP_HOUR, 0, 0, 0);
+  return d;
+}
+export const deadlineReached = (startMs: number, now: Date): boolean => now.getTime() - startMs >= MAX_RUN_MS || now.getTime() >= deadlineFor(new Date(startMs)).getTime();
+const left = (now: Date, startMs: number): number => deadlineFor(new Date(startMs)).getTime() - now.getTime();
+export const canStartRound = (startMs: number, now: Date): boolean => left(now, startMs) >= MIN_ROUND_MS;
+/** The full run plus the gate:push that follows it must both fit before the deadline. */
+export const canStartFullRun = (startMs: number, now: Date): boolean => left(now, startMs) >= FULL_RUN_MS + GATE_PUSH_ESTIMATE_MS;
+/** A child timeout never runs past the deadline (so nothing is left running after 07:00). */
+export const capTimeout = (ms: number, startMs: number, now: Date): number => Math.max(1000, Math.min(ms, left(now, startMs)));
+
+/** Collect found the 23:00 run unfinished (still pending, or the PC busy/unreachable): wait and retry instead of skipping the night. */
+export const collectUnfinished = (s: NightlyStatus | undefined): boolean => s?.state === 'pending' || (s?.state === 'not-run' && s.exit !== null && RETRY_EXITS.includes(s.exit));
+/** Retry only while the next try still starts by min(04:30 of the night the run began, a round's length before the hard stop). */
+export function retryAllowed(s: NightlyStatus | undefined, start: Date, now: Date): boolean {
+  const cutoff = new Date(start);
+  cutoff.setHours(RETRY_CUTOFF.hour, RETRY_CUTOFF.minute, 0, 0);
+  if (start.getHours() >= MORNING_STOP_HOUR) cutoff.setDate(cutoff.getDate() + 1);
+  const limit = Math.min(cutoff.getTime(), deadlineFor(start).getTime() - MIN_ROUND_MS);
+  return collectUnfinished(s) && now.getTime() + RETRY_WAIT_MS <= limit;
+}
+
+const sameSpec = (a: string, b: string): boolean => a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+const sameRef = (a: TestRef, b: TestRef): boolean => sameSpec(a.file, b.file) && a.title === b.title;
+export interface FullRunVerdict {
+  /** Unrecorded reds that were not red in the nightly before the fix: caused by the fix (collateral), block the push. */
+  readonly newReds: TestRef[];
+  /** Unrecorded reds that were already red in the nightly: still-open failures, never block the push. */
+  readonly remaining: TestRef[];
+}
+/** Judge a full re-run: flaky (passed on retry) and known-red never count; a red absent from the pre-fix nightly is new. */
+export function judgeFullRun(r: Results, baseline: readonly TestRef[], known: readonly KnownRed[]): FullRunVerdict {
+  const reds = unrecordedFailures(r.failed, known);
+  return { newReds: reds.filter((t) => !baseline.some((b) => sameRef(b, t))), remaining: reds.filter((t) => baseline.some((b) => sameRef(b, t))) };
+}
+/** Why a full re-run cannot be trusted ('' = complete): fewer specs than the pre-fix nightly, an interrupted run, or more skipped tests than before. */
+export function fullRunIncomplete(post: unknown, r: Results, pre: unknown): string {
+  const stats = (j: unknown): { skipped: number; interrupted: number } => {
+    const s = ((j ?? {}) as { stats?: { skipped?: unknown; interrupted?: unknown } }).stats ?? {};
+    return { skipped: typeof s.skipped === 'number' ? s.skipped : 0, interrupted: typeof s.interrupted === 'number' ? s.interrupted : 0 };
+  };
+  const p = parseResults(pre);
+  const before = p.passed + p.failed.length + p.flaky.length;
+  const after = r.passed + r.failed.length + r.flaky.length;
+  if (after < before) return `${String(after)} specs ran, the pre-fix nightly had ${String(before)}`;
+  if (stats(post).interrupted > 0) return 'the run was interrupted';
+  if (stats(post).skipped > stats(pre).skipped) return `skipped tests rose from ${String(stats(pre).skipped)} to ${String(stats(post).skipped)}`;
+  return '';
+}
+/** Next fix cycle chases only a red whose earlier fix did not hold (outcome fixed): flaky, known-red, needs-human and unfixed specs are never chased. */
+export function retargets(v: FullRunVerdict, results: readonly FailureResult[]): TestRef[] {
+  return v.remaining.filter((t) => results.some((r) => r.outcome === 'fixed' && sameRef(r, t)));
+}
 export const tooManyFailures = (n: number): boolean => n > MAX_FAILURES;
 
 export interface ChildResult {
@@ -263,6 +334,7 @@ export interface PushInput {
   readonly forbidden: readonly string[];
   readonly markersClean: boolean;
   readonly gatePushOk: boolean;
+  /** The latest FULL run on exactly the tree being pushed finished with no new reds (flaky and known-red do not count). */
   readonly rerunGreen: boolean;
   readonly originUnmoved: boolean;
   readonly noEnvOverride: boolean;
@@ -277,7 +349,7 @@ export function pushBlockers(i: PushInput): string[] {
   if (i.forbidden.length) b.push(`merged diff touches forbidden paths: ${i.forbidden.join(', ')}`);
   if (!i.markersClean) b.push('conflict markers found');
   if (!i.gatePushOk) b.push('gate:push failed');
-  if (!i.rerunGreen) b.push('re-run of the failed specs is not green');
+  if (!i.rerunGreen) b.push('the latest full run on the pushed tree has new reds or did not finish');
   if (!i.originUnmoved) b.push('origin/main moved during the run');
   return b;
 }

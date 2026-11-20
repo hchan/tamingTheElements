@@ -19,10 +19,11 @@ describe('nightly launchd template', () => {
       expect(text).toContain('/b&amp;c');
       expect(text).not.toMatch(/\{\{/);
     }
-    expect(JOBS.map((j) => `${String(j.hour)}:${String(j.minute)}`)).toEqual(['23:0', '6:0']);
+    expect(JOBS.map((j) => `${String(j.hour)}:${String(j.minute)}`)).toEqual(['23:0', '2:0', '7:0']);
   });
-  it('chains the 06:00 collect job into the fix loop', () => {
-    expect(JOBS.find((j) => j.hour === 6)).toMatchObject({ script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix' });
+  it('chains the 02:00 collect job into the fix loop', () => {
+    expect(JOBS.find((j) => j.hour === 2)).toMatchObject({ script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix' });
+    expect(JOBS.find((j) => j.hour === 7)).toMatchObject({ script: 'tools/ci/nightly-fix.ts', subcommand: 'report' });
   });
   it('throws on an unfilled placeholder', () => {
     expect(() => render('{{NOPE}}', {})).toThrow(/unfilled/);
