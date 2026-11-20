@@ -42,6 +42,11 @@ if (!report.ok) throw new Error(report.results.filter((r) => r.status === 'fail'
 - Hooks (all optional): `sleep` (default only yields; supply a real timer for a remote relay), `setResting(retryAfterSec | null)` flips the kill switch,
   `advanceTime(ms)` moves the relay clock and sweeps (grace expiry, the 60 s resting close), `simVersion` (default 1), `timeoutMs`, `settleMs`.
   Cases that need a missing hook (or `sendBinary`) report `skip`, not `fail`.
+- Adapter contract: `connect(opts?: { sameIdentityAs?: ConformanceClient })`. A case that resumes a session passes the client that dropped, and the new socket must act as the same
+  player (for a ticket flow: the same session token, no new `/session`), because a relay refuses a resume for another identity. An adapter whose identity is not per connection may ignore it.
+- Running against a deployment (`pnpm relay:conformance`, target only from env `TTE_RELAY_URL`): `--advisory-close` reports a 1000 close that follows an ERROR frame as `4000 + code`
+  (API Gateway cannot pick the close code, and the frame is the authority; a resting close with no frame still fails); `--no-binary` leaves `sendBinary` out so `malformed.binary` skips
+  (a gateway that routes on the message body may never pass a binary message on); `--strict-text` fails on binary delivery. All three default off.
 - `runAll(adapter, hooks, { only: ['queue.', 'resting.'] })` filters by id prefix. Case ids are grouped: `wire.golden.*` (no adapter, one byte vector per frame
   type), `wire.text.*` (golden base64 texts), `hello.*`, `version.*`, `malformed.*` (including `malformed.binary`), `queue.*`, `room.*`, `batch.*`, `setup.*`, `pause.*`, `hash.*`, `desync.*`, `result.*`, `resume.*`, `resting.*`.
 - Every server frame is also checked to decode from its base64 text and re-encode to the same bytes.
