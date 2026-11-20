@@ -31,3 +31,5 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20 step S (no SIM_VERSION bump, no sim change): re-measured at SIM_VERSION 92 (full roster, arcade, ai-level 3; 1v1 16 seeds, 2v2 26 seeds): Umbrel 1v1 53.5, 2v2 52.8, both in band 0.45-0.55, so no life retune and no tuning rounds. The kit already has no duplicate footprint: Spore Burst (range, 40x40, 6 dmg, speed 5, 70 ticks, wound) matches no other ranged ability; it only shares damage and speed with Bell Pulse (omni, 24x24). Mycelium Mend (heal 8, 1500 ticks) differs from Fire Heal (heal 10, 2000 ticks). All tick values are exact multiples of 20 ms. Kit pinned in src/core/data/abilities-c.test.ts.
+  Not done: AI rule, hit strength rows.

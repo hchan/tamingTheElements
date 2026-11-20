@@ -35,4 +35,13 @@ describe('abilities-c tick values', () => {
     expect([roll?.damage, roll?.speed, roll?.cooldownTicks]).toEqual([26, 4, 175]);
     expect([roll?.w, roll?.h]).toEqual([64 / 80, 48 / 80]);
   });
+
+  it('pins the Umbrel kit: Spore Burst 6 damage at speed 5, 40x40 box, 70 cooldown ticks, wound 4 damage over 90 ticks; Mycelium Mend heal 8, 1500 cooldown ticks (no other ability shares kind, box, damage and speed; Mend differs from Fire Heal in heal 10 and 2000 ticks)', () => {
+    const spore = ALL_ABILITIES.find((a) => a.id === 'spore-burst');
+    expect([spore?.damage, spore?.speed, spore?.cooldownTicks]).toEqual([6, 5, 70]);
+    expect([spore?.w, spore?.h]).toEqual([40 / 80, 40 / 80]);
+    expect([spore?.woundDamage, spore?.woundTicks]).toEqual([4, 90]);
+    const mend = get('mycelium-mend');
+    expect([mend?.heal, mend?.cooldownTicks]).toEqual([8, 1500]);
+  });
 });
