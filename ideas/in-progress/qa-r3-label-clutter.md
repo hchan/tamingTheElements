@@ -1,5 +1,5 @@
 ---
-status: planned
+status: in-progress
 added: 2026-11-13
 ---
 
@@ -10,3 +10,7 @@ Severity: medium. The floating TAG label overlaps the "Tag 2s" text on slot 3 (w
 Fix: move the TAG cue, use player-facing prop names or icons only, add a soft push-apart, hide empty status boxes, expire damage numbers faster.
 
 Done 2026-11-13: TAG caption lifted clear of slot text, damage numbers expire in 400 ms, ended status chips leave no empty outline. Still open: player-facing prop names (trap-fx.ts TRAP_WORDS/trapLabel), hero push-apart (sim).
+
+## Progress
+
+- Trap labels no longer carry the "P1"/"P2" prefix: the first side's trap reads "Spike", the other's "Foe Spike" (trap-fx.ts `trapLabel`; unit and arcade-trap e2e updated). Push-apart stays open (sim).

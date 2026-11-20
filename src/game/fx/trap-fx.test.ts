@@ -5,10 +5,10 @@ import { clampSpanX } from '../views/hero-scale';
 
 describe('trapLabel', () => {
   it('names the kind and the owner in words, and says "arming" until armed', () => {
-    expect(trapLabel(1, 0, 0)).toBe('P1 Fire Bomb');
-    expect(trapLabel(2, 1, 12)).toBe('P2 Puddle (arming)');
-    expect(trapLabel(3, 0, 0)).toBe('P1 Spike');
-    expect(trapLabel(4, 1, 0)).toBe('P2 Gust');
+    expect(trapLabel(1, 0, 0)).toBe('Fire Bomb');
+    expect(trapLabel(2, 1, 12)).toBe('Foe Puddle (arming)');
+    expect(trapLabel(3, 0, 0)).toBe('Spike');
+    expect(trapLabel(4, 1, 0)).toBe('Foe Gust');
   });
   it('is empty for a free slot or an unknown kind', () => {
     expect(trapLabel(0, 0, 0)).toBe('');

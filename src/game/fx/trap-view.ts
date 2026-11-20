@@ -9,7 +9,7 @@ import { TRAP_COLORS, TRAP_DECAL_HALF_PX, labelX, trapAlpha, trapLabel, trapPhas
 /**
  * Phaser side of the Arcade trap marker (WP 39b). The Arena mounts it in every Arcade match (a lazy chunk, so Classic never
  * downloads it) and it draws each live trap of `RenderArcade.traps`: an element-coloured square (the trap's box) inside an
- * outline of its trigger range, with its words above ("P1 Fire Bomb (arming)"). Reduced motion stops the blink. One Graphics
+ * outline of its trigger range, with its words above ("Fire Bomb (arming)"). Reduced motion stops the blink. One Graphics
  * plus one Text per trap slot, made on first use and reused; one `postupdate` listener, removed with the scene.
  */
 const DEPTH = -0.6;

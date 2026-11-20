@@ -15,11 +15,11 @@ export const TRAP_BLINK_TICKS = 40;
 /** The marker's outer (trigger-range) square side: the box inflated by TRAP_TRIGGER_PX on every side. */
 export const TRAP_RANGE_PX = TRAP_BOX_PX + 2 * TRAP_TRIGGER_PX;
 
-/** "P1 Fire Bomb" when armed, "P1 Fire Bomb (arming)" while it still arms; '' for a free slot. */
+/** "Fire Bomb" for the first side's trap and "Foe Fire Bomb" for the other's (no "P1"/"P2" debug prefix, qa-r3); "(arming)" while it still arms; '' for a free slot. */
 export function trapLabel(kind: number, team: number, armLeft: number): string {
   const word = TRAP_WORDS[kind];
   if (word === undefined || kind === TrapKind.none) return '';
-  return `P${String(team + 1)} ${word}${armLeft > 0 ? ' (arming)' : ''}`;
+  return `${team === 0 ? '' : 'Foe '}${word}${armLeft > 0 ? ' (arming)' : ''}`;
 }
 
 /** Marker alpha: dim while arming, full once armed, blinking over the last TRAP_BLINK_TICKS (steady when `reduced`). */

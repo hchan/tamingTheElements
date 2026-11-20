@@ -42,7 +42,7 @@ test('Arcade Versus: Z lays a trap with its words and starts the cooldown; 0 lis
   const t = await traps(page);
   expect(t?.length).toBe(1);
   expect(t?.[0]?.team).toBe(0);
-  expect(t?.[0]?.label).toMatch(/^P1 (Fire Bomb|Puddle|Spike|Gust)/);
+  expect(t?.[0]?.label).toMatch(/^(Fire Bomb|Puddle|Spike|Gust)/);
   await expect.poll(async () => { await frames(page); return page.locator('#arcadeTrap').innerText(); }, { timeout: 5000 }).toMatch(/\d+s/);
 
   await page.keyboard.press('Shift+P');
