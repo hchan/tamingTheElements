@@ -5,7 +5,7 @@
  *   collect  follow the pending job (`--pc-attach`), read its results.json and record pass | red | not-run.
  *   status   print the recorded status (exit 0 always: stale or not-run only warns).
  * Status: `<git common dir>/tte-gate/nightly-status.json` (+ nightly-history.jsonl). The PC is never bypassed: no Mac fallback.
- * launchd runs submit at 23:00 and collect at 07:30 (tools/ci/nightly-install.ts). Pure logic: nightly-status.ts.
+ * launchd runs submit at 23:00 and collect at 06:00 (tools/ci/nightly-install.ts). Pure logic: nightly-status.ts.
  */
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

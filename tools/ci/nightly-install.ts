@@ -1,5 +1,5 @@
 /**
- * Install or remove the two launchd LaunchAgents of the nightly e2e (submit 23:00, collect 07:30). Paths (repo, corepack, PATH,
+ * Install or remove the two launchd LaunchAgents of the nightly e2e (submit 23:00, collect 06:00). Paths (repo, corepack, PATH,
  * HOME) are filled into tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl here, at install time; nothing machine-specific is committed.
  * `pnpm nightly:install [--dry-run] [--uninstall]`. launchd runs a missed calendar job once on wake.
  */
@@ -16,7 +16,7 @@ export interface Job {
 }
 export const JOBS: readonly Job[] = [
   { label: 'dev.tte.nightly-e2e-submit', subcommand: 'submit', hour: 23, minute: 0 },
-  { label: 'dev.tte.nightly-e2e-collect', subcommand: 'collect', hour: 7, minute: 30 },
+  { label: 'dev.tte.nightly-e2e-collect', subcommand: 'collect', hour: 6, minute: 0 },
 ];
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

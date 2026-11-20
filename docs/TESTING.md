@@ -308,7 +308,7 @@ python3) and `tests/repo/gpu-jobs-cli.test.ts` (fake ssh in `tests/repo/fixtures
 `tools/ci/nightly-e2e.ts` runs the full e2e suite on the PC every night, in two phases so a sleeping Mac cannot lose a run.
 `pnpm nightly:submit` (23:00) fetches `origin`, checks out the tip of local `main` (pushed or not; the router bundles unpushed commits, so the safety net covers what is merged even while a push is gated) in the detached worktree `.scratch/nightly-wt` and queues the full
 suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full --pc-detach`), recording `pending` with the raw job id.
-`pnpm nightly:collect` (07:30) follows that job (`--pc-attach raw-<id>`), reads `results.json` and records `pass`, `red` or `not-run`.
+`pnpm nightly:collect` (06:00) follows that job (`--pc-attach raw-<id>`), reads `results.json` and records `pass`, `red` or `not-run`.
 `pnpm nightly:status` prints the result. It refuses to run with `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` set and never falls back to the Mac.
 
 - Health: every PC job samples `health.csv` (ts, load1, free RAM, GPU, nproc) every 30 s and writes `nproc` to `run-summary.txt`; both are copied into `out/` so they are fetched, and the router prints a one-line load/nproc summary (use it to pick a worker count).
@@ -324,7 +324,7 @@ suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full
 
 ### Nightly runbook (diagnose and fix)
 
-**How it runs.** Two LaunchAgents, `dev.tte.nightly-e2e-submit` (23:00, runs `nightly-e2e.ts submit`) and `dev.tte.nightly-e2e-collect` (07:30, runs `collect`), installed by `pnpm nightly:install` from `tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl` into `~/Library/LaunchAgents/<label>.plist`. Submit works in the detached worktree `.scratch/nightly-wt` (created on first use, then `git checkout --detach --force <sha>`); collect only reads the PC job.
+**How it runs.** Two LaunchAgents, `dev.tte.nightly-e2e-submit` (23:00, runs `nightly-e2e.ts submit`) and `dev.tte.nightly-e2e-collect` (06:00, runs `collect`), installed by `pnpm nightly:install` from `tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl` into `~/Library/LaunchAgents/<label>.plist`. Submit works in the detached worktree `.scratch/nightly-wt` (created on first use, then `git checkout --detach --force <sha>`); collect only reads the PC job.
 
 **Where state lives**
 
@@ -340,7 +340,7 @@ suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full
 
 - `pass`: full run finished, no failures (`flaky` may still list tests that passed on retry).
 - `red`: finished with failures. `failed` lists file and title; `unrecorded` is the subset not covered by `tools/ci/known-red.json`. Those are the ones to act on.
-- `pending`: submitted, not collected. Normal between 23:00 and 07:30. If it is still pending the next day, collect did not run or could not finish: run `pnpm nightly:collect`.
+- `pending`: submitted, not collected. Normal between 23:00 and 06:00. If it is still pending the next day, collect did not run or could not finish: run `pnpm nightly:collect`.
 - `not-run`: nothing was learned, never read it as pass. `reason` says why: `git fetch failed`, `could not prepare the nightly worktree`, `no job id from the router`, `submit failed`, or the router exit code below.
 - Exit codes recorded in `exit`: 89 not routed to the PC, 93 PC job lost (closed browser or `state lost`; also what an overlapping run can cause), 94 PC unreachable, 95 PC busy, 96 PC refused the job, 97 PC not set up (run `pnpm gpu:setup`), 130 cancelled. Any other code shows as `router exit N`; 0 or 1 without a `results.json` shows `no results.json`.
 - **Stale:** a status whose `finishedAt` (or `startedAt`) is over 36 h old prints `STALE` and counts as `not-run`. It means a night was missed (Mac asleep or off, agents not installed, submit never reached the PC). Warning only; nothing blocks a push on it yet.
@@ -365,7 +365,7 @@ corepack pnpm gpu:status                                      # job server queue
 
 - **`not-run`, `PC not set up` (97) or `no job id from the router`, or the router says it would run locally:** `git config tte.remote` is missing in the checkout that launchd runs (worktrees do not always inherit it). Set `git config tte.remote <ssh-alias>` in the main checkout (never write the host, IP, user or key into the repo), then `pnpm gpu:setup` if the job server is missing, then kickstart submit.
 - **`PC unreachable` (94) or `PC busy` (95):** run `pnpm pc:probe`. If the PC or its WSL has gone idle or asleep, wake it with `pnpm gpu:status`, then retry. If another session's job holds it, wait: never kill another session's job. The status stays `not-run`; kickstart submit once the PC is free, then collect.
-- **Mac asleep at 23:00:** launchd runs a missed calendar job once on wake, but that can be late and the Mac is also needed at 07:30 for collect. The job lives on the PC, so a late collect is fine (`pnpm nightly:collect`). To keep the Mac awake overnight use System Settings, Battery (or Energy) "prevent automatic sleeping on power adapter", or run `caffeinate -i -t 28800 &` before leaving; `pmset -g log | grep -i -E "sleep|wake"` shows what the Mac did.
+- **Mac asleep at 23:00:** launchd runs a missed calendar job once on wake, but that can be late and the Mac is also needed at 06:00 for collect. The job lives on the PC, so a late collect is fine (`pnpm nightly:collect`). To keep the Mac awake overnight use System Settings, Battery (or Energy) "prevent automatic sleeping on power adapter", or run `caffeinate -i -t 28800 &` before leaving; `pmset -g log | grep -i -E "sleep|wake"` shows what the Mac did.
 - **Stale lock (a router or PC job lock left from a killed run):** `pnpm pc:probe` and `pnpm gpu:status` show whether a job is really running. If nothing is running and submit keeps reporting busy or refused, cancel only your own dead job through `pnpm gpu:cancel`, and see [.claude/rules/gpu-pc.md](../.claude/rules/gpu-pc.md) for the exit codes. Do not delete files on the PC by hand.
 - **Dirty or broken `.scratch/nightly-wt`** (`could not prepare the nightly worktree`): it is a throwaway detached checkout. From the repo root run `git worktree remove --force .scratch/nightly-wt` (or, if git no longer knows it, `rm -rf .scratch/nightly-wt && git worktree prune`), then kickstart submit, which recreates it. Never edit files in it.
 - **Agents missing or wrong path (repo moved, corepack changed):** `pnpm nightly:install --dry-run` prints the rendered plists, `pnpm nightly:install` (re)installs both (it boots out the old ones first), `pnpm nightly:install --uninstall` removes them (`--dry-run` with it only prints). Paths for the repo, corepack and `PATH` are fixed at install time, so reinstall after moving the checkout or upgrading node.
