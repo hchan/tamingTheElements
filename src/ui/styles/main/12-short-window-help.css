@@ -1,0 +1,39 @@
+/* Short desktop windows (720p): a smaller crest and tighter buttons keep the whole title screen, version line included, in view. */
+@media (max-height: 800px) and (min-height: 501px) {
+  .mainMenuList::before {
+    height: 5em;
+  }
+  .mainMenuList li button {
+    padding-block: 0.4em;
+  }
+}
+
+/* Help: no crest orb over the hero art (QA r51 #11: it cluttered the page); the page links as one centred row of buttons, the sections as lit cards (no tall left-hand column, no empty bands). */
+#menu .helpLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5em 0.8em;
+  margin: 0.4em 0 1em;
+}
+#menu .helpLinks li {
+  display: block;
+}
+#menu .helpLinks a.menuButton {
+  margin: 0;
+  background: #3a3470;
+  border-color: #cfc6f0;
+}
+#menu .helpPanel,
+#menu .helpControls {
+  padding: 0.6em 1.1em 0.8em;
+  background: rgba(34, 30, 82, 0.82);
+  border: 1px solid rgba(207, 198, 240, 0.55);
+  border-radius: 12px;
+}
+#menu .helpPanel > h2.heading,
+#menu .helpControls > h2.heading {
+  text-align: left;
+  font-size: 1.3em;
+  margin: 0 0 0.3em;
+}

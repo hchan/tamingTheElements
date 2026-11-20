@@ -1,28 +1,3 @@
-/* Settings on a short viewport (qa-r25): the title is visually hidden (still the page heading for assistive tech), the Save/Back bar and
-   section headers shrink, so the first controls start high on a phone in landscape. */
-@media (max-height: 500px) {
-  body:has(.settingsBar) h1.heading {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-  #menu .settingsBar { padding: 0.25em 0; gap: 0.5em; }
-  html:has(.settingsBar) { scroll-padding-top: 64px; }
-  #menu .settingsSubheading {
-  margin: 0.75em 0.6em 0.25em;
-  font-size: 1.05em;
-  color: #ffe600;
-}
-#menu .settingsSection > a.menuLink {
-  margin: 0.5em 0.9em;
-}
-#menu .settingsBar .menuButton { box-sizing: border-box; min-height: 44px; padding-top: 0.2em; padding-bottom: 0.2em; }
-  #menu .settingsSection { margin: 0.3em 0; }
-  #menu .settingsSummary { padding: 0.3em 0.9em; min-height: 44px; }
-}
-
 /* 1v1 has one slot, so a pick is one click on the tile and the Add / Remove button has nothing to add to (QA r26). */
 #arcadePick:has(select[name='size'] option[value='1']:checked) .heroAdd {
   display: none;
@@ -77,15 +52,3 @@
     height: 44px;
   }
 }
-
-/* QA r36: on a landscape phone the first-run card hugs the action bar (the fighters meet mid-floor in the first exchange, so the band above the bar is the only clear one) and leaves quickly at the first tap. */
-@media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
-  #firstRunHint.firstRunHint:not(.firstRunWait) {
-    top: 29vh;
-    bottom: auto;
-  }
-  #firstRunHint.firstRunHint.firstRunFade {
-    transition: opacity 0.25s;
-  }
-}
-
