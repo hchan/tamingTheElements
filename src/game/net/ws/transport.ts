@@ -2,12 +2,15 @@ import type { ControlPipe, Transport } from '@core/index';
 import { ControlLink } from './control-link';
 import { RTT_WINDOW } from '../link-quality';
 import { ReorderBuffer } from './reorder';
-import { decodeText, encodeText } from './text-codec';
+import { inboundBytes } from './inbound';
+import { encodeText } from './text-codec';
 import { decodeFrame, encodeFrame, FrameType, MAX_BATCH_BYTES, type Frame } from './wire';
 
 /** The slice of WebSocket the transport uses (tests fake it). `readyState` 1 = open. */
 export interface SocketLike {
   readonly readyState: number;
+  /** Set to 'arraybuffer' by the client so binary messages decode synchronously and keep their order. */
+  binaryType?: string;
   /** One base64 text message per frame (wire v3). */
   send(data: string): void;
   addEventListener(type: 'message', listener: (ev: { data: unknown }) => void): void;
@@ -150,8 +153,8 @@ export class WebSocketTransport implements Transport {
   }
 
   private onMessage(data: unknown): void {
-    // A binary (or any non-string) message is malformed in wire v3.
-    const bytes = typeof data === 'string' ? decodeText(data) : undefined;
+    // Text, or ASCII text in a binary frame (docs/ONLINE-PROTOCOL.md); anything else is malformed in wire v3.
+    const bytes = inboundBytes(data);
     const f = bytes === undefined ? undefined : decodeFrame(bytes);
     if (f === undefined) {
       this.malformed++;
