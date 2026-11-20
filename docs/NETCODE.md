@@ -42,13 +42,11 @@ Rollback removes nearly all stalls (lockstep slows to 60-70% speed at 80-120 ms)
 
 Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs below the peer's ack) are dropped in batches, and hash history keeps the last 64 ticks, so a hash older than that is ignored.
 
-## WebRTC plan
+## Transport and trust
 
-- Input channel: `pc.createDataChannel('input', { negotiated: true, id: 0, ordered: false, maxRetransmits: 0 })`. Unordered and unreliable on purpose: stale inputs are useless and the redundancy above replaces retransmission.
-- Control channel: a second, reliable and ordered channel (`negotiated: true, id: 1`) for setup only: match setup (seed, rosters, `simVersion`, flags), ready, rematch, chat. Both peers must verify an identical `MatchSetup` and `SIM_VERSION` before tick 0.
-- Signalling: manual copy-paste of a compact code is enough for a first playtest. The code (`src/game/net/sdp-codec.ts`, prefix `T1.`, base64url) packs only what a data-channel link needs from the SDP (offer or answer, ICE ufrag and password, the sha-256 DTLS fingerprint, the setup role, UDP candidates as IPv4, IPv6 or mDNS bytes) and `unpackSdp` rebuilds a minimal `m=application ... webrtc-datachannel` SDP: about 140 characters without STUN, under 200 with it. An SDP it cannot carry (another fingerprint hash, TCP-only candidates, a second media section) falls back to the old base64 JSON code, and `decodeSignal` accepts both. Later: a tiny serverless relay (for example a Cloudflare Worker or a WebSocket room keyed by short code). Signalling never carries gameplay.
-- NAT: public STUN to start; a TURN relay (self-hosted coturn or a managed service) is needed for symmetric NATs and costs bandwidth, so it is a later, optional item.
-- Trust model: peers are equal and mutually distrusting only for crashes, not cheating. Both simulate everything, so a modified client can only send its own legal inputs (reserved bits are masked); hidden information does not exist in this game. Hash checks detect divergence (bugs or tampering) but do not prove who is right; there is no ranked play without a server referee. `war/WEB-INF/user.properties` is unrelated and must not be touched by this work.
+- Transport: online play runs over one WebSocket per player through a relay ([ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md)). Input packets are sent redundantly with acks, so loss is repaired without retransmission timers; setup, ready and rematch travel as reliable control messages. Both peers must verify an identical `MatchSetup` and `SIM_VERSION` before tick 0.
+- Trust model: peers are equal and mutually distrusting only for crashes, not cheating. Both simulate everything, so a modified client can only send its own legal inputs (reserved bits are masked); hidden information does not exist in this game. Hash checks detect divergence (bugs or tampering) but do not prove who is right; there is no ranked play without a server referee.
+- The earlier WebRTC path (data channels, copy-paste codes, STUN/TURN) was retired; its design is kept as history in [WEBRTC-PLAN.md](WEBRTC-PLAN.md).
 
 ## Readiness checklist
 
@@ -67,21 +65,14 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [x] Session snapshot hook for rollback
 - [x] Rollback with input prediction and event de-duplication (the Arena default, window 6; `?ff=lockstep` opts out)
 - [x] Match-setup protocol over a reliable pipe: `src/core/net/handshake.ts` (simVersion, flags, seed, rosters; cheats refused) and `control.ts` (`SetupHandshake`: HELLO, READY, REJECT, never throws on junk)
-- [x] `RTCDataChannel` adapters `inputTransport` (id 0) and `controlPipe` (id 1) in `src/game/net/rtc-channels.ts` (binary only, capped inbox, send never throws; unit-tested with a fake channel)
-- [x] Creating the `RTCPeerConnection` and its two negotiated channels
-- [x] Manual copy-paste signalling screen (`#online`, shown with the Arcade preview; connects, runs the setup handshake, then plays a fixed Arcade 1v1 in lockstep: host is side 0, joiner side 1; `ArenaLaunch.net` makes the Arena step through a `LockstepSession`, no pause, hidden tab via `setHidden`)
 - [x] Online hero pick exchange, real MatchSetup in the handshake
 - [x] Results text and Rematch on the same link (match number in every packet drops the old match's late packets)
-- [x] Share, copy, paste, `?join=<code>#online` link (starts Join at once, param stripped) and a QR of the link (`src/game/app/online-share.ts`, `src/game/net/qr.ts`); step-numbered Host and Join layout (WebRTC WP03)
-- [x] ICE config: Google and Cloudflare STUN, optional user TURN from Settings (`turnServer` in the save, `src/game/net/ice.ts`), early gather resolve once a server-reflexive candidate is seen, `Peer.onState` (open, failed, closed) and plain-words failures for strict networks (WebRTC WP04). `onState` is not yet shown as a connection-lost cue in the UI.
-- [x] Optional relay signalling: 6-character room codes through `tools/signal-relay/` (Node or Cloudflare Worker), shown only when a build sets `VITE_SIGNAL_URL` (WebRTC WP10). Signalling only, never gameplay
 - [ ] Lobby
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
-- [x] Browser e2e: two separate contexts play a whole match to the same winner and identical checkpoint hashes (`tests/e2e/online-match.spec.ts`). Dev/test URL switches: `?ff=netbot` (Arcade scripted AI plays the local side), `?ice=none` (no STUN, loopback candidates), `?ff=lockstep`, `?matchticks=N`, `?netsim=lat:60,jitter:20,loss:10` (WP 11: seeded one-way delay, jitter, loss on each side's input receive path; the proof also runs under it in both modes); probe `__TTE__.net()`
-- [x] Harsh soak (opt-in, `pnpm soak:webrtc`, `tools/ci/webrtc-soak.ts`; 2026-11-14, 3000-tick draws, two SwiftShader contexts, 60 checkpoints each): no desync, same winner (draw) and identical checkpoint hashes in every run. Wall time per match, lockstep / rollback: `lat:120,jitter:40,loss:20` 253 s / 112 s; `lat:200,jitter:60,loss:20,dup:10` 257 s / 156 s; `lat:200,jitter:80,loss:30,dup:10` 296 s / 119 s. Lockstep stalls to the slowest packet so it takes about 2 to 2.5 times as long as rollback, which stays near its unimpaired pace. Natural-match and multi-hour idle-link runs remain a night job (`--natural`; the idle run is not automated).
+- [x] Browser e2e: `tests/e2e/online-quick.spec.ts` plays a quick match through the relay. Dev/test URL switches: `?ff=netbot` (Arcade scripted AI plays the local side), `?ff=lockstep`, `?matchticks=N`, `?netsim=lat:60,jitter:20,loss:10` (seeded one-way delay, jitter, loss on each side's input receive path); probe `__TTE__.net()`
 - [ ] Clock sync / frame pacing so both peers run the same wall rate (today each peer stalls to the slower one)
 - [ ] Spectators and replay upload (the replay format already fits)
 
-WebSocket-only online play (relay server, message table, sequence numbers, session flow) is specified in [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md); the WebRTC path above stays until it is removed.
+WebSocket-only online play (relay server, message table, sequence numbers, session flow) is specified in [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md). The WebRTC path is retired.
 
 An overview of the whole multiplayer design, with diagrams, is in [MULTIPLAYER-DESIGN.md](MULTIPLAYER-DESIGN.md).

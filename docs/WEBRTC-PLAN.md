@@ -1,5 +1,7 @@
 # WebRTC online play: plan
 
+> **Retired (2026-11-19, owner decision):** the WebRTC path and `tools/signal-relay/` were removed; Online is WebSocket only ([ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md)). This plan is kept as history; files it names no longer exist.
+
 Owner request (2026-11-13): real 2-player online play over WebRTC, as its own effort. This file is the audit and the ordered
 work packages (WPs). Protocol background: [NETCODE.md](NETCODE.md); rules every WP keeps: [DETERMINISM.md](DETERMINISM.md).
 Each WP is also an idea file `ideas/brainstorm/webrtc-NN-*.md` (moved to `done/` when merged).

@@ -1,6 +1,6 @@
 /**
- * The package's own copy of the room-code rules. The WebRTC signalling relay (tools/signal-relay/rooms.ts) keeps its own copy
- * and never imports this package; tests/repo/room-code-rules-drift.test.ts fails if the two differ.
+ * The package's own copy of the room-code rules (the only copy: the old tools/signal-relay copy was removed with WebRTC).
+ * tests/repo/room-code-rules-drift.test.ts keeps `src/game/net/relay.ts` equal to it.
  * Pure: randomness is injected.
  */
 

@@ -1,7 +1,7 @@
 import { seedSfc32, type Transport } from '@core/index';
 
 /**
- * Dev/test-only link impairment for the input `Transport` (docs/WEBRTC-PLAN.md WP 11): `?netsim=lat:60,jitter:20,loss:10`.
+ * Dev/test-only link impairment for the input `Transport`: `?netsim=lat:60,jitter:20,loss:10`.
  * `lat` is the one-way delay in ms added to every received packet (so the round trip grows by twice that when both sides use it),
  * `jitter` adds a random 0..jitter ms on top (which also reorders packets), `loss` is the percent of packets dropped. Optional
  * `dup` (percent duplicated) and `seed` (default 1). Drops, jitter and duplicates come from a seeded sfc32 stream, so a given

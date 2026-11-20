@@ -2,7 +2,7 @@
 
 The browser side of [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md) (the contract; section numbers below refer to it). Code: `src/game/net/ws/config.ts` and
 `online-client.ts`, over the 4a transport (`transport.ts`, `wire.ts`, `control-link.ts`). Status: the Online menu entry uses it as a guest-first quick match **only when `VITE_ONLINE_URL` is set** (see "Screen" below); builds without it keep
-the WebRTC screen unchanged. Numbers marked **[estimate]** or **[choice]** are not measured.
+the retired WebRTC screen is gone. Numbers marked **[estimate]** or **[choice]** are not measured.
 
 ## Configuration
 
@@ -74,7 +74,7 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
 ## Screen
 
 `src/game/app/online-route.ts` picks the `#online` screen: `onlineConfig().configured` (the only reader of `VITE_ONLINE_URL`) gives `online-quick.ts` (own lazy
-chunk), otherwise the unchanged WebRTC `online-versus.ts`. Old WebRTC `?join=` links in a configured build land on quick match (the link is not read there).
+chunk), otherwise the quick match shows "Online play is not available in this build.". Old WebRTC `?join=` links land on quick match (the link is not read there).
 The screen is a state machine (`online-quick-model.ts`); every async continuation checks a `gen` counter, so a left screen or replaced client never touches the page.
 
 | State | Player sees | Controls |

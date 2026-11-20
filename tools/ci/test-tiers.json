@@ -71,12 +71,7 @@
     "menu-showcase.spec.ts": "P2",
     "move-backward.spec.ts": "P2",
     "move-wings-knees.spec.ts": "P2",
-    "online-copy-paste.spec.ts": "P1",
-    "online-leave.spec.ts": "P0",
-    "online-match.spec.ts": "P0",
     "online-quick.spec.ts": "P0",
-    "online-relay.spec.ts": "P0",
-    "online-versus.spec.ts": "P0",
     "own-element-fx.spec.ts": "P1",
     "pad-deadzone.spec.ts": "P1",
     "pause-menu.spec.ts": "P0",
@@ -120,8 +115,7 @@
     "versus-desktop-grid.spec.ts": "P1",
     "versus-hero-pick.spec.ts": "P0",
     "versus-stage-pick.spec.ts": "P1",
-    "weather-particles.spec.ts": "P2",
-    "webrtc-peer.spec.ts": "P0"
+    "weather-particles.spec.ts": "P2"
   },
   "overrides": [
     {
@@ -152,16 +146,6 @@
     {
       "file": "match-end.spec.ts",
       "titleIncludes": "draw at",
-      "tier": "P1"
-    },
-    {
-      "file": "online-versus.spec.ts",
-      "titleIncludes": "Rematch",
-      "tier": "P1"
-    },
-    {
-      "file": "online-leave.spec.ts",
-      "titleIncludes": "closing the page mid-match",
       "tier": "P1"
     },
     {

@@ -25,7 +25,7 @@ type Resendable = Extract<Frame, { t: 'desync' | 'result' }>;
 /**
  * `Transport` over one WebSocket to the relay (docs/ONLINE-PROTOCOL.md). `send` wraps an encoded Packet in a numbered BATCH frame;
  * `receive` returns the packets of the peer's BATCH frames after the per-sender reorder buffer (duplicates dropped, gaps skipped
- * after 40 ms), so the session sees the same "late, missing, duplicated" link as over WebRTC and handles it with its rollback or
+ * after 40 ms), so the session sees the same "late, missing, duplicated" link as an unreliable datagram link and handles it with its rollback or
  * stall logic. After a TCP stall many frames arrive in one burst: they all queue, and `receive` drains them in one `update`.
  * `control` is the reliable SETUP stream. `receive` also drives the timers (control resend, DESYNC/RESULT retry), so call it every update.
  */

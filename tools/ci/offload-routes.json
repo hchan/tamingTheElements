@@ -13,7 +13,6 @@
     { "job": "sdxl-turbo-4step-512", "placement": "mac", "note": "MPS, one at a time, load below 10" },
     { "job": "img2img-512", "placement": "mac", "note": "MPS, one at a time, load below 10" },
     { "job": "visual", "placement": "mac", "note": "visual:* scripts" },
-    { "job": "soak:webrtc", "placement": "mac" },
     { "job": "test:browser", "placement": "mac" },
     { "job": "unit-gate", "placement": "mac", "note": "the vitest part of gate:commit" },
     { "job": "golden:record", "placement": "mac" },

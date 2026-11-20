@@ -10,8 +10,8 @@ Online play, e2e stability, test infrastructure, release and housekeeping.
 Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as one theme, in separate small work packages):
 
 - [online-play](../brainstorm/online-play.md)
-- WebRTC plan ([docs/WEBRTC-PLAN.md](../../docs/WEBRTC-PLAN.md)):
-  [01](../brainstorm/webrtc-01-proof-harness.md), [02](../brainstorm/webrtc-02-compact-codes.md),
+- Retired WebRTC plan, history only ([docs/WEBRTC-PLAN.md](../../docs/WEBRTC-PLAN.md)):
+  [01](../done/webrtc-01-proof-harness.md), [02](../done/webrtc-02-compact-codes.md),
   [03](../done/webrtc-03-share-link-qr.md), [04](../done/webrtc-04-ice-config.md),
   [05](../done/webrtc-05-leave-rematch.md), [06](../done/webrtc-06-mobile.md),
   [07](../done/webrtc-07-frame-pacing.md), [08](../done/webrtc-08-rollback-default.md),
@@ -49,7 +49,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 - Members: [online-play](../brainstorm/online-play.md), [online-lobby](../brainstorm/online-lobby.md), [online-quick-join-slots](../brainstorm/online-quick-join-slots.md), [sf-versus-join-in](../brainstorm/sf-versus-join-in.md), [qa-r102-findings](../brainstorm/qa-r102-findings.md)
 - Size: L
-- Shared files: src/game/net/*, src/core/net/*, tools/signal-relay/*, online UI, main.css
+- Shared files: src/game/net/*, src/core/net/*, src/core/relay/*, online UI, main.css
 - Flags: OWNER-GATED: quick join is parked (manual codes only, owner 2026-11-17); the lobby needs an AWS decision (outward-facing). Only the qa-r102 copy fixes are free to do now. needs browser/e2e
 - Parallel: Online lane: parallel with SIM and FX; serial with main.css bundles.
 

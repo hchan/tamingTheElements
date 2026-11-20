@@ -11,8 +11,7 @@ import { mountArenaPan } from '../fx/arena-pan';
 import { mountAimIndicator } from '../fx/aim-view';
 
 /**
- * Starts the arena of an online quick match inside `node` (a deliberate copy of the launch block of online-versus.ts, which this
- * work package must not touch): dev hooks (`?ff=netbot`, `?netsim=`, `?matchticks=`), touch overlays, the panning view and the
+ * Starts the arena of an online quick match inside `node` (it began as a copy of the launch block of the retired peer-to-peer screen): dev hooks (`?ff=netbot`, `?netsim=`, `?matchticks=`), touch overlays, the panning view and the
  * session timing the service announced. The caller destroys the game with `destroyGame(game, holder)`.
  */
 const devBuild = (): boolean => import.meta.env.DEV || import.meta.env.MODE === 'test';

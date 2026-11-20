@@ -1,6 +1,6 @@
 /**
- * Minimal packet pipe the lockstep session talks to. Semantics match a WebRTC data channel
- * configured `{ negotiated: true, id: 0, ordered: false, maxRetransmits: 0 }`: packets are small,
+ * Minimal packet pipe the lockstep session talks to. Semantics match an unreliable datagram channel
+ * (unordered, no retransmits): packets are small,
  * may be lost, duplicated, delayed and reordered. The session never assumes more.
  */
 export interface Transport {

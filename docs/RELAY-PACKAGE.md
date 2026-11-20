@@ -67,7 +67,7 @@ has no dependencies.
 - `src/core/relay` is exempt from the "no async/await" lint rule only (`eslint.config.js`); every determinism ban stays on, and
   `tests/repo/relay-package.test.ts` fails if the rest of `src/core` imports it.
 - `src/core/relay/text-codec.ts` is hand-written (no Buffer, btoa or atob) so it runs in Node, browsers and Workers. The game client may not import the package (depcruise), so it keeps a copy in `src/game/net/ws/text-codec.ts`; `tests/repo/relay-text-codec-drift.test.ts` fails if they differ, and `tests/repo/relay-text-codec-node.test.ts` checks the package copy against Node's `Buffer`.
-- `src/core/relay/rooms-rules.ts` is the package's own copy of the room-code rules. The WebRTC signalling relay (`tools/signal-relay/rooms.ts`) keeps its own and does not import the package; `tests/repo/room-code-rules-drift.test.ts` fails if they differ.
+- `src/core/relay/rooms-rules.ts` is the package's own copy of the room-code rules. The browser client (`src/game/net/relay.ts`) keeps its own and does not import the package; `tests/repo/room-code-rules-drift.test.ts` fails if they differ.
 
 ## Behaviour of the 0.1.0 fix round (WP-ONLINE-FIX-RELAY)
 

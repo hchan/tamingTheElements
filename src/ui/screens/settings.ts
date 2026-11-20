@@ -12,7 +12,6 @@ import {
   type SaveV1,
 } from '@core/menu-index';
 import { ARCADE_PREVIEW } from '../../game/platform/arcade-setting';
-import { TURN_KEY, parseTurn } from '../../game/platform/turn-setting';
 import { getRecordSetting, setRecordSetting } from '../../game/platform/record-setting';
 import {
   applyPrefsToDocument,
@@ -54,10 +53,6 @@ export interface SettingsForm {
   readonly highContrast?: boolean;
   /** Retired "Arcade Versus (preview)" opt-in, kept for old saves: absent leaves the key alone; nothing reads it any more. */
   readonly arcadePreview?: boolean;
-  /** Optional relay (TURN) for online play; absent leaves the saved value alone, an empty or invalid URL removes it. */
-  readonly turnUrl?: string;
-  readonly turnUser?: string;
-  readonly turnPass?: string;
 }
 
 function pick(table: Readonly<Record<string, number>>, raw: string | number, fallback: number): number {
@@ -73,14 +68,11 @@ export function applySettings(save: SaveV1, form: SettingsForm, os: OsA11y = rea
     displaySettings: pick(DISPLAY_SCALE, form.displaySettings, save.displaySettings),
     garrisonSortOrder: pick(GARRISON_SORT_ORDER, form.garrisonSortOrder, save.garrisonSortOrder),
   };
+  // The retired TURN relay setting may hold a password; drop it from any old save on the next save.
+  Reflect.deleteProperty(base, 'turnServer');
   if (form.arcadePreview !== undefined) {
     Reflect.deleteProperty(base, ARCADE_PREVIEW);
     if (form.arcadePreview) base[ARCADE_PREVIEW] = true;
-  }
-  if (form.turnUrl !== undefined) {
-    Reflect.deleteProperty(base, TURN_KEY);
-    const turn = parseTurn({ url: form.turnUrl, username: form.turnUser, credential: form.turnPass });
-    if (turn !== undefined) base[TURN_KEY] = turn;
   }
   if (form.reduceMotion === undefined && form.highContrast === undefined) return base;
   const current = resolvePrefs(savedPrefs(save), os);
@@ -171,39 +163,6 @@ function accessibilityGroup(save: SaveV1): HTMLElement {
   return set;
 }
 
-/** Optional relay (TURN) for online play: only needed on a strict network; stored in the save as `turnServer` (docs/SAVE-FORMAT.md). */
-function relayGroup(save: SaveV1): HTMLElement {
-  const turn = parseTurn(save[TURN_KEY]);
-  const set = el('fieldset', 'settingsGroup');
-  set.append(el('legend', 'heading', 'Relay server (TURN)'));
-  const hint = el(
-    'div',
-    'info',
-    'Optional. Only needed when an online match cannot connect on a strict network. Leave empty to use public servers. The password is kept in your save on this device.',
-  );
-  hint.id = 'setting-turn-hint';
-  set.append(hint);
-  const add = (name: 'turnUrl' | 'turnUser' | 'turnPass', label: string, type: string, value: string, autocomplete: string): void => {
-    const row = el('div', 'settingsOption');
-    const input = el('input');
-    input.type = type;
-    input.name = name;
-    input.id = `setting-${name}`;
-    input.value = value;
-    input.setAttribute('autocomplete', autocomplete);
-    input.spellcheck = false;
-    input.setAttribute('aria-describedby', 'setting-turn-hint');
-    const lab = el('label', undefined, label);
-    lab.htmlFor = input.id;
-    row.append(lab, el('br'), input);
-    set.append(row);
-  };
-  add('turnUrl', 'Relay address (turn: or turns: URL)', 'text', turn?.url ?? '', 'off');
-  add('turnUser', 'Relay user name', 'text', turn?.username ?? '', 'off');
-  add('turnPass', 'Relay password', 'password', turn?.credential ?? '', 'off');
-  return set;
-}
-
 /** Device-local (not in the save): size and side of the on-screen action buttons; see `touch-layout.ts`. */
 function touchGroup(current: TouchLayout): HTMLElement {
   const set = el('fieldset', 'settingsGroup');
@@ -257,9 +216,6 @@ function readForm(form: HTMLFormElement): SettingsForm {
     garrisonSortOrder: get('garrisonSortOrder'),
     reduceMotion: data.has('reduceMotion'),
     highContrast: data.has('highContrast'),
-    turnUrl: get('turnUrl'),
-    turnUser: get('turnUser'),
-    turnPass: get('turnPass'),
   };
 }
 
@@ -467,7 +423,6 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         DEFAULT_GARRISON_SORT_ORDER,
       ),
       el('h2', 'heading settingsSubheading', 'Other'),
-      relayGroup(save),
       recordControls(),
       testerControls(store),
       cheatsButton(),

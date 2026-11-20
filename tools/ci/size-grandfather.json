@@ -1,6 +1,5 @@
 {
   "fileLines": {
-    "src/game/app/online-versus.ts": 678,
     "src/game/fx/cc-fx.ts": 501,
     "src/game/fx/defence-view.ts": 704,
     "src/game/fx/event-fx.ts": 528,
@@ -14,13 +13,12 @@
     "src/game/views/character-view.ts": 523,
     "src/game/views/pose-layer.ts": 966,
     "src/ui/screens/arcade-versus.ts": 972,
-    "src/ui/screens/settings.ts": 550,
+    "src/ui/screens/settings.ts": 505,
     "src/ui/screens/tour.ts": 542
   },
   "longFunctionFiles": [
     "src/game/app/arcade-versus.ts",
     "src/game/app/online-quick.ts",
-    "src/game/app/online-versus.ts",
     "src/game/app/replay-viewer.ts",
     "src/game/app/tour.ts",
     "src/game/fx/ability-aura-view.ts",

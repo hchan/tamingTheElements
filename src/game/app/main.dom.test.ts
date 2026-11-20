@@ -21,7 +21,7 @@ const m = vi.hoisted(() => ({
   applyA11y: vi.fn(),
   tester: { enable: vi.fn() },
   arcade: { mountArcade: vi.fn(), unmountArcade: vi.fn() },
-  online: { mountOnline: vi.fn(), unmountOnline: vi.fn() },
+  online: { mountQuickMatch: vi.fn(), unmountQuickMatch: vi.fn() },
   tour: { mountTour: vi.fn(), unmountTour: vi.fn() },
   mq: [] as Array<() => void>,
 }));
@@ -55,7 +55,7 @@ vi.mock('./flow', () => ({
 }));
 vi.mock('@core/lazy-index', () => ({}));
 vi.mock('./arcade-versus', () => m.arcade);
-vi.mock('./online-versus', () => m.online);
+vi.mock('./online-quick', () => m.online);
 vi.mock('./tour', () => m.tour);
 
 const baseFlags = {
@@ -188,7 +188,7 @@ describe('lazy chunk routes', () => {
     const host = document.createElement('div');
     for (const [name, mount, unmount] of [
       ['arcade', m.arcade.mountArcade, m.arcade.unmountArcade],
-      ['online', m.online.mountOnline, m.online.unmountOnline],
+      ['online', m.online.mountQuickMatch, m.online.unmountQuickMatch],
       ['tour', m.tour.mountTour, m.tour.unmountTour],
     ] as const) {
       const s = table()[name]?.();

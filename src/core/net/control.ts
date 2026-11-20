@@ -1,7 +1,7 @@
 import { checkHello, decodeHello, encodeHello, type HandshakeMismatch, type Hello } from './handshake';
 
 /**
- * Reliable, ordered message pipe (the second WebRTC data channel: `negotiated: true, id: 1`). Each message is one
+ * Reliable, ordered message pipe (the SETUP stream of the online service). Each message is one
  * whole byte array. Unlike `Transport` nothing is lost or reordered, so the setup protocol needs no timers.
  */
 export interface ControlPipe {
