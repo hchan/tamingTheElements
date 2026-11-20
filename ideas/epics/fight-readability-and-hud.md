@@ -16,7 +16,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 - [qa-stale-damage-numbers](../brainstorm/qa-stale-damage-numbers.md): QA: damage numbers and banners linger. After a KO the floating damage numbers (12, 12, 11, 10, 8, 27) are still on screen 100 ticks later and clutter the K.O.
 - [qa-stat-mismatch](../brainstorm/qa-stat-mismatch.md): QA: picker stats do not match in-match stats. Sindarosa has 272 HP against Pax 765 in 1v1 (210 vs 445 in 2v2);
-- [qa-r3-label-clutter](../brainstorm/qa-r3-label-clutter.md): Action-bar TAG label overlaps slot text; prop labels read as debug; heroes stack. Fix: move the TAG cue, use player-facing prop names or icons only, add a soft push-apart, hide empty status boxes, expire damage numbers faster.
+- [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md): Action-bar TAG label overlaps slot text; prop labels read as debug; heroes stack. Fix: move the TAG cue, use player-facing prop names or icons only, add a soft push-apart, hide empty status boxes, expire damage numbers faster.
 - [qa-r6-floor-label-clutter-and-hud-pips](../brainstorm/qa-r6-floor-label-clutter-and-hud-pips.md): QA r6: cryptic floor labels, unlabeled HUD pips, flat life bars. Evidence: tourfight-1.png, tourfight-4.png, fight-a-1280.png, fight-a-1920.png (~/claudetmp/qa6/).
 - [callouts-collide-with-pops](../done/callouts-collide-with-pops.md): Defence call-outs (ROOTED, FREED, PARRY ...) can still print over white damage pops. DMGNUM-1 moves the grey HUD damage numbers clear of pops and call-outs, but the white pops (shock-view.ts) and the call-outs (defence-view.ts) are sti
 - [callout-pop-limits](../brainstorm/callout-pop-limits.md): Follow-up limits of the call-out placement (upward snap, ceiling-pinned overlaps, aura word pops).
@@ -60,7 +60,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-2 Label and hazard chip clutter
 
-- Members: [qa-r3-label-clutter](../brainstorm/qa-r3-label-clutter.md), [qa-r6-floor-label-clutter-and-hud-pips](../brainstorm/qa-r6-floor-label-clutter-and-hud-pips.md), [qa-r10-fight-readability](../brainstorm/qa-r10-fight-readability.md), [qa-r13-visual-readability](../brainstorm/qa-r13-visual-readability.md), [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md)
+- Members: [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md), [qa-r6-floor-label-clutter-and-hud-pips](../brainstorm/qa-r6-floor-label-clutter-and-hud-pips.md), [qa-r10-fight-readability](../brainstorm/qa-r10-fight-readability.md), [qa-r13-visual-readability](../brainstorm/qa-r13-visual-readability.md), [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md)
 - Size: M
 - Shared files: Hud.ts, src/game/fx/hazard-view.ts, terrain-view.ts, main.css
 - Flags: needs browser/e2e
