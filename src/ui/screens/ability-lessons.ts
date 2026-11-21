@@ -26,6 +26,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('slime-blast', 'A slow glob of slime thrown at the foe.', 'Aim ahead of a moving foe and let it land.'),
   L('ice-blast', 'A bolt of ice that hurts and slows the foe for a few seconds.', 'Hit, then keep your distance while they crawl.'),
   L('icicles', 'A fast stream of small icicles.', 'Tap it again and again from range.'),
+  L('lure-orb', 'A glowing orb that drifts out, then hovers in place as a hazard.', 'Park it between you and the foe, then keep your distance.'),
+  L('abyss-flash', 'A close burst of light that hurts and stuns the foe.', 'Use it when the foe is right next to you, then follow up.'),
   // Fire
   L('fireball', 'A fireball that flies straight at the foe.', 'Line up your aim, then fire from mid range.'),
   L('fire-heal', 'Heals you a little. It takes a long time to be ready again.', 'Save it for a quiet moment, not the middle of a trade.'),
