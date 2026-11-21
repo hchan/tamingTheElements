@@ -59,6 +59,20 @@
    "rig.json": "7222af41faf94639ecf5ac7d12e06675101835c7f610ac75bc60cfb02aa6e738"
   }
  },
+ "kindrel": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "565a320ccc76dc028774966645dea00fe8908450d20d13f0155a2b559de1adfc",
+   "anim": "37caf9a440582d3f17350e4f90d32d02e4fefe4a50d4dcb29ec8abeae064cbff",
+   "portrait": "e31bed8da717323ac9010ca6992404c0a913ad09e6318f5e28e0547d6e1fd545"
+  },
+  "outputs": {
+   "parts/body.png": "9c5aa22f54484ed52a6ab5deff26d87252f3eb24047975f2e6b91d17a246ef4b",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "bd80a99134f549ca171b5751111364d20940b8c38a5e11e4c25dc0ba627cb78c",
+   "rig.json": "15c86f4ef37c76f157d46f688be9d6a72790b861302f261768ca1a2c5a902c2f"
+  }
+ },
  "lavax": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
