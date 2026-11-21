@@ -1,0 +1,113 @@
+// pnpm online:live-browser: two HEADLESS Chromium pages play one short match through the Online screen against a REAL relay.
+// The address comes only from env TTE_RELAY_URL (https, no path): it is baked into a scratch build (VITE_ONLINE_URL) and never printed or written to the repo.
+// One browser, two contexts, one match (`?matchticks=N`, bots drive both sides with `?ff=netbot`). Traffic is the game's own, paced by the relay's MATCH frame.
+// Not part of the e2e suite or the PC router (the address lives only on the machine that has the env file). Exit: 0 ok, 1 a step failed, 2 bad config.
+import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:net';
+import { pathToFileURL } from 'node:url';
+import { chromium, type Page } from '@playwright/test';
+import { parseOnlineUrl } from '../src/game/net/ws/config';
+import { LIVE_BROWSER_MATCH_TICKS, LIVE_BROWSER_STEP_MS, LIVE_BROWSER_END_MS, LIVE_BROWSER_PAGE_ORIGIN } from './live-browser-match-constants';
+
+const OUT_DIR = '.scratch/live-browser-build';
+const redact = (s: string): string => s.replace(/(https?|wss?):\/\/\S+/g, '<url>');
+
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const s = createServer();
+    s.once('error', reject);
+    s.listen(0, '127.0.0.1', () => {
+      const a = s.address();
+      const port = typeof a === 'object' && a !== null ? a.port : 0;
+      s.close(() => { resolve(port); });
+    });
+  });
+}
+
+async function waitUp(url: string): Promise<boolean> {
+  for (let i = 0; i < 100; i++) {
+    try { if ((await fetch(url)).ok) return true; } catch { /* not yet */ }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
+
+/** The two end lines describe one outcome from both sides. */
+export function mirrored(x: string, y: string): boolean {
+  if (x.includes('draw')) return y.includes('draw');
+  return x.includes('You won') ? y.includes('opponent won') : y.includes('You won');
+}
+
+export async function main(env: Readonly<Record<string, string | undefined>>, out: (l: string) => void): Promise<number> {
+  const raw = env['TTE_RELAY_URL'];
+  if (!parseOnlineUrl(raw).configured) { out('TTE_RELAY_URL is not an https base URL'); return 2; }
+  const t0 = performance.now();
+  const step = (s: string): void => { out(`${String(Math.round(performance.now() - t0)).padStart(6)} ms  ${s}`); };
+  const build = spawnSync('corepack', ['pnpm', 'exec', 'vite', 'build', '--mode', 'test', '--outDir', OUT_DIR, '--emptyOutDir'], { env: { ...process.env, VITE_ONLINE_URL: raw ?? '' }, stdio: 'ignore' });
+  if (build.status !== 0) { out('vite build failed'); return 1; }
+  step('built');
+  const port = await freePort();
+  const preview = spawn('corepack', ['pnpm', 'exec', 'vite', 'preview', '--outDir', OUT_DIR, '--port', String(port), '--strictPort'], { stdio: 'ignore' });
+  const origin = `http://localhost:${String(port)}`;
+  const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  try {
+    if (!(await waitUp(origin))) { out('preview did not come up'); return 1; }
+    const pages: Page[] = [];
+    for (const name of ['A', 'B']) {
+      const context = await browser.newContext();
+      // The relay allows only the deployed game's origin (CORS), so the local build is served under that origin by routing; nothing leaves the machine except the relay calls.
+      await context.route(`${LIVE_BROWSER_PAGE_ORIGIN}/**`, async (route) => {
+        const res = await fetch(`${origin}${new URL(route.request().url()).pathname}`);
+        await route.fulfill({ status: res.status, headers: { 'content-type': res.headers.get('content-type') ?? 'application/octet-stream' }, body: Buffer.from(await res.arrayBuffer()) });
+      });
+      const page = await context.newPage();
+      // Relay-side evidence, host-free: frame counts per direction and any short prose/JSON notice the gateway sent instead of a frame.
+      page.on('websocket', (ws) => {
+        let sent = 0; let got = 0;
+        ws.on('framesent', () => { sent++; });
+        ws.on('framereceived', (f) => {
+          got++;
+          const t = typeof f.payload === 'string' ? f.payload : '';
+          if (t.length > 0 && t.length < 200 && (t.startsWith('{') || t.includes(' '))) step(`${name} gateway text after ${String(sent)} sent / ${String(got)} received: ${redact(t)}`);
+        });
+        ws.on('close', () => { step(`${name} socket closed: ${String(sent)} sent, ${String(got)} received`); });
+      });
+      page.on('pageerror', (e) => { step(`${name} page error: ${redact(e.message).slice(0, 120)}`); });
+      // Diagnostics, host-free: failed requests (method, path, reason), HTTP error statuses and console errors.
+      const path = (u: string): string => { try { return new URL(u).pathname.replace(/^\/[^/]+/, '/<stage>'); } catch { return '<url>'; } };
+      page.on('requestfailed', (r) => { step(`${name} request failed: ${r.method()} ${path(r.url())} (${r.failure()?.errorText ?? '?'})`); });
+      page.on('response', (r) => { if (r.status() >= 400) step(`${name} http ${String(r.status())}: ${r.request().method()} ${path(r.url())}`); });
+      page.on('console', (m) => { if (m.type() === 'error') step(`${name} console: ${redact(m.text()).slice(0, 160)}`); });
+      await page.goto(`${LIVE_BROWSER_PAGE_ORIGIN}/?matchticks=${String(LIVE_BROWSER_MATCH_TICKS)}&ff=netbot#online`);
+      pages.push(page);
+    }
+    const [a, b] = pages as [Page, Page];
+    const status = async (p: Page): Promise<string> => (await p.locator('#quickStatus').textContent()) ?? '';
+    const wait = async (p: Page, sel: string, ms: number): Promise<boolean> => p.locator(sel).waitFor({ state: 'visible', timeout: ms }).then(() => true, () => false);
+    for (const p of pages) if (!(await wait(p, '#quickFind', LIVE_BROWSER_STEP_MS))) { out('Find never appeared'); return 1; }
+    await a.locator('#quickFind').click();
+    await b.locator('#quickFind').click();
+    step('both queued');
+    for (const p of pages) if (!(await wait(p, '#quickReady', LIVE_BROWSER_STEP_MS))) { out(`no opponent found: ${redact(await status(p))}`); return 1; }
+    step('matched');
+    await a.locator('#quickReady').click();
+    await b.locator('#quickReady').click();
+    for (const p of pages) if (!(await wait(p, '#quickLink', LIVE_BROWSER_STEP_MS))) { out(`arena did not start: ${redact(await status(p))}`); return 1; }
+    step('arenas running');
+    for (const p of pages) if (!(await wait(p, '#quickAgain', LIVE_BROWSER_END_MS))) { out(`match did not end: ${redact(await status(p))}`); return 1; }
+    const [ta, tb] = [await status(a), await status(b)];
+    step(`ended: ${ta} | ${tb}`);
+    const failed = (await Promise.all(pages.map((p) => p.locator('#quickFailure').isVisible()))).some(Boolean);
+    if (failed) { out('a failure banner is showing'); return 1; }
+    if (!mirrored(ta, tb)) { out('end lines do not mirror'); return 1; }
+    step('ok');
+    return 0;
+  } finally {
+    await browser.close();
+    preview.kill('SIGTERM');
+  }
+}
+
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = await main(process.env, (l) => { process.stdout.write(`${l}\n`); });
+}
