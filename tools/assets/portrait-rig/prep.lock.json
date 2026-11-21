@@ -188,6 +188,20 @@
    "rig.json": "7d69e36aed2b20196b9fe0ad2b1e44a527e5b55a91de2d15f33c421bf29bc03f"
   }
  },
+ "umbrel": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "6b1fb403fb24f1afc0d39cd682c150d05e2ba986bbfc8069f4efd6ac7cdfacea",
+   "anim": "df94659e8be935cc906a63192b8a7e8c65877a4d569cb210d67b30514d52fd96",
+   "portrait": "7e6b8885b0ca6b5f630d5dd7ca88ecfe80949027587b163ad17e4a1c7cd9006d"
+  },
+  "outputs": {
+   "parts/body.png": "592b751c538dca57c5add7745b5d9d9f1ec0620a9cad4a1d75fb1ef8bf87df31",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/spore.png": "779278536901d03afa23f18d361e913d3eab276fd7235d120255e43065b43c59",
+   "rig.json": "a3e3bccf8e98cce6dc3abe641e699a9690551271023bf16139ad58740001a5d0"
+  }
+ },
  "wispera": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",

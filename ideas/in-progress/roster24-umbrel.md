@@ -22,7 +22,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 
 - [ ] WP-0 prerequisites (release set, audit gate; shared, done once for all heroes)
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
-- [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
+- [x] P1 (art): rig spec, bake, sheets, art-director sheet approval (APPROVE 4.0, 2026-11-20; polish notes: cap colour, KO collapse, idle vs walk), audit gate (hidden, RELEASED_ROSTER24 empty). Scripts: tools/assets/portrait-rig/tune-umbrel-anim.py, umbrel-ko-keys.py
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
 - [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
