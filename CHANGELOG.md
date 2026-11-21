@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Roster24 Hyalia kit step (step S, `SIM_VERSION` 93): the kit already has no twin (no other ability shares kind, box and damage with Stinging Filament or Bell Pulse), so the only change is a life retune, Hyalia max health 95 -> 99 (1v1 42.1 -> 49.2 percent, 2v2 53.1). Arcade only; the release set stays empty. Re-record reason: a recorded Arcade match with Hyalia changes.
+
 - KO frames (ko-frames): rig-only KO poses for Glimmaw, Treenoc and Pax in `public/assets/img/ko/` (rotate, squash, tint, shadow of the map portraits), art-director approved (Fiara parked), generator `tools/assets/ko-gen/ko-rigonly.py`, sha256 pins in `tools/assets/ko-gen/approval.json`. Not wired to the scene yet. Art only: no sim, golden or `SIM_VERSION` change.
 
 - Relay conformance (MINOR): `ConformanceCase.orderSensitive` and `RunOptions.retryOrderSensitive`; `relay:conformance --retry-ordering <n>` retries the two order-sensitive cases on a concurrent-invocation deployment. Default off.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITIES_C } from './abilities-c';
 import { ALL_ABILITIES } from './abilities-all';
+import { CHARACTERS } from './characters';
 
 const get = (id: string) => ABILITIES_C.find((a) => a.id === id);
 
@@ -101,5 +102,20 @@ describe('abilities-c tick values', () => {
     expect([hop?.cooldownTicks, hop?.lungePx, hop?.damage ?? 0]).toEqual([150, -140, 0]);
     const sameBox = ALL_ABILITIES.filter((a) => a.id !== 'static-mote' && a.w === mote?.w && a.h === mote?.h);
     expect(sameBox.map((a) => a.id)).toEqual([]);
+  });
+  it('pins the Hyalia kit: 99 max health (95 gave 42.1 percent 1v1; 102 gave 57.4 percent 2v2); Stinging Filament 10 damage at speed 12, 110x10 box (scaled), 45 cooldown ticks, max 2; Bell Pulse omni 6 damage at speed 5, 24x24 box (scaled), 250 cooldown ticks (no other ability shares kind, box and damage with either)', () => {
+    expect(CHARACTERS.find((c) => c.id === 'hyalia')?.maxHealth).toBe(99);
+    const sting = get('stinging-filament');
+    expect([sting?.damage, sting?.speed, sting?.cooldownTicks, sting?.maxActive]).toEqual([10, 12, 45, 2]);
+    expect([sting?.w, sting?.h]).toEqual([110 / 80, 10 / 80]);
+    const bell = get('bell-pulse');
+    expect([bell?.damage, bell?.speed, bell?.cooldownTicks, bell?.maxActive]).toEqual([6, 5, 250, 1]);
+    expect([bell?.w, bell?.h]).toEqual([24 / 80, 24 / 80]);
+    for (const a of [sting, bell].flatMap((x) => (x ? [x] : []))) {
+      const twins = ALL_ABILITIES.filter(
+        (o) => o.id !== a.id && o.kind === a.kind && o.w === a.w && o.h === a.h && o.damage === a.damage,
+      );
+      expect(twins.map((t) => t.id), a.id).toEqual([]);
+    }
   });
 });

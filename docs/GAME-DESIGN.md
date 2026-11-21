@@ -52,7 +52,7 @@ Speed is px/tick at 50 Hz; HP is at level 0.
 | Kindrel | fire | neutral | 8 | 85 | Ember Bite, Cinder Spray |
 | Nykra | water | neutral | 7 | 100 | Hoof Crash, Kelp Lash |
 | Quarrak | earth | neutral | 4 | 140 | Hurl Rock, Boulder Roll |
-| Hyalia | air | neutral | 5 | 95 | Stinging Filament, Bell Pulse |
+| Hyalia | air | neutral | 5 | 99 | Stinging Filament, Bell Pulse |
 | Brazgor | fire | neutral | 5 | 150 | Forge Gore, Molten Hide |
 | Glimmaw | water | neutral | 6 | 95 | Lure Orb, Abyss Flash |
 | Durrok | earth | neutral | 7 | 120 | Tusk Gore, Bristle Stomp |

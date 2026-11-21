@@ -337,5 +337,9 @@
  *    (250 -> 240 ms for Bristle Stomp pushed Durrok out of band, 55.7 percent). Kindrel's Ember Bite 160 ms is tick-neutral (8 ticks either way). Release set stays empty.
  *    Win rates: see ideas/in-progress/roster24-ouroth.md.
  *    Re-record reason: a recorded Arcade match with Ouroth or Glimmaw changes; every other golden changes only the simVersion header.
+ * 93: Arcade only (Classic hashes unchanged). Roster-24 step S for Hyalia: the kit is already unique (no other ability shares kind, box and damage with
+ *    Stinging Filament or Bell Pulse), so only a life retune: Hyalia maxHealth 95 -> 99 (95 gave 42.1 percent 1v1; 105 gave 55.4; 102 gave 54.1 1v1 but 57.4 2v2).
+ *    Win rates at 99 (full roster, level 3): 1v1 49.2, 2v2 53.1 percent. Release set stays empty. See ideas/in-progress/roster24-hyalia.md.
+ *    Re-record reason: a recorded Arcade match with Hyalia changes; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 92;
+export const SIM_VERSION = 93;
