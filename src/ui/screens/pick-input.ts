@@ -48,7 +48,16 @@ function dispatch(h: PickInputHandlers, side: Side, a: Act): void {
 }
 
 function isFormTarget(t: EventTarget | null): boolean {
-  return t instanceof HTMLSelectElement || t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement;
+  if (t instanceof HTMLSelectElement || t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) return true;
+  // A <summary> (the "Keys for two players" fold) and editable text keep their own keys, Space included.
+  if (!(t instanceof HTMLElement)) return false;
+  const ce = t.getAttribute('contenteditable');
+  return t.tagName === 'SUMMARY' || t.isContentEditable || (ce !== null && ce !== 'false');
+}
+
+/** A team-stack row or grid tile is a button, but Space there picks from the cursor (the cursor follows focus; a row must not remove its hero). */
+function isPickTarget(t: EventTarget | null): boolean {
+  return t instanceof HTMLElement && t.closest('.tsRow, .heroTile') !== null;
 }
 
 function makeKeyHandler(h: PickInputHandlers): (e: KeyboardEvent) => void {
@@ -64,7 +73,7 @@ function makeKeyHandler(h: PickInputHandlers): (e: KeyboardEvent) => void {
       const a = KEYS[side]?.[e.code];
       if (!a) continue;
       // A focused button or link keeps Space: the native click does the pick.
-      if (a === 'pick' && (t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement)) return;
+      if (a === 'pick' && (t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement) && !isPickTarget(t)) return;
       e.preventDefault();
       if (e.repeat && !isMove(a)) return;
       dispatch(h, side, a);
@@ -119,11 +128,17 @@ export function create(handlers: PickInputHandlers): () => void {
     poll();
     raf = requestAnimationFrame(tick);
   };
+  // Space on a row or tile would click it on keyup (removing the hero); the pick already ran on keydown.
+  const onUp = (e: KeyboardEvent): void => {
+    if (e.code === 'Space' && isPickTarget(e.target) && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) e.preventDefault();
+  };
   document.addEventListener('keydown', onKey);
+  document.addEventListener('keyup', onUp);
   if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(tick);
   return () => {
     live = false;
     document.removeEventListener('keydown', onKey);
+    document.removeEventListener('keyup', onUp);
     if (raf && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(raf);
   };
 }

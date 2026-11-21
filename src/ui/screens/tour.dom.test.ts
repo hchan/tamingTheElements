@@ -230,7 +230,7 @@ describe('tourPickView', () => {
     tile('Lavax').click();
     expect(sel('arcadeHero1').value).toBe('lavax');
     expect(slot(1).title).toContain('Remove Lavax from slot 1');
-    expect(slot(2).getAttribute('aria-pressed')).toBe('true');
+    expect(slot(2).getAttribute('aria-current')).toBe('step');
     expect(live()).toBe('You picked Lavax for slot 1.');
     tile('Rokcore').click();
     expect(sel('arcadeHero2').value).toBe('rokcore');

@@ -70,7 +70,7 @@
   outline: 3px solid #fff;
   outline-offset: 2px;
 }
-.teamStack .tsRow[aria-pressed='true'] {
+.teamStack .tsRow[aria-current='step'] {
   border-color: #ffd678;
   background: #3a2f22;
 }
@@ -150,7 +150,22 @@
 }
 @media (forced-colors: active) {
   .teamStack.tsAimed,
-  .teamStack .tsRow[aria-pressed='true'] {
+  .teamStack .tsRow[aria-current='step'] {
     outline: 2px solid Highlight;
   }
+}
+.teamStack .tsCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2em;
+}
+.teamStack .tsNext {
+  padding: 0 0.4em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffd678;
+  border: 1px solid #ffd678;
+  border-radius: 4px;
 }

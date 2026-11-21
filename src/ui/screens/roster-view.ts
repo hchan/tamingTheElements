@@ -85,6 +85,8 @@ interface Ctx {
   aim: SideIx;
   /** Index (grid order) of the hero the panel shows. */
   focus: number;
+  /** True while a cursor key moves focus to a tile (the tile's focus handler must not move a cursor then). */
+  moving: boolean;
   seeded: boolean;
   readonly order: CharacterId[];
   readonly tiles: HTMLButtonElement[];
@@ -162,6 +164,7 @@ function stackProps(c: Ctx, s: SideIx): TeamStackProps {
   const local = isLocal(c);
   return {
     side: local ? `Player ${String(s + 1)}` : s === 0 ? 'You' : 'Computer',
+    label: local ? `Player ${String(s + 1)} heroes` : s === 0 ? 'Your heroes' : 'Computer heroes',
     rows: stackRows(c, s),
     aimed: c.aim === s,
     ready: c.teams[s].ready,
@@ -204,7 +207,7 @@ function renderTiles(c: Ctx): void {
     const cur = t.querySelector<HTMLElement>('.vsCursors');
     if (cur) {
       cur.textContent = '';
-      if (c.cursor[0] === i) cur.append(el('span', 'vsChip vsP1', 'P1'));
+      if (c.cursor[0] === i) cur.append(el('span', 'vsChip vsP1', local ? 'P1' : 'You'));
       if (local && c.cursor[1] === i) cur.append(el('span', 'vsChip vsP2', 'P2'));
     }
   });
@@ -279,6 +282,15 @@ function moveCursor(c: Ctx, s: SideIx, dx: number, dy: number): void {
   c.cursor[s] = next;
   c.focus = next;
   refresh(c);
+  const id = c.order[next];
+  const tile = c.tiles[next];
+  if (tile) {
+    c.moving = true;
+    tile.focus({ preventScroll: true });
+    c.moving = false;
+    tile.scrollIntoView({ block: 'nearest' });
+  }
+  if (id) announce(c, `${sideName(c, s)}: ${raceLabel(id)}`);
 }
 
 function cancelPick(c: Ctx, s: SideIx): void {
@@ -377,7 +389,17 @@ function decorateTile(t: HTMLButtonElement, i: number, ctx: () => Ctx): void {
     refresh(c);
   };
   t.addEventListener('pointerenter', look);
-  t.addEventListener('focus', look);
+  // Keyboard focus and the WASD cursor stay together: tabbing to a tile puts Player 1's cursor on it.
+  t.addEventListener('focus', () => {
+    const c = ctx();
+    if (!c.moving && c.cursor[0] !== i) {
+      c.cursor[0] = i;
+      c.focus = i;
+      refresh(c);
+      return;
+    }
+    look();
+  });
   t.addEventListener('click', () => {
     clickTile(ctx(), i);
   });
@@ -395,9 +417,10 @@ export function rosterView(o: RosterOptions): RosterView {
   stacks[0].el.classList.add('vsSide', 'vsSide1');
   stacks[1].el.classList.add('vsSide', 'vsSide2');
   if (o.single === true) stacks[1].el.style.display = 'none';
-  node.append(stacks[0].el, panel.node, stacks[1].el, heroes.grid, live);
+  // DOM order = screen order (stack 1, grid, panel, stack 2); the CSS grid areas place them.
+  node.append(stacks[0].el, heroes.grid, panel.node, stacks[1].el, live);
   const c: Ctx = {
-    o, teams: [model.createTeam(0), model.createTeam(0)], cursor: [0, Math.min(1, heroes.order.length - 1)], aim: 0, focus: 0, seeded: false,
+    o, teams: [model.createTeam(0), model.createTeam(0)], cursor: [0, Math.min(1, heroes.order.length - 1)], aim: 0, focus: 0, moving: false, seeded: false,
     order: heroes.order, tiles: heroes.tiles, columns: heroes.columns, stacks, panel, live, node,
   };
   bindInput(c);
