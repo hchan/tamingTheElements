@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (scorecard report; every open item is phone or portrait: portrait floor band, portrait 2v2 and Tour bars, first-run toast over the 844x390 arena, portrait menu spacing; phone work dropped 2026-11-18. Desktop super band hiding the foe is the intended cinematic in src/game/fx/super-cinematic.ts; first-run card already yields via SUPER_CUT_EVENT in src/game/app/first-run-hint.ts)
 added: 2026-11-17
 ---
 
