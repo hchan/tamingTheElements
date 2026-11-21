@@ -71,17 +71,17 @@
   #arcadePick .vsStage {
     font-size: 18px;
   }
-  .heroGrid {
+  #arcadePick .heroGrid {
     gap: 8px;
   }
-  .heroTileFace {
+  #arcadePick .heroTileFace {
     width: 64px;
     height: 64px;
   }
-  .heroTileName {
+  #arcadePick .heroTileName {
     font-size: 1em;
   }
-  .heroGrid[data-cols='6'] .heroTileName {
+  #arcadePick .heroGrid[data-cols='6'] .heroTileName {
     font-size: 0.95em;
   }
 }
