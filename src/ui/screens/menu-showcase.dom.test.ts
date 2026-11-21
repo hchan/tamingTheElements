@@ -39,7 +39,7 @@ describe('menu showcase', () => {
     const s = mainMenuScreen({ load: () => null, navigate: () => undefined })(null);
     s.mount(host);
     expect([...host.querySelectorAll('li button')].map((b) => b.textContent)).toEqual([
-      'Play',
+      'World Tour',
       'Versus',
       'Online',
       'Settings',

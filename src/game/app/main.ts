@@ -111,7 +111,7 @@ if (root) {
       tutorial: lazyScreen(() => import('./tutorial'), 'Practice', (a, c) => { a.mountTutorial(c); }, (a) => { a.unmountTutorial(); }),
       online: onlineRoute(),
       // World Tour (preview, FUN-DESIGN 2.18): its own chunk like Arcade; same failed-load handling.
-      tour: lazyScreen(() => import('./tour'), 'Play', (a, c) => { a.mountTour(c); }, (a) => { a.unmountTour(); }),
+      tour: lazyScreen(() => import('./tour'), 'World Tour', (a, c) => { a.mountTour(c); }, (a) => { a.unmountTour(); }),
     });
   }
   if (!(flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl)) prefetchSimWhenIdle();

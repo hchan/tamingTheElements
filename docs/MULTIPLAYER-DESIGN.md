@@ -22,7 +22,7 @@ Goals:
 - The sim stays pure: the network is an input source, so a lost or late packet costs a stall or a rollback, never a divergence.
 - The transport is replaceable behind one small interface, so any adapter shares the session, codec and handshake.
 - The relay is a transport-agnostic state machine over two seams (`Store`, `Sender`), so any host can run it and the repo never knows which.
-- Players see plain words: "Play", "Versus", "Online"; failures are friendly ("The game is resting", "Update needed").
+- Players see plain words: "World Tour", "Versus", "Online"; failures are friendly ("The game is resting", "Update needed").
 
 Non-goals:
 
