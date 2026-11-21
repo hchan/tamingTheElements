@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: real (large, sim-adjacent; QA checklist for a still-open parent idea, needs a new frame-strip tool)
 added: 2026-11-18
 ---
 
@@ -24,3 +25,9 @@ How the coordinating session checks [smooth-abilities-and-new-hero-abilities](sm
 ## Hand-off
 
 Art from the GPU session lands separately; re-run the frame strip after it merges.
+
+## Triage plan (2026-11-21)
+
+1. Wait for the parent idea (smooth-abilities-and-new-hero-abilities) to land abilities; this file is its acceptance checklist, not a standalone fix.
+2. Build the frame-strip capture tool once (shared with qa-hit-feel-r34-r40; no such tool exists in tools/ or tests/ yet).
+3. Per ability add the sim timing unit test (src/core, golden-neutral) and run the checklist above.
