@@ -128,11 +128,12 @@ function harness(
     forEachProjectile: (visit: (p: RenderProjectile) => void, melee?: boolean) => { (melee === true ? melees : projs).forEach(visit); },
   } as unknown as RenderView;
   const cv = new CharacterView(scene);
+  const foeView = foe ? new CharacterView(scene) : undefined;
   const img = cv.image as unknown as FakeImage;
   const layer = new PoseLayer({
     scene,
     view,
-    characters: { peek: (id) => (id === c.id ? cv : undefined) },
+    characters: { peek: (id) => (id === c.id ? cv : foe && id === foe.id ? foeView : undefined) },
     projectiles: {
       peek: (id) => {
         let v = projView.get(id);
@@ -517,6 +518,19 @@ describe('Arcade poses from events', () => {
     o.step(16);
     expect(o.layer.state.ghosts).toBe(1);
     expect(o.images[1]?.visible).toBe(true);
+  });
+
+  it('tag-in enters from the side away from the foe, even when the hero stands past it (qa-r125)', () => {
+    const left = harness({ arcade: true, vx: 0, foeX: 500 });
+    for (let i = 0; i < 5; i++) left.step(16);
+    left.consume([ev(SimEventKind.tagIn, 0, { to: 1, team: 0 })]);
+    left.step(16);
+    expect(left.img.x).toBeLessThan(left.c.x - 60);
+    const past = harness({ arcade: true, vx: 0, foeX: -300 });
+    for (let i = 0; i < 5; i++) past.step(16);
+    past.consume([ev(SimEventKind.tagIn, 0, { to: 1, team: 0 })]);
+    past.step(16);
+    expect(past.img.x).toBeGreaterThan(past.c.x + 60);
   });
 
   it('reduced motion: poses move nothing; the tag-in still fades in', () => {
