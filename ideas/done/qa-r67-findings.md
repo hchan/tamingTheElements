@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (all items fixed, by design, process notes or carried in other files)
 added: 2026-11-15
 ---
 
@@ -31,3 +32,8 @@ added: 2026-11-15
 - Tour FIGHT button was not clickable through Playwright's locator; pressing Enter on the splash worked.
 - "Hard" via getByRole or getByText matches a hidden option element; use a button locator with text.
 - A real-time K.O. is easiest to capture with `__TTE__.arena.setHp(foe.id, 1)` and attacking.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Tour map Controls wall and Wispera blur (WP T2). Not a bug: the Tour card vs splash mismatch (fresh seed per launch; guarded by `src/game/app/tour-fight.test.ts`). By design: equal-length life bars. Dropped (phone work): phone picker fade. Superseded: the picker "More below" pill is now in the footer bar (r119 triage); round pips grew in r68.
+Carried elsewhere: left-wall pin (see r66); PAX IN! over the damage number is covered by the `src/game/hud/banner-lanes.ts` lanes (`ideas/done/qa-r34-pax-in-overlap.md`). Cosmetic one-offs not seen again in r68 to r119 (chip drain length, crowd ghost, ROUND 2 contrast) are dropped as stale.

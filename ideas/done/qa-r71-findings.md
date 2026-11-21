@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (rechecked in r72/r73/r119, open art items tracked elsewhere)
 added: 2026-11-16
 ---
 
@@ -36,3 +37,8 @@ Screenshots: ~/claudetmp/qa-r71/ (f-<me>-<foe>-{intro,fight}.png, s-*.png, sup-*
 - Compact the Versus picker (collapse info card) for 720p and phones.
 - Raise phone HUD font size; shrink or auto-dismiss the hint card.
 - Add a Tour arena screenshot to the QA script (click FIGHT on the stage card).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed (confirmed in r72): Treenoc opaque on tag-in, element tags off heroes, super band clear of the fighters. Tracked elsewhere: Rokcore super whiffing at range (`ideas/brainstorm/qa-r71-rokcore-super-whiffs.md`); Echo pale on the Air floor (`ideas/done/qa-r129-echo-pale-on-air-floor.md`); Versus picker cramped at 720p (r119 triage: footer pill). Dropped (phone): item 8 and phone HUD size.
+Art only, noted: Treenoc pale with a halo on the Earth floor, Wispera as a plain orb (`ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`), Echo and Cyclonius icons both white-blue.

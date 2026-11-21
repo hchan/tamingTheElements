@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (art items noted, rest fixed or dropped)
 added: 2026-11-16
 ---
 
@@ -31,3 +32,8 @@ Screenshots: ~/claudetmp/qa-r72/ (f-<me>-<foe>-{intro,fight}.png, s-*.png, sup-*
 - Widen the 667x375 gutter like 844x390 and auto-dismiss the hint card.
 - Give Wispera a body or silhouette; recolour Echo or Cyclonius icon.
 - Add visible knockback / hitstop frames to hit feel.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed in this round or after: Treenoc opaque, element tags, super band, 844x390 gutter, Tour arena reachable. Dropped (phone): items 4 and 7. Tracked elsewhere: "More below" cue at 720p (r119 triage, fixed in `src/ui/styles/main/10-picker-layout.css`); hit stills showing no knockback or hit-stop: hit-stop confirmed working in r119 (N4).
+Art only, noted: Treenoc grey with a halo on the Earth floor, Echo as a ghost on Air (`ideas/done/qa-r129-echo-pale-on-air-floor.md`), Wispera orb, Echo/Cyclonius icons close in hue.

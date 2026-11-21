@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (floor chips unmerged; Treenoc Earth art open)
 added: 2026-11-16
 ---
 
@@ -25,3 +26,9 @@ The SUPER-BAND-1 fix works. In 24 desktop shots, 8 at 667x375 and 8 at 844x390 (
 ## Not a bug
 
 Super meter reads 0% in band shots because the test script calls setMeter(0,1000) and the super consumes it.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: the super band never covers a head or feet (verdict); hint card over the band (`ideas/done/hint-card-waits-for-super-band.md`); the "P2 Fire Bomb (arming)" debug prefix is gone (`src/game/fx/trap-fx.ts:18`, no "P1/P2", qa-r3). Dropped (phone): items 2 and 6. Not a bug: super meter 0% in band shots.
+Open (c): floor chips clipped at the view edge or under a head: built but not merged, see `ideas/in-progress/floor-tags-1.md`. Open (low): super name text pale-on-pale while fading on the Air stage (no code check made; needs a screenshot).
+Art only, noted: Treenoc pale with a halo on the Earth floor (`src/game/fx/hero-grade.ts` leaves alpha untouched, so it is the sheet art); Wispera orb and Echo/Cyclonius icons (`ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`).

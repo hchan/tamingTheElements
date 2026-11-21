@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (verification list: good or carried elsewhere)
 added: 2026-11-15
 ---
 
@@ -29,3 +30,7 @@ added: 2026-11-15
 - Run vite from the worktree after `corepack pnpm install --frozen-lockfile --offline`.
 
 WALL-3b note: the Hard-only wallHold (SIM_VERSION 85) addresses the idle-player wall pin for Hard; Normal and Easy are deliberately untouched.
+
+## Triage 2026-11-21 (code-checked)
+
+Mostly a verification list that passed (damage numbers at the head, life-bar notches, K.O. label, pips, first-run card, tag slot text, Tour chips). Wall pin: addressed for Hard by `wallHold` (SIM_VERSION 85, note at the end of the file) and for Normal by the step-apart AI (`src/core/agents/scripted-ai/step-apart.test.ts`); the camera-side clamp is carried in r65 triage item 3 and `ideas/brainstorm/qa-r125-tag-entry-left-wall-overlap.md`. Wispera low-res portrait: art only (`ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`). Process notes need no action.
