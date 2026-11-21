@@ -36,10 +36,14 @@ const execFileP = promisify(execFile);
 const STDERR_LINES = 40;
 const LOG_ROTATE_BYTES = 2 * 1024 * 1024;
 
-/** Best-effort command output (2 s timeout; the tool may be missing, e.g. lsof on the PC). */
+/**
+ * Best-effort command output (the tool may be missing, e.g. lsof on the PC). The timeout is generous because lsof walks every
+ * process and takes well over 2 s on a machine at load 20-30 (parallel agents); a short one made the holder report "unknown"
+ * and flaked tests/repo/e2e-server.test.ts case E. This runs only on a failed start, never on a healthy path.
+ */
 async function tryRun(cmd: string, args: string[]): Promise<string> {
   try {
-    return (await execFileP(cmd, args, { timeout: 2_000, encoding: 'utf8' })).stdout;
+    return (await execFileP(cmd, args, { timeout: 20_000, encoding: 'utf8' })).stdout;
   } catch (e: unknown) {
     // lsof exits 1 when nothing listens but may still have printed; anything else is just "unknown".
     return typeof e === 'object' && e !== null && 'stdout' in e && typeof e.stdout === 'string' ? e.stdout : '';

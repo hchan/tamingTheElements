@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
@@ -28,8 +28,17 @@ afterEach(() => { rmSync(root, { recursive: true, force: true }); });
 
 const owner = (pid: number, startedAt = Date.now()): Owner => ({ pid, startedAt, cwd: '/x', cmd: 'c' });
 const clock = (now: number, alive: (p: number) => boolean): Clock => ({ now: () => now, isAlive: alive });
-const TSX = 'node_modules/tsx/dist/cli.mjs';
+// Run the script under `node --import tsx`, not the tsx CLI: the CLI is a launcher that spawns the real process and relays signals,
+// so a SIGTERM to it can return (close) before the real process has released its locks, and under load the gap is seconds long.
+// Directly spawned, the pid we signal is the one that releases, and its exit means the locks are gone.
+const SLOT_CMD = ['--import', 'tsx', 'tools/ci/browser-slot.ts'];
 const baseEnv = (extra: Record<string, string>): NodeJS.ProcessEnv => ({ ...process.env, CI: '', TTE_BROWSER_SLOT_HELD: '', TTE_BROWSER_LOCK_ROOT: root, ...extra });
+
+const spawned: ChildProcess[] = [];
+afterEach(() => {
+  // Never leave a browser-slot process (and its lock) behind when a test fails before its own cleanup.
+  for (const c of spawned.splice(0)) if (c.exitCode === null && c.signalCode === null) c.kill('SIGKILL');
+});
 
 describe('browser-slot', () => {
   it('parses the command after --', () => {
@@ -126,7 +135,7 @@ describe('browser-slot', () => {
     const srv = createServer();
     const port = await new Promise<number>((res) => srv.listen(0, '127.0.0.1', () => { res((srv.address() as { port: number }).port); }));
     try {
-      const r = spawnSync(process.execPath, [TSX, 'tools/ci/browser-slot.ts', '--', process.execPath, '-e', '0'], {
+      const r = spawnSync(process.execPath, [...SLOT_CMD, '--', process.execPath, '-e', '0'], {
         encoding: 'utf8',
         env: baseEnv({ E2E_PORT: String(port), TTE_BROWSER_SLOTS: '2' }),
       });
@@ -142,7 +151,7 @@ describe('browser-slot', () => {
     const slot = join(root, 'tte-locks', 'browser-slot-1');
     mkdirSync(join(root, 'tte-locks'));
     expect(tryAcquire(slot, owner(process.pid), clock(Date.now(), () => true))).toBe(true);
-    const r = spawnSync(process.execPath, [TSX, 'tools/ci/browser-slot.ts', '--', process.execPath, '-e', '0'], {
+    const r = spawnSync(process.execPath, [...SLOT_CMD, '--', process.execPath, '-e', '0'], {
       encoding: 'utf8',
       env: baseEnv({ TTE_BROWSER_SLOTS: '1', TTE_BROWSER_SLOT_TIMEOUT_MS: '300', TTE_BROWSER_SLOT_POLL_MS: '50' }),
     });
@@ -181,10 +190,11 @@ describe('browser-slot', () => {
   });
 
   it('forwards SIGTERM to the child and releases its locks', async () => {
-    const child = spawn(process.execPath, [TSX, 'tools/ci/browser-slot.ts', '--', process.execPath, '-e', 'console.log("up");setInterval(()=>{},1000)'], {
+    const child = spawn(process.execPath, [...SLOT_CMD, '--', process.execPath, '-e', 'console.log("up");setInterval(()=>{},1000)'], {
       env: baseEnv({ TTE_BROWSER_SLOTS: '2' }),
       stdio: ['ignore', 'pipe', 'inherit'],
     });
+    spawned.push(child);
     await new Promise<void>((res) => child.stdout.on('data', (d: Buffer) => {
         if (d.toString().includes('up')) res();
       }),
@@ -192,13 +202,12 @@ describe('browser-slot', () => {
     expect(readdirSync(join(root, 'tte-locks'))).toHaveLength(1);
     child.kill('SIGTERM');
     await new Promise<void>((res) => child.on('close', () => { res(); }));
-    // The spawned process is the tsx launcher, which relays SIGTERM to the real browser-slot process and may exit before that
-    // process has released its locks (the flake at low load). Wait for the release instead of reading the directory at once.
-    const deadline = Date.now() + 10_000;
+    // Belt and braces: poll for the release (generous, the process runs at nice 19) instead of reading the directory at once.
+    const deadline = Date.now() + 20_000;
     while ((readdirSync(join(root, 'tte-locks')).length > 0 || existsSync(join(root, 'tte-e2e.lock'))) && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 50));
     }
     expect(readdirSync(join(root, 'tte-locks'))).toEqual([]);
     expect(existsSync(join(root, 'tte-e2e.lock'))).toBe(false);
-  }, 30_000);
+  }, 60_000);
 });
