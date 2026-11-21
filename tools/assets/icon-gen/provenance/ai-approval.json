@@ -1,0 +1,68 @@
+{
+  "ember_bite": {
+    "approved": "r195-ic-ember-bite_97004_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "gale_talon": {
+    "approved": "r196-ic-gale-talon_97033_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "tide_surge": {
+    "approved": "r196-ic-tide-surge_97024_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "hurl_rock": {
+    "approved": "r198-ic-hurl-rock_97211_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "lure_orb": {
+    "approved": "r198-ic-lure-orb_97223_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "mycelium_mend": {
+    "approved": "r243-mycelium_99122_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "stinging_filament": {
+    "approved": "r244-stinging-filament_99232_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "stoop": {
+    "approved": "r245-stoop_99324_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "forge_gore": {
+    "approved": "r246-forge-gore_99432_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "tusk_gore": {
+    "approved": "r247-tusk-gore_99524_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "boulder_roll": {
+    "approved": "r207-ic-boulder-roll_98024_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  }
+}

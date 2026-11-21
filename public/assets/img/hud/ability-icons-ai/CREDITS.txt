@@ -1,0 +1,2 @@
+Ability icons: AI-generated (SDXL, own work, no third-party art), resized to 128 px by tools/assets/icon-gen/install-ai-ability-icons.py.
+Approved by the art-director agent, see tools/assets/icon-gen/provenance/ai-approval.json. No attribution required.
