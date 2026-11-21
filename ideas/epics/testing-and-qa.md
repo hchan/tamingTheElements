@@ -21,14 +21,14 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 QA evaluator rounds (kept unchanged; newest first, the latest rounds hold the open items):
 
-- [qa-r85-scorecard](../brainstorm/qa-r85-scorecard.md)
-- [qa-r85-findings](../brainstorm/qa-r85-findings.md)
+- [qa-r85-scorecard](../done/qa-r85-scorecard.md)
+- [qa-r85-findings](../done/qa-r85-findings.md)
 - [qa-r84-scorecard](../brainstorm/qa-r84-scorecard.md)
 - [qa-r84-findings](../brainstorm/qa-r84-findings.md)
-- [qa-r83-scorecard](../brainstorm/qa-r83-scorecard.md)
-- [qa-r83-findings](../brainstorm/qa-r83-findings.md)
-- [qa-r82-scorecard](../brainstorm/qa-r82-scorecard.md)
-- [qa-r82-findings](../brainstorm/qa-r82-findings.md)
+- [qa-r83-scorecard](../done/qa-r83-scorecard.md)
+- [qa-r83-findings](../done/qa-r83-findings.md)
+- [qa-r82-scorecard](../done/qa-r82-scorecard.md)
+- [qa-r82-findings](../done/qa-r82-findings.md)
 - [qa-r81-scorecard](../brainstorm/qa-r81-scorecard.md)
 - [qa-r81-findings](../brainstorm/qa-r81-findings.md)
 - [qa-r80-scorecard](../brainstorm/qa-r80-scorecard.md)
@@ -150,12 +150,12 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 
 - [e2e-webserver-health](../done/e2e-webserver-health.md): E2E webServer health: a dead preview must not cascade into hundreds of failures
 - [short-and-long-gate](../in-progress/short-and-long-gate.md): Short gate on every merge, long gate once a day
-- [qa-r86-findings](../brainstorm/qa-r86-findings.md): QA r86 findings
-- [qa-r86-scorecard](../brainstorm/qa-r86-scorecard.md): QA r86 scorecard
-- [qa-r87-findings](../brainstorm/qa-r87-findings.md): QA r87 findings
-- [qa-r87-scorecard](../brainstorm/qa-r87-scorecard.md): QA r87 scorecard
-- [qa-r88-findings](../brainstorm/qa-r88-findings.md): QA r88 findings
-- [qa-r88-scorecard](../brainstorm/qa-r88-scorecard.md): QA r88 scorecard
+- [qa-r86-findings](../done/qa-r86-findings.md): QA r86 findings
+- [qa-r86-scorecard](../done/qa-r86-scorecard.md): QA r86 scorecard
+- [qa-r87-findings](../done/qa-r87-findings.md): QA r87 findings
+- [qa-r87-scorecard](../done/qa-r87-scorecard.md): QA r87 scorecard
+- [qa-r88-findings](../done/qa-r88-findings.md): QA r88 findings
+- [qa-r88-scorecard](../done/qa-r88-scorecard.md): QA r88 scorecard
 - [qa-r89-findings](../brainstorm/qa-r89-findings.md): QA r89 findings
 - [qa-r89-scorecard](../brainstorm/qa-r89-scorecard.md): QA r89 scorecard
 - [qa-r90-findings](../brainstorm/qa-r90-findings.md): QA r90 findings (main 53099fee)

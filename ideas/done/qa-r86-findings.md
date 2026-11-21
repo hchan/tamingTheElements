@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; Help item fixed)
 added: 2026-11-16
 ---
 
@@ -57,3 +58,8 @@ Tap-to-fire on the bar tiles, 2v2 and 3v3 portrait, Tag buttons, the Super cut-i
 - Versus picker at 390 is clean: roster by element with ranged and melee icons, P1 badge, Fight and Back pinned.
 - Touch controls laid out: stick 138px, Strike circles 64px, Pause 58x44, fullscreen at the top right. No overlap with the bar.
 - Desktop 1v1: single-row bar of 10 tiles, FIRE x2 hazard chips, first-run hint with real key names. No console or page errors.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: P1 Help vs Charge tile (Help now says dimmed, verified r87). Dropped (phone/portrait/touch): P2 to P6, P8. Art only, tracked: P7 Fire ground contrast (`ideas/brainstorm/qa-r128-fire-stage-hero-blend.md`).
+Open: none.

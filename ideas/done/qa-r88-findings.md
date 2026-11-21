@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped)
 added: 2026-11-16
 ---
 
@@ -45,3 +46,8 @@ Tapping tiles and Strike circles to fire, Super cut-in, Tour, landscape, long-fi
 - Touch targets: tiles at least 45px, Strike circles about 64px and apart from the stick, Pause and fullscreen at least 44px and under the strip.
 - 5+4 and 5+5 rows centred at both portrait sizes; bar lowest edge on the canvas bottom.
 - Desktop bars one row with all tiles, readable labels.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: P3 portrait HUD text (verified r89). Dropped (phone/portrait/touch): P1, P2, P4, P5, P6 (touch tiles, key hints, sky void).
+Open: none.

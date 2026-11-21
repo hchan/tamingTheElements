@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed)
 added: 2026-11-16
 ---
 
@@ -46,3 +47,8 @@ Tap-to-fire on tiles, Super cut-in, Tour, no e2e run, portrait 3v3 at 360 (bar n
 - Landscape 844x390: bar single row, Strike circles and Pause to the right of the canvas, none overlapping.
 - Desktop: bar one row of 10 tiles, hazard chips readable, Melee tile dimmed for ranged hero.
 - Versus picker clean at 390.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: P3 Help links (compact two per row, verified r89), P4 WAIT label for benched Tag tiles (verified r88). Dropped (phone/portrait/touch): P1, P2, P5, P6.
+Open: none.
