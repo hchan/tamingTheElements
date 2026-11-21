@@ -2,6 +2,7 @@
 // The address comes only from env TTE_RELAY_URL (https, no path): it is baked into a scratch build (VITE_ONLINE_URL) and never printed or written to the repo.
 // One browser, two contexts, one match (`?matchticks=N`, bots drive both sides with `?ff=netbot`). Traffic is the game's own, paced by the relay's MATCH frame.
 // Not part of the e2e suite or the PC router (the address lives only on the machine that has the env file). Exit: 0 ok, 1 a step failed, 2 bad config.
+import { RateCounter } from './live-rate';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
 import { pathToFileURL } from 'node:url';
@@ -64,13 +65,14 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
       // Relay-side evidence, host-free: frame counts per direction and any short prose/JSON notice the gateway sent instead of a frame.
       page.on('websocket', (ws) => {
         let sent = 0; let got = 0;
-        ws.on('framesent', () => { sent++; });
+        const outRate = new RateCounter(); const inRate = new RateCounter();
+        ws.on('framesent', () => { sent++; outRate.record(Date.now()); });
         ws.on('framereceived', (f) => {
-          got++;
+          got++; inRate.record(Date.now());
           const t = typeof f.payload === 'string' ? f.payload : '';
           if (t.length > 0 && t.length < 200 && (t.startsWith('{') || t.includes(' '))) step(`${name} gateway text after ${String(sent)} sent / ${String(got)} received: ${redact(t)}`);
         });
-        ws.on('close', () => { step(`${name} socket closed: ${String(sent)} sent, ${String(got)} received`); });
+        ws.on('close', () => { step(`${name} socket closed: ${String(sent)} sent, ${String(got)} received; sent ${outRate.text()}; received ${inRate.text()}`); });
       });
       page.on('pageerror', (e) => { step(`${name} page error: ${redact(e.message).slice(0, 120)}`); });
       // Diagnostics, host-free: failed requests (method, path, reason), HTTP error statuses and console errors.
