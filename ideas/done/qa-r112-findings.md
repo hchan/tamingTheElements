@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a/d (item 4 fixed by 9e48091ce, src/ui/styles/match-end.css:366-385 desktop 720p fit; item 5 intended, 5 s run per src/core/data/text-ids.ts:115; items 1,2,3,6,7,8 phone/portrait/touch, obsolete since 2026-11-18)
 added: 2026-11-18
 ---
 
