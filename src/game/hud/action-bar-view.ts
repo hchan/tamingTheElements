@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { Command, RenderView } from '@core/index';
 import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { HUD_WIDTH } from './bars';
+import { PANEL_W, PANEL_X } from './hud-chrome';
 import { readyGlow } from './arcade-hud';
 import { lookup } from '../views/projectile-view';
 import { mute } from '../fx/grim-fx';
@@ -10,7 +11,6 @@ import { syncTouchOverlays } from './touch-overlay';
 import { isPortraitPlay, setPanelTop } from '../boot/portrait-play';
 import { cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
-
 import { ACTION_SHEET, BAR_Y, CAPTURE_READY_COLOR, COOLDOWN_COLOR, DEFAULT_KEY_LABELS, ELEMENT_TINT, ICON_FRAME, ICON_PAD, KIND_TINT, LOGICAL_HEIGHT, MAX_SLOTS, MIRROR_SIDE, READY_FLASH_COLOR, SHEET_CELL, SHEET_COLS, SLOT_SIDE, TIP_LONG_PRESS_MS, TIP_SUPER_QUIET_MS, TOP_BORDER, arcadeBarOf, barTop, buildSlots, captureHint, commandAt, cooldownLook, fitIcon, fitTextScale, gradedTexture, mirrorSlots, portraitBarSlots, readyEdge, showStrikeCues, slotParts, slotTip, slotWord, strikeCues, tipExpired, tipPlacement, withoutStrikeTiles, type ActionSlot, type CooldownLook, type GroupHeader, type GroupedBar, type KeyLabels } from './action-bar';
 /** Where the 1280x720 screen sits in world px: top-left `x`,`y` and world px per logical px (`scale`). Identity for a fixed camera. */
 export interface ScreenBox {
@@ -177,18 +177,18 @@ export class ActionBarView {
         const BASE = 0.62;
         for (let i = 0; i < FADE_BANDS; i++) {
           this.back.fillStyle(0x0b0a09, (BASE * (i + 1)) / (FADE_BANDS + 1));
-          this.back.fillRect(0, top + i * BAND_H, HUD_WIDTH, BAND_H);
+          this.back.fillRect(PANEL_X, top + i * BAND_H, PANEL_W, BAND_H);
         }
         this.back.fillStyle(0x0b0a09, BASE);
-        this.back.fillRect(0, top + FADE_BANDS * BAND_H, HUD_WIDTH, LOGICAL_HEIGHT - top - FADE_BANDS * BAND_H);
+        this.back.fillRect(PANEL_X, top + FADE_BANDS * BAND_H, PANEL_W, LOGICAL_HEIGHT - top - FADE_BANDS * BAND_H);
       } else {
         this.back.fillStyle(0x0b0a09, 0.86);
-        this.back.fillRect(0, top, HUD_WIDTH, LOGICAL_HEIGHT - top);
+        this.back.fillRect(PANEL_X, top, PANEL_W, LOGICAL_HEIGHT - top);
       }
       this.back.fillStyle(0xd8cdb8, 0.05);
-      this.back.fillRect(0, top, HUD_WIDTH, 3);
+      this.back.fillRect(PANEL_X, top, PANEL_W, 3);
       g.lineStyle(1, 0x6b6558, 0.8);
-      g.lineBetween(0, top + 1, HUD_WIDTH, top + 1);
+      g.lineBetween(PANEL_X, top + 1, PANEL_X + PANEL_W, top + 1);
     } else if (this.slots.length > 0) {
       g.lineStyle(TOP_BORDER, 0x111111, 1);
       g.lineBetween(0, top + TOP_BORDER, HUD_WIDTH, top + TOP_BORDER);

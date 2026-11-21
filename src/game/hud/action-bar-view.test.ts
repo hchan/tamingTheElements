@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, type Command, type RenderActionBar, type RenderView } from '@core/index';
 import { ACTION_ICON, ACTION_SHEET, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX } from './action-bar';
 import { ActionBarView, type ScreenBox } from './action-bar-view';
+import { PANEL_W, PANEL_X } from './hud-chrome';
+import { hudFrame } from './arcade-hud';
 
 /** A recording stand-in for a Phaser game object: setters keep state, drawing calls are logged by name. */
 interface Fake {
@@ -141,6 +143,22 @@ describe('ActionBarView', () => {
     // a frame plus a key-badge outline per slot
     expect(g?.calls.filter((c) => c === 'strokeRoundedRect')).toHaveLength(6);
     expect(g?.calls).toContain('lineBetween');
+  });
+
+  it('styled panel spans the whole HUD camera frame on the widest view, not only 0..1280', () => {
+    const r = rig({ bar: bar(), styled: true });
+    const rects: { x: number; w: number }[] = [];
+    const back = r.gfx[0] as unknown as Record<string, unknown>;
+    back['fillRect'] = (x: number, _y: number, w: number): unknown => { if (w >= 1280) rects.push({ x, w }); return back; };
+    r.v.update();
+    const wide = hudFrame(1558);
+    expect(rects.length).toBeGreaterThan(0);
+    for (const q of rects) {
+      expect(q.x).toBe(PANEL_X);
+      expect(q.w).toBe(PANEL_W);
+      expect(q.x).toBeLessThanOrEqual(wide.x);
+      expect(q.x + q.w).toBeGreaterThanOrEqual(wide.x + wide.w);
+    }
   });
 
   it('styled mode puts the key in a corner badge and the words in a separate strip, with an element-coloured frame', () => {

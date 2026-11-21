@@ -10,6 +10,9 @@ export interface HudChromeContext {
 
 /** Scrim overdraw each side of the 1280 frame (px): the HUD camera on a wide view shows x from 640 - viewW/2, so the band must reach past 0..1280. */
 export const SCRIM_OVERSCAN = 400;
+/** The dressed action-bar panel overdraws the same way (x and width), so a wide view has no undimmed bottom edge strips. */
+export const PANEL_X = -SCRIM_OVERSCAN;
+export const PANEL_W = HUD_WIDTH + 2 * SCRIM_OVERSCAN;
 
 /** HUD backdrop chrome: the Arcade top scrim (depth 96) and the low-life edge grain (depth 97), both under the HUD layers (98+). */
 export class HudChrome {
