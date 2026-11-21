@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (round-10 scorecard of an old dev build; superseded by later QA rounds, open items re-filed in later qa-* ideas)
 added: 2026-11-14
 ---
 
