@@ -183,6 +183,13 @@ describe('OnlineClient', () => {
     expect(r.ok && r.value.malformed).toBe(2);
   });
 
+  it('asks every socket for ArrayBuffer messages (a Blob would be decoded asynchronously and reorder frames)', async () => {
+    const h = new Harness();
+    const { c } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    expect((h.svc.sockets[0] as TestWs & { binaryType?: string }).binaryType).toBe('arraybuffer'); // the contract value, not the constant
+  });
+
   it('an expired ticket (older than 60 s) is refused by the service', async () => {
     const h = new Harness();
     const deps = h.deps(true, { WebSocket: ctor((url) => { h.clock.ms += 61_000; return h.svc.makeSocket(url); }) });
