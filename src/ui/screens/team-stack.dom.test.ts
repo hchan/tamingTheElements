@@ -70,7 +70,7 @@ describe('teamStack', () => {
     expect(text).toEqual(['1 Starter', '2 Tag', '3 Tag']);
     expect(document.getElementById('roster-partner2')).not.toBeNull();
     expect(s.el.querySelectorAll('.rosterSlot').length).toBe(3);
-    expect(s.el.querySelector('.vsAbilities .vsAbility')?.getAttribute('title')).toBe('Quake');
+    expect(s.el.querySelector('.vsAbilities .vsAbility')?.hasAttribute('title')).toBe(false);
   });
 
   it('labels mine, suggested and empty rows', () => {
