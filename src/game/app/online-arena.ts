@@ -12,11 +12,12 @@ import { mountAimIndicator } from '../fx/aim-view';
  * Starts the arena of an online quick match inside `node` (it began as a copy of the launch block of the retired peer-to-peer screen): dev hooks (`?ff=netbot`, `?netsim=`, `?matchticks=`), touch overlays, the panning view and the
  * session timing the service announced. The caller destroys the game with `destroyGame(game, holder)`.
  */
-const devBuild = (): boolean => import.meta.env.DEV || import.meta.env.MODE === 'test';
+/** A module constant (not a function) so the bundler folds it and drops the dev-only branches, and their dynamic imports, from production builds. */
+const DEV_HOOKS: boolean = import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 /** `?matchticks=N` (dev and test builds only): end the match as a draw at tick N. */
 function matchTicksParam(): number | undefined {
-  if (!devBuild()) return undefined;
+  if (!DEV_HOOKS) return undefined;
   const n = Number(new URLSearchParams(window.location.search).get('matchticks'));
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
@@ -43,8 +44,8 @@ export interface OnlineArena {
 export async function launchOnlineArena(o: OnlineArenaOptions): Promise<OnlineArena> {
   const { setup, side } = o;
   const matchTicks = matchTicksParam();
-  const sim = devBuild() && new URLSearchParams(window.location.search).has('netsim') ? import('../net/netsim') : Promise.resolve(undefined);
-  const bot = devBuild() && getUiFlags(window.location.search).netbot ? import('./arcade-setup').then((m) => m.arcadeBot(setup, side)) : Promise.resolve(undefined);
+  const sim = DEV_HOOKS && new URLSearchParams(window.location.search).has('netsim') ? import('../net/netsim') : Promise.resolve(undefined);
+  const bot = DEV_HOOKS && getUiFlags(window.location.search).netbot ? import('./arcade-setup').then((m) => m.arcadeBot(setup, side)) : Promise.resolve(undefined);
   const [{ createGame }, agent, netsimMod] = await Promise.all([import('../boot/phaser-config'), bot, sim]);
   const netsim = netsimMod?.netsimFromSearch(window.location.search, true);
   const holder = el('div');
