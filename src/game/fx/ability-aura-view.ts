@@ -168,9 +168,10 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         if (!b) return false;
         for (const arc of b.arcs) {
           const pts = toPts(arc);
-          gfx.lineStyle(7, 0x000000, 0.2 * b.alpha).strokePoints(pts, false);
-          gfx.lineStyle(3.5, BITE_COLOR, 0.75 * b.alpha).strokePoints(pts, false);
-          glow.lineStyle(9, BITE_COLOR, 0.12 * b.alpha).strokePoints(pts, false);
+          gfx.lineStyle(9, 0x000000, 0.24 * b.alpha).strokePoints(pts, false);
+          gfx.lineStyle(5, BITE_COLOR, 0.9 * b.alpha).strokePoints(pts, false);
+          gfx.lineStyle(1.5, 0xffc060, 0.8 * b.alpha).strokePoints(pts, false);
+          glow.lineStyle(12, BITE_COLOR, 0.16 * b.alpha).strokePoints(pts, false);
         }
         paintEmbers(glow, b.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: b.alpha })), BITE_COLOR, 0.9);
         return age <= BITE_TICKS;
