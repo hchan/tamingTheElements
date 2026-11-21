@@ -40,7 +40,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
-- [qa-r103-findings](../brainstorm/qa-r103-findings.md): QA r103 findings
+- [qa-r103-findings](../done/qa-r103-findings.md): QA r103 findings
 - [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
 
 ## Bundles (2026-11-17)
@@ -89,7 +89,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### SC-6 Hero kits presentation
 
-- Members: [hero-special-move-presentation-art](../brainstorm/hero-special-move-presentation-art.md), [action-bar-rethink-hero-kits](../brainstorm/action-bar-rethink-hero-kits.md), [qa-r103-findings](../brainstorm/qa-r103-findings.md)
+- Members: [hero-special-move-presentation-art](../brainstorm/hero-special-move-presentation-art.md), [action-bar-rethink-hero-kits](../brainstorm/action-bar-rethink-hero-kits.md), [qa-r103-findings](../done/qa-r103-findings.md)
 - Size: M
 - Shared files: action-bar.ts, src/game/fx/signature-view.ts, asset manifest
 - Flags: needs browser/e2e, owner art review; r103 supplies the "super cut-in hides the foe" item
