@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (2026-11-21; mostly fixed or obsolete; open: Tour card art, matte halo, air moving clouds)
 added: 2026-11-15
 ---
 
@@ -23,3 +24,9 @@ Screenshots under `~/claudetmp/qa-r48/s/`. Scores in qa-r48-scorecard.md.
 14. Life asymmetry persists (Echo 438 vs Morblass 359 in 2v2; phone 1v1 Wispera 795 vs Fiara 547). Confirm intended and show life in the picker. Shots: `team2-tag-b.png`, `ph-hit9.png`.
 
 Working well: menu readability with the showcase on every viewport tested (`menu-desk.png`, `menu-pl.png`), tag swap presentation (`team2-tag-b.png`), super banner with element label (`ph-super.png`), phone Victory flow (`ph-result.png`), Tour ladder (`tour-card5.png`).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: entrance animation (`src/ui/styles/menu-motion.css`, staggered, reduced-motion safe, `tests/e2e/menu-showcase.spec.ts:46`); picker bar vs partner and detail pane (`picker-bar.spec.ts:76,140`); FIGHT banner 0.6 s (`round-announcer.ts:20`); per-element hit marks and super bursts (`hit-mark.ts`, `super-burst.ts`); Air floor distinct from Water (verified r49); Online page rebuilt (`online-quick.ts`); life shown scaled in the picker.
+Obsolete: phone landscape/portrait menu layout (phone/portrait/touch work was dropped by the owner (2026-11-18)); hint strip over the arena (leaves on tag/super).
+Open (c): #1 showcase cut-out halo at 2560x1440 and the cropped left dragon (matte art, see r46 (b)); #9/#12 Tour card painted portraits on flat purple (see r47 #10); #10 Air stage moving cloud shadows (low, optional).
