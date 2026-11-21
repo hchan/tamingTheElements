@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: real (large, visual polish; live: item 5 terrain patch chips still drawn in open floor via PATCH_WORDS in src/game/fx/terrain-fx.ts, item 7 desktop first-run card placement in src/game/app/first-run-hint.ts; items 1-4 and 6 are portrait/landscape-phone work, obsolete since phone work dropped)
 added: 2026-11-17
 ---
 
@@ -34,3 +35,9 @@ No console or page errors, no banned words, no horizontal overflow in any script
 ## Not covered (follow up)
 
 - Match-end win and lose cards; hero-by-hero Strike labels; a real two-browser Online connection; a later-frame super band sample at landscape.
+
+## Triage plan (2026-11-21)
+
+1. Item 5: shrink or edge-anchor the FIRE x2 / WATER +HP / AIR x2 patch labels (terrain-fx.ts, terrain-view.test.ts pins the words); needs a real-game screenshot.
+2. Item 7: move the desktop first-run card off the lower floor (first-run-hint.ts, covered by first-run-hint e2e); screenshot check.
+3. Items 1-4 and 6 (portrait/landscape phone) are dropped; "Not covered" match-end and online follow-ups belong to other QA ideas.
