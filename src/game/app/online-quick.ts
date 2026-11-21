@@ -287,6 +287,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         }
         break;
       case 'gateway-notice':
+        if (state === 'ended') break; // a throttle notice after the end must not replace the end line
         view?.say(GATEWAY_NOTICE_TEXT);
         break;
       case 'reconnecting':
