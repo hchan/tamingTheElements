@@ -1,0 +1,639 @@
+{
+ "source": "imgWorkArea/portrait-src/umbrel.png",
+ "frame": 240,
+ "box": [
+  20,
+  24,
+  200,
+  200
+ ],
+ "res": 2,
+ "feet": [
+  200,
+  388
+ ],
+ "matte": {
+  "minIsland": 40,
+  "band": 1,
+  "fringeLum": 35
+ },
+ "rim": {
+  "color": [
+   200,
+   190,
+   160
+  ],
+  "dir": [
+   -0.55,
+   -0.85
+  ],
+  "strength": 0.22,
+  "width": 1.6
+ },
+ "shadow": {
+  "rx": 120,
+  "ry": 13,
+  "alpha": 66,
+  "dy": 2
+ },
+ "bones": [
+  {
+   "id": "root",
+   "head": [
+    200,
+    388
+   ]
+  },
+  {
+   "id": "spine0",
+   "head": [
+    135,
+    250
+   ],
+   "parent": "root",
+   "tip": [
+    240,
+    228
+   ],
+   "feather": 18,
+   "poly": [
+    [
+     0,
+     0
+    ],
+    [
+     400,
+     0
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     0,
+     400
+    ]
+   ]
+  },
+  {
+   "id": "spine1",
+   "head": [
+    240,
+    228
+   ],
+   "parent": "spine0",
+   "tip": [
+    205,
+    195
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     277,
+     215
+    ],
+    [
+     216,
+     158
+    ],
+    [
+     168,
+     208
+    ],
+    [
+     229,
+     265
+    ]
+   ]
+  },
+  {
+   "id": "legFF0",
+   "head": [
+    272,
+    290
+   ],
+   "parent": "spine1",
+   "tip": [
+    275,
+    330
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     241,
+     277
+    ],
+    [
+     246,
+     347
+    ],
+    [
+     306,
+     343
+    ],
+    [
+     301,
+     273
+    ]
+   ]
+  },
+  {
+   "id": "legFF1",
+   "head": [
+    275,
+    330
+   ],
+   "parent": "legFF0",
+   "tip": [
+    232,
+    368
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     266,
+     298
+    ],
+    [
+     201,
+     355
+    ],
+    [
+     241,
+     400
+    ],
+    [
+     306,
+     343
+    ]
+   ]
+  },
+  {
+   "id": "legHF0",
+   "head": [
+    112,
+    285
+   ],
+   "parent": "spine0",
+   "tip": [
+    96,
+    325
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     90,
+     260
+    ],
+    [
+     63,
+     328
+    ],
+    [
+     118,
+     350
+    ],
+    [
+     145,
+     282
+    ]
+   ]
+  },
+  {
+   "id": "legHF1",
+   "head": [
+    96,
+    325
+   ],
+   "parent": "legHF0",
+   "tip": [
+    80,
+    368
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     73,
+     300
+    ],
+    [
+     47,
+     372
+    ],
+    [
+     103,
+     393
+    ],
+    [
+     129,
+     321
+    ]
+   ]
+  },
+  {
+   "id": "legFN0",
+   "head": [
+    320,
+    250
+   ],
+   "parent": "spine1",
+   "tip": [
+    345,
+    320
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     287,
+     246
+    ],
+    [
+     322,
+     344
+    ],
+    [
+     378,
+     324
+    ],
+    [
+     343,
+     226
+    ]
+   ]
+  },
+  {
+   "id": "legFN1",
+   "head": [
+    345,
+    320
+   ],
+   "parent": "legFN0",
+   "tip": [
+    355,
+    368
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     313,
+     311
+    ],
+    [
+     329,
+     389
+    ],
+    [
+     387,
+     377
+    ],
+    [
+     371,
+     299
+    ]
+   ]
+  },
+  {
+   "id": "legHN0",
+   "head": [
+    250,
+    240
+   ],
+   "parent": "spine0",
+   "tip": [
+    175,
+    302
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     242,
+     207
+    ],
+    [
+     144,
+     288
+    ],
+    [
+     183,
+     335
+    ],
+    [
+     281,
+     254
+    ]
+   ]
+  },
+  {
+   "id": "legHN1",
+   "head": [
+    175,
+    302
+   ],
+   "parent": "legHN0",
+   "tip": [
+    142,
+    368
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     155,
+     275
+    ],
+    [
+     108,
+     368
+    ],
+    [
+     162,
+     395
+    ],
+    [
+     209,
+     302
+    ]
+   ]
+  },
+  {
+   "id": "tail0",
+   "head": [
+    120,
+    240
+   ],
+   "parent": "spine0",
+   "tip": [
+    85,
+    224
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     146,
+     219
+    ],
+    [
+     84,
+     190
+    ],
+    [
+     59,
+     245
+    ],
+    [
+     121,
+     274
+    ]
+   ]
+  },
+  {
+   "id": "tail1",
+   "head": [
+    85,
+    224
+   ],
+   "parent": "tail0",
+   "tip": [
+    50,
+    205
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     112,
+     205
+    ],
+    [
+     51,
+     171
+    ],
+    [
+     23,
+     224
+    ],
+    [
+     84,
+     258
+    ]
+   ]
+  },
+  {
+   "id": "neck0",
+   "head": [
+    205,
+    195
+   ],
+   "parent": "spine1",
+   "tip": [
+    190,
+    100
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     237,
+     205
+    ],
+    [
+     217,
+     81
+    ],
+    [
+     158,
+     90
+    ],
+    [
+     178,
+     214
+    ]
+   ]
+  },
+  {
+   "id": "head",
+   "head": [
+    190,
+    100
+   ],
+   "parent": "neck0",
+   "tip": [
+    330,
+    100
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     168,
+     145
+    ],
+    [
+     352,
+     145
+    ],
+    [
+     352,
+     55
+    ],
+    [
+     168,
+     55
+    ]
+   ]
+  },
+  {
+   "id": "jaw",
+   "head": [
+    200,
+    108
+   ],
+   "parent": "head",
+   "tip": [
+    330,
+    100
+   ],
+   "feather": 6,
+   "poly": [
+    [
+     188,
+     96
+    ],
+    [
+     342,
+     96
+    ],
+    [
+     342,
+     132
+    ],
+    [
+     188,
+     132
+    ]
+   ]
+  }
+ ],
+ "glows": [
+  {
+   "id": "spore",
+   "bone": "head",
+   "at": [
+    232,
+    62
+   ],
+   "r": 9,
+   "color": [
+    255,
+    170,
+    60
+   ],
+   "gain": 0.9,
+   "hot": 0.5
+  }
+ ],
+ "dirOffsets": {
+  "SE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": 4
+   }
+  },
+  "S": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": 6
+   }
+  },
+  "N": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": -6
+   }
+  },
+  "NE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": -4
+   }
+  }
+ },
+ "license": "Rig parts for umbrel: the painting is generated with Stable Diffusion XL (stabilityai/stable-diffusion-xl-base-1.0; sd-turbo/SDXL-Turbo for\nrefinements) under the CreativeML Open RAIL++-M licence, which permits commercial use of the outputs with its use-based restrictions;\nthe repository owner holds the outputs. Cut, matted and animated by tools/assets/portrait-rig (prep.py, body_plans); numpy/PIL only.\n",
+ "deformMask": {
+  "feather": 16,
+  "polys": [
+   [
+    [
+     290,
+     60
+    ],
+    [
+     264,
+     124
+    ],
+    [
+     200,
+     150
+    ],
+    [
+     136,
+     124
+    ],
+    [
+     110,
+     60
+    ],
+    [
+     136,
+     -4
+    ],
+    [
+     200,
+     -30
+    ],
+    [
+     264,
+     -4
+    ]
+   ],
+   [
+    [
+     100,
+     190
+    ],
+    [
+     88,
+     218
+    ],
+    [
+     60,
+     230
+    ],
+    [
+     32,
+     218
+    ],
+    [
+     20,
+     190
+    ],
+    [
+     32,
+     162
+    ],
+    [
+     60,
+     150
+    ],
+    [
+     88,
+     162
+    ]
+   ]
+  ]
+ }
+}
