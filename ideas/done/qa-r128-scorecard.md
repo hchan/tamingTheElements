@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-19
 ---
 # QA r128 scorecard
@@ -19,3 +19,4 @@ No console or page errors in the run.
 | Help | - | 3 | 3 | Jump-to chips still ragged (already filed as qa-r127-help-chips-ragged) |
 
 Not verified this round (capture limits, not game bugs, unconfirmed): a tag swap by holding `3` in manual mode (the held key did not swap in 13 ticks, `32-tag.png` shows no TAG call), and the super cut-in (25 ticks after the press showed only a ring aura, `20-super.png`). Both are covered by `arcade-tag.spec.ts` and `arcade-super.spec.ts`, so a screenshot spec that grabs them mid-effect is the follow-up.
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r128 findings.

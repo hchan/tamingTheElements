@@ -1,6 +1,6 @@
 # QA r122 scorecard
 
-status: idea
+status: done
 added: 2026-11-19
 
 Build: main at 7491ef07, headless Chromium with SwiftShader, 1280x720, stepped play (not live input), so feel is judged from frames.
@@ -20,3 +20,4 @@ Smoke: `e2e ran on: PC (job 20261119-142449-short-56a740, short lane) -> exit 0`
 | 2v2 and results | 3 | 4 | 4 | Results now fit, Rematch focused |
 | Tour | 2 | 4 | 4 | Stage 1 dead walk; cards are clear |
 | Menus, Help, Settings | n/a | 3 | 3 | Help chips ragged; picker chip overlap |
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r122 findings.

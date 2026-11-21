@@ -11,3 +11,5 @@ Repro: 2v2 on the Fire stage, tag in Pax (Adrenaline), look at the left status c
 Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a84dea11ac10d7faf/.scratch/qa-r126/shots/42-tag-swap-a.png
 
 Suggested fix: raise chip fill alpha to about 0.85 with a lighter 1 px border, or darken the crowd scrim under the chip row.
+
+triaged: 2026-11-21 real, small, but chip code is in Hud.ts (off limits this pass). Plan: next pass, failing-first test on chip fill alpha.

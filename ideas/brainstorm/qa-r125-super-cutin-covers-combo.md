@@ -11,3 +11,5 @@ Repro: Versus 2v2 (`/?manual=1&seed=7&ff=arcade#arcade`, size 2), land a hit cha
 Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a77c3dce6b1857aa7/.scratch/qa-r125/22-super-4-1280.png
 
 Suggested fix: hide or fade the combo counter while the super cut-in banner is up, or move the banner away from the combo text.
+
+triaged: 2026-11-21 real, but touches src/game/fx/super-view.ts and Hud.ts (off limits this pass). Plan: confirm in live play, then hide combo text while the cut-in shows.

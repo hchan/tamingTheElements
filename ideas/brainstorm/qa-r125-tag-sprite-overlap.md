@@ -11,3 +11,5 @@ Repro: 2v2 fight, stand close to the foe, hold 3 across one tick, look at the fr
 Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a77c3dce6b1857aa7/.scratch/qa-r125/21-tag-a-1280.png
 
 Suggested fix: bring the incoming hero in from off-screen, or enforce a minimum sprite spacing during the swap.
+
+triaged: 2026-11-21 real, medium: needs a swap-in entry in the renderer. Plan: medium planner.

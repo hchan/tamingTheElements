@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-19
 ---
 # QA r127 scorecard
@@ -17,3 +17,4 @@ Word scan of page text on menu, Versus, 2v2 picker, Tour, Help, Settings: no Cla
 | Menus, Help, Settings | n/a | 3 | 3 | Menu (`01`) clean with a gold Online CTA; Help chips (`60`) still ragged in 2-3-4 rows; picker text under the "More below" chip (`02`, `50`) |
 
 vs Street Fighter / MvC: stage art and the super band approach the genre; hit weight, sprite scale parity and menu polish lag.
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r127 findings.
