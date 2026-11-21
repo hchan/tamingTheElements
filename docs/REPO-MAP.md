@@ -124,3 +124,5 @@ ADR index: [docs/adr/README.md](adr/README.md)
 `tools/ci/nightly-e2e.ts` (`pnpm nightly:submit|collect|status`), `nightly-status.ts` (pure status logic), `nightly-install.ts` (`pnpm nightly:install`) and `tools/ci/launchd/` (plist template) run the full e2e on the PC nightly; see [TESTING.md](TESTING.md) "Nightly full e2e".
 
 `tests/repo/file-size.test.ts` (size rule: 500 lines per `src/ui` and `src/game` file, ratcheted caps) and `tools/ci/size-grandfather.json` (grandfathered file caps and long-function files; read by the test and `eslint.config.js`).
+
+`tools/ci/nightly-push.ts` (clean-night push of local main by the 02:00 job after a green or known-red-only full e2e; pure `nightVerdict`/`cleanPushBlockers`); see [TESTING.md](TESTING.md) "Nightly fix loop".

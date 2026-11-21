@@ -265,6 +265,11 @@ export function claudeArgs(prompt: string): string[] {
   ];
 }
 
+/** Env vars that would let a run touch the Mac lanes; the nightly jobs refuse to push with any of them set. */
+export const BLOCKING_ENV: readonly string[] = ['CI', 'TTE_E2E_LOCAL', 'TTE_ALLOW_MAC_E2E'];
+/** The only push the nightly jobs make: plain, never forced, only HEAD to main. Shared by the fix push and the clean-night push. */
+export const PUSH_ARGS: readonly string[] = ['push', 'origin', 'HEAD:main'];
+
 const ENV_KEEP = /^(PATH|HOME|USER|LOGNAME|SHELL|LANG|LC_[A-Z]+|TERM|TMPDIR|XDG_[A-Z_]+|ANTHROPIC_[A-Z_]+|CLAUDE_CODE_OAUTH_TOKEN|NODE_OPTIONS)$/;
 /** Env for the re-run and gate:push children: no credentials, pushes disabled. Only the final push gets the real env. */
 export function noPushEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string> {
