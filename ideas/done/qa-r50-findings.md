@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (all fixed by later rounds, dropped, or art-only)
 added: 2026-11-15
 ---
 
@@ -34,3 +35,7 @@ Menu on five viewports, per-element stage floors, super banner with element labe
 ## Not verified
 
 Playwright e2e was not run this round; hit-stop, the menu entrance animation and Online two-browser flow are not judgeable from stills.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: FIGHT! banner over first hit (r52 #1); per-attacker-element hit marks (`src/game/fx/hit-mark.ts`, commit 7c4f5e806); idle auras (`src/game/fx/idle-aura-view.ts`); partner slot above the Fight bar (compaction in `src/ui/styles/main/10-picker-layout.css`) and Add/Remove-from-team relabel (`src/ui/screens/arcade-versus.ts:473`); first-run card leaves on super, tag call, round over and fades on fight time (`src/game/app/first-run-hint.ts`); ROUND ghost (r52 #6); life asymmetry (later `heroLife`). Dropped: phone landscape title, phone portrait (owner dropped phone work 2026-11-18). Art-only, noted: Wispera dithered halo, menu cut-out contour noise, mixed Tour card portraits.

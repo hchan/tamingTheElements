@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (all fixed, art-only or unverifiable from stills)
 added: 2026-11-15
 ---
 
@@ -36,3 +37,7 @@ Menu on seven viewports, per-element floors, element-labelled super banners, TAG
 ## Not verified
 
 Online two-browser flow, Firefox and WebKit, real-time hit-stop, first-run card real-time fade, fire/earth/air attacker hit marks.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Stage 9 horizon/boss (r53), menu entrance (r53), per-element hit marks, idle auras. Dropped: phone items. Info only: real-time hit-stop and swing feel (covered by `hit-feel` tests and e2e), Tour three-hero team reuse (design, not a defect). Void cast-bar tint is carried as a low open item in qa-r57-findings. Art-only, noted: Wispera halo, cut-out noise, Tour card portraits.

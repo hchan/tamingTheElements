@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (carried to later rounds; all fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -37,3 +38,7 @@ Menu on three viewports, per-element stage floors, element-labelled super banner
 ## Not verified
 
 Online two-browser flow, hit-stop and menu entrance feel, Tour 8 and 9, Firefox and WebKit. Port 7951 was occupied by a stale r50 dev server (pid 50471, cwd agent-a690ae345ac49639d); a coordinator may want to kill it.
+
+## Triage 2026-11-21 (code-checked)
+
+Same set as r50, all checked against code: hit marks per element (`hit-mark.ts`), idle auras, first-run hint events (`first-run-hint.ts`), picker partner slot and Add-to-team relabel (`arcade-versus.ts:473`), super banner full opacity (r52 #12 fixed). Help orb fixed in r52. Art-only, noted: Wispera halo, menu cut-out contour noise, Tour card portrait mix. The stale dev server note (pid 50471) is obsolete.

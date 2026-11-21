@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -30,3 +31,7 @@ Screenshots in `~/claudetmp/qa-r54/s/`. Scripts in `~/claudetmp/qa-r54/*.mjs`. S
 ## Coverage
 
 Menu (desktop, QHD, phone), hero select, 1v1 in Fire, Water, Earth, Air (intro, start, hit, super), tag swap, super, 2v2, Tour, Help, phone landscape and portrait in-match, CC chips for Fiara and Morblass, idle auras for Pax and Rokcore. Not judgeable from stills: motion feel, hit-stop, audio.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: CC chips per kind (r57), CC body overlay (`cc-fx.ts`, `cc-view.ts`), first-run card events, per-status chip colour border (r57). Dropped (owner 2026-11-18, no phone/portrait work): phone portrait in-match. Harness artifact: Tour stage 9. A deterministic e2e per CC rider exists as `tests/e2e/cc-fx.spec.ts`. Art-only, noted: Wispera halo, menu contour noise.

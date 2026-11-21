@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (small leftovers; phone and art items dropped or noted)
 added: 2026-11-15
 ---
 
@@ -30,3 +31,9 @@ Screenshots under `~/claudetmp/qa-r57/s/`.
 ## Coverage
 
 Menu at 1280x720, 667x375, 390x844; Versus picker (1v1) at 1280x720 and 667x375; 1v1 in Fire/Water/Earth/Air with hit and super; 2v2 tag swap; phone landscape fight with Pause and touch pads; phone portrait fight; roster24 heroes Kindrel, Nykra, Quarrak, Hyalia (intro, hit, ability, super); CC overlay mired, stun scan, Classic tornado crack; the CC chips for daze/down; E2E subset of 29 specs.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed since: CC chips and overlay, first-run card, tester panel, TESTER-MODE doc. Dropped: phone portrait (owner 2026-11-18), 667x375 hero picker, demo HUD debug text (`?ff=arenaDemo` is a dev demo only). Art-only, noted: Wispera halo, Nykra translucent on Void floor, Kindrel sprite blends into lava.
+
+Open (c, all low, render-only): (1) Void has no element tint on the cast bar or chip (r52 #2); (2) Kindrel's basic hit shows no spark (r56/r57); (3) repeated WATER +HP pickup labels at the same size compete with fighters (r55); (4) the second TAG slot beside the bench portraits reads as an empty stub (r55). The CC chip sitting far from the victim (r57) is by design: the lane is under the life bars.

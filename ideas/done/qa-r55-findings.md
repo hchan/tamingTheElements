@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or low; low leftovers carried to r57)
 added: 2026-11-15
 ---
 
@@ -30,3 +31,7 @@ None (no new code on main).
 ## Coverage
 
 Menu (desktop, phone landscape), 1v1 in Fire, Water, Earth, Air (intro, start, hit, super), 2v2 picker and tag swap, Tour cards 1-9 and fights, Help, Settings, Play, Online pages, phone landscape and portrait in-match. Not judgeable from stills: motion feel, hit-stop, audio.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: partner slot compaction, first-run card, CC body feedback and chips. Dropped: phone portrait, 667x375 title overlap (phone). Harness artifact: Tour stage 9. Open low items carried to qa-r57-findings: repeated pickup labels at the same size in the crowd band, second TAG slot looks like an empty stub. Air strike reach is info only. Art-only, noted: Wispera halo, cut-out noise.
