@@ -1,4 +1,4 @@
-// pnpm online:live-match: two OnlineClients play queue -> match -> a few batches -> RESULT -> RESULT_ACK against a REAL relay.
+// pnpm online:live-match [--resume|--gone|--rematch|--disagree|--bad-version|--malformed] (see --help): two OnlineClients play queue -> match -> a few batches -> RESULT -> RESULT_ACK against a REAL relay.
 // The address comes only from env TTE_RELAY_URL (https, no path); it is never printed. Traffic is light: one match, ~20 batches per side
 // paced at BATCH_GAP_MS (an estimate chosen to stay well under the stage's 10 frames/s limit, not a measurement). Exit: 0 ok, 1 step failed, 2 bad config.
 import { pathToFileURL } from 'node:url';
@@ -8,23 +8,16 @@ import { encodePacket } from '../src/core/net/packet';
 import { decodeFrame } from '../src/core/relay/codec';
 import { decodeText } from '../src/core/relay/text-codec';
 import { parseOnlineUrl } from '../src/game/net/ws/config';
+import { BATCH_GAP_MS, DRAIN_MAX_MS, INPUT_GAP_MS, STEP_TIMEOUT_MS } from './live-match-constants';
+import { badVersion, HELP, runPaired, SCENARIOS, type Peer, type Rig, type Scenario } from './live-match-scenarios';
 import { OnlineClient, type FetchLike, type OnlineEvent, type WsCtor } from '../src/game/net/ws/online-client';
 
-/** Estimate: each side sends one batch per gap, so two sides stay under half the 10 frames/s stage limit. */
-export const BATCH_GAP_MS = 250;
-// Scripted inputs (--inputs): one command per tick, one packet per tick, paced at INPUT_GAP_MS (estimate: 10 packets/s per client, the live grant's
-// ceiling; the real game sends one per 20 ms tick, i.e. 50/s, which needs the backend owner's go-ahead).
-export const INPUT_GAP_MS = 100;
+export { BATCH_GAP_MS, DRAIN_MAX_MS, INPUT_GAP_MS, STEP_TIMEOUT_MS } from './live-match-constants';
 const SCRIPT: Record<string, readonly Command[]> = {
   A: [Cmd.right, Cmd.right, Cmd.right | Cmd.up, Cmd.right | Cmd.primary, Cmd.primary, 0],
   B: [Cmd.left, Cmd.left, Cmd.secondary, Cmd.left | Cmd.primary, 0, Cmd.down],
 };
 export const BATCHES_PER_SIDE = Number(process.env['TTE_BATCHES'] ?? '20');
-/** Estimate: generous wall-clock cap per step (queue pairing of two fresh sessions should take a second or two). */
-export const STEP_TIMEOUT_MS = 20_000;
-/** Estimate: how long to keep draining after the last batch before calling a missing batch lost (late vs lost). */
-export const DRAIN_MAX_MS = 5000;
-
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const redact = (s: string): string => s.replace(/https?:\/\/\S+|wss?:\/\/\S+/g, '<url>');
 
@@ -97,21 +90,23 @@ class TracedWs extends WebSocket {
 }
 let wsCount = 0;
 
-interface Side { readonly name: string; readonly c: OnlineClient; readonly events: OnlineEvent[] }
+interface Side extends Peer { readonly ws: WebSocket | undefined }
 
-function side(name: string, httpUrl: string): Side {
+function side(name: string, httpUrl: string, simVersion = SIM_VERSION): Side {
+  const me: { ws: WebSocket | undefined } = { ws: undefined };
+  class Mine extends TracedWs { constructor(url: string) { super(url); me.ws = this; } }
   const c = new OnlineClient({
     config: { configured: true, httpUrl },
     fetch: tracedFetch,
-    WebSocket: TracedWs as unknown as WsCtor,
-    simVersion: SIM_VERSION,
+    WebSocket: Mine as unknown as WsCtor,
+    simVersion,
     now: () => performance.now(),
     after: (ms, fn) => { const t = setTimeout(fn, ms); return () => { clearTimeout(t); }; },
     random: () => Math.random(),
   });
   const events: OnlineEvent[] = [];
   c.onEvent = (e) => { events.push(e); };
-  return { name, c, events };
+  return { name, c, events, get ws() { return me.ws; } };
 }
 
 async function waitFor<T>(label: string, f: () => T | undefined): Promise<T> {
@@ -125,7 +120,14 @@ async function waitFor<T>(label: string, f: () => T | undefined): Promise<T> {
 }
 
 export async function main(env: Readonly<Record<string, string | undefined>>, out: (l: string) => void): Promise<number> {
-  const scripted = process.argv.includes('--inputs');
+  const argv = process.argv.slice(2);
+  const scripted = argv.includes('--inputs');
+  const flags = argv.filter((x) => x.startsWith('--'));
+  const scenarios = flags.filter((x) => (SCENARIOS as readonly string[]).includes(x.slice(2)));
+  const known = new Set(['--inputs', '--trace', '--help', ...SCENARIOS.map((x) => `--${x}`)]);
+  if (flags.includes('--help')) { out(HELP); return 0; }
+  if (flags.some((x) => !known.has(x)) || scenarios.length > 1 || (scenarios.length === 1 && scripted)) { out(`bad flags (see --help): ${redact(flags.join(' '))}`); return 2; }
+  const scenario = scenarios[0]?.slice(2) as Scenario | undefined;
   traceOn = process.argv.includes('--trace') || env['TTE_TRACE'] === '1';
   const cfg = parseOnlineUrl(env['TTE_RELAY_URL']);
   if (!cfg.configured) { out('TTE_RELAY_URL is not an https base URL'); return 2; }
@@ -133,6 +135,17 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
   const b = side('B', cfg.httpUrl);
   const t0 = performance.now();
   const step = (s: string): void => { out(`${String(Math.round(performance.now() - t0)).padStart(6)} ms  ${s}`); };
+  const spawned: Side[] = [];
+  const rig: Rig = {
+    sleep, now: () => performance.now(), step,
+    drop: (p) => { (p as Side).ws?.close(4000); },
+    leave: (p) => { p.c.close(); },
+    raw: (p, text) => { (p as Side).ws?.send(text); },
+    spawn: (name, v) => { const s = side(name, cfg.httpUrl, v); spawned.push(s); return s; },
+  };
+  if (scenario === 'bad-version') {
+    try { const ok = await badVersion(rig, SIM_VERSION); step(ok ? 'OK' : 'FAIL: bad-version'); return ok ? 0 : 1; } catch (e) { step(`FAIL: ${redact(e instanceof Error ? e.message : String(e))}`); return 1; } finally { for (const s of spawned) s.c.close(); }
+  }
   try {
     for (const s of [a, b]) {
       const r = await s.c.connect();
@@ -145,6 +158,11 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
     if (ma.t !== 'match' || mb.t !== 'match') throw new Error('unreachable');
     step(`matched id=${String(ma.matchId)} slots=${String(ma.slot)}/${String(mb.slot)} seed-equal=${String(ma.seed === mb.seed)}`);
     if (ma.matchId !== mb.matchId || ma.slot === mb.slot || ma.seed !== mb.seed) throw new Error('match descriptors disagree');
+    if (scenario !== undefined) {
+      const ok = await runPaired(scenario as Exclude<Scenario, 'bad-version'>, rig, a, b, ma);
+      step(ok ? 'OK' : `FAIL: ${scenario}`);
+      return ok ? 0 : 1;
+    }
     const got = { A: 0, B: 0 };
     for (let i = 0; i < BATCHES_PER_SIDE; i++) {
       for (const s of [a, b]) {
