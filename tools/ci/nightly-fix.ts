@@ -12,6 +12,8 @@
  * means no push: needs-human, the fixes kept on the local branch nightly-fix-kept/<date>. Outcomes: fixed (commit), flaky, needs-human.
  * Push only if every precondition in nightly-fix-logic.ts `pushBlockers` holds (latest FULL run on the pushed tree has no new reds, conflict-marker
  * grep, gate:push, origin unmoved); plain `git push origin HEAD:main`, never forced. Report: tte-gate/nightly-fix-*.
+ * A night with no new reds (green, or known-red only) skips the fix loop: collect-and-fix pushes local main itself when the
+ * nightly-push.ts preconditions hold (origin/main an ancestor, main is the tested commit, clean tree, gate:commit). Report: tte-gate/nightly-push-status.json.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -19,11 +21,12 @@ import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, LOCK_STALE_MS, MAX_FAILURES, MAX_FULL_CYCLES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers,
+  addsSkipMarkers, BLOCKING_ENV, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, LOCK_STALE_MS, MAX_FAILURES, MAX_FULL_CYCLES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers, PUSH_ARGS,
   retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, tooManyFailures, triage,
   type Failure, type FailureResult, type FixState, type FixStatus, type PushInput,
 } from './nightly-fix-logic';
+import { describePush, nightVerdict, pushCleanNight, readPushStatus } from './nightly-push';
 import { describeStatus, parseRawId, parseResults, pendingStatus, unrecordedFailures, type Results } from './nightly-status';
 import { redact } from './redact';
 
@@ -57,7 +60,6 @@ interface Ref {
   title: string;
 }
 
-const BLOCKING_ENV = ['CI', 'TTE_E2E_LOCAL', 'TTE_ALLOW_MAC_E2E'];
 const FIX_WT = join('.scratch', 'nightly-fix-wt');
 const MERGE_WT = join('.scratch', 'nightly-fix-merge');
 const fixStatusPath = (dir: string): string => join(dir, 'nightly-fix-status.json');
@@ -429,7 +431,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   if (count === 0) return done(false, blockers.length ? blockers : ['no fix commits to push'], forced);
   if (!verified) return done(false, blockers.length ? blockers : ['fixes were not verified by a full re-run; nothing pushed'], forced);
   const fp = finalPush(d, { mergeWt, base, shaOnOrigin, startMs }, git, sh);
-  if (fp.length === 0 && git(mergeWt, 'push', 'origin', 'HEAD:main').code !== 0) fp.push('git push failed (not forced)');
+  if (fp.length === 0 && git(mergeWt, ...PUSH_ARGS).code !== 0) fp.push('git push failed (not forced)');
   // Commits made after the verified merge (an unverified cycle) were not pushed: keep the branch for them.
   if (fp.length === 0) life.keep = count > verifiedAhead;
   return done(fp.length === 0, [...warn, ...fp]);
@@ -490,6 +492,7 @@ function collectWithRetry(d: FixDeps, start: Date): void {
 export function report(d: FixDeps): number {
   const lines = describeStatus(readStatus(d.statusDir), d.now().getTime());
   lines.push(...describeFix(readFixStatus(d.statusDir)));
+  lines.push(...describePush(readPushStatus(d.statusDir)));
   if (existsSync(lockPath(d.statusDir))) lines.push('nightly fix loop: lock file present, the loop may still be running (or crashed; the lock goes stale after 12 h)');
   mkdirSync(d.statusDir, { recursive: true });
   writeFileSync(join(d.statusDir, 'nightly-morning-report.md'), `# Nightly morning report (${d.now().toISOString()})\n\n${lines.join('\n')}\n`);
@@ -512,6 +515,10 @@ export function main(argv: readonly string[], d: FixDeps): number {
     }
     try {
       collectWithRetry(d, start);
+      // No new reds (green or known-red only, collected by this run): no fix loop, push local main if its preconditions hold.
+      const st = readStatus(d.statusDir);
+      const v = nightVerdict(st);
+      if (st && (v === 'green' || v === 'known-red') && statusUsable(st, d.now().getTime(), notBefore)) return pushCleanNight(d, st, start.getTime());
       return fix(d, false, { notBefore, startMs: start.getTime(), lockHeld: true });
     } finally {
       rmSync(lockPath(d.statusDir), { force: true });

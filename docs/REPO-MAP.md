@@ -126,3 +126,5 @@ ADR index: [docs/adr/README.md](adr/README.md)
 `tests/repo/file-size.test.ts` (size rule: 500 lines per `src/ui` and `src/game` file, ratcheted caps) and `tools/ci/size-grandfather.json` (grandfathered file caps and long-function files; read by the test and `eslint.config.js`).
 
 `src/ui/screens/settings-touch.ts` (the Settings "On-screen buttons" group: `touchGroup`, `hasTouchScreen`, `readTouchForm`; split out of `settings.ts`)
+
+`tools/ci/nightly-push.ts` (clean-night push of local main by the 02:00 job after a green or known-red-only full e2e; pure `nightVerdict`/`cleanPushBlockers`); see [TESTING.md](TESTING.md) "Nightly fix loop".
