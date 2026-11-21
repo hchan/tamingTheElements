@@ -8,6 +8,7 @@ import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } fr
 import { viewHeight, viewWidth } from '../boot/viewport';
 import { GORE_COLOR, GORE_POP, GORE_SPRITE, GORE_TICKS, HIDE_COLOR, HIDE_POP, HIDE_SPRITE, HIDE_TICKS, forgeGore, moltenHide } from './brazgor-fx';
 import { BITE_COLOR, BITE_POP, BITE_SPRITE, BITE_TICKS, SPRAY_COLOR, SPRAY_POP, SPRAY_SPRITE, SPRAY_TICKS, cinderSpray, emberBite } from './kindrel-fx';
+import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
@@ -50,6 +51,7 @@ interface Pop {
 }
 
 export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
+  mountStingFx(arena, view, reduceMotion);
   let g: Phaser.GameObjects.Graphics | undefined;
   let glowG: Phaser.GameObjects.Graphics | undefined;
   const born = new Map<string, number>();
