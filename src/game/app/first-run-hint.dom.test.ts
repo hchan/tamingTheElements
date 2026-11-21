@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, bannerUp, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunPhoneLine, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
+import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, bannerUp, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunPickArgs, firstRunLines, firstRunSeen, firstRunPhoneLine, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
 import { CUT_KEY } from '../hud/banner-lanes';
 import { TAG_CALL_KEY } from '../hud/arcade-hud';
 import { PRELOAD_READY } from '../scenes/launch';
@@ -561,5 +561,18 @@ describe('first-run card font (qa-r119 N1)', () => {
     Object.defineProperty(window, 'innerHeight', { value: 720, configurable: true });
     const card = firstRunHint(memory());
     expect(card?.style.fontSize).toBe('');
+  });
+});
+
+describe('firstRunPickArgs', () => {
+  it("passes the controlled hero's action-bar names so the card never says Attack / Second attack", () => {
+    const a = firstRunPickArgs('lavax');
+    expect(a.names).toBeDefined();
+    const text = firstRunLines(DEFAULT_BINDINGS, false, false, undefined, false, a.names).join(' ');
+    expect(text).not.toContain('Second attack');
+    expect(text).toContain(`${a.names?.[1] ?? ''} with`);
+  });
+  it('falls back to no names for an unknown hero', () => {
+    expect(firstRunPickArgs('nobody').names).toBeUndefined();
   });
 });
