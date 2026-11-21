@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -35,3 +36,8 @@ Done: menu, Versus picker, hero select, 1v1 on all four stages (desktop), 2v2 wi
 ## e2e subset
 
 `E2E_PORT=7961 playwright test portrait-play versus-portrait-grid phone-layout super-band-portrait menu-phone-row tour-fight-match --workers=1`: 37 passed (3.2 min), 0 failed.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: whole portrait HUD names, Versus footer, first-run card vs super banner (r92), Help chips (r92 to r97). Dropped (phone/portrait): rotate gate before Tour fight, empty portrait sky, More-below chip, Help chip clipping. Art/design only, tracked: super cut-in banner (`ideas/brainstorm/sf-super-cinematics.md`), Sindarosa wings (`ideas/brainstorm/qa-r128-fire-stage-hero-blend.md`).
+Open: none.

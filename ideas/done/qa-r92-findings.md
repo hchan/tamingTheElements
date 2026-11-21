@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -39,3 +40,8 @@ P3. Online is a technical copy-paste host-code flow (step 2/3) with no friendly 
 P3. Portrait arena still has a large empty sky band above small fighters (carried from r91). `p390-fight-Fire-b.png`.
 
 P3. Super cut-in is still a thin banner versus MvC full-screen portrait slam (carried).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: arcade-tag selector (`tests/e2e/arcade-tag.spec.ts:145,208` now use `.matchEndSummary`), result word contrast and loss/draw portraits (r93), duplicate Rounds text (r94), first-run card (r93), Help chips (r94). Dropped (phone/portrait): sky band, Online copy at 360, 390 wrapping. Design, tracked: super cut-in banner (`ideas/brainstorm/sf-super-cinematics.md`); later match-end polish is in `ideas/done/qa-r107-findings.md`.
+Open: none.

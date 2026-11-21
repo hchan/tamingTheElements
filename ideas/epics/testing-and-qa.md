@@ -158,26 +158,26 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r88-scorecard](../done/qa-r88-scorecard.md): QA r88 scorecard
 - [qa-r89-findings](../brainstorm/qa-r89-findings.md): QA r89 findings
 - [qa-r89-scorecard](../brainstorm/qa-r89-scorecard.md): QA r89 scorecard
-- [qa-r90-findings](../brainstorm/qa-r90-findings.md): QA r90 findings (main 53099fee)
-- [qa-r90-scorecard](../brainstorm/qa-r90-scorecard.md): QA r90 scorecard (main 53099fee)
-- [qa-r91-findings](../brainstorm/qa-r91-findings.md): QA r91 findings (main fbc2085d)
-- [qa-r91-scorecard](../brainstorm/qa-r91-scorecard.md): QA r91 scorecard (main fbc2085d)
-- [qa-r92-findings](../brainstorm/qa-r92-findings.md): QA r92 findings (main ea6fe5b7)
-- [qa-r92-scorecard](../brainstorm/qa-r92-scorecard.md): QA r92 scorecard (main ea6fe5b7)
-- [qa-r93-findings](../brainstorm/qa-r93-findings.md): QA r93 findings (main 2eca0a0e)
-- [qa-r93-scorecard](../brainstorm/qa-r93-scorecard.md): QA r93 scorecard (main 2eca0a0e)
-- [qa-r94-findings](../brainstorm/qa-r94-findings.md): QA r94 findings (main b36370b2)
-- [qa-r94-scorecard](../brainstorm/qa-r94-scorecard.md): QA r94 scorecard (main b36370b2)
-- [qa-r95-findings](../brainstorm/qa-r95-findings.md): QA r95 findings (main 5d3b0227)
-- [qa-r95-scorecard](../brainstorm/qa-r95-scorecard.md): QA r95 scorecard (main 5d3b0227)
-- [qa-r96-findings](../brainstorm/qa-r96-findings.md): QA r96 findings (main f0828a8a)
-- [qa-r96-scorecard](../brainstorm/qa-r96-scorecard.md): QA r96 scorecard (main f0828a8a)
-- [qa-r97-findings](../brainstorm/qa-r97-findings.md): QA r97 findings (main 7c500bc5)
-- [qa-r97-scorecard](../brainstorm/qa-r97-scorecard.md): QA r97 scorecard (main 7c500bc5)
-- [qa-r98-findings](../brainstorm/qa-r98-findings.md): QA r98 findings
-- [qa-r98-scorecard](../brainstorm/qa-r98-scorecard.md): QA r98 scorecard
-- [qa-r99-findings](../brainstorm/qa-r99-findings.md): QA round 99 findings
-- [qa-r99-scorecard](../brainstorm/qa-r99-scorecard.md): QA round 99 scorecard
+- [qa-r90-findings](../done/qa-r90-findings.md): QA r90 findings (main 53099fee)
+- [qa-r90-scorecard](../done/qa-r90-scorecard.md): QA r90 scorecard (main 53099fee)
+- [qa-r91-findings](../done/qa-r91-findings.md): QA r91 findings (main fbc2085d)
+- [qa-r91-scorecard](../done/qa-r91-scorecard.md): QA r91 scorecard (main fbc2085d)
+- [qa-r92-findings](../done/qa-r92-findings.md): QA r92 findings (main ea6fe5b7)
+- [qa-r92-scorecard](../done/qa-r92-scorecard.md): QA r92 scorecard (main ea6fe5b7)
+- [qa-r93-findings](../done/qa-r93-findings.md): QA r93 findings (main 2eca0a0e)
+- [qa-r93-scorecard](../done/qa-r93-scorecard.md): QA r93 scorecard (main 2eca0a0e)
+- [qa-r94-findings](../done/qa-r94-findings.md): QA r94 findings (main b36370b2)
+- [qa-r94-scorecard](../done/qa-r94-scorecard.md): QA r94 scorecard (main b36370b2)
+- [qa-r95-findings](../done/qa-r95-findings.md): QA r95 findings (main 5d3b0227)
+- [qa-r95-scorecard](../done/qa-r95-scorecard.md): QA r95 scorecard (main 5d3b0227)
+- [qa-r96-findings](../done/qa-r96-findings.md): QA r96 findings (main f0828a8a)
+- [qa-r96-scorecard](../done/qa-r96-scorecard.md): QA r96 scorecard (main f0828a8a)
+- [qa-r97-findings](../done/qa-r97-findings.md): QA r97 findings (main 7c500bc5)
+- [qa-r97-scorecard](../done/qa-r97-scorecard.md): QA r97 scorecard (main 7c500bc5)
+- [qa-r98-findings](../done/qa-r98-findings.md): QA r98 findings
+- [qa-r98-scorecard](../done/qa-r98-scorecard.md): QA r98 scorecard
+- [qa-r99-findings](../done/qa-r99-findings.md): QA round 99 findings
+- [qa-r99-scorecard](../done/qa-r99-scorecard.md): QA round 99 scorecard
 - [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
 - [qa-r100-scorecard](../done/qa-r100-scorecard.md): QA round 100 scorecard
 - [qa-r101-findings](../done/qa-r101-findings.md): QA r101 findings

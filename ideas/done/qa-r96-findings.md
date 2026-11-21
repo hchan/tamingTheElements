@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -35,3 +36,8 @@ P3. Match-end screen: portrait and name alignment slightly off, plus carried ite
 - Phone round-result card: the idle manual run (`m390-result-3`..`-39`) was still mid-round at the last frame (timer 44), so the card was never captured. Re-check by stepping until a KO or timeout, at 390 and 360.
 - 360x640 live 1v1 and 2v2 were not run; only the stage, Help and Versus shots exist at 360.
 - Landscape and desktop were out of scope.
+
+## Triage 2026-11-21 (code-checked)
+
+Dropped (phone/portrait): every item is portrait-only (sky seam, crowd step, band under floor, Help chips, Options strip, 2v2 on phone). P1/P2 verified fixed in r97, Help and Options in r97, floor band in r99; match-end alignment is covered by `ideas/done/qa-r107-findings.md`.
+Open: none.

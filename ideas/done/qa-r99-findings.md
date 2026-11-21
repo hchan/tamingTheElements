@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -35,3 +36,8 @@ None.
 ## Tests
 
 Playwright Chromium (SwiftShader), E2E_PORT=7949: 57 of 57 passed in 7.3 min (portrait-play, super-band-portrait 390 and 360, round-end-panel, round-result-real-fight, tour-card, versus-portrait-grid, match-end and related specs). A custom screenshot flow (menu, help, picker, 4 stages, supers, 2v2 plus tag, Tour at 390, 360, 1280) finished with 0 console or page errors. The full e2e suite was not run.
+
+## Triage 2026-11-21 (code-checked)
+
+Dropped (phone/portrait): empty sky band, two-row bar, 360 match-end name break and tile alignment, 2v2 bench chips, tag tooltip. First-run hint over the ROUND 1 banner is by design (r99).
+Open: none.
