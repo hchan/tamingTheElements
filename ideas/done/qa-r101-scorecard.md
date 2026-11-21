@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (historical r101 scorecard, no actionable claims; phone/portrait scope dropped 2026-11-18)
 added: 2026-11-17
 ---
 
