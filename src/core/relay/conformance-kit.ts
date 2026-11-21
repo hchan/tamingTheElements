@@ -49,6 +49,11 @@ export interface ConformanceCase {
   /** Section of docs/ONLINE-PROTOCOL.md the rule comes from. */
   readonly spec: string;
   readonly title: string;
+  /**
+   * True when the rule needs two frames processed in the order they were sent. A relay on one process keeps that order; a deployment
+   * that runs each frame in its own concurrent invocation may not, so `runAll` can retry these cases (`retryOrderSensitive`).
+   */
+  readonly orderSensitive?: true;
   /** Throws on failure; throws `ConformanceSkip` (via `skip`) when a needed hook or capability is missing. */
   run(adapter: ConformanceAdapter, hooks: ConformanceHooks): Promise<void>;
 }

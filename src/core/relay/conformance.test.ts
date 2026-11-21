@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { conformanceCases, runAll } from './conformance';
+import { conformanceCases, runAll, type ConformanceCase } from './conformance';
 import { createLoopbackConformance } from './conformance-loopback';
 
 // Thin vitest wrapper: the suite itself is framework-agnostic (docs/RELAY-PACKAGE.md). One vitest case per conformance case.
@@ -36,3 +36,33 @@ describe('relay wire-spec conformance (RelayCore + InMemoryStore + LoopbackSende
     expect(r).toMatchObject({ ok: false, failed: 1 });
   });
 });
+
+describe('runAll retryOrderSensitive', () => {
+  const t = createLoopbackConformance();
+  /** A case that fails its first `failures` runs. */
+  const flaky = (id: string, failures: number, orderSensitive: boolean): ConformanceCase => {
+    let n = 0;
+    return { id, spec: '4', title: id, ...(orderSensitive ? { orderSensitive: true as const } : {}), run: () => (n++ < failures ? Promise.reject(new Error('out of order')) : Promise.resolve()) };
+  };
+  it('marks exactly the two order-sensitive cases', () => {
+    expect(conformanceCases.filter((c) => c.orderSensitive === true).map((c) => c.id)).toEqual(expect.arrayContaining(['batch.far-ahead-seq', 'hash.consumed']));
+    expect(conformanceCases.filter((c) => c.orderSensitive === true)).toHaveLength(2);
+  });
+  it('fails without retries (default)', async () => {
+    const r = await runAll(t.adapter, t.hooks, { cases: [flaky('a', 1, true)] });
+    expect(r.results[0]?.status).toBe('fail');
+  });
+  it('passes on a retry and says so', async () => {
+    const r = await runAll(t.adapter, t.hooks, { cases: [flaky('a', 2, true)], retryOrderSensitive: 2 });
+    expect(r.results[0]).toMatchObject({ status: 'pass', message: 'passed on attempt 3 (order-sensitive)' });
+  });
+  it('still fails when the retries run out', async () => {
+    const r = await runAll(t.adapter, t.hooks, { cases: [flaky('a', 3, true)], retryOrderSensitive: 2 });
+    expect(r.results[0]).toMatchObject({ status: 'fail', message: 'out of order' });
+  });
+  it('never retries a case that is not order-sensitive', async () => {
+    const r = await runAll(t.adapter, t.hooks, { cases: [flaky('a', 1, false)], retryOrderSensitive: 5 });
+    expect(r.results[0]?.status).toBe('fail');
+  });
+});
+
