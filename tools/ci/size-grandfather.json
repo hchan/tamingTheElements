@@ -10,8 +10,7 @@
     "src/game/hud/action-bar.ts": 695,
     "src/game/scenes/Arena.ts": 824,
     "src/game/views/character-view.ts": 523,
-    "src/game/views/pose-layer.ts": 966,
-    "src/ui/screens/tour.ts": 542
+    "src/game/views/pose-layer.ts": 966
   },
   "longFunctionFiles": [
     "src/game/app/arcade-versus.ts",
@@ -42,7 +41,6 @@
     "src/ui/screens/hero-dnd.ts",
     "src/ui/screens/key-bindings.ts",
     "src/ui/screens/pad-bindings-section.ts",
-    "src/ui/screens/tour.ts",
     "src/ui/tester/panel.ts"
   ]
 }

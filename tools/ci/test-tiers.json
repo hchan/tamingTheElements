@@ -48,7 +48,6 @@
     "ghost-bar-shot.spec.ts": "P2",
     "guide.spec.ts": "P1",
     "help-controls.spec.ts": "P1",
-    "hero-drag.spec.ts": "P1",
     "key-bindings-top.spec.ts": "P1",
     "hero-portrait-shot.spec.ts": "P2",
     "hero-scale.spec.ts": "P2",

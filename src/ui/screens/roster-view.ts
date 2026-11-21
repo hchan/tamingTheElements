@@ -61,6 +61,10 @@ export interface RosterOptions {
   readonly fight: () => void;
   /** Random source for the Random key (tests inject a seeded one). */
   readonly rng?: () => number;
+  /** DOM id of a stack row by select name (default `roster-<name>`; the tour keeps `tourSlotN`). */
+  readonly rowId?: (name: string) => string;
+  /** One team only (the tour): the second stack stays hidden. */
+  readonly single?: boolean;
 }
 
 export interface RosterView {
@@ -134,7 +138,7 @@ function stackRows(c: Ctx, s: SideIx): StackRow[] {
   const size = Math.max(1, team.slots.length);
   const target = team.ready || c.aim !== s ? -1 : team.slots.findIndex((x) => x === null || !x.mine);
   return c.o.sides[s].map((name, i): StackRow => {
-    const id = `roster-${name}`;
+    const id = c.o.rowId?.(name) ?? `roster-${name}`;
     const slot = team.slots[i];
     if (i >= team.slots.length) return { state: 'empty', id, hidden: true };
     if (!slot) return { state: 'empty', id, pressed: i === target };
@@ -390,6 +394,7 @@ export function rosterView(o: RosterOptions): RosterView {
   const stacks: [TeamStack, TeamStack] = [teamStack(BLANK), teamStack(BLANK)];
   stacks[0].el.classList.add('vsSide', 'vsSide1');
   stacks[1].el.classList.add('vsSide', 'vsSide2');
+  if (o.single === true) stacks[1].el.style.display = 'none';
   node.append(stacks[0].el, panel.node, stacks[1].el, heroes.grid, live);
   const c: Ctx = {
     o, teams: [model.createTeam(0), model.createTeam(0)], cursor: [0, Math.min(1, heroes.order.length - 1)], aim: 0, focus: 0, seeded: false,

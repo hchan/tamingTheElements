@@ -50,7 +50,6 @@
     "ghost-bar-shot.spec.ts": { "sec": 55, "tests": 3 },
     "guide.spec.ts": { "sec": 1, "tests": 1 },
     "help-controls.spec.ts": { "sec": 6, "tests": 5 },
-    "hero-drag.spec.ts": { "sec": 5, "tests": 1 },
     "hero-portrait-shot.spec.ts": { "sec": 940, "tests": 16 },
     "hero-scale.spec.ts": { "sec": 161, "tests": 4 },
     "hero-unselect.spec.ts": { "sec": 9, "tests": 4 },
