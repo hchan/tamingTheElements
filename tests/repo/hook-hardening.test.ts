@@ -84,8 +84,8 @@ describe('pre-push-local-ci.sh docs-only rule and fail-closed', () => {
     rmSync(base, { recursive: true, force: true });
   });
 
-  const DOCS_RUN = ['exec vitest run tests/repo', 'run --silent gate:push --verify'];
-  const FULL_RUN = ['run --silent gate:commit --hook', 'run --silent gate:push --verify'];
+  const DOCS_RUN = ['exec vitest run tests/repo'];
+  const FULL_RUN = ['run --silent gate:commit --hook'];
 
   it('docs-only range: runs tests/repo instead of gate:commit and names the rule', () => {
     const repo = mkRepo();
@@ -93,7 +93,7 @@ describe('pre-push-local-ci.sh docs-only rule and fail-closed', () => {
     const r = run(repo, 'git push origin main');
     expect(r.code).toBe(0);
     expect(r.err).toContain('gate:commit skipped (docs-only rule');
-    expect(r.err).toContain('exec vitest run tests/repo ok, gate:push --verify ok');
+    expect(r.err).toContain('exec vitest run tests/repo ok');
     expect(r.err).not.toContain('gate:commit ok');
     expect(calls()).toEqual(DOCS_RUN);
   });

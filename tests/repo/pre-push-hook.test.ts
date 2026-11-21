@@ -124,19 +124,19 @@ describe('pre-push-local-ci.sh', () => {
     expect(calls()).toEqual([]);
   });
 
-  it('runs commit --hook then push --verify for a real push, stdout empty', () => {
+  it('runs gate:commit --hook only for a real push, stdout empty', () => {
     const r = run('git push origin main');
     expect(r.code).toBe(0);
     expect(r.out).toBe('');
-    expect(r.err).toContain('gate:commit ok, gate:push --verify ok');
-    expect(calls()).toEqual(['run --silent gate:commit --hook', 'run --silent gate:push --verify']);
+    expect(r.err).toContain('gate:commit ok');
+    expect(calls()).toEqual(['run --silent gate:commit --hook']);
   });
 
   it('honours git -C and cd to the project', () => {
     expect(run(`git -C ${repo} push`, {}, other).code).toBe(0);
-    expect(calls().length).toBe(2);
+    expect(calls().length).toBe(1);
     expect(run(`cd ${repo} && git push`, {}, other).code).toBe(0);
-    expect(calls().length).toBe(2);
+    expect(calls().length).toBe(1);
   });
 
   it('skips a push in another repository', () => {
@@ -150,12 +150,6 @@ describe('pre-push-local-ci.sh', () => {
     expect(r.err).toContain('blocked by gate:commit (rc 2)');
     expect(r.err).toContain('fake gate output');
     expect(calls()).toEqual(['run --silent gate:commit --hook']);
-  });
-
-  it('blocks when gate:push --verify fails', () => {
-    const r = run('git push', { FAKE_PUSH_RC: '2' });
-    expect(r.code).toBe(2);
-    expect(r.err).toContain('blocked by gate:push (rc 2)');
   });
 
   it('blocks a moved-HEAD chain and an unknown directory without running the gate', () => {
