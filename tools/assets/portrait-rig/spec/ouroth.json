@@ -1,0 +1,472 @@
+{
+ "source": "imgWorkArea/portrait-src/ouroth.png",
+ "frame": 240,
+ "box": [
+  35,
+  64,
+  170,
+  160
+ ],
+ "res": 2,
+ "feet": [
+  230,
+  312
+ ],
+ "matte": {
+  "minIsland": 40,
+  "band": 1,
+  "fringeLum": 35
+ },
+ "rim": {
+  "color": [
+   255,
+   190,
+   120
+  ],
+  "dir": [
+   -0.55,
+   -0.85
+  ],
+  "strength": 0.22,
+  "width": 1.6
+ },
+ "shadow": {
+  "rx": 113,
+  "ry": 13,
+  "alpha": 66,
+  "dy": 2
+ },
+ "bones": [
+  {
+   "id": "root",
+   "head": [
+    230,
+    312
+   ]
+  },
+  {
+   "id": "spine0",
+   "head": [
+    230,
+    262
+   ],
+   "parent": "root",
+   "tip": [
+    205,
+    195
+   ],
+   "feather": 18,
+   "poly": [
+    [
+     0,
+     0
+    ],
+    [
+     340,
+     0
+    ],
+    [
+     340,
+     320
+    ],
+    [
+     0,
+     320
+    ]
+   ]
+  },
+  {
+   "id": "seg1",
+   "head": [
+    205,
+    195
+   ],
+   "parent": "spine0",
+   "tip": [
+    150,
+    155
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     261,
+     166
+    ],
+    [
+     160,
+     93
+    ],
+    [
+     94,
+     184
+    ],
+    [
+     195,
+     257
+    ]
+   ]
+  },
+  {
+   "id": "seg2",
+   "head": [
+    150,
+    155
+   ],
+   "parent": "seg1",
+   "tip": [
+    95,
+    120
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     204,
+     123
+    ],
+    [
+     101,
+     58
+    ],
+    [
+     41,
+     152
+    ],
+    [
+     144,
+     217
+    ]
+   ]
+  },
+  {
+   "id": "seg3",
+   "head": [
+    95,
+    120
+   ],
+   "parent": "seg2",
+   "tip": [
+    80,
+    70
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     157,
+     131
+    ],
+    [
+     126,
+     27
+    ],
+    [
+     18,
+     59
+    ],
+    [
+     49,
+     163
+    ]
+   ]
+  },
+  {
+   "id": "seg4",
+   "head": [
+    80,
+    70
+   ],
+   "parent": "seg3",
+   "tip": [
+    130,
+    42
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     83,
+     133
+    ],
+    [
+     182,
+     77
+    ],
+    [
+     127,
+     -21
+    ],
+    [
+     28,
+     35
+    ]
+   ]
+  },
+  {
+   "id": "seg5",
+   "head": [
+    130,
+    42
+   ],
+   "parent": "seg4",
+   "tip": [
+    195,
+    62
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     87,
+     87
+    ],
+    [
+     205,
+     124
+    ],
+    [
+     238,
+     17
+    ],
+    [
+     120,
+     -20
+    ]
+   ]
+  },
+  {
+   "id": "head",
+   "head": [
+    195,
+    62
+   ],
+   "parent": "seg5",
+   "tip": [
+    262,
+    130
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     154,
+     75
+    ],
+    [
+     248,
+     171
+    ],
+    [
+     303,
+     117
+    ],
+    [
+     209,
+     21
+    ]
+   ]
+  },
+  {
+   "id": "jaw",
+   "head": [
+    225,
+    118
+   ],
+   "parent": "head",
+   "tip": [
+    262,
+    130
+   ],
+   "feather": 6,
+   "poly": [
+    [
+     213,
+     106
+    ],
+    [
+     274,
+     106
+    ],
+    [
+     274,
+     142
+    ],
+    [
+     213,
+     142
+    ]
+   ]
+  }
+ ],
+ "glows": [
+  {
+   "id": "eye",
+   "bone": "head",
+   "at": [
+    228,
+    92
+   ],
+   "r": 5,
+   "color": [
+    255,
+    120,
+    40
+   ],
+   "gain": 0.9,
+   "hot": 0.5
+  },
+  {
+   "id": "maw",
+   "bone": "jaw",
+   "at": [
+    235,
+    122
+   ],
+   "r": 8,
+   "color": [
+    255,
+    130,
+    30
+   ],
+   "gain": 0.9,
+   "hot": 0.5
+  }
+ ],
+ "dirOffsets": {
+  "SE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": 4
+   }
+  },
+  "S": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": 6
+   }
+  },
+  "N": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": -6
+   }
+  },
+  "NE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": -4
+   }
+  }
+ },
+ "license": "Rig parts for ouroth: the painting is generated with Stable Diffusion XL (stabilityai/stable-diffusion-xl-base-1.0; sd-turbo/SDXL-Turbo for\nrefinements) under the CreativeML Open RAIL++-M licence, which permits commercial use of the outputs with its use-based restrictions;\nthe repository owner holds the outputs. Cut, matted and animated by tools/assets/portrait-rig (prep.py, body_plans); numpy/PIL only.\n",
+ "deformMask": {
+  "feather": 16,
+  "polys": [
+   [
+    [
+     145,
+     225
+    ],
+    [
+     136,
+     246
+    ],
+    [
+     115,
+     255
+    ],
+    [
+     94,
+     246
+    ],
+    [
+     85,
+     225
+    ],
+    [
+     94,
+     204
+    ],
+    [
+     115,
+     195
+    ],
+    [
+     136,
+     204
+    ]
+   ],
+   [
+    [
+     275,
+     265
+    ],
+    [
+     263,
+     293
+    ],
+    [
+     235,
+     305
+    ],
+    [
+     207,
+     293
+    ],
+    [
+     195,
+     265
+    ],
+    [
+     207,
+     237
+    ],
+    [
+     235,
+     225
+    ],
+    [
+     263,
+     237
+    ]
+   ],
+   [
+    [
+     99,
+     150
+    ],
+    [
+     92,
+     167
+    ],
+    [
+     75,
+     174
+    ],
+    [
+     58,
+     167
+    ],
+    [
+     51,
+     150
+    ],
+    [
+     58,
+     133
+    ],
+    [
+     75,
+     126
+    ],
+    [
+     92,
+     133
+    ]
+   ]
+  ]
+ }
+}

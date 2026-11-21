@@ -1,10 +1,10 @@
 """Per-species body-plan rig templates for the 12 roster24 heroes (plan: .scratch/roster24-crisp/r3a-plan.md). `build(landmarks)` picks the
-template named by landmarks["plan"] and returns (spec, anim) for prep.py. Only the quadruped is implemented; serpent, fish, tentacle, bird and
+template named by landmarks["plan"] and returns (spec, anim) for prep.py. Quadruped and serpent are implemented; fish, tentacle, bird and
 mushroom land as their own modules (R3a items 3-4) and join PLANS."""
-from . import quadruped
+from . import quadruped, serpent
 from .common import PlanError
 
-PLANS = {"quadruped": quadruped.build}
+PLANS = {"quadruped": quadruped.build, "serpent": serpent.build}
 KINDS = ("quadruped", "serpent", "fish", "tentacle", "bird", "mushroom")
 HERO_PLAN = {  # hero -> template (r3a-plan.md section 4)
     "kindrel": "quadruped", "brazgor": "quadruped", "ouroth": "serpent", "nykra": "quadruped", "glimmaw": "fish", "abyssor": "tentacle",

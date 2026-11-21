@@ -1,0 +1,21 @@
+{
+ "plan": "serpent",
+ "hero": "ouroth",
+ "source": "imgWorkArea/portrait-src/ouroth.png",
+ "canvas": [340, 320],
+ "res": 2,
+ "feet": [230, 312],
+ "fx": {"element": "fire", "zones": [[115, 225, 30], [235, 265, 40], [75, 150, 24]]},
+ "widths": {"head": 24},
+ "tune": {"wave": 8, "sub": {"idle": 1, "walk": 1}},
+ "joints": {
+  "chain": [[230, 262], [205, 195], [150, 155], [95, 120], [80, 70], [130, 42], [195, 62]],
+  "head": [195, 62],
+  "jaw": [225, 118],
+  "mouth": [262, 130]
+ },
+ "glows": [
+  {"id": "eye", "bone": "head", "at": [228, 92], "r": 5, "color": [255, 120, 40]},
+  {"id": "maw", "bone": "jaw", "at": [235, 122], "r": 8, "color": [255, 130, 30]}
+ ]
+}
