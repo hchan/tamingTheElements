@@ -14,3 +14,13 @@ describe('desktop hero picker at 1920x1080 (qa-r46 #3)', () => {
     expect(Number(face?.[1])).toBeGreaterThan(48);
   });
 });
+
+describe('wide-window tile rules stay out of the Tour picker (tour names clipped at 1920x1080)', () => {
+  const block = /@media \(min-width: 1600px\) and \(min-height: 900px\) and \(pointer: fine\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
+  it('scopes every tile selector to #arcadePick', () => {
+    const selectors = [...block.matchAll(/(^|\})\s*([^{}]+)\{/g)].map((m) => (m[2] ?? '').trim());
+    const tile = selectors.filter((s) => /heroGrid|heroTile/.test(s));
+    expect(tile.length).toBeGreaterThanOrEqual(4);
+    for (const s of tile) expect(s).toMatch(/^#arcadePick /);
+  });
+});
