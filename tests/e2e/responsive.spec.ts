@@ -111,7 +111,7 @@ for (const vp of VIEWPORTS) {
         const links = await page.evaluate<{ x: number; y: number; w: number; h: number }[]>(
           `[...document.querySelectorAll('.helpLinks a')].map((a) => { const r = a.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
         );
-        expect(links.length).toBe(5);
+        expect(links.length).toBe(6); // HELP_LINKS in src/ui/screens/help.ts
         for (const l of links) {
           expect(l.h).toBeGreaterThanOrEqual(44);
           expect(l.x).toBeGreaterThanOrEqual(0);
