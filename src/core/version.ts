@@ -345,5 +345,9 @@
  *    box and damage with Stoop or Talon Rake), so only a 2v2 life retune: ARCADE_2V2_LIFE_PM vortigal 665 -> 740 (665 gave 41.6 percent in 2v2).
  *    Win rates (full roster, level 3): 1v1 51.9 (unchanged), 2v2 49.0 percent. Release set stays empty. See ideas/in-progress/roster24-vortigal.md.
  *    Re-record reason: a recorded Arcade 2v2 match with Vortigal changes; every other golden changes only the simVersion header.
+ * 95: Roster-24 step S for Kindrel, no sim rule or data change: the kit is already unique (Ember Bite and Cinder Spray share no kind, box and damage with any
+ *    other ability; the Ember Bite light-strength override and the omni AI rule for Cinder Spray already exist from 90), so no life retune (1v1 45.9, 2v2 46.7 percent,
+ *    full roster, level 3, both in the 45-55 band). Release set stays empty.
+ *    Re-record reason: version bump only; every golden changes only the simVersion header.
  */
-export const SIM_VERSION = 94;
+export const SIM_VERSION = 95;
