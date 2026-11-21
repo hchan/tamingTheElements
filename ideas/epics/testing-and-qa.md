@@ -135,7 +135,7 @@ QA evaluator rounds (kept unchanged; newest first, the latest rounds hold the op
 - [qa-r17-scorecard](../brainstorm/qa-r17-scorecard.md)
 - [qa-r16-scorecard](../brainstorm/qa-r16-scorecard.md)
 - [qa-r15-scorecard](../brainstorm/qa-r15-scorecard.md)
-- [qa-r14-scorecard](../brainstorm/qa-r14-scorecard.md)
+- [qa-r14-scorecard](../done/qa-r14-scorecard.md)
 - [qa-r13-scorecard](../done/qa-r13-scorecard.md)
 - [qa-r12-scorecard-and-status](../done/qa-r12-scorecard-and-status.md)
 - [qa-r11-scorecard-and-status](../done/qa-r11-scorecard-and-status.md)
@@ -192,7 +192,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r105-scorecard](../done/qa-r105-scorecard.md): QA r105 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
 - [qa-r106-findings](../done/qa-r106-findings.md): QA r106 findings
 - [qa-r106-scorecard](../done/qa-r106-scorecard.md): QA r106 scorecard (headless Chromium, SwiftShader, 390x844, 667x375, 844x390, 1920x1080)
-- [qa-r107-findings](../brainstorm/qa-r107-findings.md): QA r107 findings
+- [qa-r107-findings](../done/qa-r107-findings.md): QA r107 findings
 - [qa-r107-scorecard](../done/qa-r107-scorecard.md): QA r107 scorecard
 
 ## Bundles (2026-11-17)
@@ -211,7 +211,7 @@ Rounds r86 to r99 are history: their open items were fixed or repeated in r100 t
 
 ### TQ-2 Triage of open items, r103 to r107
 
-- Members: [qa-r103-findings](../done/qa-r103-findings.md), [qa-r104-findings](../done/qa-r104-findings.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md), [qa-r106-findings](../done/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Members: [qa-r103-findings](../done/qa-r103-findings.md), [qa-r104-findings](../done/qa-r104-findings.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md), [qa-r106-findings](../done/qa-r106-findings.md), [qa-r107-findings](../done/qa-r107-findings.md)
 - Size: S
 - Shared files: ideas/ only (new idea files for anything not yet filed)
 - Flags: docs only, no browser
