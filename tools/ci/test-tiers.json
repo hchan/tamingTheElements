@@ -73,6 +73,7 @@
     "move-backward.spec.ts": "P2",
     "move-wings-knees.spec.ts": "P2",
     "online-quick.spec.ts": "P0",
+    "online-result.spec.ts": "P0",
     "own-element-fx.spec.ts": "P1",
     "pad-deadzone.spec.ts": "P1",
     "pause-menu.spec.ts": "P0",
