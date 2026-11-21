@@ -38,7 +38,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [e2e-webserver-health](../done/e2e-webserver-health.md): E2E webServer health: a dead preview must not cascade into hundreds of failures
 - [short-and-long-gate](../in-progress/short-and-long-gate.md): Short gate on every merge, long gate once a day
 - [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
-- [qa-r101-findings](../brainstorm/qa-r101-findings.md): QA r101 findings
+- [qa-r101-findings](../done/qa-r101-findings.md): QA r101 findings
 - [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
 
 ## Bundles (2026-11-17)
