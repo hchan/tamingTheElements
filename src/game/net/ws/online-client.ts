@@ -444,9 +444,11 @@ export class OnlineClient {
     this.reconnecting = true;
     const start = this.d.now();
     const budget = this.inMatch ? MATCH_GRACE_MS : IDLE_GRACE_MS;
+    let hintSec = 0; // retryAfterSec from the last failed attempt: a floor for the next wait (still capped).
     for (let n = 0; !this.over(); n++) {
       if (n > 0 && this.d.now() - start >= budget) break;
-      const base = Math.min(BACKOFF_MAX_MS, BACKOFF_MS[n] ?? BACKOFF_MS[BACKOFF_MS.length - 1] ?? 0);
+      const step = BACKOFF_MS[n] ?? BACKOFF_MS[BACKOFF_MS.length - 1] ?? 0;
+      const base = Math.min(BACKOFF_MAX_MS, Math.max(step, hintSec * 1000));
       if (base > 0) await new Promise<void>((r) => { this.d.after(Math.round(base * (1 + 0.25 * this.d.random())), r); });
       if (this.over()) break;
       this.onEvent({ t: 'reconnecting', attempt: n + 1 });
@@ -461,6 +463,7 @@ export class OnlineClient {
         this.onEvent({ t: 'reconnected', resumed: r.value.resumed });
         return;
       }
+      hintSec = r.failure.kind === 'server' ? r.failure.retryAfterSec : 0;
       if (r.failure.kind !== 'network' && r.failure.kind !== 'server' && r.failure.kind !== 'bad-response') {
         this.reconnecting = false;
         this.end(r.failure);

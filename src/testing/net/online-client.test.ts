@@ -191,6 +191,23 @@ describe('OnlineClient', () => {
     expect(r.ok).toBe(false);
   });
 
+  it('a reconnect after a server failure with retryAfterSec waits at least that long (capped at BACKOFF_MAX_MS)', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    h.svc.httpStatus = 429;
+    h.svc.httpRetry = 10;
+    (h.svc.sockets[0] as TestWs).drop(1006);
+    await h.step(0);
+    expect(events.filter((e) => e.t === 'reconnecting').length).toBe(1);
+    h.svc.httpStatus = 200;
+    await h.step(9_000);
+    expect(events.filter((e) => e.t === 'reconnecting').length).toBe(1);
+    await h.step(1_000);
+    expect(events.filter((e) => e.t === 'reconnecting').length).toBe(2);
+    expect(events.at(-1)).toEqual({ t: 'reconnected', resumed: true });
+  });
+
   it('reconnects with backoff, a new ticket each time, the old session id, and the seq continues', async () => {
     const h = new Harness();
     const { c, events } = h.client();
