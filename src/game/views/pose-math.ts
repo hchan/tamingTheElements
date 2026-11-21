@@ -106,14 +106,15 @@ export function tagInAlpha(t: number): number {
 /**
  * Adds transient pose `kind` at age `ageMs` into `p`. `dir` is -1 or 1 (the way the character faces or is pushed),
  * `power` 0..1 scales hurt by hit strength. Reduced motion keeps only what carries information: no movement, scale or
- * spin; a tag-in fades in instead of sliding.
+ * spin; a tag-in fades in instead of sliding. `fadeAgeMs` (default `ageMs`) times the tag-in fade alone, so the caller can run it on
+ * a clock that a hit-stop does not freeze.
  */
-export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, power: number, reduced: boolean): void {
+export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, power: number, reduced: boolean, fadeAgeMs: number = ageMs): void {
   const dur = POSE_MS[kind] ?? 0;
   if (kind === PoseKind.none || dur <= 0 || ageMs >= dur) return;
   const t = ageMs / dur;
   if (kind === PoseKind.tagIn) {
-    p.alpha *= tagInAlpha(t);
+    p.alpha *= tagInAlpha(Math.min(1, Math.max(0, fadeAgeMs / dur)));
     if (!reduced) {
       p.ox += -dir * 48 * (1 - easeOutCubic(t));
       const pop = popScale(t);
