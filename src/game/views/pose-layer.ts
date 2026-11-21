@@ -4,11 +4,11 @@ import { poseHoldMs } from '../fx/hit-feel';
 import { COLUMN_FADE_MS, SMOOTH_KIND, columnEnvelope, lungeStretch, settlePose, smoothKindForDef, type SmoothKind } from '../fx/ability-smooth';
 import { REDUCED_FADE_MS } from '../fx/motion';
 import { PoseVfx } from './pose-vfx';
+import { tagEntryDir } from './tag-entry';
 import { CAST_HOLD_MS, CAST_Z, PROJ_CAST_GAP_MS, PROJ_CAST_Z, SUPER_HOLD_MS, applyDepth, depthTarget, shadowFor, stepDepth, type ShadowPose } from './pose-depth';
 import { FX_ELEMENTS } from './pose-vfx-math';
 import { createFrameResolver, generatedSheets, walkTime, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
 import type { Action, SheetsManifest } from '../assets/sheet-spec';
-
 declare global {
   interface Window {
     /** Dev and test builds: a sheets manifest that replaces the shipped one for the next match (e2e fixture). */
@@ -307,7 +307,7 @@ export class PoseLayer {
         }
         case SimEventKind.tagIn:
           this.clearKoGhosts(e['team'] ?? 0);
-          this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, (e['team'] ?? 0) === 0 ? 1 : -1, 1);
+          this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, tagEntryDir((e['to'] ?? 0) & (SLOTS - 1), (e['from'] ?? -1) & (SLOTS - 1), e['team'] ?? 0, this.team, this.have, this.lx), 1);
           break;
         case SimEventKind.superStarted: {
           const s = (e['caster'] ?? e.sourceId) & (SLOTS - 1);
