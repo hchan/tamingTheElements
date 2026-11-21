@@ -3,6 +3,7 @@
 // paced at BATCH_GAP_MS (an estimate chosen to stay well under the stage's 10 frames/s limit, not a measurement). Exit: 0 ok, 1 step failed, 2 bad config.
 import { pathToFileURL } from 'node:url';
 import { SIM_VERSION } from '../src/core/version';
+import { Cmd, type Command } from '../src/core/sim/commands';
 import { encodePacket } from '../src/core/net/packet';
 import { decodeFrame } from '../src/core/relay/codec';
 import { decodeText } from '../src/core/relay/text-codec';
@@ -11,6 +12,13 @@ import { OnlineClient, type FetchLike, type OnlineEvent, type WsCtor } from '../
 
 /** Estimate: each side sends one batch per gap, so two sides stay under half the 10 frames/s stage limit. */
 export const BATCH_GAP_MS = 250;
+// Scripted inputs (--inputs): one command per tick, one packet per tick, paced at INPUT_GAP_MS (estimate: 10 packets/s per client, the live grant's
+// ceiling; the real game sends one per 20 ms tick, i.e. 50/s, which needs the backend owner's go-ahead).
+export const INPUT_GAP_MS = 100;
+const SCRIPT: Record<string, readonly Command[]> = {
+  A: [Cmd.right, Cmd.right, Cmd.right | Cmd.up, Cmd.right | Cmd.primary, Cmd.primary, 0],
+  B: [Cmd.left, Cmd.left, Cmd.secondary, Cmd.left | Cmd.primary, 0, Cmd.down],
+};
 export const BATCHES_PER_SIDE = Number(process.env['TTE_BATCHES'] ?? '20');
 /** Estimate: generous wall-clock cap per step (queue pairing of two fresh sessions should take a second or two). */
 export const STEP_TIMEOUT_MS = 20_000;
@@ -98,6 +106,7 @@ async function waitFor<T>(label: string, f: () => T | undefined): Promise<T> {
 }
 
 export async function main(env: Readonly<Record<string, string | undefined>>, out: (l: string) => void): Promise<number> {
+  const scripted = process.argv.includes('--inputs');
   traceOn = process.argv.includes('--trace') || env['TTE_TRACE'] === '1';
   const cfg = parseOnlineUrl(env['TTE_RELAY_URL']);
   if (!cfg.configured) { out('TTE_RELAY_URL is not an https base URL'); return 2; }
@@ -119,8 +128,11 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
     if (ma.matchId !== mb.matchId || ma.slot === mb.slot || ma.seed !== mb.seed) throw new Error('match descriptors disagree');
     const got = { A: 0, B: 0 };
     for (let i = 0; i < BATCHES_PER_SIDE; i++) {
-      for (const s of [a, b]) s.c.transport.send(encodePacket({ match: ma.matchId, flags: 0, ack: 0, firstTick: i, inputs: [], hashes: [] }));
-      await sleep(BATCH_GAP_MS);
+      for (const s of [a, b]) {
+        const cmds = scripted ? [(SCRIPT[s.name] ?? [0])[i % 6] ?? 0] : [];
+        s.c.transport.send(encodePacket({ match: ma.matchId, flags: 0, ack: scripted ? i : 0, firstTick: i, inputs: cmds, hashes: [] }));
+      }
+      await sleep(scripted ? INPUT_GAP_MS : BATCH_GAP_MS);
       for (const s of [a, b]) { while (s.c.transport.receive() !== undefined) got[s.name as 'A' | 'B']++; }
     }
     const drainStart = Date.now();
