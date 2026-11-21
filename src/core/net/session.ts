@@ -158,6 +158,11 @@ class TickBuf<T> {
   }
 }
 
+/** Default update calls without a packet before the remote is forfeited (250 = 5 s at 50 Hz). */
+export const DEFAULT_TIMEOUT_TICKS = 250;
+/** Default, while the remote has announced it is paused or hidden (1500 = 30 s). */
+export const DEFAULT_PAUSE_TIMEOUT_TICKS = 1500;
+
 /**
  * Two-player deterministic lockstep over an unreliable, unordered `Transport`.
  *
@@ -269,8 +274,8 @@ export class LockstepSession {
     this.maxDelay = Math.max(this.delay, opts.maxInputDelay ?? 4);
     this.adaptive = opts.adaptive ?? true;
     this.hashInterval = opts.hashInterval ?? 50;
-    this.timeoutTicks = opts.timeoutTicks ?? 250;
-    this.pauseTimeoutTicks = opts.pauseTimeoutTicks ?? 1500;
+    this.timeoutTicks = opts.timeoutTicks ?? DEFAULT_TIMEOUT_TICKS;
+    this.pauseTimeoutTicks = opts.pauseTimeoutTicks ?? DEFAULT_PAUSE_TIMEOUT_TICKS;
     this.tickLimit = opts.tickLimit ?? Number.POSITIVE_INFINITY;
     this.rbWindow = opts.rollbackWindow ?? 0;
     this.batchEvery = opts.batchEvery ?? 1;

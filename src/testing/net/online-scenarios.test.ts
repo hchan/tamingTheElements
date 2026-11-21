@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
-import { LockstepSession } from '../../core/net/session';
+import { DEFAULT_PAUSE_TIMEOUT_TICKS, DEFAULT_TIMEOUT_TICKS, LockstepSession } from '../../core/net/session';
 import {
   DISCONNECT_GRACE_MS,
   decodeText,
@@ -32,9 +32,8 @@ import { botScripts, type Script } from './net-match';
 const TICK_MS = 20;
 const BASE = 1_000_000;
 const TICKS = 300;
-/** Documented LockstepOptions defaults (src/core/net/session.ts): update calls without a packet before the remote is forfeited. */
-const TIMEOUT_TICKS = 250;
-const PAUSE_TIMEOUT_TICKS = 1500;
+const TIMEOUT_TICKS = DEFAULT_TIMEOUT_TICKS;
+const PAUSE_TIMEOUT_TICKS = DEFAULT_PAUSE_TIMEOUT_TICKS;
 
 interface Side {
   readonly sock: FakeSocket;
