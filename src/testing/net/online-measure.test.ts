@@ -56,4 +56,33 @@ describe('online measurement harness (virtual clock; figures are local, not esti
     expect(a.finalHashEqual).toBe(true);
     expect(await measureMatch(o)).toEqual(a);
   });
+
+  it('adaptive delay at batchEvery 3 stays in agreement, never lowers the delay and keeps it at or below the session default cap (4)', async () => {
+    const profile = PROFILES['bad'];
+    const r = await measureMatch({ ticks: 900, batchEvery: 3, inputDelay: 1, adaptive: true, profile, netSeed: 5 });
+    expect(r.finalHashEqual).toBe(true);
+    expect(r.relayAgreed).toBe(true);
+    for (const x of r.sessions) {
+      expect(x.finalInputDelay).toBeGreaterThanOrEqual(1);
+      expect(x.finalInputDelay).toBeLessThanOrEqual(4) // Session default maxInputDelay;
+    }
+  });
+
+  it('a match ends with both sides agreeing on the result at batchEvery 3, even when the last batch is partial (ticks not a multiple of 3)', async () => {
+    const r = await measureMatch({ ticks: 598, batchEvery: 3, inputDelay: 4, profile: PROFILES['typical'], netSeed: 3 });
+    expect(r.finalHashEqual).toBe(true);
+    expect(r.relayAgreed).toBe(true);
+    expect(r.matchesOfflineReference).toBe(true);
+  });
+
+  it('a session sends one packet per batchEvery ticks (the value MATCH_START gives reaches the session)', async () => {
+    const ticks = 600;
+    const one = await measureMatch({ ticks, batchEvery: 1, inputDelay: 2, profile: PROFILES['ideal'], netSeed: 2 });
+    const three = await measureMatch({ ticks, batchEvery: 3, inputDelay: 4, profile: PROFILES['ideal'], netSeed: 2 });
+    for (const x of three.sessions) {
+      expect(x.packetsSent).toBeGreaterThanOrEqual(ticks / 3);
+      expect(x.packetsSent).toBeLessThanOrEqual(ticks / 3 + 10); // The extra few are the end-of-match flush and resend slack.
+    }
+    for (const x of one.sessions) expect(x.packetsSent).toBeGreaterThanOrEqual(ticks);
+  });
 });
