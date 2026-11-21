@@ -59,6 +59,17 @@ for (const [name, width, height] of VIEWPORTS) {
       const slot = await rectOf(page, '#tourSlot3');
       const tile = await rectOf(page, '#tourPick .heroTile');
       expect(bar).not.toBeNull();
+      // Tile names stay readable (>= 14 px) and are not clipped by their tile (desktop viewports).
+      if (width >= 800) {
+        const names = await page.evaluate<Array<[number, boolean]>>(
+          `[...document.querySelectorAll('#tourPick .heroTileName')].map(n => [parseFloat(getComputedStyle(n).fontSize), n.scrollWidth > n.clientWidth + 1])`,
+        );
+        expect(names.length).toBeGreaterThan(0);
+        for (const [size, clipped] of names) {
+          expect(size).toBeGreaterThanOrEqual(14);
+          expect(clipped).toBe(false);
+        }
+      }
       // Hard targets from 1024x768 up; phones may scroll to the tiles inside the region.
       if (width >= 800 && height >= 600) {
         expect(need(slot).bottom).toBeLessThanOrEqual(need(bar).top + 1);

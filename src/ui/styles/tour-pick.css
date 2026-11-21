@@ -25,14 +25,39 @@
   }
 }
 
-/* qa-r46: Play (tour) tiles inherit a large menu button font, so names clipped ("Curomc", "Cyclonit") at 1280x720 and 1920x1080.
-   A smaller name size makes every roster name fit its tile; the Versus picker has its own rules (#arcadePick). */
+/* qa-r46 / names-14px: tile names were 10 px at 720p. Now 14 px (0.875em of the 16 px stage) or 16 px on wide windows; tiles use less
+   padding, a tighter face, and names wrap only at spaces with the full name kept in the tile title (tour.ts). */
+#menu #tourPick .heroGrid[data-cols='6'] button.menuButton.heroTile {
+  padding: 3px 1px;
+}
 #menu #tourPick .heroTileName {
-  font-size: 0.62em;
+  font-size: 0.875em;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow-wrap: normal;
+}
+#menu #tourPick .heroGrid[data-cols='6'] .heroTileName {
+  font-size: 0.875em;
+}
+/* Below 1200 px the tile is about 110-140 px wide: stack the face above the name so a 14 px name (Cyclonius, Sindarosa) never clips. */
+@media (max-width: 1199px) {
+  #menu #tourPick .heroSelect button.menuButton.heroTile,
+  #menu #tourPick button.menuButton.heroTile {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  #menu #tourPick .heroTileFace {
+    width: 40px;
+    height: 40px;
+  }
 }
 @media (min-width: 1600px) {
-  #menu #tourPick .heroTileName {
-    font-size: 0.7em;
+  #menu #tourPick .heroTileName,
+  #menu #tourPick .heroGrid[data-cols='6'] .heroTileName {
+    font-size: 1em;
   }
 }
 
