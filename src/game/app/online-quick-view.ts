@@ -135,6 +135,7 @@ export function createQuickView(h: QuickHandlers): QuickView {
     fail(text) {
       failBox.textContent = text;
       failBox.hidden = text === '';
+      status.hidden = text !== ''; // the alert already says it; the status line would print the same text twice
     },
     link(text) {
       link.textContent = text;
