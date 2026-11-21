@@ -140,9 +140,9 @@ QA evaluator rounds (kept unchanged; newest first, the latest rounds hold the op
 - [qa-r12-scorecard-and-status](../brainstorm/qa-r12-scorecard-and-status.md)
 - [qa-r11-scorecard-and-status](../brainstorm/qa-r11-scorecard-and-status.md)
 - [qa-r10-scorecard-and-status](../done/qa-r10-scorecard-and-status.md)
-- [qa-r9-scorecard-and-status](../brainstorm/qa-r9-scorecard-and-status.md)
-- [qa-r8-scorecard-and-status](../brainstorm/qa-r8-scorecard-and-status.md)
-- [qa-r7-scorecard-and-open-regressions](../brainstorm/qa-r7-scorecard-and-open-regressions.md)
+- [qa-r9-scorecard-and-status](../done/qa-r9-scorecard-and-status.md)
+- [qa-r8-scorecard-and-status](../done/qa-r8-scorecard-and-status.md)
+- [qa-r7-scorecard-and-open-regressions](../done/qa-r7-scorecard-and-open-regressions.md)
 
 ## Filed 2026-11-17 (round-note filing and cross-listing)
 

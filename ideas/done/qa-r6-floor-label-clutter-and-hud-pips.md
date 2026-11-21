@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
+triaged: 2026-11-21 (a) already fixed: chips, pips and element-tinted bars landed; chip trail at src/game/hud/slim-hud.ts:154. Only crowd rim-light remains, a cosmetic nicety.
 ---
 
 # QA r6: cryptic floor labels, unlabeled HUD pips, flat life bars

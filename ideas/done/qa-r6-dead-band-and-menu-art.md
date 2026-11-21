@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
+triaged: 2026-11-21 (a) already fixed: seam, crest, key art, legends and Locked pill landed per the Progress sections (menu-motion.css drifts mist and embers); remaining ultrawide and parallax polish lives in the menus-tour-and-picker epic.
 ---
 
 # QA r6: dead band and hard seam on every non-fight screen; menu has no key art

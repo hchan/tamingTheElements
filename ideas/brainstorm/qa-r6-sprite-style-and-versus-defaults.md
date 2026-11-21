@@ -1,6 +1,7 @@
 ---
 status: idea
 added: 2026-11-13
+triaged: 2026-11-21 (c) real and large: rim light and the Rokcore default landed, but legacy heroes (Fiara, Lavax, Ishimi) are still low-res. Plan: finish ADR-0020 portrait rigs per hero under the hero-art-and-rigging epic, one hero per work package; the Versus You-card mismatch is owned by the picker QA files.
 ---
 
 # QA r6: legacy vs rigged sprite mismatch; Versus default matchup

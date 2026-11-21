@@ -18,7 +18,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [sprite-cleanup-upscale-outline-pass](../brainstorm/sprite-cleanup-upscale-outline-pass.md): Sprite cleanup, upscale and outline consistency pass (all 24 heroes). Goal: one pipeline pass over all 24 hero sprites:
 - [opaque-bbox-tuck](../brainstorm/opaque-bbox-tuck.md): Tuck on the opaque bounding box. wallTuck uses the frame box, not the opaque pixels, so transparent padding leaves a gap or clips art at the wall.
 - [grim-rebuilds-rejected-fiara-treenoc-cyclonius](../brainstorm/grim-rebuilds-rejected-fiara-treenoc-cyclonius.md): Grim rebuilds of Fiara, Treenoc and Cyclonius were rejected. Owner, 2026-11-15: "Fiara and Treenoc: original is better than your new one", then Cyclonius too (its small 80x80 info-card and
-- [qa-r7-hero-contrast-and-sprite-look](../brainstorm/qa-r7-hero-contrast-and-sprite-look.md): QA r7: dark heroes vanish on the air floor; sprite mismatch persists. Evidence: fight-air.png (Echo is a faint dark swirl on blue-grey while Pax reads strongly), hero-select.png, tour-stage1.png (blocky upscaled Wispera 
+- [qa-r7-hero-contrast-and-sprite-look](../done/qa-r7-hero-contrast-and-sprite-look.md): QA r7: dark heroes vanish on the air floor; sprite mismatch persists. Evidence: fight-air.png (Echo is a faint dark swirl on blue-grey while Pax reads strongly), hero-select.png, tour-stage1.png (blocky upscaled Wispera 
 - [qa-r6-sprite-style-and-versus-defaults](../brainstorm/qa-r6-sprite-style-and-versus-defaults.md): QA r6: legacy vs rigged sprite mismatch; Versus default matchup. Evidence: hero-*.png, hero2/3-*.png, pick-*.png, tour-*.png (~/claudetmp/qa6/).
 - [hero-sprite-grading](../in-progress/hero-sprite-grading.md) (in progress): Grim grade for hero sprites and HUD portraits. Owner feedback: the hero art reads bright and cartoony, with hard black outlines, next to the grim terrain and icons.
 - [hero-rig-from-portraits](../in-progress/hero-rig-from-portraits.md) (in progress): Hero rigs from the painted portraits. Owner: the portraits look great, the in-game sprites "look soooo ugly" (thick outlines, flat fills, blurry upscale).
@@ -48,7 +48,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### HA-2 Portraits and sprite look (originals kept)
 
-- Members: [grim-rebuilds-rejected-fiara-treenoc-cyclonius](../brainstorm/grim-rebuilds-rejected-fiara-treenoc-cyclonius.md), [qa-r7-hero-contrast-and-sprite-look](../brainstorm/qa-r7-hero-contrast-and-sprite-look.md), [qa-r6-sprite-style-and-versus-defaults](../brainstorm/qa-r6-sprite-style-and-versus-defaults.md), [portraits-from-baked-sheets](../in-progress/portraits-from-baked-sheets.md), [hi-res-mist-portraits](../brainstorm/hi-res-mist-portraits.md)
+- Members: [grim-rebuilds-rejected-fiara-treenoc-cyclonius](../brainstorm/grim-rebuilds-rejected-fiara-treenoc-cyclonius.md), [qa-r7-hero-contrast-and-sprite-look](../done/qa-r7-hero-contrast-and-sprite-look.md), [qa-r6-sprite-style-and-versus-defaults](../brainstorm/qa-r6-sprite-style-and-versus-defaults.md), [portraits-from-baked-sheets](../in-progress/portraits-from-baked-sheets.md), [hi-res-mist-portraits](../brainstorm/hi-res-mist-portraits.md)
 - Size: M
 - Shared files: asset manifest, portrait assets, tools/assets/*
 - Flags: PC-offloadable, owner art review, originals of Fiara and Treenoc must stay

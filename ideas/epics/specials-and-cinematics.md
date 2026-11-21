@@ -16,7 +16,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 - [qa-r24-some-supers-did-not-fire](../brainstorm/qa-r24-some-supers-did-not-fire.md): QA r24: Curomo, Fiara, Ishimi and Treenoc showed no super effect (low confidence). After setMeter(0,3000) and KeyX, superFx() was null for these four, while Pax, Rokcore, Lavax, Morblass, Wispera and others fired.
 - [qa-r71-rokcore-super-whiffs](../brainstorm/qa-r71-rokcore-super-whiffs.md): QA r71: Rokcore's super whiffs at range. Rokcore's super can miss a foe standing at range, so the full meter is spent for nothing.
-- [qa-r3-super-cinematic-hides-action](../brainstorm/qa-r3-super-cinematic-hides-action.md): Super cinematic dims the stage, hides the foe and shows the wrong portrait. Fix: dim less, keep both fighters lit, use the caster's portrait, SF-style freeze and zoom on the pair.
+- [qa-r3-super-cinematic-hides-action](../done/qa-r3-super-cinematic-hides-action.md): Super cinematic dims the stage, hides the foe and shows the wrong portrait. Fix: dim less, keep both fighters lit, use the caster's portrait, SF-style freeze and zoom on the pair.
 - [qa-r26-super-banner-portrait-box](../brainstorm/qa-r26-super-banner-portrait-box.md): QA r26: super banner shows hero portrait in a hard black square; payoff reads small. Repro: hero=fiara&foe=rokcore, place heroes, step(1,1<<13,0), stepLive 6 and 20.
 - [qa-r33-super-glow-subtle](../brainstorm/qa-r33-super-glow-subtle.md): SUPER-ready slot glow works but is subtle. The gold border on slot 9 is visible beside the dimmed Charge and Weather slots, a clear improvement.
 - [qa-r19-ko-punch-in-not-visible-in-shots](../brainstorm/qa-r19-ko-punch-in-not-visible-in-shots.md): KO camera punch-in not visible in the seek frames (r19). The r17 punch-in fix landed (ko-fx-shot passes) but the shockSeek frames at 60/200/400 show the same framing as before the KO:
@@ -49,7 +49,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### SC-1 Super cinematic presentation
 
-- Members: [qa-r3-super-cinematic-hides-action](../brainstorm/qa-r3-super-cinematic-hides-action.md), [qa-r26-super-banner-portrait-box](../brainstorm/qa-r26-super-banner-portrait-box.md), [qa-r33-super-glow-subtle](../brainstorm/qa-r33-super-glow-subtle.md), [qa-r19-ko-punch-in-not-visible-in-shots](../brainstorm/qa-r19-ko-punch-in-not-visible-in-shots.md), [qa-r104-findings](../done/qa-r104-findings.md)
+- Members: [qa-r3-super-cinematic-hides-action](../done/qa-r3-super-cinematic-hides-action.md), [qa-r26-super-banner-portrait-box](../brainstorm/qa-r26-super-banner-portrait-box.md), [qa-r33-super-glow-subtle](../brainstorm/qa-r33-super-glow-subtle.md), [qa-r19-ko-punch-in-not-visible-in-shots](../brainstorm/qa-r19-ko-punch-in-not-visible-in-shots.md), [qa-r104-findings](../done/qa-r104-findings.md)
 - Size: M
 - Shared files: src/game/fx/super-view.ts, super-cinematic.ts, super-burst.ts, src/game/cine/*
 - Flags: needs browser/e2e (super-band specs), owner art review

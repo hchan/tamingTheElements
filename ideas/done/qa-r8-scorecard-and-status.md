@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
+triaged: 2026-11-21 (d) obsolete: scorecard whose findings are tracked in the per-topic qa-r6/r7 files and later rounds; open items were fixed or refiled.
 ---
 
 # QA r8: scorecard and qa-r6/r7 status
