@@ -55,6 +55,8 @@ export interface MeasureOptions {
   /** Ticks between packets, given to the relay (MATCH_START carries it) and to both sessions (default 1). */
   readonly batchEvery?: number;
   readonly inputDelay?: number;
+  /** Let the sessions raise their input delay after repeated stalls (default false, so reports stay comparable). */
+  readonly adaptive?: boolean;
   readonly rollbackWindow?: number;
   /** Seeds the link impairments and the relay's random numbers. */
   readonly netSeed?: number;
@@ -79,7 +81,7 @@ export interface MeasureReport {
   readonly oneWayMs: Dist;
   readonly messages: { readonly total: Rate; readonly clientToRelay: Rate; readonly relayToClient: Rate; readonly bySlot: readonly [Rate, Rate] };
   readonly bytes: { readonly total: Rate; readonly clientToRelay: Rate; readonly relayToClient: Rate };
-  readonly sessions: readonly { readonly stalls: number; readonly rollbacks: number; readonly resimTicks: number; readonly maxRollbackDepth: number; readonly packetsSent: number }[];
+  readonly sessions: readonly { readonly stalls: number; readonly rollbacks: number; readonly resimTicks: number; readonly maxRollbackDepth: number; readonly packetsSent: number; readonly finalInputDelay: number }[];
   readonly rollbacks: number;
   readonly stalls: number;
   readonly finalHashes: readonly [number, number];
@@ -216,7 +218,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
 
   const worlds = [createMatch(setup), createMatch(setup)] as const;
   const sessions = ([0, 1] as const).map(
-    (side) => new LockstepSession({ world: worlds[side], side, transport: transports[side], match: matchId, inputDelay, tickLimit: ticks, adaptive: false, rollbackWindow, batchEvery }),
+    (side) => new LockstepSession({ world: worlds[side], side, transport: transports[side], match: matchId, inputDelay, tickLimit: ticks, adaptive: o.adaptive ?? false, rollbackWindow, batchEvery }),
   ) as [LockstepSession, LockstepSession];
   const hashed = [0, 0];
   const done = (): boolean => sessions.every((s) => s.status === 'ended' || s.status === 'desync' || s.status === 'forfeit');
@@ -255,7 +257,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
   const up = msgs.up[0] + msgs.up[1];
   const down = msgs.down[0] + msgs.down[1];
   const rtt = medianRtt([...transports[0].rtts, ...transports[1].rtts]);
-  const stats = sessions.map((s) => s.stats);
+  const stats = sessions.map((s) => ({ ...s.stats, finalInputDelay: s.inputDelay }));
   const result = events.find((e) => e.kind === 'result');
   return {
     label: MEASUREMENT_LABEL,
@@ -269,7 +271,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
       bySlot: [rate(msgs.up[0] + msgs.down[0]), rate(msgs.up[1] + msgs.down[1])],
     },
     bytes: { total: rate(bytes.up + bytes.down), clientToRelay: rate(bytes.up), relayToClient: rate(bytes.down) },
-    sessions: stats.map((x) => ({ stalls: x.stalls, rollbacks: x.rollbacks, resimTicks: x.resimTicks, maxRollbackDepth: x.maxRollbackDepth, packetsSent: x.packetsSent })),
+    sessions: stats.map((x) => ({ stalls: x.stalls, rollbacks: x.rollbacks, resimTicks: x.resimTicks, maxRollbackDepth: x.maxRollbackDepth, packetsSent: x.packetsSent, finalInputDelay: x.finalInputDelay })),
     rollbacks: stats.reduce((n, x) => n + x.rollbacks, 0),
     stalls: stats.reduce((n, x) => n + x.stalls, 0),
     finalHashes,
