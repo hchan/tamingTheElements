@@ -66,7 +66,7 @@ function abilityIcon(mark: string, sprite: string | undefined): HTMLElement {
 export function heroPanel(onAdd?: () => void, lifeOf?: (id: CharacterId) => number): HeroPanel {
   const node = el('section', 'heroPanel');
   node.setAttribute('aria-label', 'Hero details');
-  // "Add to team": assigns the shown hero (the mouse and touch alternative to a second click or a drag).
+  // "Add to team": assigns the shown hero (the mouse alternative to a second click).
   const add = el('button', 'menuButton heroAdd', 'Add to team');
   add.type = 'button';
   add.addEventListener('click', () => {

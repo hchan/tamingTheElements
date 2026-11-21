@@ -70,3 +70,16 @@
     grid-template-areas: 'side1 side1' 'grid hero';
   }
 }
+
+/* The 14em stack is narrow: ability chips wrap inside the row instead of spilling past the stack border. */
+#tourPick .teamStack .vsAbilities {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+#tourPick .teamStack .vsAbility {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
