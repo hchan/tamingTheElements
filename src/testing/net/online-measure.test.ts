@@ -34,6 +34,15 @@ describe('online measurement harness (virtual clock; figures are local, not esti
     expect(three.messages.total.perSec).toBeLessThan(one.messages.total.perSec / 2);
   });
 
+  it('batchEvery 3 with inputDelay 4 stalls less than batchEvery 1 with inputDelay 2 on the bad profile', async () => {
+    const profile = PROFILES['bad'];
+    const base = await measureMatch({ ticks: 600, batchEvery: 1, inputDelay: 2, profile });
+    const three = await measureMatch({ ticks: 600, batchEvery: 3, inputDelay: 4, profile });
+    expect(three.finalHashEqual).toBe(true);
+    expect(three.relayAgreed).toBe(true);
+    expect(three.stalls).toBeLessThanOrEqual(base.stalls);
+  });
+
   it('is deterministic for a seed and survives duplicates and reordering', async () => {
     const o = { ticks: 200, profile: PROFILES['bad'], netSeed: 5 } as const;
     const a = await measureMatch(o);

@@ -204,7 +204,7 @@ burst-after-stall behaviour of TCP; a WebSocket-style netsim mode that holds all
 | Quantity | Value | Kind |
 | --- | --- | --- |
 | Sim rate | 50 ticks/s | fact |
-| Batch size | 12 + 2n + 8m bytes, max 172 | fact |
+| Batch size | 12 + 4n + 8m bytes, max 300 (section 4) | fact |
 | Typical batch | n about 4-8 unacked inputs, m = 1-4 hashes: about 30-60 bytes plus 5 frame bytes | estimate |
 | Send rate (as measured on the retired WebRTC path) | one packet per `update`, 50/s per side | fact: `sendPacket` in `session.ts` |
 | Billed messages, 1 batch per tick | 2 players x 50/s x (1 in + 1 out) = 200 msgs/s per match | estimate (arithmetic) |
@@ -214,8 +214,8 @@ burst-after-stall behaviour of TCP; a WebSocket-style netsim mode that holds all
 | Input delay needed at 120 ms one way | about 6 ticks at 50 Hz would hide it in plain lockstep; rollback window 6 covers it | estimate; NETCODE.md measured only up to 120 ms with its fake network |
 | Match length | about 90 s | estimate |
 
-**`batchEvery` stays 1 by default.** `batchEvery = 3` needs `inputDelay >= 4` or a bigger rollback window: a harness run (3000 ticks, window 6) gave, typical link: 6 stalls at `batchEvery 1`/delay 2, 10 at 3/2, 10 at 3/4; bad profile: 770 at 1/2, 1530 at 3/2, 447 at 3/4 [measurement, local harness, virtual clock, my run of the current code; the reviewer's earlier figures differed, so treat all as indicative; see ONLINE-MEASURE.md]. Using `batchEvery > 1` needs a decision on the input delay floor (open question 2). The session option `LockstepOptions.batchEvery` now exists (default 1); measured costs are in [ONLINE-MEASURE.md](ONLINE-MEASURE.md).
-Input is 2 bytes per tick, so `batchEvery = 3` still fits 64 inputs with large margin.
+**Recommended relay options: `batchEvery` 3 with `inputDelay` 4** (owner review 2026-11-20; the package default `DEFAULT_BATCH_EVERY` stays 1, because changing it is a major package bump, so the host passes the options to `RelayCore`; the client reads both from MATCH_START and needs no change). At `batchEvery` 1 one match is about 103 inbound frames/s (BATCH 50/s per player, HASH 1/s, PING 0.5/s; computed, harness 103-105/s), 3 gives about 36/s and 8 about 15.5/s, so the stage throttle (placeholder rate 10, burst 20) cannot carry even one match at any allowed setting: it must rise to roughly 40 req/s per concurrent match, burst at least 2x [estimate]. Stalls depend on `inputDelay + rollbackWindow` only (harness). `batchEvery = 3` needs `inputDelay >= 4` or a bigger rollback window: a harness run (3000 ticks, window 6) gave, typical link: 6 stalls at `batchEvery 1`/delay 2, 10 at 3/2, 10 at 3/4; bad profile: 770 at 1/2, 1530 at 3/2, 447 at 3/4 [measurement, local harness, virtual clock, my run of the current code; the reviewer's earlier figures differed, so treat all as indicative; see ONLINE-MEASURE.md]. Using `batchEvery > 1` needs a decision on the input delay floor (open question 2). The session option `LockstepOptions.batchEvery` now exists (default 1); measured costs are in [ONLINE-MEASURE.md](ONLINE-MEASURE.md).
+Each input is a 4-byte u32 (section 4), so `batchEvery = 3` still fits 64 inputs with large margin.
 
 ## 10. Open questions / what the backend may not satisfy
 
