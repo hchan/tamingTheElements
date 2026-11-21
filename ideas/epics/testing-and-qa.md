@@ -193,7 +193,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r106-findings](../done/qa-r106-findings.md): QA r106 findings
 - [qa-r106-scorecard](../done/qa-r106-scorecard.md): QA r106 scorecard (headless Chromium, SwiftShader, 390x844, 667x375, 844x390, 1920x1080)
 - [qa-r107-findings](../brainstorm/qa-r107-findings.md): QA r107 findings
-- [qa-r107-scorecard](../brainstorm/qa-r107-scorecard.md): QA r107 scorecard
+- [qa-r107-scorecard](../done/qa-r107-scorecard.md): QA r107 scorecard
 
 ## Bundles (2026-11-17)
 

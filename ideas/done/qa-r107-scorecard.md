@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: d (duplicate; scorecard only summarises qa-r107-findings, whose open items are tracked there; portrait items obsolete)
 added: 2026-11-17
 ---
 
