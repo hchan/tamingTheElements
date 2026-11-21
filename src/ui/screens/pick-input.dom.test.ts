@@ -161,3 +161,33 @@ describe('pick-input off', () => {
     expect(frames).toEqual([]);
   });
 });
+
+describe('pick-input targets', () => {
+  it('Space on a stack row or grid tile picks from the cursor; on a plain button it stays native', () => {
+    const row = document.createElement('button');
+    row.className = 'tsRow';
+    const plain = document.createElement('button');
+    document.body.append(row, plain);
+    const e1 = key('Space', {}, row);
+    expect(calls).toEqual(['pick0']);
+    expect(e1.defaultPrevented).toBe(true);
+    key('Space', {}, plain);
+    expect(calls).toEqual(['pick0']);
+    const tile = document.createElement('button');
+    tile.className = 'heroTile';
+    document.body.append(tile);
+    key('Space', {}, tile);
+    expect(calls).toEqual(['pick0', 'pick0']);
+    tile.remove();
+    row.remove();
+    plain.remove();
+  });
+  it('a <summary> keeps Space so the key fold opens', () => {
+    const sum = document.createElement('summary');
+    document.body.append(sum);
+    const e = key('Space', {}, sum);
+    expect(calls).toEqual([]);
+    expect(e.defaultPrevented).toBe(false);
+    sum.remove();
+  });
+});

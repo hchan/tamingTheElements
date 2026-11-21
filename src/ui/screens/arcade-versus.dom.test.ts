@@ -223,17 +223,17 @@ describe('arcadePickView (DOM)', () => {
     expect(scroll.contains(document.getElementById('arcadeStart'))).toBe(false);
   });
 
-  it('roster: a tile fills the active slot with aria-pressed, then advances to the next open slot', () => {
+  it('roster: a tile fills the active slot (next row is aria-current=step), then advances to the next open slot', () => {
     mount(vi.fn(), { size: '2' });
     const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
     expect(tiles).toHaveLength(RACES.length);
     const slots = [...document.querySelectorAll<HTMLButtonElement>('.rosterSlot')];
-    expect(slots[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(slots[0]?.getAttribute('aria-current')).toBe('step');
     tiles[2]?.click();
     // Tiles are grouped by element (fire before earth), so the order is sindarosa, lavax, rokcore.
     expect(sel('arcadePlayer').value).toBe('rokcore');
     expect(tiles[2]?.getAttribute('aria-pressed')).toBe('true');
-    expect(slots[1]?.getAttribute('aria-pressed')).toBe('true');
+    expect(slots[1]?.getAttribute('aria-current')).toBe('step');
     tiles[1]?.click();
     expect(sel('arcadePartner').value).toBe('lavax');
   });
@@ -277,6 +277,39 @@ describe('arcadePickView (DOM)', () => {
   const key = (code: string): void => {
     document.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }));
   };
+
+  it('WASD moves keyboard focus to the cursor tile and announces hero and element; focusing a tile sets the cursor', () => {
+    mount();
+    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
+    key('KeyD');
+    const cur = tiles.findIndex((t) => t.classList.contains('vsCursor1'));
+    expect(document.activeElement).toBe(tiles[cur]);
+    expect(document.querySelector('[role=status]')?.textContent).toMatch(/\((fire|water|air|earth)\)/);
+    const other = tiles.findIndex((_, i) => i !== cur);
+    tiles[other]?.focus();
+    expect(tiles[other]?.classList.contains('vsCursor1')).toBe(true);
+  });
+
+  it('Space on a focused stack row picks from the cursor and does not remove the hero', () => {
+    mount();
+    document.querySelectorAll<HTMLButtonElement>('.heroTile')[2]?.click();
+    expect(sel('arcadePlayer').value).toBe('rokcore');
+    const row = document.getElementById('roster-player') as HTMLButtonElement;
+    row.focus();
+    row.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', bubbles: true, cancelable: true }));
+    expect(sel('arcadePlayer').value).toBe('rokcore');
+  });
+
+  it('DOM order is stack 1, grid, panel, stack 2; the player group is "Your heroes"; the cursor chip says You', () => {
+    mount();
+    const stage = document.querySelector('.vsStage') as HTMLElement;
+    const kids = [...stage.children].map((k) => (k.classList.contains('teamStack') ? 'stack' : k.classList.contains('heroGrid') ? 'grid' : 'other'));
+    expect(kids.slice(0, 2)).toEqual(['stack', 'grid']);
+    expect(stage.children[3]?.classList.contains('teamStack')).toBe(true);
+    expect(stage.querySelector('.vsSide1')?.getAttribute('aria-label')).toContain('Your heroes');
+    expect(stage.querySelector('.vsSide2')?.getAttribute('aria-label')).toContain('Computer heroes');
+    expect(stage.querySelector('.vsCursor1 .vsCursors')?.textContent).toBe('You');
+  });
 
   it('local mode: both players pick at once with their own keys, ready up and fight', () => {
     const onStart = vi.fn();

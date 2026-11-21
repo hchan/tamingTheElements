@@ -95,9 +95,20 @@ describe('teamStack', () => {
     expect(a.textContent).not.toContain('Suggested');
   });
 
-  it('has exactly one aria-pressed row', () => {
+  it('marks the one row the next pick fills with aria-current=step and a visible Next tag, never aria-pressed', () => {
     const { s } = make(rows3);
-    expect(s.el.querySelectorAll('[aria-pressed=true]').length).toBe(1);
+    expect(s.el.querySelectorAll('[aria-current=step]').length).toBe(1);
+    expect(s.el.querySelectorAll('[aria-pressed]').length).toBe(0);
+    const next = [...s.el.querySelectorAll<HTMLElement>('.tsNext')].filter((n) => !n.hidden);
+    expect(next).toHaveLength(1);
+    expect(next[0]?.textContent).toBe('Next');
+    expect(next[0]?.closest('[aria-current=step]')).not.toBeNull();
+  });
+
+  it('names the group from the label prop', () => {
+    const { s } = make(rows3);
+    s.update(props(rows3, { side: 'You', label: 'Your heroes' }));
+    expect(s.el.getAttribute('aria-label')).toBe('Your heroes');
   });
 
   it('shows Aimed and Ready as text and aria-current', () => {

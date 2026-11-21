@@ -94,10 +94,10 @@ button.menuButton.heroSlotClear {
   top: 50%;
   transform: translateY(-50%);
   box-sizing: border-box;
-  height: 22px;
+  height: 26px;
   padding: 2px 10px 0;
-  font-size: max(0.75em, 11px);
-  line-height: 17px;
+  font-size: 16px;
+  line-height: 22px;
   white-space: nowrap;
   color: rgba(255, 214, 120, 0.95);
   background: rgba(28, 24, 62, 0.97);

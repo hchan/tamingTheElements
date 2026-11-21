@@ -20,7 +20,7 @@ export interface StackRow {
   hero?: StackHero;
   /** DOM id of the row button (e.g. roster-partner). */
   id?: string;
-  /** True on the one row the next pick fills (aria-pressed). */
+  /** True on the one row the next pick fills (aria-current="step" plus a visible "Next" tag). */
   pressed?: boolean;
   /** Hidden and disabled (partner rows in 1v1). */
   hidden?: boolean;
@@ -29,6 +29,8 @@ export interface StackRow {
 export interface TeamStackProps {
   /** Side label shown as text, e.g. "P1". */
   side: string;
+  /** Accessible group name; defaults to "<side> heroes". */
+  label?: string;
   rows: readonly StackRow[];
   /** This stack is the one the next tile click fills. */
   aimed: boolean;
@@ -74,6 +76,7 @@ interface RowView {
   num: HTMLElement;
   role: HTMLElement;
   detail: HTMLElement;
+  next: HTMLElement;
 }
 
 function buildRow(): RowView {
@@ -84,9 +87,13 @@ function buildRow(): RowView {
   const num = el('span', 'tsNum');
   const role = el('span', 'tsRole');
   const detail = el('span', 'tsDetail');
-  btn.append(num, role, detail);
+  const next = el('span', 'tsNext', 'Next');
+  next.hidden = true;
+  const col = el('span', 'tsCol');
+  col.append(role, next);
+  btn.append(num, col, detail);
   li.append(btn);
-  return { li, btn, num, role, detail };
+  return { li, btn, num, role, detail, next };
 }
 
 function fillDetail(d: HTMLElement, row: StackRow): void {
@@ -129,7 +136,9 @@ function paintRow(v: RowView, row: StackRow, i: number): void {
   else delete btn.dataset.hero;
   // The name comes from the visible text (axe label-content-name-mismatch); the fuller wording is the tooltip.
   btn.title = rowLabel(row, i);
-  btn.setAttribute('aria-pressed', row.pressed === true ? 'true' : 'false');
+  if (row.pressed === true) btn.setAttribute('aria-current', 'step');
+  else btn.removeAttribute('aria-current');
+  v.next.hidden = row.pressed !== true;
   v.num.textContent = String(i + 1);
   v.role.textContent = slotRole(i);
   fillDetail(v.detail, row);
@@ -183,7 +192,7 @@ export function teamStack(initial: TeamStackProps): TeamStack {
     else root.removeAttribute('aria-current');
     root.setAttribute(
       'aria-label',
-      `${next.side} heroes${next.aimed ? ', aimed' : ''}${next.ready ? ', ready' : ''}`,
+      `${next.label ?? `${next.side} heroes`}${next.aimed ? ', aimed' : ''}${next.ready ? ', ready' : ''}`,
     );
   }
 
