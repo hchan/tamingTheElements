@@ -1,4 +1,18 @@
 {
+ "brazgor": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "cb1ec76b71059437468d5494078322d17f56598ffb9d665dcc702b30c39f7ad4",
+   "anim": "166b5d6211eb484501406977b8345f728b5ef3fc03cda9c7dca4fd7f7e984543",
+   "portrait": "c91d87f200bd0557117e242d8827877d2a1dde16f78a3bb39966d87ba91e2729"
+  },
+  "outputs": {
+   "parts/body.png": "0de71133c9d210fd84d5245c9b2c101668088918cd7a7e65afcf1ff7868f16f9",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "b344eb698bc96cb679075c8c591d4d8b005b5ac18264c23d03620a176170f79b",
+   "rig.json": "8acce8c3a3c173f1a1b3e36445eee4ddf390c4735f61c121c4164de3f1c823f0"
+  }
+ },
  "curomo": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",

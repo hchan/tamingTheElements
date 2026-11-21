@@ -12,4 +12,8 @@ Plan: .scratch/plans/roster24-one-hero.md (section 3, rank 2). Release set stays
 - 2026-11-20 step S (SIM_VERSION 91): Forge Gore de-duped from Wyrm Coil and Stoop (both 90x60 heavy, 400 ms recovery): now a slow overhead
   anvil blow, 30 dmg, 2000 ms cooldown, 600 ms recovery, 70x80 box (narrow and tall, no lunge, no grab). Molten Hide unchanged.
   Same bump: Kindrel Ember Bite recovery 150 -> 160 ms (tick-neutral: 8 ticks either way). Numbers in the SIM_VERSION 91 note and CHANGELOG.
-- Still to do: flank-glow art fix, rig spec/audit gate (P1), hit FX (P2), lesson rows (P3), Pyre Totem ally no-flinch zone (slot 3, later), release flip (R).
+- 2026-11-20 P1 rig and bake done (art-director APPROVE 4.0, KO revise 1 of 2 used): source mirrored to face east, quadruped spec + tune
+  script, procedural KO keys (buckle, slump, edge-on roll, belly-up; tools/assets/portrait-rig/brazgor-ko-keys.py), sheet and map strip.
+  Provenance: tools/assets/portrait-rig/provenance/brazgor-approval.json. Art stays hidden (RELEASED_ROSTER24 untouched). Follow-ups from
+  the director: tilt the last KO frame a few degrees, darken its shadow ~15%, nudge walk frame 2, edge-on KO frame may flicker.
+- Still to do: flank-glow art fix, audit gate, hit FX (P2), lesson rows (P3), Pyre Totem ally no-flinch zone (slot 3, later), release flip (R).
