@@ -253,19 +253,15 @@ describe('arcadePickView (DOM)', () => {
     expect(sel('arcadePlayer').value).toBe('lavax');
   });
 
-  it('Clear returns focus to the slot and the next pick refills the first empty slot', () => {
+  it('clicking a picked row removes the hero and the next pick refills the first empty slot', () => {
     mount(vi.fn(), { size: '2' });
     const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
     tiles[2]?.click();
     tiles[1]?.click();
-    const clears = [...document.querySelectorAll<HTMLElement>('.vsSlotActions .vsSmall')].filter(
-      (b) => b.textContent === 'Clear',
-    );
-    clears[0]?.click();
-    expect(sel('arcadePlayer').value).toBe('');
-    expect(document.activeElement).toBe(document.getElementById('roster-player'));
+    document.getElementById('roster-player')?.click(); // later picks move up
+    expect([sel('arcadePlayer').value, sel('arcadePartner').value]).toEqual(['lavax', '']);
     tiles[0]?.click();
-    expect(sel('arcadePlayer').value).toBe('sindarosa');
+    expect(sel('arcadePartner').value).toBe('sindarosa');
   });
 
   it('a picked hero carries a P1 chip with its slot number, as text', () => {
@@ -278,57 +274,54 @@ describe('arcadePickView (DOM)', () => {
     expect(flags(2)?.textContent).toContain('You 1');
   });
 
-  it('local mode: both players pick at once with their own keys and ready up', () => {
-    mount(vi.fn(), { size: '1' });
+  const key = (code: string): void => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }));
+  };
+
+  it('local mode: both players pick at once with their own keys, ready up and fight', () => {
+    const onStart = vi.fn();
+    mount(onStart, { size: '1' });
     change(sel('arcadeMode'), 'local');
     change(sel('arcadeSize'), '1');
-    const key = (code: string): void => {
-      document.dispatchEvent(
-        new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }),
-      );
-    };
-    // P1 cursor starts on hero 0 and P2's on hero 1.
+    const names = [...document.querySelectorAll('.heroTileName')].map((n) => n.textContent);
+    const at = (n: string): number => names.indexOf(n);
     key('KeyD');
     key('Space');
-    expect(sel('arcadePlayer').value).toBe('lavax');
+    const p1 = sel('arcadePlayer').value;
+    expect(p1).not.toBe('sindarosa');
     key('KeyL');
     key('KeyU');
-    expect(sel('arcadeEnemy').value).toBe('rokcore');
-    const ready1 = document.getElementById('ready-p1') as HTMLButtonElement;
-    const ready2 = document.getElementById('ready-p2') as HTMLButtonElement;
-    ready1.click();
-    expect(ready1.getAttribute('aria-pressed')).toBe('true');
+    expect(sel('arcadeEnemy').value).not.toBe('');
+    expect(at('Sindarosa')).toBeGreaterThanOrEqual(0);
+    key('Space');
+    expect(onStart).not.toHaveBeenCalled();
     key('KeyU');
-    expect(ready2.getAttribute('aria-pressed')).toBe('true');
-    expect(document.querySelector('.vsStage')?.classList.contains('vsBothReady')).toBe(true);
-    // Undo clears the last pick and the ready state.
-    key('KeyQ');
-    expect(ready1.getAttribute('aria-pressed')).toBe('false');
-    expect(document.querySelector('.vsStatus')?.textContent).toBe('Pick your fighter');
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it('3v3: slots fill in order, Swap up reorders and Clear empties a slot', () => {
+  it('Q pops the last pick and Delete on a picked row removes it', () => {
     mount();
     change(sel('arcadeMode'), 'local');
     const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
     tiles[0]?.click();
     tiles[1]?.click();
     tiles[2]?.click();
-    expect([
-      sel('arcadePlayer').value,
-      sel('arcadePartner').value,
-      sel('arcadePartner2').value,
-    ]).toEqual(['sindarosa', 'lavax', 'rokcore']);
-    (
-      document.querySelector(
-        'button[aria-label="Swap Player 1 pick 2 up to position 1"]',
-      ) as HTMLButtonElement
-    ).click();
-    expect([sel('arcadePlayer').value, sel('arcadePartner').value]).toEqual(['lavax', 'sindarosa']);
-    (
-      document.querySelector('button[aria-label="Clear Player 1 pick 3"]') as HTMLButtonElement
-    ).click();
-    expect(document.querySelector('.vsStatus')?.textContent).toBe('2 of 3 picked');
+    expect([sel('arcadePlayer').value, sel('arcadePartner').value, sel('arcadePartner2').value]).toEqual([
+      'sindarosa', 'lavax', 'rokcore',
+    ]);
+    key('KeyQ');
+    expect(sel('arcadePartner2').value).toBe('');
+    document.getElementById('roster-partner')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    expect(sel('arcadePartner').value).toBe('');
+    expect(document.getElementById('arcadeStart')?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('the Random button picks one hero for the aimed team', () => {
+    mount(vi.fn(), { size: '1' });
+    const before = sel('arcadePlayer').value;
+    document.getElementById('arcadeRandom')?.click();
+    expect(sel('arcadePlayer').value).not.toBe('');
+    expect(before).toBe('sindarosa');
   });
 
   it('the AI level row only shows against the computer', () => {

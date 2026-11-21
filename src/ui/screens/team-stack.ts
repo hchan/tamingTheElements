@@ -9,6 +9,8 @@ export interface StackHero {
   stats?: string;
   /** Ability chips: a short mark plus the full text for the title. */
   abilities?: readonly { mark: string; title: string }[];
+  /** Spoken summary, set as the title of the ability group. */
+  abilitiesTitle?: string;
 }
 
 export type StackRowState = 'mine' | 'suggested' | 'empty';
@@ -44,12 +46,13 @@ export function slotRole(i: number): string {
   return i === 0 ? 'Starter' : 'Tag';
 }
 
-/** Accessible name of a row. */
+/** Spoken summary of a row, used as its tooltip (the button's name is its visible text). */
 export function rowLabel(row: StackRow, i: number): string {
   const role = slotRole(i);
   const name = row.hero?.name ?? '';
   const slot = String(i + 1);
-  if (row.state === 'mine' && name) return `Remove ${name} from slot ${slot} (${role})`;
+  const abil = (row.hero?.abilities ?? []).map((a) => `${a.mark} ${a.title}`).join(', ');
+  if (row.state === 'mine' && name) return `Remove ${name} from slot ${slot} (${role})${abil ? `. ${abil}` : ''}`;
   if (row.state === 'suggested' && name) return `Slot ${slot}, ${role}, suggested ${name}`;
   return `Slot ${slot}, ${role}, empty`;
 }
@@ -98,8 +101,9 @@ function fillDetail(d: HTMLElement, row: StackRow): void {
   if (hero.stats) d.append(el('span', 'tsStats', hero.stats));
   if (hero.abilities && hero.abilities.length > 0) {
     const abil = el('span', 'vsAbilities');
+    if (hero.abilitiesTitle) abil.title = hero.abilitiesTitle;
     for (const a of hero.abilities) {
-      const chip = el('span', 'vsAbility', a.mark);
+      const chip = el('span', 'vsAbility', `${a.mark} ${a.title}`);
       chip.title = a.title;
       abil.append(chip);
     }
@@ -107,7 +111,6 @@ function fillDetail(d: HTMLElement, row: StackRow): void {
   }
   if (row.state === 'mine') {
     const rm = el('span', 'tsRemove', 'Remove');
-    rm.setAttribute('aria-hidden', 'true');
     d.append(rm);
   }
 }
@@ -124,7 +127,8 @@ function paintRow(v: RowView, row: StackRow, i: number): void {
   btn.classList.toggle('heroSlotEmpty', row.state === 'empty');
   if (row.hero) btn.dataset.hero = row.hero.id;
   else delete btn.dataset.hero;
-  btn.setAttribute('aria-label', rowLabel(row, i));
+  // The name comes from the visible text (axe label-content-name-mismatch); the fuller wording is the tooltip.
+  btn.title = rowLabel(row, i);
   btn.setAttribute('aria-pressed', row.pressed === true ? 'true' : 'false');
   v.num.textContent = String(i + 1);
   v.role.textContent = slotRole(i);
@@ -179,7 +183,7 @@ export function teamStack(initial: TeamStackProps): TeamStack {
     else root.removeAttribute('aria-current');
     root.setAttribute(
       'aria-label',
-      `${next.side} team${next.aimed ? ', aimed' : ''}${next.ready ? ', ready' : ''}`,
+      `${next.side} heroes${next.aimed ? ', aimed' : ''}${next.ready ? ', ready' : ''}`,
     );
   }
 

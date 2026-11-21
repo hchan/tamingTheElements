@@ -76,7 +76,7 @@ test.describe('Versus 2v2 at 1280x720', () => {
   test('the partner slot is visible above the bar at scroll 0', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByRole('radio', { name: /^✓?2v2 tag team$/ }).click();
-    const partner = await rectOf(page, '#arcadePick .vsSide1 .vsSlotItem:nth-child(2)');
+    const partner = await rectOf(page, '#arcadePick #roster-partner');
     const bar = await rectOf(page, BAR);
     expect(partner).not.toBeNull();
     expect(need(partner).bottom).toBeLessThanOrEqual(need(bar).top + 1);
