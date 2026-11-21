@@ -1,6 +1,7 @@
 ---
 status: idea
 added: 2026-11-18
+triaged: c (items 1,2,3,4,5,7,8,10 fixed or obsolete; open: #11 shorter intro banners and #12 Easy AI opening damage, both design or balance; plan: Opus plan for #12 with balance:compare, #11 a small scene-timing work package; #6 and phone parts of #9 obsolete, #9 desktop text is the Help landing page and is intended)
 ---
 
 # QA r110 findings
