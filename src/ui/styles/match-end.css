@@ -75,6 +75,10 @@
   -webkit-text-fill-color: #ffd2d2;
 }
 /* A draw has no "you": both portraits get the neutral frame, not the yellow selection ring. */
+/* Both draw tiles are equals: top-align them (the bottom-aligned winner/foe pair staggered when the names wrapped differently). */
+#arcadeResults[data-tone='draw'] .matchEndHero {
+  align-items: flex-start;
+}
 #arcadeResults[data-tone='draw'] .matchEndFace {
   border-color: #8a7fb8;
   box-shadow: inset 0 0 12px rgba(235, 225, 255, 0.4);
@@ -313,7 +317,8 @@
   box-shadow: 0 0 0 2px #ffe600, 0 0 26px rgba(255, 220, 60, 0.55);
 }
 #arcadeResults[data-tone='loss'] {
-  background: radial-gradient(ellipse at 50% 18%, rgba(190, 30, 40, 0.38), rgba(40, 10, 40, 0) 65%), rgba(10, 8, 24, 0.35);
+  background: radial-gradient(ellipse at 50% 18%, rgba(190, 30, 40, 0.38), rgba(40, 10, 40, 0) 65%),
+    radial-gradient(ellipse at 50% 45%, rgba(10, 8, 24, 0.4), rgba(10, 8, 24, 0) 70%);
 }
 #arcadeResults[data-tone='loss'] .matchEndRibbon {
   color: #ffd6d6;
