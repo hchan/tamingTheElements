@@ -42,7 +42,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r104-findings](../done/qa-r104-findings.md): QA r104 findings
 - [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings
 - [qa-r106-findings](../brainstorm/qa-r106-findings.md): QA r106 findings
-- [qa-r107-findings](../brainstorm/qa-r107-findings.md): QA r107 findings
+- [qa-r107-findings](../done/qa-r107-findings.md): QA r107 findings
 
 ## Bundles (2026-11-17)
 
@@ -76,7 +76,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-4 Action bar and HUD style (finish in-progress)
 
-- Members: [unified-action-bar](../in-progress/unified-action-bar.md), [qa-action-bar-readability](../in-progress/qa-action-bar-readability.md), [grim-hud-pass](../in-progress/grim-hud-pass.md), [street-fighter-hud](../in-progress/street-fighter-hud.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Members: [unified-action-bar](../in-progress/unified-action-bar.md), [qa-action-bar-readability](../in-progress/qa-action-bar-readability.md), [grim-hud-pass](../in-progress/grim-hud-pass.md), [street-fighter-hud](../in-progress/street-fighter-hud.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../done/qa-r107-findings.md)
 - Size: M
 - Shared files: action-bar.ts, Hud.ts, arcade-hud.ts, main.css
 - Flags: needs browser/e2e. Some members are in in-progress/: check what is already merged; r106/r107 supply the HUD life-format item
