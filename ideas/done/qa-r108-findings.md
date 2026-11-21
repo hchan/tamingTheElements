@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-18
+triaged: done (1 Run slot, touch button and tour row exist; 2 core RUN_EDGE_PX stops Away 8 px from the edge; 3 touch Run button and gamepad Run row exist; 4 and 5 phone, obsolete; 6 Settings has a Key bindings link, Tab in rebind leaves capture by design, Help names Tab; 7 info only)
 ---
 
 # QA round 108 findings
