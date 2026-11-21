@@ -1,5 +1,6 @@
 # QA r119 scorecard (0-5 vs Street Fighter / Marvel vs Capcom)
-status: idea
+status: done
+triaged: d (scorecard only, duplicates qa-r119-findings.md; open items tracked there)
 added: 2026-11-19
 
 Desktop 1280x720, headless, main 0ac72a1c. Details in qa-r119-findings.md. Screenshots in `.scratch/qa-r119/`.
