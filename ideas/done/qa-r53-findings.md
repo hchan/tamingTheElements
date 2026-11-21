@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (CC feedback landed; low leftovers carried to r57)
 added: 2026-11-15
 ---
 
@@ -39,3 +40,7 @@ Menu on seven viewports, four stage floors, element-labelled super banners (PHOE
 ## Not verified
 
 Online two-browser flow, Firefox and WebKit, real-time hit-stop and entrance timing, a 390x844 in-match shot (phone match was 667x375), CC with the AI attacking (this round drove the attacker by hand).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: CC chips and cues (`src/game/audio/arcade-cues.ts`, r54 confirms), CC overlay and body pose (`src/game/fx/cc-fx.ts`, `cc-view.ts`, cc-fx e2e), Fire Blast fade (`src/game/fx/fire-blast-fade.ts`), first-run card (fades on fight time, events in `first-run-hint.ts`). Menu entrance black-blob start is art-only polish. Stage 9 script crash was a harness artifact (r54 #5). Open low item carried to qa-r57-findings: Void cast-bar element tint.

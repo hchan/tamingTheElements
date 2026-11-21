@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only; Kindrel spark carried to r57)
 added: 2026-11-15
 ---
 
@@ -31,3 +32,7 @@ Screenshots under `~/claudetmp/qa-r56/s/`.
 ## Coverage
 
 Menu at five sizes, hero select, 1v1 in Fire/Water/Earth/Air with hit and super, 2v2 tag swap (`team2-tag-b.png`), Tour stage cards 1-9 and fights 4-9, Help, Settings, phone landscape (`ph-super.png`) and portrait, B1 heroes vs fiara/echo/morblass/wispera, CC chips, idle motifs (treenoc, sindarosa, kindrel, nykra), tester mode.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: first-run card dismiss was a harness artifact (r57); tester panel header states God mode and the cheat label reads Snag, not Capture (`src/ui/tester/panel.ts`); `docs/TESTER-MODE.md` now says Settings > Advanced > Cheats; CC chip and body feedback (r57). Dropped: phone portrait. Open low item carried to qa-r57-findings: Kindrel basic hit spark. Art-only, noted: Nykra translucent on Void floor.
