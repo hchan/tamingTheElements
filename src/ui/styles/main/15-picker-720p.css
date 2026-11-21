@@ -61,3 +61,27 @@
   }
 }
 
+
+/* qa-r46 #3: at 1920x1080 the Versus page stayed capped at 80em (about 1280 px) with 48 px faces and 11 px names while margins sat empty.
+   Wide mouse windows widen the page and scale the stage and tile faces (desktop only; narrower windows keep the rules above). */
+@media (min-width: 1600px) and (min-height: 900px) and (pointer: fine) {
+  #menu #arcadePick {
+    max-width: min(96vw, 108em);
+  }
+  #arcadePick .vsStage {
+    font-size: 18px;
+  }
+  .heroGrid {
+    gap: 8px;
+  }
+  .heroTileFace {
+    width: 64px;
+    height: 64px;
+  }
+  .heroTileName {
+    font-size: 1em;
+  }
+  .heroGrid[data-cols='6'] .heroTileName {
+    font-size: 0.95em;
+  }
+}
