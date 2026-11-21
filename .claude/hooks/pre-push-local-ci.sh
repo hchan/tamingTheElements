@@ -1,9 +1,9 @@
 #!/bin/bash
-# PreToolUse hook on Bash: before a real `git push`, run the tiered gate (gate:commit --hook, then gate:push --verify).
+# PreToolUse hook on Bash: before a real `git push`, run gate:commit --hook (owner, 2026-11-20: gate:push is no longer required before a push; it stays runnable and optional).
 # push-match.mjs decides whether the command really pushes and in which checkout. Exit 2 blocks. Stdout stays empty.
 # Fails open only when node or pnpm is missing; fails closed (exit 2) when git rev-parse fails.
 # Docs-only rule: for a plain `git push [origin [HEAD|<current branch>]]` whose range origin/main...HEAD (renames split) touches only
-# .claude/, docs/, ideas/ or *.md, gate:commit is replaced by `pnpm exec vitest run tests/repo`; gate:push --verify still runs. bash 3.2 compatible. Budget: TTE_PUSH_HOOK_BUDGET_SEC (default 840).
+# .claude/, docs/, ideas/ or *.md, gate:commit is replaced by `pnpm exec vitest run tests/repo`. bash 3.2 compatible. Budget: TTE_PUSH_HOOK_BUDGET_SEC (default 840).
 input=$(cat)
 case "$input" in
   *push*) ;;
@@ -138,10 +138,10 @@ for top in $tops; do
   mkdir -p "$top/.scratch"
   log="$top/.scratch/push-hook.log"
   : > "$log"
-  steps=("gate:commit --hook" "gate:push --verify")
+  steps=("gate:commit --hook")
   if docs_only "$top"; then
     echo "pre-push-local-ci: gate:commit skipped (docs-only rule: every file in origin/main...HEAD is under .claude/, docs/, ideas/ or is *.md); running tests/repo instead."
-    steps=("exec vitest run tests/repo" "gate:push --verify")
+    steps=("exec vitest run tests/repo")
   fi
   for step in "${steps[@]}"; do
     # shellcheck disable=SC2086
