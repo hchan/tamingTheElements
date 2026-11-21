@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: already-fixed (keyart-hires.webp backdrop in src/ui/styles/main/01-base.css, hero showcase with idle motion in src/ui/screens/menu-showcase.ts, Help two-column MENU-D a5cd3ca5)
 added: 2026-11-13
 ---
 

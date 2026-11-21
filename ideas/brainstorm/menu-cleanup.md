@@ -13,7 +13,7 @@ Seen while testing online play:
 - The Online screen hid the Join button behind a role choice (addressed by the Online Part 1 flow, see [online-lobby](online-lobby.md)).
 - Menu hierarchy, prominence and wording overall: five entries (Play, Versus, Online, Settings, Help) but unclear what each does; Versus screen is dense (opponent, team, AI level, arena, roster, details panel all at once).
 
-To do: audit every menu screen at 360 px and desktop, decide a simple hierarchy (one primary action per screen), prominence for Online, trim options per screen, plan with Opus before building. Related: [qa-menu-bland](qa-menu-bland.md).
+To do: audit every menu screen at 360 px and desktop, decide a simple hierarchy (one primary action per screen), prominence for Online, trim options per screen, plan with Opus before building. Related: [qa-menu-bland](../done/qa-menu-bland.md).
 
 ## Progress (stepwise)
 
