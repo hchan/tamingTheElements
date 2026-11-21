@@ -55,7 +55,7 @@ export function actionBarKeys(b: Bindings): readonly BarKey[] {
 
 /** Building a team on the hero picker, step by step (text only). */
 export const PICKER_STEPS: readonly string[] = [
-  'Select a hero tile (click, tap or Enter) to put it in the next empty slot.',
+  'Select a hero tile (click or Enter) to put it in the next empty slot.',
   'Select the same tile again, or the x button on its slot, to take the hero back out. Delete does the same from the keyboard.',
   'Drag a slot off the team to remove it, or press B on a gamepad.',
   'Fight starts once every slot holds a hero; the page says how many more you need.',

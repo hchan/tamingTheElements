@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DIFFICULTY,
   DISPLAY_SCALE,
@@ -276,6 +276,7 @@ describe('applyUiScale / loadSave', () => {
 
   it('on-screen button size and side: default to auto/right, and submit stores them device-locally and applies them', async () => {
     localStorage.removeItem('tte.touchLayout');
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
     await mountWith(fakeStore());
     expect(checked('touchSize')).toBe('auto');
     expect(checked('touchSide')).toBe('right');
@@ -300,9 +301,28 @@ describe('applyUiScale / loadSave', () => {
     expect(document.documentElement.dataset['touchHaptics']).toBe('false');
     expect(document.documentElement.dataset['touchSize']).toBe('compact');
     expect(document.documentElement.dataset['touchSide']).toBe('left');
+    vi.unstubAllGlobals();
     localStorage.removeItem('tte.touchLayout');
     delete document.documentElement.dataset['touchSize'];
     delete document.documentElement.dataset['touchSide'];
+  });
+
+  it('desktop (no coarse pointer): hides the on-screen button rows and keeps a stored layout on Save', async () => {
+    const stored = { size: 'compact', side: 'left', haptics: false };
+    localStorage.setItem('tte.touchLayout', JSON.stringify(stored));
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    try {
+      await mountWith(fakeStore());
+      expect(radios('touchSize')).toHaveLength(0);
+      expect(root.querySelector('input[name="touchHaptics"]')).toBeNull();
+      await submit();
+      expect(JSON.parse(localStorage.getItem('tte.touchLayout') ?? '{}')).toEqual(stored);
+    } finally {
+      vi.unstubAllGlobals();
+      localStorage.removeItem('tte.touchLayout');
+      delete document.documentElement.dataset['touchSize'];
+      delete document.documentElement.dataset['touchSide'];
+    }
   });
 });
 
