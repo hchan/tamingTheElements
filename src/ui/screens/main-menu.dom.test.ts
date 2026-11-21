@@ -27,7 +27,7 @@ describe('main menu in the DOM', () => {
     const { host: h } = mount({ load: () => null, navigate: () => undefined });
     const buttons = [...h.querySelectorAll<HTMLButtonElement>('li button')];
     expect(buttons.map((b) => b.textContent)).toEqual([
-      'Play',
+      'World Tour',
       'Versus',
       'Online',
       'Settings',

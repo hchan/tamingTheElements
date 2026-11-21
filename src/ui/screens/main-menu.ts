@@ -38,9 +38,9 @@ export interface MenuItem {
 const always = (): boolean => true;
 
 export const MENU_ITEMS: readonly MenuItem[] = [
-  { label: 'Play', route: 'tour', sub: 'A tour of nine fights', enabled: always },
-  { label: 'Versus', route: 'arcade', sub: 'The computer, or two players, same screen', enabled: always },
-  { label: 'Online', route: 'online', sub: 'Play a friend over the internet', enabled: always },
+  { label: 'World Tour', route: 'tour', sub: 'Three heroes, nine fights in a row', enabled: always },
+  { label: 'Versus', route: 'arcade', sub: 'One match: the computer, or a friend at this keyboard', enabled: always },
+  { label: 'Online', route: 'online', sub: 'One match against a friend over the internet', enabled: always },
   { label: 'Settings', route: 'settings', sub: 'Sound, controls and display', enabled: (s) => s.settings },
   { label: 'Help', route: 'help', sub: 'How to play', enabled: always },
 ];

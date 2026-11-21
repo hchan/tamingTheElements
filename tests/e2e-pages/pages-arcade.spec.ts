@@ -16,7 +16,7 @@ test('production build: Arcade Versus is on the menu by default (no flag, no opt
   const arcadeEntry = page.locator('li[data-route="arcade"]');
 
   await gotoMenu(page);
-  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('Play');
+  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('World Tour');
   await arcadeEntry.locator('button').click();
   await expect(page).toHaveURL(/#versus$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Versus', exact: true })).toBeVisible();

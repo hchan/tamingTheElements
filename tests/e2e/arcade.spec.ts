@@ -41,7 +41,7 @@ const SUPER = 1 << 13;
  */
 const INTRO = 71;
 const KO_TO_ROUND_END = 30 + 120 + 60;
-const MENU = ['Play', 'Versus', 'Online', 'Settings', 'Help'];
+const MENU = ['World Tour', 'Versus', 'Online', 'Settings', 'Help'];
 
 async function audit(page: Page, name: string): Promise<void> {
   const result = await new AxeBuilder({ page }).analyze();
@@ -106,7 +106,7 @@ test('on by default: the menu has the five entries Play, Versus, Online, Setting
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await goToHash(page, '#main');
   expect(await menuLabels(page)).toEqual(MENU);
-  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('Play');
+  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('World Tour');
   await page.evaluate(`window.location.hash = '#arcade'`);
   await waitForRoute(page, '#versus');
   await expect(page.locator('#arcadePick')).toHaveCount(1);

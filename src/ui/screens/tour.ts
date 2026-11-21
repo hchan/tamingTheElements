@@ -244,7 +244,7 @@ export interface TourPickOptions {
 export function tourPickView(o: TourPickOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'tourPick';
-  page.append(el('h1', 'heading', 'Play'));
+  page.append(el('h1', 'heading', 'World Tour'));
   const intro = el(
     'p',
     'tourIntro',

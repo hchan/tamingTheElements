@@ -77,7 +77,7 @@ export const KEY_WORDS: Readonly<Record<string, string>> = {
 
 /** The "Ways to play" section: one short paragraph per menu entry (player-facing words only). */
 export const MODES_COPY: readonly string[] = [
-  'Play: the World Tour. Pick three heroes and fight through nine stages, each a best of three against a computer team: eight element arenas, then the Eternal Void. A lost fight can be replayed up to 3 times, and the run is saved in this browser.',
+  'World Tour: Pick three heroes and fight through nine stages, each a best of three against a computer team: eight element arenas, then the Eternal Void. A lost fight can be replayed up to 3 times, and the run is saved in this browser.',
   "Versus: one fight set up your way: your hero, a partner for 2v2 or two for 3v3, the opponent, the computer's level and the arena.",
   'Online: play a friend on another device over the internet. One of you hosts and sends a code, the other joins and sends a code back; then each of you picks three heroes.',
   'Teams: in 2v2 and 3v3 one hero per side fights at a time. Tag swaps in a rested teammate; benched heroes show under the life bars.',

@@ -21,7 +21,7 @@ interface Tag {
 /** Round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
 const INTRO = 91;
 const KO_TO_ROUND_END = 30 + 120 + 60;
-const MENU = ['Play', 'Versus', 'Online', 'Settings', 'Help'];
+const MENU = ['World Tour', 'Versus', 'Online', 'Settings', 'Help'];
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 const tag = async (page: Page): Promise<Tag | undefined> => {
