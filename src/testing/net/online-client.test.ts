@@ -427,6 +427,18 @@ describe('OnlineClient', () => {
     expect(h.svc.sockets.length).toBe(0);
   });
 
+  it('resting is decided by the body code 0x000B, not by the status: a 503 without that code is a server failure and does not start the rest', async () => {
+    for (const body of [{}, { code: 0x0c, retryAfterSec: 30 }]) {
+      const h = new Harness();
+      const deps = h.deps(true, { fetch: () => Promise.resolve(reply(503, body)) });
+      const c = new OnlineClient(deps);
+      const r = await c.connect();
+      expect(r, JSON.stringify(body)).toMatchObject({ ok: false, failure: { kind: 'server', status: 503 } });
+      const again = await c.connect(); // Not resting: a second attempt still goes out.
+      expect(again, JSON.stringify(body)).toMatchObject({ ok: false, failure: { kind: 'server' } });
+    }
+  });
+
   it('resting with no time means one hour, in words', () => {
     expect(friendlyMessage({ kind: 'resting', retryAfterSec: 0 })).toContain('1 h');
     expect(DEFAULT_RESTING_SEC).toBe(3600);

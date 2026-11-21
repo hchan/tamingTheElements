@@ -32,7 +32,7 @@ Review verdict: approve, no blockers. Open minor items:
 
 - Harness test in `src/testing/net/online-client.test.ts` that asserts `binaryType === 'arraybuffer'` and text, binary, text frame order; rename the old "binary is malformed" test at line 176.
 - (Done 2026-11-20, docs-online-stale; transport.ts comment was already fixed.) Docs `ONLINE-CLIENT.md:55` and `ONLINE-PROTOCOL.md:20` still say binary is malformed; document that the client also accepts base64 text in a binary frame (the relay never sends one). Fix the comment at `transport.ts:156`.
-- Add a conformance case for the HTTP resting body `{"code":11,"retryAfterSec":n}` on a 503 (the resting check now depends on the body).
+- (Done 2026-11-20 as a client test, conf-resting-http: HTTP is the host's, outside the conformance adapter, so no kit case. A 503 without body code 0x000B is a server failure, not resting.) Add a conformance case for the HTTP resting body `{"code":11,"retryAfterSec":n}` on a 503 (the resting check now depends on the body).
 - (Done 2026-11-20, ws-retry-after.) `reconnect()` ignored `retryAfterSec` on a plain 503; wait the larger of the backoff and `retryAfterSec * 1000`, capped at `BACKOFF_MAX_MS`.
 - Nits: comment at `online-client.ts:29` says "HTTP 503" (should say with body code 0x000B); consider requiring `res.status === 503` for the resting check; move the `binaryType` assignment inside the `try`.
 - Not yet done: plan test 2d (relay golden path in ASCII-binary mode) needs `relay-socket.int.test.ts`.
