@@ -307,7 +307,7 @@ export class PoseLayer {
         }
         case SimEventKind.tagIn:
           this.clearKoGhosts(e['team'] ?? 0);
-          this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, tagEntryDir((e['to'] ?? 0) & (SLOTS - 1), e['team'] ?? 0, this.team, this.have, this.lx), 1);
+          this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, tagEntryDir((e['to'] ?? 0) & (SLOTS - 1), (e['from'] ?? -1) & (SLOTS - 1), e['team'] ?? 0, this.team, this.have, this.lx), 1);
           break;
         case SimEventKind.superStarted: {
           const s = (e['caster'] ?? e.sourceId) & (SLOTS - 1);
