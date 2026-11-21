@@ -146,6 +146,8 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out\.$/);
   const shotDir = process.env['SHOT_DIR'];
   if (shotDir) await page.screenshot({ path: `${shotDir}/results-2v2.png` });
+  // The Phaser canvas is removed a frame after the results mount; measured earlier it still pushes the buttons ~560 px down (nightly flake).
+  await expect(page.locator('#game canvas')).toHaveCount(0);
   // QA r120 N1: the action buttons fit the 720 px desktop viewport without scrolling (12 px bottom padding).
   const height = page.viewportSize()?.height ?? 720;
   for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
@@ -207,6 +209,8 @@ test('3v3: the third hero only in 3v3, a BENCH line each, Tag 2 on the 4 key, th
   expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left, Curomo \(\w+\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out, .+ knocked out\.$/);
   const shotDir3 = process.env['SHOT_DIR'];
   if (shotDir3) await page.screenshot({ path: `${shotDir3}/results-3v3.png` });
+  // The Phaser canvas is removed a frame after the results mount; measured earlier it still pushes the buttons ~560 px down (nightly flake).
+  await expect(page.locator('#game canvas')).toHaveCount(0);
   // QA r120 N1: the action buttons fit the 720 px desktop viewport without scrolling (12 px bottom padding).
   const height3 = page.viewportSize()?.height ?? 720;
   for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
