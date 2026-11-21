@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -37,3 +38,8 @@ P3. Super cut-in is still a banner versus an MvC full-screen slam; portrait aren
 P3. The first-run "FIRST BLOOD" card on phone sits mid-screen as a large box over the sky and stays until "Got it" (`m390-fight-2.png`); it hides the HUD-to-arena gap but looks heavy.
 
 Test notes: draw was not re-shot this round (needs a double KO in sudden death); the `match-end` spec covers win and loss only.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed (this round): Help chips, Versus Options strip, Play label, Rounds text. Dropped (phone/portrait/touch): rotate overlay, Options strip overlay and aria-expanded (r97 verified), Play tile at 390, 2v2 phone HUD, first-run card on phone, sky band. Design, tracked: match-end polish (`ideas/done/qa-r107-findings.md`) and super cut-in banner (`ideas/brainstorm/sf-super-cinematics.md`).
+Open: none.

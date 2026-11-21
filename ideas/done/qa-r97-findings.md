@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -34,3 +35,8 @@ P3. Super cinematic not visible at 390: `m390-super-Water.png` and `m390-super-A
 - Phone round-result card: my `end` shot never reached a round end (team size also persisted as 2v2 in that browser context, so later `end` and `tour` shots show 2v2 chips). Needs a fresh context.
 - Not individually reviewed: m360 2v2 and tour, menu shots at each size, earth and air at 360 `-b`, Water super.
 - Real touch play beyond taps, audio, online, Garrison and Settings were out of scope.
+
+## Triage 2026-11-21 (code-checked)
+
+Dropped (phone/portrait/touch): hairline and dead sky, Options label, More-below chip, 2v2 phone HUD, phone super banner (full width in r98). The not-done items (phone first-run, round-result card) are phone-only.
+Open: none.

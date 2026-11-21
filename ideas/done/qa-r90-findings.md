@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -31,3 +32,8 @@ added: 2026-11-17
 ## e2e subset
 
 Run on port 7953, headless, one worker: portrait-play, responsive, picker-bar specs. Result: 103 passed, 0 failed (8.0 min). That includes the new "Versus footer 360x640 / 390x844 slim single row" tests.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: portrait names (verified r91), match-end Victory screen (P2, redone r92/r93: portrait, ribbon, stats chip), round-end card legibility (P6, bold in r99), Online page length (P9; the copy-paste host-code flow went with the WebRTC removal), first-run card placement (P8, waits for banners and fades itself, r93). Dropped (phone/portrait): P1, P3, P5. Art/design only, tracked: P4 super cut-in banner (`ideas/brainstorm/sf-super-cinematics.md`), P7 Sindarosa wings on Fire/Earth (`ideas/brainstorm/qa-r128-fire-stage-hero-blend.md`).
+Open: none.

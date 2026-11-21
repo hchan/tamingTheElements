@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -34,3 +35,8 @@ P3. Help at 390: jump chips wrap ragged with inconsistent sizes and offsets (`p3
 P3. Super cut-in is still a thin banner versus an MvC slam; portrait arena keeps its empty sky band (both carried).
 
 Test note: a draw is reachable in manual mode only by double KO through sudden death (match was 3-3 at the end); setHp 0 on both fighters never ends the match in one round.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Rounds shown twice (r94), draw ring no longer means you (`src/ui/styles/match-end.css:77`), win/loss told apart by ribbon and tone (`src/ui/screens/arcade-versus.ts:946-956`). Dropped (phone/portrait): rotate overlay, 390 tile label wrap, Help chips at 390, sky band. Design, tracked: super cut-in banner (`ideas/brainstorm/sf-super-cinematics.md`).
+Open: none.

@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -32,3 +33,8 @@ P3. Carried, unchanged: rotate overlay on first portrait entry needs "Play anywa
 Haze and gradient joins below the crowd are smooth in all four elements (no seam at the arena top edge), the stage tint carries up (teal, violet, olive, orange), and the HUD stays readable on top. Live 1v1: Strike 1/2, stun, Rockfall and weather chips are legible at 390; no errors across the run.
 
 Not done: the root cause was not confirmed in code (QA only); P1's "stage-independent texture" is a hypothesis from the screenshots. Desktop 1280 was not re-shot (change is portrait-only).
+
+## Triage 2026-11-21 (code-checked)
+
+Dropped (phone/portrait): every item is portrait-only (sky band with Fire art, mirrored art, seams, band under floor, KO banner, Options strip, Play pick). P1 verified fixed in r96, seams in r97, band under floor in r99.
+Open: none.

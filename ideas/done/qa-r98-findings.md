@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-17
 ---
 
@@ -28,3 +29,8 @@ Evidence is in `.scratch/shots98/` (gitignored; regenerate with the r98 spec flo
 ## Tests
 
 E2E stable subset: 128 passed (9.0 min). Screenshot run: 24 passed plus 15 stage-fixed reruns, 0 console or page errors.
+
+## Triage 2026-11-21 (code-checked)
+
+Dropped (phone/portrait): empty sky, two-row ability bar, super title collision at 360, Tour card clip, round-end banner on phone, band under floor (fixed r99).
+Open: none.
