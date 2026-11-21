@@ -39,7 +39,7 @@ Text table by default, the full report as JSON with `--json`. Exit code 0 when t
 
 `LockstepOptions.batchEvery` (default 1, so nothing changes today) makes the session send a packet every N updates. Each packet still carries all unacked inputs, so
 nothing is lost, only delayed by up to N-1 updates. `setHidden`, `forfeit` and the update that ends the match or the link send at once. The relay's MATCH_START carries
-`batchEvery`; the harness passes the value to `RelayCore` and to both sessions. Game code does not use it yet.
+`batchEvery`; the harness passes the value to `RelayCore` and to both sessions. Game code passes it through: `Arena.ts` hands MATCH_START's `batchEvery` and `inputDelay` to the session. Recommended live values are 3 and 4 (see ONLINE-PROTOCOL.md section 9).
 
 ## Sample (3000 ticks, `typical` profile, rollback window 6, input delay 2; all measurement, local harness, virtual clock)
 
