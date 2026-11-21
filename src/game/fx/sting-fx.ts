@@ -38,18 +38,18 @@ export function mountStingFx(arena: Phaser.Scene, view: RenderView, reduceMotion
   const build = (): Phaser.GameObjects.Particles.ParticleEmitter => {
     if (!arena.textures.exists(STING_TEX)) {
       const g = arena.make.graphics({}, false);
-      g.fillStyle(0xffffff, 1).fillRect(0, 0, 26, 2);
-      g.generateTexture(STING_TEX, 26, 2);
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 44, 3);
+      g.generateTexture(STING_TEX, 44, 3);
       g.destroy();
     }
     // `rotate` runs before `angle` on emit, so it takes the next ray and `angle` reuses it; each line lies along its own flight.
     return arena.add
       .particles(0, 0, STING_TEX, {
         emitting: false,
-        lifespan: 240,
-        speed: { min: 380, max: 520 },
+        lifespan: 260,
+        speed: { min: 420, max: 620 },
         tint: STING_COLOR,
-        alpha: { start: 0.95, end: 0 },
+        alpha: { start: 1, end: 0 },
         scaleX: { start: 1, end: 0.35 },
         blendMode: 'ADD',
         rotate: { onEmit: () => (cur = queue.shift() ?? 0) },
