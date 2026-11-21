@@ -1,9 +1,8 @@
 import type { CharacterId } from '@core/index';
 import { el, markMoreBelow } from '../dom';
-import { heroLife, raceLabel, select } from './arcade-versus';
-import { heroProfile } from './hero-info';
-import { heroDnd } from './hero-dnd';
-import { faceUrl, heroGrid, heroPanel } from './hero-panel';
+import { select } from './arcade-versus';
+import { faceUrl } from './hero-panel';
+import { raceLabel, rosterView } from './roster-view';
 import '../styles/tour-pick.css';
 
 /**
@@ -227,227 +226,38 @@ export function tourSplashView(
   return page;
 }
 
+
 export interface TourPickOptions {
   readonly races: readonly CharacterId[];
   readonly current: readonly [string, string, string];
   readonly onStart: (v: { hero1: string; hero2: string; hero3: string }) => void;
 }
 
+const NAMES = ['hero1', 'hero2', 'hero3'] as const;
+const LABELS = ['Hero 1 (lead)', 'Hero 2', 'Hero 3'] as const;
+
 /**
- * The Play team picker (Marvel vs. Capcom style): three team slots, the element-grouped portrait grid and the focused hero's panel
- * (stats and what each ability does). Arrow keys or W A S D move, Enter or Space picks, a gamepad D-pad and A do the same, and the
- * mouse or touch picks by tap. The three real selects stay in the form, visually hidden and out of the Tab order, so the form data,
- * labels and tests are unchanged. Picking a hero already in another slot swaps the two. A slot can also be emptied (the x button,
- * Delete or Backspace on the slot, a second click or Enter on its hero's tile, dragging it off, gamepad B); Start waits until all three
- * slots hold a hero. An empty slot is a hidden select with the empty option.
+ * The World Tour team picker on the shared MvC-style roster (`roster-view.ts`): one numbered team stack, the element-grouped grid and
+ * the focused hero's panel. A pick (click, Enter, Space, pad A) locks the hero into the next empty slot, cancel (Q, pad B) pops the
+ * last pick, Random fills one slot, a click on a filled row or Delete removes it. The three real selects stay in the form, visually
+ * hidden and out of the Tab order, so the form data and labels are unchanged. Start waits until all three slots hold a hero.
  */
 export function tourPickView(o: TourPickOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'tourPick';
   page.append(el('h1', 'heading', 'World Tour'));
-  const intro = el(
-    'p',
-    'tourIntro',
-    'Pick three heroes, then fight through nine stages. Your run is saved in this browser.',
-  );
+  const intro = el('p', 'tourIntro', 'Pick three heroes, then fight through nine stages. Your run is saved in this browser.');
   const races = [{ value: '', label: 'Empty' }, ...o.races.map((r) => ({ value: r, label: raceLabel(r) }))];
   const form = el('form', 'settingsForm heroSelect');
-  const names = ['hero1', 'hero2', 'hero3'] as const;
-  const labels = ['Hero 1 (lead)', 'Hero 2', 'Hero 3'] as const;
   const hidden = el('fieldset', 'settingsGroup srOnly');
   hidden.setAttribute('aria-hidden', 'true');
   hidden.append(el('legend', undefined, 'Your team'));
-  names.forEach((n, i) => {
-    const row = select(n, labels[i] ?? n, races, o.current[i]);
+  NAMES.forEach((n, i) => {
+    const row = select(n, LABELS[i] ?? n, races, o.current[i]);
     row.querySelector('select')?.setAttribute('tabindex', '-1');
     hidden.append(row);
   });
-  const field = (i: number): HTMLSelectElement => form.elements.namedItem(names[i] ?? '') as HTMLSelectElement;
-
-  const idAt = (i: number): CharacterId | '' => field(i).value as CharacterId | '';
-  // Tour always fields three heroes (TOUR_TEAM_SIZE in game/app/tour-match.ts; ui cannot import game).
-  const panel = heroPanel(() => {
-    dnd.disarm();
-    const id = order[cursor];
-    // Already in the active slot: take it off. Anywhere else: put it in the active slot (swapping when it is on the team).
-    if (id && idAt(active) === id) clear(active);
-    else pick(cursor);
-  }, (id) => heroLife(id, 3));
-  const live = el('p', 'srOnly');
-  live.setAttribute('role', 'status');
-  let active = 0;
-  let cursor = 0;
-  const more: { update?: () => void } = {};
-  const slotsBox = el('ol', 'heroSlots');
-  slotsBox.setAttribute('aria-label', 'Your team');
-  const slotButtons = names.map((_n, i) => {
-    const b = el('button', 'menuButton heroSlot');
-    b.type = 'button';
-    b.id = `tourSlot${String(i + 1)}`;
-    b.dataset['heroSlot'] = String(i);
-    b.addEventListener('keydown', (e) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        e.preventDefault();
-        clear(i);
-      }
-    });
-    b.addEventListener('click', () => {
-      const armed = dnd.takeArmed();
-      if (armed >= 0) {
-        // Tap a hero to preview it, then tap a slot: the touch alternative to dragging.
-        active = i;
-        pick(armed);
-        return;
-      }
-      active = i;
-      refresh();
-    });
-    const li = el('li');
-    li.append(b);
-    slotsBox.append(li);
-    return b;
-  });
-  const heroes = heroGrid({
-    races: o.races,
-    onTile: (t, _id, i) => {
-      t.addEventListener('focus', () => {
-        cursor = i;
-        refresh();
-      });
-      t.addEventListener('pointerenter', () => {
-        // A previewed hero stays in the panel while the pointer travels to "Add to team" or a slot.
-        if (cursor !== i && dnd.armed() < 0) {
-          cursor = i;
-          refresh();
-        }
-      });
-    },
-  });
-  const order = heroes.order;
-  const dnd = heroDnd({
-    root: form,
-    tiles: heroes.tiles,
-    previewTile: (i) => {
-      cursor = i;
-      refresh();
-    },
-    assignTile: (i) => {
-      cursor = i;
-      toggle(i);
-    },
-    dropTile: (i, slot) => {
-      const id = order[i];
-      if (id) assign(id, Number(slot));
-    },
-    slotDraggable: (slot) => idAt(Number(slot)) !== '',
-    clearSlot: (slot) => {
-      clear(Number(slot));
-    },
-    swapSlots: (a, b) => {
-      const [fa, fb] = [field(Number(a)), field(Number(b))];
-      [fa.value, fb.value] = [fb.value, fa.value];
-      live.textContent = `Hero ${String(Number(a) + 1)} swapped with hero ${String(Number(b) + 1)}.`;
-      refresh();
-    },
-  });
-  function refresh(): void {
-    slotButtons.forEach((b, i) => {
-      const id = idAt(i);
-      b.textContent = '';
-      b.classList.toggle('heroSlotEmpty', id === '');
-      if (id === '') {
-        b.append(el('span', 'heroSlotLabel', labels[i] ?? ''), el('b', 'heroSlotName', 'Empty'));
-      } else {
-        const face = el('span', 'heroFace heroSlotFace');
-        face.style.backgroundImage = faceUrl(id);
-        face.setAttribute('aria-hidden', 'true');
-        b.append(face, el('span', 'heroSlotLabel', labels[i] ?? ''), el('b', 'heroSlotName', heroProfile(id).name));
-      }
-      b.setAttribute('aria-pressed', String(i === active));
-      b.classList.toggle('heroActive', i === active);
-      // The x button sits next to the slot (a button cannot hold a button) and exists only while the slot holds a hero.
-      const li = b.parentElement;
-      li?.querySelector('.heroSlotClear')?.remove();
-      if (li && id !== '') {
-        const x = el('button', 'menuButton heroSlotClear', '\u00d7');
-        x.type = 'button';
-        x.setAttribute('aria-label', `Remove ${heroProfile(id).name} from slot ${String(i + 1)}`);
-        x.title = `Remove ${heroProfile(id).name}`;
-        x.addEventListener('click', () => {
-          clear(i);
-          b.focus();
-        });
-        li.append(x);
-      }
-    });
-    const missing = names.filter((_n, k) => idAt(k) === '').length;
-    start.disabled = missing > 0;
-    hint.hidden = missing === 0;
-    hint.textContent = missing === 0 ? '' : missing === names.length ? 'Pick 3 heroes' : `Pick ${String(missing)} more hero${missing === 1 ? '' : 'es'}`;
-    heroes.tiles.forEach((t, i) => {
-      const inTeam = names.findIndex((_n, k) => idAt(k) !== '' && idAt(k) === order[i]);
-      t.classList.toggle('heroCursor', i === cursor);
-      t.classList.toggle('heroPicked', inTeam >= 0);
-      t.setAttribute('aria-pressed', String(inTeam >= 0));
-      t.querySelector('.heroFlag')?.remove();
-      if (inTeam >= 0) t.append(el('span', 'heroFlag', `Slot ${String(inTeam + 1)}`));
-    });
-    const shown = order[cursor];
-    const at = shown ? names.findIndex((_n, k) => idAt(k) === shown) : -1;
-    panel.setAction(at < 0 ? 'Add to team' : at === active ? 'Remove from team' : `Swap into hero ${String(active + 1)}`);
-    if (shown && panel.node.dataset['hero'] !== shown) {
-      panel.node.dataset['hero'] = shown;
-      panel.show(shown);
-    }
-    more.update?.();
-  }
-  /** Puts `id` in slot `slot`; a hero already in another slot swaps places with this slot's hero, so there is never a duplicate. */
-  function assign(id: CharacterId, slot: number): void {
-    const target = field(slot);
-    const old = target.value;
-    const other = names.findIndex((_n, k) => k !== slot && field(k).value === id);
-    if (other >= 0) field(other).value = old;
-    target.value = id;
-    live.textContent = `${heroProfile(id).name} is hero ${String(slot + 1)}.`;
-    refresh();
-  }
-  /** Empties slot `slot` and makes it the active one, so the next pick refills it. */
-  function clear(slot: number): void {
-    const was = idAt(slot);
-    if (was === '') return;
-    field(slot).value = '';
-    // The next pick refills the first empty slot (the lead first), so emptying the team and refilling it starts at hero 1.
-    active = names.findIndex((_n, k) => idAt(k) === '');
-    live.textContent = `${heroProfile(was).name} removed from hero ${String(slot + 1)}.`;
-    refresh();
-  }
-  /** Pick or toggle off: a hero already on the team (tile activated again) leaves it. */
-  function toggle(i: number): void {
-    const id = order[i];
-    const slot = id ? names.findIndex((_n, k) => idAt(k) === id) : -1;
-    if (slot >= 0) clear(slot);
-    else pick(i);
-  }
-  function pick(i: number): void {
-    const id = order[i];
-    if (!id) return;
-    assign(id, active);
-    // On to the next empty slot, else the next one round.
-    const empty = names.map((_n, k) => (active + 1 + k) % names.length).find((k) => idAt(k) === '');
-    active = empty ?? (active + 1) % names.length;
-    refresh();
-  }
-  /** Moves the cursor (and the focus, so the panel and screen readers follow). */
-  const move = (dx: number, dy: number): void => {
-    const n = order.length;
-    let next = cursor + dx + dy * heroes.columns();
-    if (dx !== 0) next = Math.max(0, Math.min(n - 1, next));
-    else if (next < 0 || next >= n) next = cursor;
-    cursor = next;
-    dnd.disarm();
-    heroes.tiles[next]?.focus();
-    refresh();
-  };
+  const fields = form.elements as unknown as Record<string, HTMLSelectElement>;
   const hint = el('p', 'heroHint');
   hint.id = 'tourHint';
   const start = el('button', 'menuButton tourStartCta', 'Start tour');
@@ -456,87 +266,52 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   start.id = 'tourStart';
   const back = el('a', 'menuButton', 'Back');
   back.href = '#main';
-  const stage = el('div', 'heroStage');
-  stage.append(heroes.grid, panel.node);
+  const roster = rosterView({
+    races: o.races,
+    fields: () => fields,
+    sides: [NAMES, []],
+    single: true,
+    rowId: (n) => `tourSlot${String(NAMES.indexOf(n as (typeof NAMES)[number]) + 1)}`,
+    changed: () => form.dispatchEvent(new Event('change')),
+    fight: () => {
+      if (!start.disabled) form.requestSubmit();
+    },
+  });
+  const random = el('button', 'menuButton vsRandom', 'Random');
+  random.type = 'button';
+  random.id = 'tourRandom';
+  random.addEventListener('click', () => {
+    roster.randomAimed();
+  });
   const actions = el('div', 'heroActions');
-  actions.append(start, hint, back);
+  actions.append(random, start, hint, back);
   const scroll = el('div', 'pickScroll');
-  scroll.append(intro, hidden, slotsBox, stage, live);
+  scroll.append(intro, hidden, roster.node);
   form.append(scroll, actions);
-  more.update = markMoreBelow(scroll);
-  cursor = Math.max(0, order.indexOf(o.current[0] as CharacterId));
-  refresh();
-  // A change made straight on a hero select (assistive tech, autofill, tests) shows in the slots too.
+  const more = markMoreBelow(scroll);
+  const sync = (): void => {
+    roster.refresh();
+    const missing = roster.empties();
+    start.disabled = missing > 0;
+    hint.hidden = missing === 0;
+    hint.textContent = missing === 0 ? '' : missing === NAMES.length ? 'Pick 3 heroes' : `Pick ${String(missing)} more hero${missing === 1 ? '' : 'es'}`;
+    more();
+  };
+  sync();
+  // A change made straight on a hero select (assistive tech, autofill, tests) counts as a pick and moves the detail pane.
   form.addEventListener('change', (e) => {
-    const t = e.target;
-    // The detail pane follows the hero a select now holds (never the stale one).
-    if (t instanceof HTMLSelectElement && t.value !== '') {
-      const k = order.indexOf(t.value as CharacterId);
-      if (k >= 0) cursor = k;
-    }
-    refresh();
+    if (e.target instanceof HTMLSelectElement) roster.confirm(e.target.name);
+    sync();
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (names.some((_n, k) => idAt(k) === '')) {
-      live.textContent = 'Pick all three heroes first.';
+    if (roster.empties() > 0) {
+      const live = roster.node.querySelector('[role=status]');
+      if (live) live.textContent = 'Pick all three heroes first.';
       return;
     }
     o.onStart(Object.fromEntries(new FormData(form)) as { hero1: string; hero2: string; hero3: string });
   });
-  const keys: Record<string, [number, number]> = {
-    ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0],
-  };
-  let seen = false;
-  const onKey = (e: KeyboardEvent): void => {
-    if (!page.isConnected) {
-      if (seen) document.removeEventListener('keydown', onKey);
-      return;
-    }
-    seen = true;
-    const t = e.target;
-    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || t instanceof HTMLSelectElement || t instanceof HTMLInputElement) return;
-    const d = keys[e.code];
-    if (!d) return;
-    e.preventDefault();
-    move(d[0], d[1]);
-  };
-  document.addEventListener('keydown', onKey);
-  // Gamepad: D-pad or left stick moves, A picks, B steps back a slot and empties it; polled while the page is up.
-  const held = new Map<string, boolean>();
-  const poll = (): void => {
-    if (!page.isConnected) {
-      if (seen) return;
-    } else seen = true;
-    const pad = typeof navigator.getGamepads === 'function' ? navigator.getGamepads()[0] : undefined;
-    if (pad) {
-      const ax = pad.axes[0] ?? 0;
-      const ay = pad.axes[1] ?? 0;
-      const down = (b: number): boolean => pad.buttons[b]?.pressed === true;
-      const states: [string, boolean][] = [
-        ['up', down(12) || ay < -0.6], ['down', down(13) || ay > 0.6], ['left', down(14) || ax < -0.6], ['right', down(15) || ax > 0.6],
-        ['pick', down(0)], ['back', down(1)],
-      ];
-      for (const [name, on] of states) {
-        if (on && !held.get(name)) {
-          if (name === 'up') move(0, -1);
-          else if (name === 'down') move(0, 1);
-          else if (name === 'left') move(-1, 0);
-          else if (name === 'right') move(1, 0);
-          else if (name === 'pick') pick(cursor);
-          else {
-            // Step back a slot and empty it when it holds a hero: B undoes the last pick.
-            active = (active + names.length - 1) % names.length;
-            if (idAt(active) !== '') clear(active);
-            else refresh();
-          }
-        }
-        held.set(name, on);
-      }
-    }
-    requestAnimationFrame(poll);
-  };
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(poll);
   page.append(form);
   return page;
 }

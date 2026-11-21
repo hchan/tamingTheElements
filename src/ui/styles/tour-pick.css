@@ -35,3 +35,38 @@
     font-size: 0.7em;
   }
 }
+
+/* MvC-style layout (shared roster-view): one team stack, the hero grid and the hero panel; the second stack stays hidden. */
+#tourPick .vsStage {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(12em, 14em) minmax(0, 1.5fr) minmax(0, 1fr);
+  grid-template-areas: 'side1 grid hero';
+  font-size: 16px;
+  gap: 0.75em;
+  align-items: start;
+  margin: 0;
+}
+#tourPick .vsSide {
+  grid-area: side1;
+  min-width: 0;
+  border: 2px solid var(--vs-p1, #6a8cff);
+  border-radius: 10px;
+  padding: 0.5em;
+  background: #1f1f3c;
+  text-align: left;
+}
+#tourPick .vsSide2 {
+  display: none;
+}
+#tourPick button:focus-visible,
+#tourPick a:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 1000px) {
+  #tourPick .vsStage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'side1 side1' 'grid hero';
+  }
+}
