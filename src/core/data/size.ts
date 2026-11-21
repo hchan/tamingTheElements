@@ -10,7 +10,7 @@ import { CHARACTERS } from './characters';
 export const SIZE_ONE = 100;
 export const SIZE_MAX = 400;
 /**
- * The smallest size (roster WP 0.3: wisps and the salamander, sizes 60-70). Below SIZE_ONE every curve below continues
+ * The smallest size (roster WP 0.3: wisps and Kindrel, sizes 60-70). Below SIZE_ONE every curve below continues
  * linearly through 1x (all integer, floored): at size 60 (`size - 100` = -40) life x0.82, damage x0.952, knockback weight
  * x0.76 (it is knocked back further), walk and dash speed x1.112, Snag root x1.1. SIZE_MIN keeps them positive and sane
  * (at 50: life x0.775, weight x0.7, speed x1.14). Arcade life is `arcadeLifePm` (race pm, roster tag-team pm) times
@@ -23,7 +23,7 @@ export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
   rokcore: 200,
   // A 1.5x mid-size bruiser: +22% life, +6% damage, knockback / 1.3, walk and dash x0.86.
   ishimi: 150,
-  // Roster-24 batch 1: a small cinder salamander, a medium kelpie, a large siege crab, a medium tall jelly (box below).
+  // Roster-24 batch 1: a small cinder fox, a medium kelpie, a large siege crab, a medium tall jelly (box below).
   kindrel: 70,
   nykra: 110,
   quarrak: 170,
