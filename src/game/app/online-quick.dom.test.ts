@@ -5,6 +5,9 @@ import type { ArenaLaunch } from '../scenes/launch';
 import { OnlineClient } from '../net/ws/online-client';
 import { errorFrame, Harness, matchStart, peerStatus, type TestWs } from '../../testing/net/fake-online-service';
 import { FakeRelay } from '../../testing/net/fake-relay';
+import { attachRelayCore } from '../../testing/net/relay-core-service';
+import { ACK_STATUS, HASH_REPORT_MS, type ReportSession } from '../net/ws/match-report';
+import { RESULT_DISAGREE_TEXT } from './online-quick-model';
 
 const h$ = vi.hoisted(() => ({
   created: [] as Array<{ host: HTMLElement; launch: ArenaLaunch; destroyed: boolean }>,
@@ -360,6 +363,81 @@ describe('quick match screen', () => {
     (r.h.svc.sockets.at(-1) as TestWs).serve(errorFrame(8));
     await r.h.flush();
     expect(n.textContent).not.toMatch(FORBIDDEN);
+    r.unmounts.forEach((u) => { u(); });
+  });
+});
+
+/** The same two screens, but the service behind the sockets is the real RelayCore over an in-memory store (not the FakeRelay). */
+function relayRig(): Rig & ReturnType<typeof attachRelayCore> {
+  const r = rig();
+  return { ...r, ...attachRelayCore(r.h.svc, r.h.clock) };
+}
+
+/** What the arena would hand the screen: a session that has one checkpoint (tick 50) with `hash`, ended at tick 120. */
+const sessionWith = (hash: number, extra: Partial<ReportSession> = {}): ReportSession => ({
+  simTick: 120,
+  forfeitReason: undefined,
+  desync: undefined,
+  checkpoints: () => [[50, hash]],
+  hashAt: (t) => (t === 120 ? 999 : undefined),
+  ...extra,
+});
+const statusOf = (i: number, s: ReportSession): void => {
+  h$.created[i]?.launch.net?.onStatus?.(s.desync === undefined ? 'running' : 'desync', s as never);
+};
+const endOf = (i: number, winner: number): void => {
+  h$.created[i]?.launch.onEnd?.({ winner, activeSlot: 0, capturedIndices: [] });
+};
+const count = (r: Rig, i: number, op: number): number => frames(r.h.svc.sockets[i] as TestWs, op);
+
+describe('online result reporting (RelayCore)', () => {
+  it('sends HASH about once a second and one RESULT at the end; both get RESULT_ACK 0', async () => {
+    const r = relayRig();
+    await play(r);
+    expect(h$.created).toHaveLength(2);
+    for (const i of [0, 1]) statusOf(i, sessionWith(111));
+    await run(r, 100);
+    expect(count(r, 0, 0x41)).toBe(1);
+    // Inside HASH_REPORT_MS no second HASH (only one checkpoint exists anyway).
+    await run(r, HASH_REPORT_MS);
+    for (const i of [0, 1]) statusOf(i, sessionWith(111));
+    expect(count(r, 0, 0x41)).toBe(1);
+    for (const i of [0, 1]) endOf(i, 0);
+    await run(r, 200);
+    expect([count(r, 0, 0x50), count(r, 1, 0x50)]).toEqual([1, 1]);
+    expect(r.acks.filter((a) => a.status === ACK_STATUS.agreed).map((a) => a.conn).sort()).toEqual([0, 1]);
+    expect(r.events.find((e) => e.kind === 'result')).toMatchObject({ agreed: true, winner: 0, ticks: 120, finalHash: 999 });
+    // The ack stopped the resend.
+    await run(r, 2000);
+    expect([count(r, 0, 0x50), count(r, 1, 0x50)]).toEqual([1, 1]);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('different hashes at one checkpoint give RESULT_ACK 2 to both and offer the report', async () => {
+    const r = relayRig();
+    const [a, b] = await play(r);
+    statusOf(0, sessionWith(111));
+    statusOf(1, sessionWith(222));
+    await run(r, 200);
+    expect(r.acks.map((x) => x.status)).toEqual([ACK_STATUS.disagreed, ACK_STATUS.disagreed]);
+    for (const n of [a, b]) {
+      expect(say(n)).toBe(RESULT_DISAGREE_TEXT);
+      expect(shown(n, 'quickReport')).toBe(true);
+    }
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('a desync the session found is sent as DESYNC once, then RESULT, and the answer stops the resend', async () => {
+    const r = relayRig();
+    await play(r);
+    const bad = sessionWith(111, { desync: { tick: 50, local: 111, remote: 222 } });
+    statusOf(0, bad);
+    statusOf(0, bad);
+    await run(r, 100);
+    expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 1]);
+    expect(r.events.find((e) => e.kind === 'desync')).toMatchObject({ tick: 50, by: 0 });
+    await run(r, 2000);
+    expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 1]);
     r.unmounts.forEach((u) => { u(); });
   });
 });

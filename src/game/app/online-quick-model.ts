@@ -42,6 +42,7 @@ export const BUSY_TEXT = 'The online service is busy right now. Try again in a m
 export const GENERIC_TEXT = 'Something went wrong online. Try again.';
 export const RECONNECTING_PREFIX = 'Connection lost. Reconnecting';
 export const OPPONENT_AWAY_TEXT = "Your opponent's connection dropped. Waiting for them...";
+export const RESULT_DISAGREE_TEXT = 'The two games ended differently. You can save a report.';
 export const OPPONENT_LEFT_TEXT = 'Your opponent left.';
 /** Shown when the service's gateway sent a failure notice; the raw notice text is for logs, not for players. */
 export const GATEWAY_NOTICE_TEXT = 'The online service is having trouble. Hang on...';
