@@ -179,11 +179,9 @@ test('both pages end a short match and the relay records it agreed', async ({ br
   await a.evaluate('window.__TTE__?.settled()');
 });
 
-// Known client bug online-again-stray-batch (not yet in KNOWN-BUGS.md, coordinator to register): Play again sends QUEUE_JOIN while the finished arena is still being destroyed (Phaser finishes a frame
-// later), one more BATCH leaves after it, and the relay answers a BATCH from a connection that is not in a match with ERROR bad-frame and
-// close 4001. Every redial then repeats it, so the second match never starts. Fix: stop the arena's batches before QUEUE_JOIN (online-quick.ts
-// `again`). `test.fail` turns green when the bug is fixed and this should then become a plain `test`.
-test.fail('Play again starts a second agreed match', async ({ browser }) => {
+// Fixed client bug online-again-stray-batch: Play again sends QUEUE_JOIN while the finished arena is still being destroyed (Phaser finishes a frame later), and one more BATCH used to leave
+// after it; the relay answered bad-frame and closed 4001, so the second match never started. The transport now drops match frames after `endMatch` (OnlineClient.leaveMatch).
+test('Play again starts a second agreed match', async ({ browser }) => {
   test.setTimeout(240_000);
   const { rig, a, b } = await startMatch(browser);
   for (const p of [a, b]) await expect(p.locator('#quickAgain')).toBeVisible({ timeout: 90_000 });
