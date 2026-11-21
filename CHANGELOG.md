@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Roster24 Brazgor kit step (step S, `SIM_VERSION` 96): the kit already has no twin (Forge Gore was de-duped at 91; Molten Hide is the only thorns ability), pinned in `abilities-c.test.ts`; no data change and no life retune (1v1 45.7, 2v2 46.0 percent). The Pyre Totem no-flinch zone is not in this step (a new zone system, slot 3). Arcade only; the release set stays empty. Re-record reason: version bump only, every golden changes only the simVersion header.
+
 - Roster24 Kindrel kit step (step S, `SIM_VERSION` 95): the kit already has no twin (Ember Bite and Cinder Spray share no kind, box and damage with any other ability), pinned in `abilities-c.test.ts`; the light hit-strength override and the omni AI rule already exist, so no data change and no life retune (1v1 45.9, 2v2 46.7 percent). Arcade only; the release set stays empty. Re-record reason: version bump only, every golden changes only the simVersion header.
 
 - Roster24 Vortigal kit step (step S, `SIM_VERSION` 94): the kit already has no twin (no other ability shares kind, box and damage with Stoop or Talon Rake), pinned in `abilities-c.test.ts`; only a 2v2 life retune, `ARCADE_2V2_LIFE_PM` vortigal 665 -> 740 (2v2 41.6 -> 49.0 percent, 1v1 51.9 unchanged). Arcade only; the release set stays empty. Re-record reason: a recorded Arcade 2v2 match with Vortigal changes.

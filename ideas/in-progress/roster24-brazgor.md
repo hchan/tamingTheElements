@@ -19,4 +19,5 @@ Plan: .scratch/plans/roster24-one-hero.md (section 3, rank 2). Release set stays
 - 2026-11-20 P2 and P3 (presentation only, no src/core): brazgor-fx.ts (Forge Gore overhead arc plus impact ring, Molten Hide ember ring) painted in
   ability-aura-view.ts from the action-bar readyTick rise, reduced motion held still; lesson words for forge-gore and molten-hide in
   ability-lessons.ts; ABILITY-AUDIT rows updated. Not done: a hit-confirm FX on the foe (no sim event), thorns flash.
+- 2026-11-20 step S closed (SIM_VERSION 96): Forge Gore (melee 30 dmg, 70x80, heavy hit) and Molten Hide (the only thorns ability) have no twin in ALL_ABILITIES; pin test in abilities-c.test.ts. Round 1 (no change, level 3, full roster, Arcade): 1v1 45.7 (16 seeds), 2v2 46.0 (26 seeds), both in 45-55, so no retune. Pyre Totem no-flinch zone skipped: a new ally-zone system (slot 3), not a tune. Goldens re-recorded, simVersion header only. Note: the Progress line above says SIM_VERSION 91 for the de-dupe, which is correct for that change.
 - Still to do: flank-glow art fix, audit gate, Pyre Totem ally no-flinch zone (slot 3, later), release flip (R).

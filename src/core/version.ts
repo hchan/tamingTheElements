@@ -349,5 +349,10 @@
  *    other ability; the Ember Bite light-strength override and the omni AI rule for Cinder Spray already exist from 90), so no life retune (1v1 45.9, 2v2 46.7 percent,
  *    full roster, level 3, both in the 45-55 band). Release set stays empty.
  *    Re-record reason: version bump only; every golden changes only the simVersion header.
+ * 96: Roster-24 step S for Brazgor, no sim rule or data change: the kit is already unique (Forge Gore was de-duped from Wyrm Coil and Stoop at 91 and shares no kind,
+ *    box and damage with any other ability; Molten Hide is the only thorns ability; the heavy hit-strength override for Forge Gore exists from 73), so no life retune
+ *    (1v1 45.7, 2v2 46.0 percent, full roster, level 3, both in the 45-55 band). The Pyre Totem ally no-flinch zone is out of scope (a new zone system, slot 3, later).
+ *    Release set stays empty.
+ *    Re-record reason: version bump only; every golden changes only the simVersion header.
  */
-export const SIM_VERSION = 95;
+export const SIM_VERSION = 96;

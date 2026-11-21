@@ -146,4 +146,17 @@ describe('abilities-c tick values', () => {
       expect(twins.map((t) => t.id), a.id).toEqual([]);
     }
   });
+  it('pins the Brazgor kit: Forge Gore melee 30 damage, 100 cooldown ticks, 30 recovery ticks, 70x80 box, no lunge, heavy hit; Molten Hide buff 50 percent damage decrease, 4 thorns, 3000 ms for 12000 ms cooldown (no other ability shares kind, box and damage with Forge Gore; Molten Hide is the only thorns ability)', () => {
+    const gore = get('forge-gore');
+    expect([gore?.kind, gore?.damage, gore?.cooldownTicks, gore?.delayAfterAttackTicks, gore?.maxActive]).toEqual(['melee', 30, 100, 30, 1]);
+    expect([gore?.w, gore?.h, gore?.lungePx ?? 0]).toEqual([70, 80, 0]);
+    expect(HIT_STRENGTH_OVERRIDE['forge-gore']).toBe(HitStrength.heavy);
+    const hide = get('molten-hide');
+    expect([hide?.kind, hide?.damageDecreasePercentage, hide?.thornsDamage, hide?.cooldownTicks]).toEqual(['buff', 50, 4, 600]);
+    const twins = ALL_ABILITIES.filter(
+      (o) => o.id !== 'forge-gore' && o.kind === 'melee' && o.w === 70 && o.h === 80 && o.damage === 30,
+    );
+    expect(twins.map((t) => t.id)).toEqual([]);
+    expect(ALL_ABILITIES.filter((o) => o.id !== 'molten-hide' && (o.thornsDamage ?? 0) > 0).map((o) => o.id)).toEqual([]);
+  });
 });
