@@ -240,5 +240,9 @@ Each input is a 4-byte u32 (section 4), so `batchEvery = 3` still fits 64 inputs
 ## Relay decisions the client follows (WP-ONLINE-FIX-CLIENT)
 
 - After a match ends the same socket may QUEUE_JOIN or use rooms again; BATCH/PAUSE seq restart at 0 per match; HASH, DESYNC and RESULT carry seq 0 and the relay never checks it.
+- After a match ends the client stops sending BATCH and PAUSE (`WebSocketTransport.endMatch()`, until the next `startMatch`), so a late frame cannot reach a following match; the relay would answer a stray BATCH with ERROR bad-frame.
+- PEER_STATUS timing [fact, relay code]: event 0 (disconnected, `graceMs` 10000) is sent from the `$disconnect` handler, so an abrupt drop can report late. Event 1 (back) is sent only if the relay had already recorded the disconnect when the player resumed. Event 2 (gone) comes only from the once-a-minute sweep, so it arrives about 10 to 70 s after the drop (estimate; the live `--gone` run saw it at about 50 s).
+- The sim version is not checked at QUEUE_JOIN: pairing matches equal simVersion only, so a client with another sim version just stays queued.
+- Every bad-frame path sends ERROR bad-frame and then closes (4001); a client that keeps sending after the first bad frame gets a send error, not more ERRORs.
 - A takeover resume (a new socket for the same session) closes the **old** socket with close code 1000. The client only reacts to the close of its current socket, so that close is neither an error nor a reconnect trigger.
 - A resume with another identity (ticket subject) than the session's gets WELCOME `resumed = 0`; the relay host passes `ctx.identity`.
