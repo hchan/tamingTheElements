@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: real (large, subjective feel; most items done, 3 small leftovers, needs human real-time look)
 added: 2026-11-14
 ---
 
@@ -97,3 +98,9 @@ Screenshots: ~/claudetmp/qa-r40/s/hit-{2,4,6,8,13}.png (Pax vs Rokcore on lava),
 
 - 2026-11-14 (chip-layer): chips and words stay above the floor patches (-0.7) and below every fighter layer (lowest -0.6); depths are now the exported `CHIP_DEPTH`/`LABEL_DEPTH` and part of the terrain probe, pinned by a unit test on all four stages. The QA overlap was the fade lag: a chip that appeared (round start, after a banner) with a fighter on it showed at full alpha and eased down; it now starts faint and fades 2x faster. Contrast fix from r38 untouched. Screenshots: ~/claudetmp/chip-shots/{fire,earth,air}-2v2.png (water stage could not be forced in the headless script).
 - Not done: attacker-displacement assertion in hit-feel-capture (owned by the hit-feel agent), FIGHT! vs super overlap, ember/shard hit layer.
+
+## Triage plan (2026-11-21)
+
+- Done per Progress notes: streaks, hit-stop, recoil, lunge, shake, pop merge, ghost bar, chip depth. Open: (a) attacker-displacement assertion in tests/e2e/hit-feel-capture.spec.ts (no lunge check there yet), (b) FIGHT! text under the super effect, (c) ember/shard hit layer (art/feel).
+- (a) is small, a builder task (e2e via the router); (b) and (c) need a real-time look and art-director sign-off.
+- Keep in brainstorm until a human confirms real-time feel; split (a) into its own idea if wanted.
