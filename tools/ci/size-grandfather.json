@@ -38,7 +38,6 @@
     "src/game/scenes/Arena.ts",
     "src/game/views/pose-layer.ts",
     "src/ui/screens/garrison.ts",
-    "src/ui/screens/hero-dnd.ts",
     "src/ui/screens/key-bindings.ts",
     "src/ui/screens/pad-bindings-section.ts",
     "src/ui/tester/panel.ts"

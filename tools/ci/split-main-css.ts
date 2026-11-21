@@ -16,7 +16,7 @@ const PARTS: readonly (readonly [string, string])[] = [
   ['05-action-bar.css', '/* Touch/action buttons: transparent ove'],
   ['06-versus-picker.css', '/* Versus hero select (Street Fighter / '],
   ['07-hero-grid.css', '/* Hero select (Versus and Play): elemen'],
-  ['08-picker-dnd.css', '/* Drag and drop (hero-dnd.ts): the prev'],
+  ['08-picker-dnd.css', '/* Picker layout (the pointer drag-and-d'],
   ['09-help-first-run.css', '/* Help: Controls tables (text, never co'],
   ['10-picker-layout.css', '/* Unselect (team slots): empty placehol'],
   ['11-tour-splash.css', '/* Tour versus splash: two big portraits'],
