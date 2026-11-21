@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (point-in-time scorecard; scope was phone/portrait layout, which is dropped; no open action)
 added: 2026-11-17
 ---
 
