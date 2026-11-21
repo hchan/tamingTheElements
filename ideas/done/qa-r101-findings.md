@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (2026-11-21: phone/portrait/touch work dropped by owner 2026-11-18; remaining items are portrait-only or contrived)
 added: 2026-11-17
 ---
 
