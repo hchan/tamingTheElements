@@ -12,18 +12,21 @@ export function tagEntrySlide(t: number): number {
 
 /**
  * Pose dir for a tag-in (applyPose offsets by `-dir * slide`, so dir 1 starts left of the rest position): the entry starts on the
- * side away from the nearest foe. Falls back to the team side (team 0 left) when no foe or own position is known.
+ * side away from the nearest foe. The incoming hero is still benched in the view (`have[to]` is 0), so the position used is the
+ * OUTGOING hero's last drawn x (`lx[from]`; the incoming hero spawns there in the sim). Falls back to the team side (team 0 left)
+ * when no foe or outgoing position is known.
  */
-export function tagEntryDir(to: number, team: number, teams: ArrayLike<number>, have: ArrayLike<number>, lx: ArrayLike<number>): number {
+export function tagEntryDir(to: number, from: number, team: number, teams: ArrayLike<number>, have: ArrayLike<number>, lx: ArrayLike<number>): number {
   const side = team === 0 ? 1 : -1;
-  if (have[to] !== 1) return side;
+  if (from < 0 || from >= lx.length || from === to) return side;
+  const ox = lx[from] ?? 0;
   let foe = -1;
   let best = Infinity;
   for (let j = 0; j < teams.length; j++) {
-    if (j === to || have[j] !== 1 || teams[j] === team || (teams[j] ?? -1) < 0) continue;
-    const d = Math.abs((lx[j] ?? 0) - (lx[to] ?? 0));
+    if (j === to || j === from || have[j] !== 1 || teams[j] === team || (teams[j] ?? -1) < 0) continue;
+    const d = Math.abs((lx[j] ?? 0) - ox);
     if (d < best) { best = d; foe = j; }
   }
   if (foe < 0) return side;
-  return (lx[to] ?? 0) <= (lx[foe] ?? 0) ? 1 : -1;
+  return ox <= (lx[foe] ?? 0) ? 1 : -1;
 }
