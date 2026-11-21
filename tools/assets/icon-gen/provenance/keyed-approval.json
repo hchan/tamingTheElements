@@ -1,0 +1,69 @@
+{
+  "_note": "Art-director verdicts on the keyed 128 px icons as installed (not the 512 px sources). abyssal_pull REVISEd twice (3.5, soft twin of whirlpool) and is not installed.",
+  "bell_pulse": {
+    "approved": "bell_pulse.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Grey box gone, clean silhouette matte, textured bronze bell, teal ripple rings give the pulse cue and the water tie. Rings are a bit thin and graphic, but acceptable.",
+    "sha256": "cadcd10ebb1d1e9a81d89e69c54c74393af893ad29a993e0cec82ec3b76ca2f8"
+  },
+  "heal_spring": {
+    "approved": "heal_spring.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Dark halo removed. Mossy stone basin with glowing teal pool and a blue droplet arc reads as a spring and is clearly different from lure_orb. Droplets are slightly cartoon-flat and the moss fringe edge is ragged; acceptable at HUD size.",
+    "sha256": "f7831b1401cf2ae5e788ff907551951c86fde10af9f83626c188f951db3db568"
+  },
+  "kelp_lash": {
+    "approved": "kelp_lash.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "sha256": "eb5a84bcb31ff6027efa9585142bacb6538eba142fcff1d621e9e139d8892532"
+  },
+  "molten_hide": {
+    "approved": "molten_hide.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "sha256": "465ee6c1d74f3710ea1bee30b00c69a277b115591e9e3b9a4a2c248244250027"
+  },
+  "scorch_breath": {
+    "approved": "scorch_breath.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "sha256": "6a6e5a9a27612647d848363d0f4625e9defbf468188bab78d84189ccc584f6e6"
+  },
+  "whirlpool": {
+    "approved": "whirlpool.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "sha256": "76fbca69ecc6ed90b90e27bd7ed7067cdf04ef1b1e767f2acba7f54addcfadee"
+  },
+  "wyrm_coil": {
+    "approved": "wyrm_coil.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "sha256": "41eb19f841f57a0340f170bb967e4d817f94465b01e59b4c843d5897355a3b23"
+  },
+  "spore_burst": {
+    "approved": "spore_burst.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "sha256": "ee27dd28a566329bee9c8f9cf6af8cd44ec1d3adf8a1b9860e601068529ec262"
+  }
+}

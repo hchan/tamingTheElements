@@ -64,5 +64,53 @@
     "reviewer": "art-director",
     "date": "2026-11-20",
     "beats_shipped": true
+  },
+  "kelp_lash": {
+    "approved": "r253-kelp-lash_100002_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "molten_hide": {
+    "approved": "r253-molten-hide_99980_d0.45_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "whirlpool": {
+    "approved": "r207-ic-whirlpool_98034_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "bell_pulse": {
+    "approved": "r256-bell-pulse_100253_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "heal_spring": {
+    "approved": "r256-heal-spring_100220_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "scorch_breath": {
+    "approved": "r257-scorch-breath_100311_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "wyrm_coil": {
+    "approved": "r262-wyrm-coil_100602_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "spore_burst": {
+    "approved": "r263-spore-burst_100731_512x512.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
   }
 }
