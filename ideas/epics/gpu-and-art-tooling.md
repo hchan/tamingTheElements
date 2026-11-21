@@ -15,7 +15,7 @@ Offload heavy image/rig work to the Windows GPU PC and pilot Blender rigging.
 Member ideas, in suggested priority order (work them as separate small work packages):
 
 - [remote-gpu-offload](../brainstorm/remote-gpu-offload.md): Offload heavy work to the owner's Windows PC (RTX 4060). Owner, 2026-11-16: the Mac crashed under parallel agent load;
-- [blender-rigging-pilot](../brainstorm/blender-rigging-pilot.md): Blender rigging pilot (headless, driven by Claude Code). Owner asked 2026-11-16 whether to rig heroes with Blender.
+- [blender-rigging-pilot](../in-progress/blender-rigging-pilot.md): Blender rigging pilot (headless, driven by Claude Code). Owner asked 2026-11-16 whether to rig heroes with Blender.
 
 ## Filed 2026-11-17 (round-note filing and cross-listing)
 
@@ -29,7 +29,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### GT-1 Remote GPU offload and bake-off
 
-- Members: [remote-gpu-offload](../brainstorm/remote-gpu-offload.md), [blender-rigging-pilot](../brainstorm/blender-rigging-pilot.md), [gpu-vs-mac-bakeoff](../brainstorm/gpu-vs-mac-bakeoff.md)
+- Members: [remote-gpu-offload](../brainstorm/remote-gpu-offload.md), [blender-rigging-pilot](../in-progress/blender-rigging-pilot.md), [gpu-vs-mac-bakeoff](../brainstorm/gpu-vs-mac-bakeoff.md)
 - Size: M
 - Shared files: tools/gen/*, tools/rig-assist/*, docs only for results
 - Flags: PC-offloadable by definition; OWNER-GATED (using the owner hardware is an outward-facing step: confirm first); credentials never read or printed; no browser

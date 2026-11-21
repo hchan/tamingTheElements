@@ -26,7 +26,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
 - [grim-arena-environments](../in-progress/grim-arena-environments.md): Grim arena environments (floor, props, atmosphere)
-- [blender-rigging-pilot](../brainstorm/blender-rigging-pilot.md): Blender rigging pilot (headless, driven by Claude Code)
+- [blender-rigging-pilot](../in-progress/blender-rigging-pilot.md): Blender rigging pilot (headless, driven by Claude Code)
 
 ## Bundles (2026-11-17)
 
@@ -50,7 +50,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### AP-3 Rig tooling
 
-- Members: [hero-rigs](../brainstorm/hero-rigs.md), [rig-gen-shared-palette](../brainstorm/rig-gen-shared-palette.md), [blender-rigging-pilot](../brainstorm/blender-rigging-pilot.md)
+- Members: [hero-rigs](../brainstorm/hero-rigs.md), [rig-gen-shared-palette](../brainstorm/rig-gen-shared-palette.md), [blender-rigging-pilot](../in-progress/blender-rigging-pilot.md)
 - Size: M
 - Shared files: tools/rig-assist/*, tools/assets/*
 - Flags: PC-offloadable; tooling only, no manifest change until output is approved
