@@ -24,3 +24,14 @@
     white-space: normal;
   }
 }
+
+/* qa-r46: Play (tour) tiles inherit a large menu button font, so names clipped ("Curomc", "Cyclonit") at 1280x720 and 1920x1080.
+   A smaller name size makes every roster name fit its tile; the Versus picker has its own rules (#arcadePick). */
+#menu #tourPick .heroTileName {
+  font-size: 0.62em;
+}
+@media (min-width: 1600px) {
+  #menu #tourPick .heroTileName {
+    font-size: 0.7em;
+  }
+}
