@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (items 1-4,6 are phone/portrait/touch work, dropped 2026-11-18; item 5 fixed: terrain-fx.ts ~L257 limits the floor chip to one patch (qa-r112); item 7 fixed: first-run-hint.ts auto-fades the card, removes it from the DOM, has a Got it button)
 added: 2026-11-17
 ---
 
