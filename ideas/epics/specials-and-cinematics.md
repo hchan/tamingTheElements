@@ -41,7 +41,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
 - [qa-r103-findings](../done/qa-r103-findings.md): QA r103 findings
-- [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
+- [qa-r104-findings](../done/qa-r104-findings.md): QA r104 findings
 
 ## Bundles (2026-11-17)
 
@@ -49,7 +49,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### SC-1 Super cinematic presentation
 
-- Members: [qa-r3-super-cinematic-hides-action](../brainstorm/qa-r3-super-cinematic-hides-action.md), [qa-r26-super-banner-portrait-box](../brainstorm/qa-r26-super-banner-portrait-box.md), [qa-r33-super-glow-subtle](../brainstorm/qa-r33-super-glow-subtle.md), [qa-r19-ko-punch-in-not-visible-in-shots](../brainstorm/qa-r19-ko-punch-in-not-visible-in-shots.md), [qa-r104-findings](../brainstorm/qa-r104-findings.md)
+- Members: [qa-r3-super-cinematic-hides-action](../brainstorm/qa-r3-super-cinematic-hides-action.md), [qa-r26-super-banner-portrait-box](../brainstorm/qa-r26-super-banner-portrait-box.md), [qa-r33-super-glow-subtle](../brainstorm/qa-r33-super-glow-subtle.md), [qa-r19-ko-punch-in-not-visible-in-shots](../brainstorm/qa-r19-ko-punch-in-not-visible-in-shots.md), [qa-r104-findings](../done/qa-r104-findings.md)
 - Size: M
 - Shared files: src/game/fx/super-view.ts, super-cinematic.ts, super-burst.ts, src/game/cine/*
 - Flags: needs browser/e2e (super-band specs), owner art review

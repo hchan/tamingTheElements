@@ -20,7 +20,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
-- [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
+- [qa-r104-findings](../done/qa-r104-findings.md): QA r104 findings
 - [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings
 - [qa-r106-findings](../brainstorm/qa-r106-findings.md): QA r106 findings
 
@@ -30,7 +30,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### AO-1 Input accessibility and first-run card
 
-- Members: [accessibility-pass](../in-progress/accessibility-pass.md), [controller-and-touch](../in-progress/controller-and-touch.md), [tutorial-and-help](../in-progress/tutorial-and-help.md), [qa-r104-findings](../brainstorm/qa-r104-findings.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md)
+- Members: [accessibility-pass](../in-progress/accessibility-pass.md), [controller-and-touch](../in-progress/controller-and-touch.md), [tutorial-and-help](../in-progress/tutorial-and-help.md), [qa-r104-findings](../done/qa-r104-findings.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md)
 - Size: M
 - Shared files: src/ui/*, src/game/input/*, src/game/a11y/*, main.css, first-run hint code
 - Flags: needs browser/e2e (first-run-hint specs)

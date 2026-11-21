@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (per item: 1,3,5 phone/portrait, dropped 2026-11-18; 2 first-run card waits for intro/cut-in/tag/banner via whenIdle+arenaBusy in first-run-hint.ts; 4 'nomark' is a 2v2-phone fallback applied to both sides in Hud.ts, elsewhere glyph kept for both (compactLabel 'min'); 6 super band is see-through at 80% brightness and lifts foes undimmed (super-cinematic.ts, super-view.ts); 7 strike ability cue showStrikeCues is coarse-pointer/phone only; 8 tourStageChip uses georgia serif (ui/screens/tour.ts); 9 'More below' pill is intentional scroll cue, cosmetic; 10 rimLightRgba exists in hero-grade.ts)
 added: 2026-11-17
 ---
 
