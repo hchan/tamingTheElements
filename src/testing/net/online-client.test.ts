@@ -355,6 +355,15 @@ describe('OnlineClient', () => {
     expect(a.events.filter((e) => e.t === 'result-ack').length).toBe(1);
   });
 
+  it('after RESULT_ACK a late BATCH from the old session is not sent (no stray frame into the next lobby state)', async () => {
+    const { a, ta, wa } = await pair();
+    const before = wa.sent.length;
+    wa.serve(Uint8Array.of(0x51, 1, 0));
+    expect(a.events.at(-1)).toEqual({ t: 'result-ack', matchId: 1, status: 0 });
+    ta.send(Uint8Array.of(1, 2, 3, 4));
+    expect(wa.sent.length).toBe(before);
+  });
+
   it('wraps the matchId 255 to 1: the next match plays', async () => {
     const h = new Harness();
     const { c, events } = h.client();
