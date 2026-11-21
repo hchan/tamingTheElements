@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (2026-11-21: every r42 repeat was fixed in r44/r45 or is phone-only)
 added: 2026-11-14
 ---
 
@@ -21,3 +22,9 @@ New or notable:
 - Desktop first-run hint is a slim strip and fine; a hero info strip (ADREN/SAFE/EMBER chips) under the HUD is small but legible.
 - Air stage: GALE 9 meter and "AIR x2" chips are clear; stage tint is readable.
 - Page errors: 0.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed (all verified r44/r45): phone glyph, FIGHT banner behind the super, Tour card contrast and badge overlap, Fiara sprite (clean by r49).
+Obsolete: phone hint covering the arena (phone/portrait/touch work was dropped by the owner (2026-11-18)); desktop hint fades on super/tag/round end (`first-run-hint.ts:12-18`).
+Open: none.

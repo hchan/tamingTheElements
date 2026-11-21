@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (2026-11-21: all items fixed in r45/r49 or phone-only)
 added: 2026-11-14
 ---
 
@@ -20,3 +21,9 @@ Still open:
 
 Good: desktop TAG! callout with ring and chevrons (tag-1.png), HUD glyphs, rain/gale meters and chips on water/air stages, super cut-in banners.
 Page errors: 0.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: phone 2v2 weather label vs tag portraits (verified r45); Fiara sprite (clean by r49).
+Obsolete: phone hint strip and the portrait overlay (phone/portrait/touch work was dropped by the owner (2026-11-18)); desktop TAG! callout, glyphs and chips were already good.
+Open: none.

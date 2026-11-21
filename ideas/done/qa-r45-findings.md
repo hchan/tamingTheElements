@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (2026-11-21: all items fixed, info only, or phone-only)
 added: 2026-11-14
 ---
 
@@ -22,3 +23,10 @@ New observations (low severity):
 
 Good: TAG! callout, super cut-in and ice fan (super-b.png), stage palettes for all four elements, Tour card at 667x375.
 Page errors: 0. e2e subset all green (see scorecard).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: phone weather label and Tour badges (verified in r45 itself); hit feedback: per-element contact marks (`src/game/fx/hit-mark.ts`) and a number on every hit (verified r49); Fiara sprite (clean by r49).
+Info only, no action: desktop 2v2 portraits under Super meters, four weather items on the Water stage, floating FADE chip.
+Obsolete: phone hint strip (phone/portrait/touch work was dropped by the owner (2026-11-18)).
+Open: none.

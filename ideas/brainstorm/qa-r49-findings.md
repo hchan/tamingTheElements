@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (2026-11-21; open items are art only: Wispera/menu matte halo, Tour card portraits, moving Air clouds)
 added: 2026-11-15
 ---
 
@@ -40,3 +41,9 @@ HEAD 352bc205 (main), dev server, headless Chromium SwiftShader, 0 page errors i
 ## Working well
 
 Menu readability on five viewports (`menu-desk-late.png`, `menu-ph-l.png`, `menu-ph-p.png`), 2v2 tag (TAG! call, bench cards with cooldown, SAFE chip: `team2-tag-b.png`), per-element stage floors (all four, `st-*-start.png`), super banner with element label, Tour ladder with cleared and locked chips, phone match to Victory 2-0, Help page with jump links (`help-ph-l.png`, `page-help.png`).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: FIGHT banner overlapping the first hit (`FIGHT_BANNER_TICKS = 30`, `round-announcer.ts:20`; `fightYields` in `banner-lanes.ts:35`); stray ROUND text during TAG (centre-call lanes, `banner-lanes.ts`); picker bar vs partner slot and detail pane (`picker-bar.spec.ts:76,140`); Tour picker More-below pill (`10-picker-layout.css:85`); desktop hint at the tag moment (`TAG_CALL_EVENT`, `first-run-hint.ts:14`); life per hero shown in the picker (`heroLife`, `arcade-versus.ts:40`).
+Obsolete: phone landscape title collision and phone hint placement (phone/portrait/touch work was dropped by the owner (2026-11-18)).
+Open (c): #3 Wispera dithered halo and showcase matte contour (art, see r46 (b)); Tour card painted portraits (r47 #10); Air floor moving clouds (low).

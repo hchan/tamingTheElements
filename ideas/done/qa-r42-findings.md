@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (2026-11-21: all items fixed by r44/r45, dropped as phone-only, or art noted in later rounds)
 added: 2026-11-14
 ---
 
@@ -15,3 +16,9 @@ Screenshots: ~/claudetmp/qa-r42/s/*.png (menu, help, stage-{fire,water,earth,air
 - Desktop 1v1 (stage-fire-hit.png): the hint is a slim strip by design and e2e confirms it fades; in manual-step stills it never fades, so not a bug.
 - Fire stage: the Fiara sprite is still noisier and lower-resolution than Pax/Echo; the translucent Sindarosa ghost (2v2-hit.png) is readable.
 - Super (super-b.png): the FIGHT banner draws behind the super burst and the ice fan covers Pax; super still the best beat. The round-start "FIGHT" text remains on screen while the super fires, which muddies the burst.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: phone left-name element glyph (verified r44); Tour card title and NEXT badge (verified r44); FIGHT banner under the super (`fightYields`, `src/game/hud/banner-lanes.ts:35`, verified r44); Fiara sprite noise (clean by r49).
+Obsolete: phone 1v1/2v2 hint placement and the portrait rotate overlay (phone/portrait/touch work was dropped by the owner (2026-11-18)); desktop hint strip is by design (`09-help-first-run.css:51`).
+Open: none.
