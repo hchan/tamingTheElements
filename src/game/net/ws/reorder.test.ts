@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REORDER_LEAD_MAX, REORDER_MAX_HELD, REORDER_SKIP_MS, ReorderBuffer } from './reorder';
+import { REORDER_GAPS_MAX, REORDER_LEAD_MAX, REORDER_MAX_HELD, REORDER_SKIP_MS, ReorderBuffer } from './reorder';
 
 describe('ReorderBuffer', () => {
   it('delivers in order frames straight away', () => {
@@ -75,5 +75,25 @@ describe('ReorderBuffer', () => {
     expect(r.poll(1000)).toEqual([1, 2]); // The gap is skipped; order holds across the wrap.
     expect(r.nextSeq).toBe(1);
     expect(r.push(0xfffffffe, 7, 0)).toEqual([]);
+  });
+
+  it('accepts a skipped-over frame that arrives late once, only with acceptLate', () => {
+    const r = new ReorderBuffer<number>();
+    r.push(2, 2, 100);
+    expect(r.poll(100 + REORDER_SKIP_MS)).toEqual([2]); // 0 and 1 skipped.
+    expect(r.push(1, 1, 200)).toEqual([]); // Not asked for: stale.
+    expect(r.push(0, 0, 200, true)).toEqual([0]);
+    expect(r.late).toBe(1);
+    expect(r.push(0, 0, 200, true)).toEqual([]); // A duplicate of the late frame is dropped.
+    expect(r.push(2, 2, 200, true)).toEqual([]); // Already delivered: dropped.
+  });
+
+  it('forgets skipped seqs beyond REORDER_GAPS_MAX', () => {
+    const r = new ReorderBuffer<number>();
+    r.push(REORDER_GAPS_MAX + 10, 0, 0);
+    r.poll(1000);
+    expect(r.push(0, 0, 0, true)).toEqual([]);
+    expect(r.push(9, 0, 0, true)).toEqual([]);
+    expect(r.push(10, 0, 0, true)).toEqual([0]);
   });
 });
