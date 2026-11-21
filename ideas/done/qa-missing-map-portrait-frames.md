@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: already-fixed (hero-grade.ts syncFrames copies late-registered right0/left0 frames to the ~grim copy; e2e collectors fail on "has no frame|missing frame")
 added: 2026-11-13
 ---
 
