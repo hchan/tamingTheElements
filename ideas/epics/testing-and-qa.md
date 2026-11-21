@@ -185,7 +185,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r102-findings](../done/qa-r102-findings.md): QA r102 findings
 - [qa-r102-scorecard](../done/qa-r102-scorecard.md): QA r102 scorecard (headless Chromium, SwiftShader, 1280x720, 390x844, 844x390, 360x640)
 - [qa-r103-findings](../done/qa-r103-findings.md): QA r103 findings
-- [qa-r103-scorecard](../brainstorm/qa-r103-scorecard.md): QA r103 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
+- [qa-r103-scorecard](../done/qa-r103-scorecard.md): QA r103 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
 - [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
 - [qa-r104-scorecard](../brainstorm/qa-r104-scorecard.md): QA r104 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
 - [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings

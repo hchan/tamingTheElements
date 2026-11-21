@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (scorecard report; its only failing item is the 390x844 phone-portrait Versus bar, and phone/portrait work was dropped 2026-11-18)
 added: 2026-11-17
 ---
 
