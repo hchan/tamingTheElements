@@ -1,6 +1,7 @@
 # QA r116 scorecard (desktop 1280x720, Chromium SwiftShader, seed 7)
 
-status: idea
+status: done
+triaged: d (obsolete, scores only; every finding lives in the sibling findings file)
 added: 2026-11-19
 
 Build: local main (5fd483f9), `vite build --mode test` preview on port 7931 (7930 held by the smoke router). Scripted with ad-hoc Playwright (`shoot-r116.mjs`, not kept). No page or console errors. Shots in `.scratch/qa-r116/`.

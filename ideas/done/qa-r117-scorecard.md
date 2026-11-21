@@ -1,6 +1,7 @@
 # QA r117 scorecard
 
-status: idea
+status: done
+triaged: d (obsolete, scores only; every finding lives in the sibling findings file)
 added: 2026-11-19
 
 Scores 0-5 vs Street Fighter / Marvel vs Capcom, at 1280x720 desktop. Fun is judged from stepped play (no live clock). Screenshots in `.scratch/qa-r117/`.

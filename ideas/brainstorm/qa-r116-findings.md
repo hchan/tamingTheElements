@@ -1,6 +1,7 @@
 # QA r116 findings (ranked)
 
 status: idea
+triaged: c (2026-11-21; r116 items all repeat in r117, see that file. Fixed: help chip grid help.css:26-31, first-run hint fades on input or 2.5 s first-run-hint.ts:23,347-356, More-below pill in bar 10-picker-layout.css:85, hit-stop view hit-feel.ts:212. Still open: AI footsies in src/core, HUD Life 286 vs picker 100 scale (bars.ts:279, hero-info.ts:193), hit burst size, water props. Plan: see qa-r117-findings)
 added: 2026-11-19
 
 Desktop 1280x720 only. Screenshots under `.scratch/qa-r116/`.
