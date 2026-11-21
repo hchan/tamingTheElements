@@ -12,7 +12,7 @@ Desktop 1280x720 only, headless Chromium (SwiftShader), test build of local main
 2. Help chips wrap unevenly: STILL OPEN. Rows are 4 / 1 / 4 with "Reading the arena" alone and centred (`20-help.png`). Idea: grid of equal columns, or one scroll row.
 3. Fighters static: PARTLY. The AI foe stands still unless hit; in 2v2 and Tour both sides sit at opposite ends 700+ px apart after 150 ticks (`12-2v2-fight.png`, `19-tour-fight.png`). Idea: AI should close distance (footsies).
 4. HUD life numbers vs picker "Life 100": STILL OPEN. HUD shows Sindarosa 286, Pax 690/591, Curomo 542, Echo 675; picker says Life 100. Idea: percent in HUD or the same scale in the picker.
-5. Projectile bursts cover the target: STILL OPEN. The starburst hit spark is about 110 px wide and hides the target's torso (`07-fire-hit-5.png`, `23-stage-air-hit.png`); the damage number is large and clear though. Idea: smaller burst at the contact point, plus a brief target flash/recoil so the body stays readable.
+5. Projectile bursts cover the target: FIXED 2026-11-21 (the 110 px starburst is src/game/fx/impact-view.ts IMPACT_SIZE, not pose-vfx.ts:232 which is the mote burst; now 72 px, alpha 0.8 fading out, impactAlphaAt; the target flash/recoil already exists in character-view.ts flash/recoil). Was: STILL OPEN. The starburst hit spark is about 110 px wide and hides the target's torso (`07-fire-hit-5.png`, `23-stage-air-hit.png`); the damage number is large and clear though. Idea: smaller burst at the contact point, plus a brief target flash/recoil so the body stays readable.
 
 ## New
 

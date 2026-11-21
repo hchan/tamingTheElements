@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SimEventKind, type SimEvent } from '@core/index';
 import { EventFx, type FxSink } from './event-fx';
-import { IMPACT_MS, impactFrameAt } from './impact-view';
+import { IMPACT_ALPHA, IMPACT_MS, IMPACT_SIZE, impactAlphaAt, impactFrameAt } from './impact-view';
 import { LOOP_FPS, loopFrameAt, lookup } from '../views/projectile-view';
 
 describe('impactFrameAt', () => {
@@ -14,6 +14,16 @@ describe('impactFrameAt', () => {
   });
   it('has an impact sheet for every element', () => {
     for (const e of ['Fire', 'Air', 'Earth', 'Water', 'Void']) expect(lookup(`impact${e}`)).toBeDefined();
+  });
+});
+
+describe('impact readability (QA r117 item 5)', () => {
+  it('is smaller than a character and fades out instead of sitting at full opacity', () => {
+    expect(IMPACT_SIZE).toBeLessThanOrEqual(80);
+    expect(impactAlphaAt(0)).toBe(IMPACT_ALPHA);
+    expect(IMPACT_ALPHA).toBeLessThan(1);
+    expect(impactAlphaAt(IMPACT_MS * 0.75)).toBeCloseTo(IMPACT_ALPHA / 2);
+    expect(impactAlphaAt(IMPACT_MS)).toBe(0);
   });
 });
 
