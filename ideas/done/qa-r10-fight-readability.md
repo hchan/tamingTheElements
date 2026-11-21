@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: already-fixed (progress note covers 5 items; crystal prop DONE in qa-r10-scorecard-and-status.md + terrain-props.ts; hitStop events and FX in src/core/data/arcade.ts, src/game/fx/event-fx.test.ts)
 added: 2026-11-14
 ---
 
