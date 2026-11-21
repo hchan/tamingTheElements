@@ -1,6 +1,7 @@
 # QA r115 findings (ranked)
 
-status: idea
+status: done
+triaged: d (desktop items duplicate tracked ideas: 1 qa-r16-first-run-card-over-cutin, qa-r17-super-band-hides-first-hit-number; 2 qa-r24-earth-stage-murky; 3 qa-r24-tag-swap-feedback-thin; 4 qa-r23-ice-shock-burst-still-faint; 5 qa-r15-life-totals-vs-bar-length; 6 qa-first-hint-covers-arena; 7 qa-r4-desktop-picker-footer-clips-roster; 8 fixed by six-chip Help row 88aabe58; 9 round-transition-pacing)
 added: 2026-11-18
 
 1. Super cut-in overlaps the combo counter and a status badge. In .scratch/qa-r115/16-super-freeze.png the "3 HITS / 60 DMG" text sits on top of the HELLFIRE LANCE band and covers a "SAFE" badge at top-left. Fix: hide or shift the combo counter and badges during the super freeze.

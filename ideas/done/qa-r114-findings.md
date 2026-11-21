@@ -1,5 +1,8 @@
 # QA r114 findings (ranked)
 
+status: done
+triaged: d/a (items 1-3, 6-8 are phone/portrait/touch, dropped 2026-11-18; 4 Run note is 12 px Phaser text, src/game/hud/action-bar-view.ts:479; 5 terrain chip registers in HUD_AVOID_KEY, src/game/fx/terrain-view.ts:3,420; 9 probe reports chipAlpha, terrain-view.ts:516,584; 10 match-end hook exists via arena.setHp/step, tests/e2e/match-end.spec.ts:17)
+
 Build: main at 46992a0d (swap-allowed merge). Headless Playwright (SwiftShader), viewports 1280x720, 844x390, 390x844, 360x640. Screenshots under `.scratch/qa-r114/`.
 
 ## 1. Portrait fight: fighters bigger, but still small with a big empty sky

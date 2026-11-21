@@ -1,6 +1,7 @@
 # QA r114 scorecard
 
-status: idea
+status: done
+triaged: d (scorecard duplicates qa-r114-findings.md; its e2e failure is portrait-only)
 added: 2026-11-18
 
 Build: main at 46992a0d (swap-allowed merge), dev build, headless Playwright (SwiftShader), `?seed=7`.
