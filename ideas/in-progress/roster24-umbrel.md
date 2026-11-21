@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [x] P1 (art): rig spec, bake, sheets, art-director sheet approval (APPROVE 4.0, 2026-11-20; polish notes: cap colour, KO collapse, idle vs walk), audit gate (hidden, RELEASED_ROSTER24 empty). Scripts: tools/assets/portrait-rig/tune-umbrel-anim.py, umbrel-ko-keys.py
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -33,3 +33,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
 - 2026-11-20 step S (no SIM_VERSION bump, no sim change): re-measured at SIM_VERSION 92 (full roster, arcade, ai-level 3; 1v1 16 seeds, 2v2 26 seeds): Umbrel 1v1 53.5, 2v2 52.8, both in band 0.45-0.55, so no life retune and no tuning rounds. The kit already has no duplicate footprint: Spore Burst (range, 40x40, 6 dmg, speed 5, 70 ticks, wound) matches no other ranged ability; it only shares damage and speed with Bell Pulse (omni, 24x24). Mycelium Mend (heal 8, 1500 ticks) differs from Fire Heal (heal 10, 2000 ticks). All tick values are exact multiples of 20 ms. Kit pinned in src/core/data/abilities-c.test.ts.
   Not done: AI rule, hit strength rows.
+- 2026-11-21 (P3 text, done): spore-burst and mycelium-mend lesson rows in src/ui/screens/ability-lessons.ts (words only, no banned terms); pin test in ability-lessons.test.ts. docs/ABILITY-AUDIT.md and GAME-DESIGN.md Umbrel rows already matched abilities-c.ts. No src/core change, no art, RELEASED_ROSTER24 still empty.

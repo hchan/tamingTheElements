@@ -32,6 +32,12 @@ describe('ability lessons', () => {
     expect(lessonsFor(characterId('fiara')).includes(SNAG_LESSON)).toBe(false);
   });
 
+  it('has Umbrel lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('umbrel'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['spore-burst', 'mycelium-mend']);
+  });
+
   it('never uses the retired words', () => {
     for (const l of [...ABILITY_LESSONS.values(), SNAG_LESSON]) expect(`${l.line} ${l.tip}`).not.toMatch(BANNED);
   });

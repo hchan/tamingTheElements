@@ -44,6 +44,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('rock-pellet', 'A quick pellet of rock thrown at the foe.', 'Fire it in a steady rhythm from range.'),
   L('entangling-vines', 'Vines that root the foe where they stand.', "Throw it along the foe's path, then move in."),
   L('strangling-branches', 'A short, fast lash of branches.', 'Stay close and keep lashing.'),
+  L('spore-burst', 'A slow spore cloud that hurts and leaves a festering wound that keeps hurting for a moment.', 'Fire it from range and back off while the wound ticks.'),
+  L('mycelium-mend', 'Mushroom threads knit your wounds and heal you a little.', 'Press it when you are hurt and the foe is far away; it takes a long while to be ready again.'),
   // Air
   L('tornado', 'Sends a spinning tornado out ahead of you.', 'Fire it in front of the foe so they run into it.'),
   L('wind-cone', 'A cone of wind that hits across a wide arc.', 'Fire it when the foe is a little off your aim.'),
