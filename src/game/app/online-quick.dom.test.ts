@@ -260,6 +260,22 @@ describe('quick match screen', () => {
     r.unmounts.forEach((u) => { u(); });
   });
 
+  it('a failure shows once: the alert box, not also the status line', async () => {
+    const r = rig();
+    r.h.svc.refuseSockets = 2;
+    const n = r.mount();
+    click(n, 'quickFind');
+    await r.h.flush();
+    expect(shown(n, 'quickFailure')).toBe(true);
+    expect(q(n, 'quickFailure').textContent).not.toBe('');
+    expect(shown(n, 'quickStatus')).toBe(false);
+    click(n, 'quickRetry');
+    await r.h.flush();
+    expect(shown(n, 'quickFailure')).toBe(false);
+    expect(shown(n, 'quickStatus')).toBe(true);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
   it('a refused socket fails, and Try again reaches the queue', async () => {
     const r = rig();
     r.h.svc.refuseSockets = 2;
