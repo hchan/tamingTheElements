@@ -26,7 +26,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 
 - [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
 - [qa-r101-findings](../done/qa-r101-findings.md): QA r101 findings
-- [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
+- [qa-r102-findings](../done/qa-r102-findings.md): QA r102 findings
 - [qa-r103-findings](../brainstorm/qa-r103-findings.md): QA r103 findings
 - [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
 - [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings
@@ -57,7 +57,7 @@ Done 2026-11-17: Strike circle label uses Snag and the portrait 2v2 label fixes 
 
 ### PT-3 Review fixes and performance
 
-- Members: [a11y-review-fixes](../in-progress/a11y-review-fixes.md), [performance-pass](../brainstorm/performance-pass.md), [qa-r102-findings](../brainstorm/qa-r102-findings.md)
+- Members: [a11y-review-fixes](../in-progress/a11y-review-fixes.md), [performance-pass](../brainstorm/performance-pass.md), [qa-r102-findings](../done/qa-r102-findings.md)
 - Size: M
 - Shared files: src/game/*, tools/bench/*, vite config
 - Flags: PC-offloadable (bench), needs browser/e2e; check what a11y-review-fixes already shipped

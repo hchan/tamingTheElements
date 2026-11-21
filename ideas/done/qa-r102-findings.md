@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (phone/portrait/touch work dropped by owner 2026-11-18/19; every item is phone-viewport polish)
 added: 2026-11-17
 ---
 
