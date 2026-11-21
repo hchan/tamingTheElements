@@ -24,3 +24,7 @@ Banned-word scan (Classic, Arcade, ruleset, Capture) of Menu, Versus, Play/Tour 
 - N3 (info) Tag swap works: 2v2 tag at tick 95 shows "TAG!" call, Pax in, Sindarosa on the bench with a 2.7 s timer and "ADREN 3s" buff badge (`tag2-10.png`). When the active hero is stunned (`2v2-fight.png`), slot 3 is greyed "STUN" and the tag cannot fire; fine, but players may read it as a bug. The first scripted tag during a stun did nothing.
 - N4 (info) Super works: HELLFIRE LANCE cut-in, band, portrait and name present, Rokcore took 308 -> 164 with combo [4,3]; hit-stop confirmed (damage numbers frozen across steps).
 - N5 (info) Online host/join, Settings (scrolls below the first viewport, five screens), Help links (Guide, Wiki, Story, About, Key Bindings) all load and are free of banned words.
+
+## Progress note (item 3, damage numbers over the cut-in)
+
+2026-11-21: render-only fix written, NOT yet run (no node_modules in this worktree, no gate, no screenshot). `src/game/fx/super-view.ts` publishes the band rows under `tte.cutBand` while the cut-in is up (cleared at its end); `src/game/hud/cut-numbers.ts` (`cutNumberFadeOf`) returns 0.12 for a number whose box overlaps those rows; `Hud.ts` multiplies the number alpha by it (+1 import line). Unit test `src/game/hud/cut-numbers.test.ts`. Stays in brainstorm until the gate and a real-game super screenshot confirm it.

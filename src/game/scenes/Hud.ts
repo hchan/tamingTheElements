@@ -44,6 +44,7 @@ import { hudOnPage, hudToDom, PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect,
 import { isPortraitPlay } from '../boot/portrait-play';
 import { COMBO_GAP, COMBO_STUCK_ALPHA, NUMBER_H_MIN, comboMode, newPlaceOut, newPlaceState, numberLane, placeCombo, resetPlaceState, type NumberLane, type PlaceInput } from '../hud/combo-anchor';
 import type { PlaceOut, PlaceState } from '../hud/combo-anchor';
+import { cutNumberFadeOf } from '../hud/cut-numbers';
 import type { ComboProbe } from '../platform/test-hook';
 
 export const HUD_SCENE = 'Hud';
@@ -798,7 +799,7 @@ export class Hud extends Phaser.Scene {
       this.numberShift[i * 2] = moved.x - p.x;
       this.numberShift[i * 2 + 1] = moved.y - baseY;
       const at = clampNumber(moved.x, moved.y, halfW, h, frame, avoid);
-      t.setPosition(at.x, at.y).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
+      t.setPosition(at.x, at.y).setAlpha(numberAlpha(n.age) * dim * cutNumberFadeOf(this.registry, at.y - h, at.y)).setVisible(true);
       const r = (this.numberObstacles[this.obstacleCount] ??= { x: 0, y: 0, w: 0, h: 0 });
       r.x = at.x - halfW;
       r.y = at.y - h;
