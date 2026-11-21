@@ -21,6 +21,7 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
   markers and silent collateral deletions have slipped through merges before; `git grep -nE '^(<<<<<<<|>>>>>>>) '`).
 - **Commits/pushes:** the user has explicitly authorised small commits and regular pushes to `origin/main` for this project;
   never force-push, never rewrite history, never push other branches.
+- **Fix means verified on main (owner, 2026-11-21, permanent):** a red test is a loop: run it, fix it, merge to main, re-run the SAME failing specs plus `gate:commit` on the merged main (via the e2e router), repeat until green, cap 3 rounds, then report needs-human. Never say "fixed" or push on builder-side runs alone. A flake needs repeat runs before and after the change (a spec that also passes without the fix proves nothing). Visual fixes need a real-game screenshot. Report each round's result.
 - **Write in worktrees (owner, 2026-11-16):** every edit or generated file destined for the repo is made in a `git worktree`, never in the main checkout; main is only for merging, pushing and read-only checks.
 - **Scratch/temp (owner, 2026-11-16: avoid claudetmp, use worktrees):** work files, plans, progress logs and generated candidates go in the agent's own worktree under the gitignored `.scratch/`; `~/claudetmp/` only for what must outlive a worktree (shared venvs, the merge script); never `/tmp/`.
 - **Save work back to the repo:** `~/claudetmp/` is disposable. Anything that produces or explains a committed artifact (art generator
