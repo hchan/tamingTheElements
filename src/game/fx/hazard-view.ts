@@ -1,7 +1,8 @@
 import type Phaser from 'phaser';
 import { HAZARD_VIEW_STRIDE, type RenderView } from '@core/index';
 import { mute } from './grim-fx';
-import { resolutionOf } from '../boot/viewport';
+import { resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
+import { HUD_AVOID_KEY, hudFrame, viewOfCamera, type HudRect } from '../hud/arcade-hud';
 
 /**
  * Phaser side of the Arcade stage hazard (systems/arcade/hazard.ts; ideas/brainstorm/stage-selection-hazards.md). The Arena
@@ -135,6 +136,27 @@ function tideCountdown(g: Gfx, x: number, y: number, w: number, h: number, dir: 
 /** Warning progress 0..1 as `warnLeft` runs down from `warnTotal` (the countdown the rockfall ring and the fire fill follow). */
 export function warnProgress(warnLeft: number, warnTotal: number): number {
   return 1 - Math.min(1, Math.max(0, warnLeft / Math.max(1, warnTotal)));
+}
+
+/** The slot of HUD_AVOID_KEY the warning chip publishes to (slot 0 is the terrain badge). */
+export const HAZARD_AVOID_SLOT = 1;
+
+type Mut = { -readonly [K in keyof HudRect]: HudRect[K] };
+/** A centred world-space box (`cx`, `cy`, `w` by `h`) as a HUD-px rect, for the anchored combo counter to stay clear of the warning chip. Pure; `out` is filled. */
+export function chipAvoidRect(cx: number, cy: number, w: number, h: number, from: HudRect, to: HudRect, out: Mut = { x: 0, y: 0, w: 0, h: 0 }): HudRect {
+  out.x = to.x + ((cx - w / 2 - from.x) / from.w) * to.w;
+  out.y = to.y + ((cy - h / 2 - from.y) / from.h) * to.h;
+  out.w = (w / from.w) * to.w;
+  out.h = (h / from.h) * to.h;
+  return out;
+}
+
+/** Sets one source's rect list in the shared avoid registry (lower slots filled); undefined clears. */
+export function publishAvoidSlot(all: HudRect[][], slot: number, rect: HudRect | undefined): void {
+  for (let i = 0; i <= slot; i++) all[i] ??= [];
+  const list = all[slot] as HudRect[];
+  list.length = 0;
+  if (rect) list.push(rect);
 }
 
 /** Short on-screen warning word per hazard kind (index 0 unused): fire lava lane, water tide, earth rockfall, air gust. */
@@ -272,6 +294,13 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
   };
 
   let text: Phaser.GameObjects.Text | undefined;
+  const mut = (): Mut => ({ x: 0, y: 0, w: 0, h: 0 });
+  const [avoidRect, avoidFrom, avoidTo] = [mut(), mut(), mut()];
+  const avoid = (rect: HudRect | undefined): void => {
+    const all = arena.registry.get(HUD_AVOID_KEY) as HudRect[][] | undefined;
+    if (all) publishAvoidSlot(all, HAZARD_AVOID_SLOT, rect);
+    else if (rect) arena.registry.set(HUD_AVOID_KEY, [[], [rect]]);
+  };
   /** The warning chip: the hazard word and seconds left, centred just above the box but kept inside the camera view (empty text hides it). */
   const chip = (label: string, x: number, y: number, w: number, alpha: number): void => {
     if (label === '' && !text) return;
@@ -280,7 +309,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       .setOrigin(0.5, 0.5)
       .setDepth(CHIP_DEPTH);
     text.setVisible(label !== '');
-    if (label === '') return;
+    if (label === '') { avoid(undefined); return; }
     const v = arena.cameras.main.worldView;
     text.setText(label).setAlpha(Math.max(0.85, alpha));
     const cx = Math.min(v.x + v.width - text.width / 2 - 8, Math.max(v.x + text.width / 2 + 8, x + w / 2));
@@ -288,6 +317,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     const zoom = (arena.cameras.main.zoom || 1) / (resolutionOf(arena) || 1);
     const cy = Math.min(v.y + v.height - 24, Math.max(v.y + CHIP_MIN_SCREEN_Y / zoom, y - 24));
     text.setPosition(cx, cy);
+    avoid(chipAvoidRect(cx, cy, text.displayWidth, text.displayHeight, viewOfCamera(arena.cameras.main, avoidFrom), hudFrame(viewWidth(arena), avoidTo, viewHeight(arena)), avoidRect));
   };
 
   const draw = (): void => {
@@ -456,6 +486,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     parts?.glow.destroy();
     text?.destroy();
     text = undefined;
+    avoid(undefined);
     parts = undefined;
     live?.remove();
     live = undefined;
