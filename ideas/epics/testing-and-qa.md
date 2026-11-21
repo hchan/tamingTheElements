@@ -179,7 +179,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r99-findings](../brainstorm/qa-r99-findings.md): QA round 99 findings
 - [qa-r99-scorecard](../brainstorm/qa-r99-scorecard.md): QA round 99 scorecard
 - [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
-- [qa-r100-scorecard](../brainstorm/qa-r100-scorecard.md): QA round 100 scorecard
+- [qa-r100-scorecard](../done/qa-r100-scorecard.md): QA round 100 scorecard
 - [qa-r101-findings](../brainstorm/qa-r101-findings.md): QA r101 findings
 - [qa-r101-scorecard](../brainstorm/qa-r101-scorecard.md): QA r101 scorecard (headless Chromium, SwiftShader, 1280x720, 390x844, 360x640)
 - [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
@@ -219,7 +219,7 @@ Rounds r86 to r99 are history: their open items were fixed or repeated in r100 t
 
 ### TQ-3 Triage of r100 to r102
 
-- Members: [qa-r100-findings](../done/qa-r100-findings.md), [qa-r100-scorecard](../brainstorm/qa-r100-scorecard.md), [qa-r101-findings](../brainstorm/qa-r101-findings.md), [qa-r101-scorecard](../brainstorm/qa-r101-scorecard.md), [qa-r102-findings](../brainstorm/qa-r102-findings.md), [qa-r102-scorecard](../brainstorm/qa-r102-scorecard.md)
+- Members: [qa-r100-findings](../done/qa-r100-findings.md), [qa-r100-scorecard](../done/qa-r100-scorecard.md), [qa-r101-findings](../brainstorm/qa-r101-findings.md), [qa-r101-scorecard](../brainstorm/qa-r101-scorecard.md), [qa-r102-findings](../brainstorm/qa-r102-findings.md), [qa-r102-scorecard](../brainstorm/qa-r102-scorecard.md)
 - Size: S
 - Shared files: ideas/ only
 - Flags: docs only, no browser
