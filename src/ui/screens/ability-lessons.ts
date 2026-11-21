@@ -33,6 +33,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('fire-dance', 'A burst of speed for a few seconds.', 'Press it, then dash around the foe to set up a shot.'),
   L('fire-blast', 'A big blast that hits hardest up close and fades with distance.', 'Wait for the foe to come close, then let it go.'),
   L('translucent-flame', 'Become translucent for a moment so attacks pass through you.', 'Press it just as the foe fires.'),
+  L('ember-bite', 'A rapid chain of light bites that hurt a little and recover fast.', 'Stay close and keep biting between the foe\'s attacks.'),
+  L('cinder-spray', 'A close ring of embers bursts out all round you.', 'Fire it when the foe closes in from any side.'),
   // Earth
   L('adrenaline', 'A short rush: you move faster and take less harm.', 'Press it before you close in.'),
   L('ground-shock', 'A slam that hits every foe around you.', 'Use it up close; it needs a moment to be ready again.'),
