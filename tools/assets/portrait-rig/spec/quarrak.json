@@ -1,0 +1,639 @@
+{
+ "source": "imgWorkArea/portrait-src/quarrak.png",
+ "frame": 240,
+ "box": [
+  20,
+  24,
+  200,
+  200
+ ],
+ "res": 2,
+ "feet": [
+  200,
+  388
+ ],
+ "matte": {
+  "minIsland": 40,
+  "band": 1,
+  "fringeLum": 35
+ },
+ "rim": {
+  "color": [
+   200,
+   190,
+   160
+  ],
+  "dir": [
+   -0.55,
+   -0.85
+  ],
+  "strength": 0.22,
+  "width": 1.6
+ },
+ "shadow": {
+  "rx": 120,
+  "ry": 13,
+  "alpha": 66,
+  "dy": 2
+ },
+ "bones": [
+  {
+   "id": "root",
+   "head": [
+    200,
+    388
+   ]
+  },
+  {
+   "id": "spine0",
+   "head": [
+    115,
+    190
+   ],
+   "parent": "root",
+   "tip": [
+    285,
+    185
+   ],
+   "feather": 18,
+   "poly": [
+    [
+     0,
+     0
+    ],
+    [
+     400,
+     0
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     0,
+     400
+    ]
+   ]
+  },
+  {
+   "id": "spine1",
+   "head": [
+    285,
+    185
+   ],
+   "parent": "spine0",
+   "tip": [
+    305,
+    170
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     292,
+     224
+    ],
+    [
+     340,
+     188
+    ],
+    [
+     298,
+     132
+    ],
+    [
+     250,
+     168
+    ]
+   ]
+  },
+  {
+   "id": "legFF0",
+   "head": [
+    325,
+    220
+   ],
+   "parent": "spine1",
+   "tip": [
+    335,
+    285
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     302,
+     212
+    ],
+    [
+     315,
+     299
+    ],
+    [
+     358,
+     293
+    ],
+    [
+     345,
+     206
+    ]
+   ]
+  },
+  {
+   "id": "legFF1",
+   "head": [
+    335,
+    285
+   ],
+   "parent": "legFF0",
+   "tip": [
+    345,
+    352
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     312,
+     277
+    ],
+    [
+     325,
+     366
+    ],
+    [
+     368,
+     360
+    ],
+    [
+     355,
+     271
+    ]
+   ]
+  },
+  {
+   "id": "legHF0",
+   "head": [
+    150,
+    250
+   ],
+   "parent": "spine0",
+   "tip": [
+    142,
+    300
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     130,
+     236
+    ],
+    [
+     119,
+     307
+    ],
+    [
+     162,
+     314
+    ],
+    [
+     173,
+     243
+    ]
+   ]
+  },
+  {
+   "id": "legHF1",
+   "head": [
+    142,
+    300
+   ],
+   "parent": "legHF0",
+   "tip": [
+    140,
+    335
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     121,
+     288
+    ],
+    [
+     117,
+     345
+    ],
+    [
+     161,
+     347
+    ],
+    [
+     165,
+     290
+    ]
+   ]
+  },
+  {
+   "id": "legFN0",
+   "head": [
+    232,
+    215
+   ],
+   "parent": "spine1",
+   "tip": [
+    228,
+    285
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     211,
+     203
+    ],
+    [
+     205,
+     295
+    ],
+    [
+     249,
+     297
+    ],
+    [
+     255,
+     205
+    ]
+   ]
+  },
+  {
+   "id": "legFN1",
+   "head": [
+    228,
+    285
+   ],
+   "parent": "legFN0",
+   "tip": [
+    232,
+    372
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     206,
+     275
+    ],
+    [
+     211,
+     384
+    ],
+    [
+     254,
+     382
+    ],
+    [
+     249,
+     273
+    ]
+   ]
+  },
+  {
+   "id": "legHN0",
+   "head": [
+    105,
+    225
+   ],
+   "parent": "spine0",
+   "tip": [
+    85,
+    285
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     88,
+     208
+    ],
+    [
+     61,
+     288
+    ],
+    [
+     102,
+     302
+    ],
+    [
+     129,
+     222
+    ]
+   ]
+  },
+  {
+   "id": "legHN1",
+   "head": [
+    85,
+    285
+   ],
+   "parent": "legHN0",
+   "tip": [
+    85,
+    345
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     63,
+     274
+    ],
+    [
+     63,
+     356
+    ],
+    [
+     107,
+     356
+    ],
+    [
+     107,
+     274
+    ]
+   ]
+  },
+  {
+   "id": "tail0",
+   "head": [
+    95,
+    185
+   ],
+   "parent": "spine0",
+   "tip": [
+    60,
+    190
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     101,
+     166
+    ],
+    [
+     49,
+     173
+    ],
+    [
+     54,
+     209
+    ],
+    [
+     106,
+     202
+    ]
+   ]
+  },
+  {
+   "id": "tail1",
+   "head": [
+    60,
+    190
+   ],
+   "parent": "tail0",
+   "tip": [
+    28,
+    196
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     66,
+     171
+    ],
+    [
+     16,
+     180
+    ],
+    [
+     22,
+     215
+    ],
+    [
+     72,
+     206
+    ]
+   ]
+  },
+  {
+   "id": "neck0",
+   "head": [
+    305,
+    170
+   ],
+   "parent": "spine1",
+   "tip": [
+    340,
+    168
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     292,
+     201
+    ],
+    [
+     357,
+     197
+    ],
+    [
+     353,
+     137
+    ],
+    [
+     288,
+     141
+    ]
+   ]
+  },
+  {
+   "id": "head",
+   "head": [
+    340,
+    168
+   ],
+   "parent": "neck0",
+   "tip": [
+    382,
+    178
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     308,
+     207
+    ],
+    [
+     393,
+     227
+    ],
+    [
+     414,
+     139
+    ],
+    [
+     329,
+     119
+    ]
+   ]
+  },
+  {
+   "id": "jaw",
+   "head": [
+    350,
+    188
+   ],
+   "parent": "head",
+   "tip": [
+    382,
+    178
+   ],
+   "feather": 6,
+   "poly": [
+    [
+     338,
+     176
+    ],
+    [
+     394,
+     176
+    ],
+    [
+     394,
+     212
+    ],
+    [
+     338,
+     212
+    ]
+   ]
+  }
+ ],
+ "glows": [
+  {
+   "id": "eye",
+   "bone": "head",
+   "at": [
+    326,
+    158
+   ],
+   "r": 4,
+   "color": [
+    255,
+    190,
+    90
+   ],
+   "gain": 0.9,
+   "hot": 0.5
+  }
+ ],
+ "dirOffsets": {
+  "SE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": 4
+   }
+  },
+  "S": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": 6
+   }
+  },
+  "N": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": -6
+   }
+  },
+  "NE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": -4
+   }
+  }
+ },
+ "license": "Rig parts for quarrak: the painting is generated with Stable Diffusion XL (stabilityai/stable-diffusion-xl-base-1.0; sd-turbo/SDXL-Turbo for\nrefinements) under the CreativeML Open RAIL++-M licence, which permits commercial use of the outputs with its use-based restrictions;\nthe repository owner holds the outputs. Cut, matted and animated by tools/assets/portrait-rig (prep.py, body_plans); numpy/PIL only.\n",
+ "deformMask": {
+  "feather": 16,
+  "polys": [
+   [
+    [
+     360,
+     170
+    ],
+    [
+     351,
+     191
+    ],
+    [
+     330,
+     200
+    ],
+    [
+     309,
+     191
+    ],
+    [
+     300,
+     170
+    ],
+    [
+     309,
+     149
+    ],
+    [
+     330,
+     140
+    ],
+    [
+     351,
+     149
+    ]
+   ],
+   [
+    [
+     200,
+     90
+    ],
+    [
+     185,
+     125
+    ],
+    [
+     150,
+     140
+    ],
+    [
+     115,
+     125
+    ],
+    [
+     100,
+     90
+    ],
+    [
+     115,
+     55
+    ],
+    [
+     150,
+     40
+    ],
+    [
+     185,
+     55
+    ]
+   ]
+  ]
+ }
+}
