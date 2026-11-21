@@ -75,9 +75,9 @@ describe('teamStack', () => {
 
   it('labels mine, suggested and empty rows', () => {
     const { s } = make(rows3);
-    const labels = [...s.el.querySelectorAll('.tsRow')].map((r) => r.getAttribute('aria-label'));
+    const labels = [...s.el.querySelectorAll('.tsRow')].map((r) => r.getAttribute('title'));
     expect(labels).toEqual([
-      'Remove Pax from slot 1 (Starter)',
+      'Remove Pax from slot 1 (Starter). Q Quake',
       'Slot 2, Tag, suggested Curomo',
       'Slot 3, Tag, empty',
     ]);
@@ -108,7 +108,7 @@ describe('teamStack', () => {
     expect(s.el.querySelector<HTMLElement>('.tsAim')?.hidden).toBe(false);
     expect(s.el.querySelector<HTMLElement>('.tsReady')?.hidden).toBe(false);
     expect(s.el.getAttribute('aria-current')).toBe('true');
-    expect(s.el.getAttribute('aria-label')).toBe('P2 team, aimed, ready');
+    expect(s.el.getAttribute('aria-label')).toBe('P2 heroes, aimed, ready');
   });
 
   it('hides and disables hidden rows, and trims rows on update', () => {

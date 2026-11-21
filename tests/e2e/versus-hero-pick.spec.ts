@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
+import { waitForArena } from './support/wait';
 
 // Versus hero pick (QA r21): ONE click on a roster tile picks that hero (selected state, "You" card, Fight uses it), and the
 // dev/test-only `?hero=` / `?foe=` flags start a fight with chosen heroes so QA can test any hero.
@@ -14,8 +15,7 @@ test('Versus: a single click picks the hero, shows it selected, and Fight starts
   const tile = page.locator('.heroTile', { hasText: 'Fiara' });
   await tile.click();
   await expect(tile).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.vsSide1 .vsStatus')).toHaveText('Picked');
-  await expect(page.locator('.vsSide1 .rosterSlot').first()).toContainText('Fiara');
+  await expect(page.locator('.vsSide1 .tsRow').first()).toContainText('Fiara');
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
   await page.evaluate('window.__TTE__.arena.step(1)');
@@ -47,10 +47,22 @@ test('?hero= and ?foe= start a fight with the chosen heroes (dev/test builds)', 
   expect(errors).toEqual([]);
 });
 
-test('Versus: the Add to team button is hidden in 1v1 and back for tag teams (QA r26)', async ({ page }) => {
+// Long gate: a 6-key sequence on a 3v3 picker; the smoke test above covers the click path.
+test('Versus 3v3: Space locks three heroes in order, Q pops the last, Space on a full team fights', async ({ page }) => {
   await page.goto(`${START}&ff=arcade#arcade`);
-  await expect(page.locator('select[name=size]')).toHaveValue('1');
-  await expect(page.locator('.heroAdd')).toBeHidden();
-  await page.selectOption('select[name=size]', '2');
-  await expect(page.locator('.heroAdd')).toBeVisible();
+  await page.selectOption('select[name=size]', '3');
+  const rows = page.locator('.vsSide1 .tsRow');
+  await expect(rows).toHaveCount(3);
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('KeyD');
+    await page.keyboard.press('Space');
+  }
+  await expect(rows.nth(2)).toHaveAttribute('title', /^Remove /);
+  await page.keyboard.press('KeyQ');
+  await expect(rows.nth(2)).not.toHaveAttribute('title', /^Remove /);
+  await page.keyboard.press('KeyD');
+  await page.keyboard.press('Space');
+  await expect(rows.nth(2)).toHaveAttribute('title', /^Remove /);
+  await page.keyboard.press('Space');
+  await waitForArena(page);
 });
