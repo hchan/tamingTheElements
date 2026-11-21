@@ -52,7 +52,7 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
    and a second try; a second failure is a failed attempt. The handshake never answers ticket-invalid or resting, so the client does not look for them there; a
    version mismatch (frame 0x0003) is final. A `url` that is not a `wss://` string is `bad-response`, and no socket opens.
 4. HELLO `{ver 3, simVersion, resumeSession}`; WELCOME is the answer. Every frame in both directions is one base64 text message (standard alphabet, padding, no
-   line breaks; `src/game/net/ws/text-codec.ts`); a binary message from the server is dropped and counted in `malformed`.
+   line breaks; `src/game/net/ws/text-codec.ts`); a binary message whose bytes are base64 text is decoded the same way (the relay never sends one; `binaryType` is `arraybuffer` so order is kept), and anything else is dropped and counted in `malformed`.
    The ERROR frame is the authority for what a following close means; the close code is a hint only when no frame arrived (4003 update, 4011 resting). `connect()` resolves with the transport after WELCOME. The ping timer (every 2 s) starts.
 5. Lobby frames (QUEUE_STATE, ROOM_*, MATCH_START, PEER_STATUS, RESULT_ACK) are decoded by the client; everything else goes to the transport. Malformed frames
    (wrong length, bad room code or event) are dropped; the transport counts them in `malformed`. RESULT_ACK stops the transport's RESULT retry.
