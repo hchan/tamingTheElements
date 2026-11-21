@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (point-in-time scorecard; findings tracked in done/qa-r100-findings.md; remaining items are portrait/phone, dropped 2026-11-18)
 added: 2026-11-17
 ---
 
