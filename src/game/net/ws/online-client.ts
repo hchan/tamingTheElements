@@ -149,10 +149,8 @@ export function decodeLobby(b: Uint8Array): Lobby | undefined {
 }
 
 function hello(simVersion: number, resume: number): string {
-  const b = new Uint8Array(8);
+  const b = Uint8Array.of(0x01, PROTOCOL_VERSION, 0, 0, 0, 0, 0, 0);
   const d = new DataView(b.buffer);
-  b[0] = 0x01;
-  b[1] = PROTOCOL_VERSION;
   d.setUint16(2, simVersion);
   d.setUint32(4, resume >>> 0);
   return encodeText(b);
