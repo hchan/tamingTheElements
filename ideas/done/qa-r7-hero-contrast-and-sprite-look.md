@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
+triaged: 2026-11-21 (a) already fixed: rim light at src/game/fx/hero-grade.ts:108 and :184 (RIM_BY_HERO); pixelated tour portraits are tracked in ideas/brainstorm/hi-res-mist-portraits.md.
 ---
 
 # QA r7: dark heroes vanish on the air floor; sprite mismatch persists

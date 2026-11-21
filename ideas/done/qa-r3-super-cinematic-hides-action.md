@@ -1,6 +1,7 @@
 ---
-status: planned
+status: done
 added: 2026-11-13
+triaged: 2026-11-21 (a) already fixed: dim 0.2 at src/game/fx/super-cinematic.ts:10, band weighs the caster over the foe at src/game/fx/super-view.ts:46, punch zoom PUNCH_ZOOM imported at super-view.ts:10. Freeze zoom polish is tracked in the specials-and-cinematics epic.
 ---
 
 # Super cinematic dims the stage, hides the foe and shows the wrong portrait
