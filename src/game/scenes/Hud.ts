@@ -1,41 +1,33 @@
 import Phaser from 'phaser';
 import type { RenderView } from '@core/index';
-import { ELEMENT_COLORS } from '../fx/element-colors';
-import { mute } from '../fx/grim-fx';
-import { ROOT_ICON, STATUS_LOOKS, StatusTracker, chipBlink, chipFlash, chipPop } from '../fx/status-fx';
 import { coreDisplayWidth, crisp, fitScene, phoneBoost, viewHeight, viewWidth } from '../boot/viewport';
-import { lookup } from '../views/projectile-view';
 import { heroName } from '../hud/tag-fx';
-import { elementMark } from '../hud/element-mark';
 import { getPrefs } from '../platform/a11y/prefs';
-import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
-import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, PORTRAIT_CHIP_MAX, collectStatusChips } from '../hud/status-icons';
 import {
-  CHARGE_DASH, CHIP_RECTS_KEY, hudFrame, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, meterLabel, meterFlashAlpha, readyGlow,
+  CHARGE_DASH, hudFrame, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, meterLabel, meterFlashAlpha, readyGlow,
   HUD_AVOID_KEY, gapLabel, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   benchBar,
   collectSide,
-  criticalPulse,
   dashSegments,
   activeHeroText,
   mainBar,
-  regenLabel,
-  regenState,
   sideOffset,
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipBar, isPhoneHud, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, SLIM_ROW_B,
+  CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, isPhoneHud, compactLabel, portraitLifeCandidates, shortName, slimBar, SLIM_ROW_B,
 } from '../hud/slim-hud';
-import { gradedHeroTexture } from '../fx/hero-grade';
 import { HudChrome } from '../hud/hud-chrome';
 import { HUD_FONT, hudText, newHudFlags } from '../hud/hud-ctx';
 import { HudNumbers } from '../hud/hud-numbers';
 import { HudCombo } from '../hud/hud-combo';
 import { HudBarPainter } from '../hud/hud-bar-painter';
-import { PORTRAIT, PORTRAIT_Y, benchPortraitRect, chipRowTop, phoneFontPx, portraitMeterRowY, portraitX, regenAnchor } from '../hud/hud-math';
+import { HudPortraits } from '../hud/hud-portraits';
+import { HudStatusChips } from '../hud/hud-status-chips';
+import { HudClassicRow } from '../hud/hud-classic-row';
+import { phoneFontPx, portraitMeterRowY } from '../hud/hud-math';
 import { isPortraitPlay } from '../boot/portrait-play';
 import type { ComboProbe } from '../platform/test-hook';
 
@@ -71,18 +63,6 @@ const MIN_LIFE_NAME = 5;
 
 const TEAMS = [0, 1] as const;
 
-/** Portrait phone: the status chips start this far under the HUD bar's fill (SLIM_H + 2), so they never touch it. */
-const PHONE_CHIP_GAP = 6;
-
-/** Where a status chip was and its colour, kept so the expire flash can outline it after it ends. */
-interface ChipLook {
-  readonly x: number;
-  readonly y: number;
-  readonly w: number;
-  readonly h: number;
-  readonly color: number;
-}
-const PORTRAIT_FRAME = 'portrait';
 /** Portrait phone: gap (logical px) between the name/SUPER text and the bench chips under it. */
 const PORTRAIT_CHIP_GAP = 12;
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
@@ -97,24 +77,19 @@ export class Hud extends Phaser.Scene {
   private gfx: Phaser.GameObjects.Graphics | undefined;
   private labels: Phaser.GameObjects.Text[] = [];
   private back: Phaser.GameObjects.Graphics | undefined;
-  private portraits: Phaser.GameObjects.Image[] = [];
-  /** Regen text per bench row, pooled: index team * 4 + row. */
-  private regenTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private readonly chrome = new HudChrome(this);
   private readonly flags = newHudFlags();
   private readonly bars = new HudBarPainter(this, this.flags);
-  private chipTrackers: StatusTracker<ChipLook>[] = [];
+  private readonly portraitView = new HudPortraits(this, this.flags, this.bars, () => this.back);
+  private readonly classicRow = new HudClassicRow(this, this.flags);
+  private readonly statusChips = new HudStatusChips(this, this.flags, { label: (team) => this.labels[team], portraitBottom: () => this.portraitBottom });
   private arcade: ArcadeHudModel | undefined;
-  /** Per team: the longest hit-stun left seen since it began (the STUN chip's bar total). */
-  private readonly stunTotals: number[] = [0, 0];
   private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   /** Centre y of the SUPER segments and label: the plain METER_Y row, or a second row under the names in portrait play (set by `dropChips`). */
   /** Portrait play: the lowest logical y of the names and the SUPER row (the status chips start under it). */
   private portraitBottom = 0;
   private meterRowY = METER_Y + SEGMENT_H / 2;
   private readonly meterTight: boolean[] = [false, false];
-  /** Arcade status chip words, pooled per side: index team * CHIP_MAX + slot. */
-  private chipTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private arenaView: (() => HudRect) | undefined;
   /** Arcade: each side's last active hero (name, max life), kept for the K.O. gap label. */
   private lastActive: ({ name: string; maxHp: number } | undefined)[] = [];
@@ -150,7 +125,7 @@ export class Hud extends Phaser.Scene {
     if (this.arcade) this.chrome.drawScrim();
     this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
-    this.portraits = [...TEAMS, ...TEAMS.flatMap((t) => [t, t, t, t])].map(() => this.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99).setVisible(false));
+    this.portraitView.create();
     // One text per side next to the bar: health state in words, so it never depends on red versus green.
     // Larger on phones (the canvas is drawn about 0.3x there), wrapped to the free column left of the bench bars, and outlined so it
     // reads on bright arenas without touching the bars beside it.
@@ -186,16 +161,14 @@ export class Hud extends Phaser.Scene {
       setPhoneHud(false);
       this.lastActive = [];
       this.chrome.destroy();
-      for (const im of this.portraits) im.destroy();
-      this.portraits = [];
-      for (const t of [...this.labels, ...this.regenTexts, ...this.meterTexts, ...this.chipTexts]) t?.destroy();
+      this.portraitView.destroy();
+      for (const t of [...this.labels, ...this.meterTexts]) t?.destroy();
+      this.classicRow.destroy();
+      this.statusChips.destroy();
       this.labels = [];
-      this.regenTexts = [];
       this.numbers.destroy();
       this.combo.destroy();
-      this.registry.remove(CHIP_RECTS_KEY);
       this.meterTexts = [];
-      this.chipTexts = [];
       this.view = undefined;
       this.arcade = undefined;
       this.flags.arcade = false;
@@ -262,10 +235,10 @@ export class Hud extends Phaser.Scene {
           this.bars.drawBar(gfx, mainBar(x), side.active, true);
           label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
         }
-        if (this.arcade) this.drawArcadeAvatar(gfx, team, side.active);
-        else this.drawPortrait(gfx, team, side.active, side.bench);
-        if (this.arcade) this.drawStatusChips(gfx, team, side.active, x, side.bench.length > 0);
-        else this.drawLegacyBuffs(gfx, view, side.active, x);
+        if (this.arcade) this.portraitView.drawArcadeAvatar(gfx, team, side.active);
+        else this.portraitView.drawPortrait(gfx, team, side.active, side.bench);
+        if (this.arcade) this.statusChips.drawStatusChips(gfx, this.view, team, side.active, x, side.bench.length > 0);
+        else this.statusChips.drawLegacyBuffs(gfx, view, side.active, x);
       } else {
         if (this.arcade) {
           // K.O. gap: keep the last hero's name greyed over an empty bar, instead of a blank label (qa-r64/r65).
@@ -273,18 +246,18 @@ export class Hud extends Phaser.Scene {
           label?.setText(gapLabel(last, false)).setAlpha(0.6);
           if (last) this.bars.drawEmptyBar(gfx, slimBar(team), last.maxHp);
         } else label?.setText('');
-        this.hideChips(team, 0);
-        for (const i of [team, ...[0, 1, 2, 3].map((k) => TEAMS.length + team * 4 + k)]) this.portraits[i]?.setVisible(false);
+        this.statusChips.hideChips(team, 0);
+        this.portraitView.hideTeam(team);
       }
       side.bench.forEach((c, i) => {
         if (this.arcade) {
-          this.drawChip(gfx, team, i, c);
+          this.portraitView.drawChip(gfx, this.view, team, i, c);
           return;
         }
         this.bars.drawBar(gfx, benchBar(x, i), c, false);
-        if (this.classic) this.drawRegenText(team, i, c);
+        if (this.classic) this.classicRow.drawRegenText(team, i, c);
       });
-      for (let i = side.bench.length; i < 4; i++) this.regenTexts[team * 4 + i]?.setVisible(false);
+      this.classicRow.hideFrom(team, side.bench.length);
     }
     if (this.arcade) {
       this.matchLifeFormat();
@@ -302,242 +275,8 @@ export class Hud extends Phaser.Scene {
     l.setText(l.text.replace(/(\d+)\/\d+/, '$1'));
   }
 
-  /** Arcade bench chip: a 68 px portrait with its element mark, a life bar under it, and a gold pulsing frame when a tag would work now (dimmed with a cross when down). */
-  private drawChip(gfx: Phaser.GameObjects.Graphics, team: number, i: number, c: HudCharacter): void {
-    const r = chipRect(team, i);
-    this.back?.fillStyle(0x070a12, 0.85).fillRect(r.x - 2, r.y - 2, r.size + 4, r.size + 4);
-    const im = this.portraits[TEAMS.length + team * 4 + i];
-    this.placePortrait(im, c, r.x, r.y, r.size, team === 1);
-    im?.setAlpha(c.dead ? 0.35 : 1);
-    const bar = this.view?.actionBar(team);
-    const ready = !c.dead && !!bar && bar.swapReadyTick <= bar.tick;
-    const pulse = ready && !this.flags.reduceMotion ? 0.6 + 0.4 * Math.abs(((this.flags.frame % 60) - 30) / 30) : 1;
-    gfx.lineStyle(this.flags.highContrast || ready ? 3 : 2, c.dead ? 0x777777 : this.flags.highContrast ? 0xffffff : ready ? 0xb39653 : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), ready ? pulse : 0.95);
-    gfx.strokeRect(r.x - 2, r.y - 2, r.size + 4, r.size + 4);
-    this.drawMark(gfx, c.element, r.x + 8, r.y + r.size - 8, 4);
-    if (c.dead) {
-      gfx.lineStyle(3, 0xff5a4a, 1);
-      gfx.lineBetween(r.x + 4, r.y + 4, r.x + r.size - 4, r.y + r.size - 4);
-      gfx.lineBetween(r.x + 4, r.y + r.size - 4, r.x + r.size - 4, r.y + 4);
-    }
-    const cb = chipBar(team, i);
-    this.bars.drawBar(gfx, cb, c, false);
-    // The same lost-life ghost as the main bar (a hero hit just before it tagged out keeps its trail on the bench chip).
-    this.bars.drawTrail(gfx, cb, c);
-  }
-
-  /** Classic buffs: a row of plus or cross squares in the free column under the health words. */
-  private drawLegacyBuffs(gfx: Phaser.GameObjects.Graphics, view: RenderView, c: HudCharacter, x: number): void {
-    for (const b of collectBuffs(view, c.id, x, this.flags.highContrast)) {
-      gfx.lineStyle(this.flags.highContrast ? 2 : 1, this.flags.highContrast ? 0xffffff : 0x111111, 1);
-      gfx.strokeRect(b.x, b.y, BUFF_SLOT, BUFF_SLOT);
-      // Remaining-time fill: the slot drains as the status runs out.
-      const remain = (1 - b.elapsed) * BUFF_SLOT;
-      gfx.fillStyle(b.color, 1);
-      gfx.fillRect(b.x, b.y + BUFF_SLOT - remain, BUFF_SLOT, remain);
-      // Shape cue: a plus for a buff, a cross for a debuff.
-      gfx.lineStyle(2, 0x000000, 1);
-      const cx = b.x + BUFF_SLOT / 2;
-      const cy = b.y + BUFF_SLOT / 2;
-      const r = BUFF_SLOT / 4;
-      if (b.glyph === 'plus') {
-        gfx.lineBetween(cx - r, cy, cx + r, cy);
-        gfx.lineBetween(cx, cy - r, cx, cy + r);
-      } else {
-        gfx.lineBetween(cx - r, cy - r, cx + r, cy + r);
-        gfx.lineBetween(cx - r, cy + r, cx + r, cy - r);
-      }
-    }
-  }
-
-  /**
-   * Arcade: one chip per active buff or debuff under the bar (shape, word and seconds; the bar under it drains), pooled texts.
-   * The sim already exposes every status, so this only reads the view (`collectStatusChips`).
-   */
-  private drawStatusChips(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, x: number, benched: boolean): void {
-    const view = this.view;
-    if (!view) return;
-    // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
-    const label = this.labels[team];
-    // Portrait phone: the chips stack directly under the name line, beside the big portrait (the bench chips sit further in, so they never meet).
-    const phone = isPortraitPlay(this.game);
-    const px = Math.round(16 * phoneBoost(this, 2));
-    const top = chipRowTop(phone ? Math.max(SLIM_H + PHONE_CHIP_GAP, Math.ceil(this.portraitBottom) + 2) : Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
-    // The first stunLeft seen after a calm tick is the stun's length (it drains from there); a re-stun that outlasts it raises it.
-    const stunLeft = view.arcade()?.stunLeft(c.id) ?? 0;
-    this.stunTotals[team] = stunLeft > 0 ? Math.max(this.stunTotals[team] ?? 0, stunLeft) : 0;
-    const chips = collectStatusChips(view, team, c.id, c.element, x, this.flags.highContrast, { scale: px / CHIP_FONT, top, ...(phone ? { max: PORTRAIT_CHIP_MAX, perRow: 1, alignRight: team === 1 } : {}) }, this.stunTotals[team]);
-    const now = view.tick;
-    const reduced = this.flags.reduceMotion;
-    const tracker = (this.chipTrackers[team] ??= new StatusTracker<ChipLook>(12));
-    const cur = new Map<string, { payload: ChipLook; start: number; expire: number }>();
-    for (const chip of chips) cur.set(chip.key, { payload: { x: chip.x, y: chip.y, w: chip.w, h: chip.h, color: chip.color }, start: 0, expire: 0 });
-    const rects = this.chipRects(team);
-    rects.length = chips.length;
-    chips.forEach((chip, i) => (rects[i] = { x: chip.x, y: chip.y, w: chip.w, h: chip.h }));
-    const born = new Map(tracker.update(now, cur).map((t) => [t.key, t.born]));
-    chips.forEach((chip, i) => {
-      const slot = team * CHIP_MAX + i;
-      const t = (this.chipTexts[slot] ??= this.add
-        .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: `${String(px)}px`, color: '#d8d2c4', fontStyle: 'normal', stroke: '#0a0806', strokeThickness: 2 }))
-        .setDepth(102));
-      const age = now - (born.get(chip.key) ?? Number.NEGATIVE_INFINITY);
-      // Apply pop: the chip swells about its centre and settles; a flash washes over it (no motion under reduced motion).
-      const pop = chipPop(age, reduced);
-      const w = chip.w * pop;
-      const h = chip.h * pop;
-      // Portrait phone: the swell grows down and inward only, so it never climbs into the HUD bar or under the portrait (qa-r98).
-      const x = phone ? (team === 1 ? chip.x + chip.w - w : chip.x) : chip.x - (w - chip.w) / 2;
-      const y = phone ? chip.y : chip.y - (h - chip.h) / 2;
-      const low = chip.secs !== null && chip.secs <= 1;
-      const shown = !low || chipBlink(now % 49, reduced);
-      t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true).setAlpha(shown ? 1 : 0.45);
-      gfx.fillStyle(0x0d0b09, 0.78).fillRect(x, y, w, h);
-      const flash = chipFlash(age, reduced);
-      if (flash > 0) gfx.fillStyle(mute(chip.color, 0.5, 1.3), flash * 0.5).fillRect(x, y, w, h);
-      // Time bar along the foot of the chip, draining to the left.
-      gfx.fillStyle(chip.color, shown ? 0.85 : 0.4).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
-      // Shape icon in a draining timer ring at the chip's right end: the silhouette codes the status without colour.
-      const id = /^s(\d+)$/.exec(chip.key);
-      const icon = id ? (STATUS_LOOKS[Number(id[1])]?.icon ?? CC_ICONS[chip.key]) : chip.key === 'root' ? ROOT_ICON : CC_ICONS[chip.key];
-      if (icon) {
-        const r = Math.max(5, Math.round(chip.h / 2) - 2);
-        const cx = chip.x + chip.w - r - 4;
-        const cy = chip.y + chip.h / 2;
-        gfx.lineStyle(1, chip.color, 0.3).strokeCircle(cx, cy, r);
-        gfx.lineStyle(2, chip.color, shown ? 0.9 : 0.4).beginPath().arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chip.remaining, false).strokePath();
-        gfx.lineStyle(1.5, chip.color, 0.95);
-        for (let k = 0; k + 3 < icon.length; k += 2) gfx.lineBetween(cx + (icon[k] ?? 0) * r * 0.55, cy + (icon[k + 1] ?? 0) * r * 0.55, cx + (icon[k + 2] ?? 0) * r * 0.55, cy + (icon[k + 3] ?? 0) * r * 0.55);
-      }
-      // Buffs have a solid frame, debuffs a dashed one (so the two differ without colour).
-      gfx.lineStyle(this.flags.highContrast ? 2 : 1, chip.color, this.flags.highContrast ? 1 : 0.75);
-      if (chip.hostile) {
-        for (const [a, b] of dashSegments(chip.x, chip.x + chip.w, [6, 3])) {
-          gfx.lineBetween(a, chip.y, b, chip.y);
-          gfx.lineBetween(a, chip.y + chip.h, b, chip.y + chip.h);
-        }
-        gfx.lineBetween(chip.x, chip.y, chip.x, chip.y + chip.h);
-        gfx.lineBetween(chip.x + chip.w, chip.y, chip.x + chip.w, chip.y + chip.h);
-      } else gfx.strokeRect(chip.x, chip.y, chip.w, chip.h);
-    });
-    // An ended chip leaves nothing behind (an empty outlined box read as clutter: qa-r3-label-clutter).
-    this.hideChips(team, chips.length);
-  }
-
-  /** The team's published chip rects (one array per team under CHIP_RECTS_KEY, reused every frame). */
-  private chipRects(team: number): HudRect[] {
-    let all = this.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined;
-    if (!all) this.registry.set(CHIP_RECTS_KEY, (all = [[], []]));
-    return (all[team] ??= []);
-  }
-
-  private hideChips(team: number, from: number): void {
-    if (from === 0) this.chipRects(team).length = 0;
-    for (let i = from; i < CHIP_MAX; i++) this.chipTexts[team * CHIP_MAX + i]?.setVisible(false);
-  }
-
   private get classic(): boolean {
     return !this.arcade && !this.flags.highContrast;
-  }
-
-  /** Arcade: the active hero's picture at the end of its health bar (`arcadeAvatar`), in an element-coloured frame. */
-  private drawArcadeAvatar(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter): void {
-    const a = slimPortrait(team);
-    this.back?.fillStyle(0x070a12, 0.78).fillRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
-    this.placePortrait(this.portraits[team], c, a.x, a.y, a.size, team === 1);
-    gfx.lineStyle(this.flags.highContrast ? 3 : 2, this.flags.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.9);
-    gfx.strokeRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
-    this.drawMark(gfx, c.element, a.x + 8, a.y + 8, 6);
-  }
-
-  /** Element silhouette (white on a dark chip) so identity is never the frame colour alone: see `elementMark`. */
-  private drawMark(gfx: Phaser.GameObjects.Graphics, element: HudCharacter['element'], x: number, y: number, r: number): void {
-    gfx.fillStyle(0x070a12, 0.9).fillCircle(x, y, r + 3);
-    gfx.lineStyle(2, 0xffffff, 1).fillStyle(0xffffff, 1);
-    const m = elementMark(element, r);
-    const at = (flat: readonly number[]): Phaser.Math.Vector2[] => {
-      const out: Phaser.Math.Vector2[] = [];
-      for (let k = 0; k + 1 < flat.length; k += 2) out.push(new Phaser.Math.Vector2(x + (flat[k] ?? 0), y + (flat[k + 1] ?? 0)));
-      return out;
-    };
-    if (m.kind === 'circle') gfx.fillCircle(x, y, m.r);
-    else if (m.kind === 'poly') {
-      gfx.fillPoints(at(m.pts), true);
-      if (m.hole) gfx.fillStyle(0x070a12, 1).fillPoints(at(m.hole), true);
-    }
-    else for (const run of m.runs) gfx.strokePoints(at(run), false);
-  }
-
-  /** Portrait frame, the active monster's picture and a small picture per benched teammate (dimmed with a cross when knocked out). */
-  private drawPortrait(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, bench: readonly HudCharacter[]): void {
-    const x = portraitX(team);
-    const back = this.back;
-    back?.fillStyle(0x070a12, 0.78);
-    back?.fillRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
-    this.placePortrait(this.portraits[team], c, x, PORTRAIT_Y, PORTRAIT, team === 1);
-    gfx.lineStyle(2, this.flags.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.9);
-    gfx.strokeRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
-    this.drawMark(gfx, c.element, x + 10, PORTRAIT_Y + 10, 8);
-    // Benched teammates: their picture sits in the slot just left of their own bar.
-    for (let i = 0; i < 4; i++) {
-      const b = bench[i];
-      const im = this.portraits[TEAMS.length + team * 4 + i];
-      if (!b) {
-        im?.setVisible(false);
-        continue;
-      }
-      const { x: bx, y: by, size: s } = benchPortraitRect(team, i);
-      back?.fillStyle(0x070a12, 0.78);
-      back?.fillRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
-      this.placePortrait(im, b, bx, by, s, team === 1);
-      im?.setAlpha(b.dead ? 0.35 : 1);
-      gfx.lineStyle(2, b.dead ? 0x777777 : this.flags.highContrast ? ELEMENT_COLORS[b.element] : mute(ELEMENT_COLORS[b.element], 0.55, 0.72), 0.9);
-      gfx.strokeRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
-      this.drawMark(gfx, b.element, bx + 6, by + s - 6, 5);
-      if (b.dead) {
-        gfx.lineStyle(2, 0xff5a4a, 1);
-        gfx.lineBetween(bx + 3, by + 3, bx + s - 3, by + s - 3);
-        gfx.lineBetween(bx + 3, by + s - 3, bx + s - 3, by + 3);
-      }
-    }
-  }
-
-  /** Put a character's picture (the first frame of its sprite sheet) in a pooled image, or hide the image when it has none. */
-  private placePortrait(im: Phaser.GameObjects.Image | undefined, c: HudCharacter, x: number, y: number, size: number, flip: boolean): void {
-    const found = lookup(c.sprite);
-    if (im && found && this.textures.exists(found.key)) {
-      const tex = this.textures.get(found.key);
-      const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
-      if (!tex.has(PORTRAIT_FRAME)) tex.add(PORTRAIT_FRAME, 0, fx, fy, fw, fh);
-      // Grim grade (fx/hero-grade.ts): the portrait is drawn from the graded copy, which needs the portrait frame too.
-      const shown = gradedHeroTexture(this, found.key);
-      if (shown !== found.key) {
-        const gtex = this.textures.get(shown);
-        if (!gtex.has(PORTRAIT_FRAME)) gtex.add(PORTRAIT_FRAME, 0, fx, fy, fw, fh);
-      }
-      if (im.texture.key !== shown || im.frame.name !== PORTRAIT_FRAME) im.setTexture(shown, PORTRAIT_FRAME);
-      im.setPosition(x, y).setDisplaySize(size, size).setFlipX(flip).setAlpha(1).setVisible(true);
-    } else im?.setVisible(false);
-  }
-
-  /** Regen text for a bench row: the live +N/s while healing, `rested` at the cap. Right of the player's bars, left of the enemy's. */
-  private drawRegenText(team: number, row: number, c: HudCharacter): void {
-    const slot = team * 4 + row;
-    const text = regenLabel(c);
-    if (text === '') {
-      this.regenTexts[slot]?.setVisible(false);
-      return;
-    }
-    const g = benchBar(sideOffset(team), row);
-    const at = regenAnchor(team, g);
-    const t = this.regenTexts[slot] ?? this.text(16).setOrigin(team === 0 ? 0 : 1, 0.5);
-    this.regenTexts[slot] = t;
-    const healing = regenState(c) === 'healing';
-    t.setPosition(at.x, at.y)
-      .setColor(healing ? '#9dffa0' : '#c8d0e0')
-      .setAlpha(healing && !this.flags.reduceMotion ? criticalPulse(this.time.now, false) * 0.4 + 0.6 : 1)
-      .setVisible(true);
-    if (t.text !== text) t.setText(text);
   }
 
   private refreshPrefs(): void {
