@@ -2,6 +2,7 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { type BrowserContext, expect, type Page, test, type WebSocketRoute } from '@playwright/test';
 import { RelayCore, type RelayCtx, type RelayEvent, type Sender } from '../../src/core/relay';
+import { DISCONNECT_GRACE_MS } from '../../src/core/relay/constants';
 import { InMemoryStore } from '../../src/core/relay/testing';
 
 // ONLINE-RESULT-E2E (tests/e2e/online-quick.spec.ts is the setup-handshake sibling): two pages play a short online match to the end
@@ -81,6 +82,8 @@ interface Rig {
   readonly sender: RouteSender;
   readonly ctx: RelayCtx;
   readonly events: RelayEvent[];
+  /** Added to the relay's clock (ms): a test moves time past the disconnect grace without waiting for it. */
+  skewMs: number;
 }
 
 async function serve(page: Page, name: string, rig: Rig): Promise<void> {
@@ -113,9 +116,10 @@ async function serve(page: Page, name: string, rig: Rig): Promise<void> {
 async function startMatch(browser: import('@playwright/test').Browser): Promise<{ rig: Rig; a: Page; b: Page }> {
   const events: RelayEvent[] = [];
   const sender = new RouteSender();
-  const ctx: RelayCtx = { now: () => Date.now(), randomInt: (n) => Math.floor(Math.random() * n) };
+  const clock = { skew: 0 };
+  const ctx: RelayCtx = { now: () => Date.now() + clock.skew, randomInt: (n) => Math.floor(Math.random() * n) };
   const core = new RelayCore(new InMemoryStore(() => ctx.now()), sender, { onEvent: (e) => { events.push(e); } });
-  const rig: Rig = { core, sender, ctx, events };
+  const rig: Rig = { core, sender, ctx, events, get skewMs() { return clock.skew; }, set skewMs(v: number) { clock.skew = v; } };
   const pages: Page[] = [];
   for (const name of ['a', 'b']) {
     const context = await browser.newContext();
@@ -215,4 +219,27 @@ test('a dropped socket mid-match resumes the same match, with no second game', a
   expect(results(rig).every((r) => r.agreed)).toBe(true);
   expect(rig.events.some((e) => e.kind === 'desync')).toBe(false);
   for (const p of [a, b]) await expect(p.locator('#quickFailure')).toBeHidden();
+});
+
+// Long gate (two pages, about 15 s). The opponent closes the page and never comes back. The lockstep stall timeout (DEFAULT_TIMEOUT_TICKS, about 5 s)
+// fires first and ends the match on the remaining page ("stopped responding, so you win"); the relay's grace is longer (10 s), so PEER_STATUS gone
+// only arrives afterwards. The page must stay ended on the win line (no hang, no failure banner, no second game) when gone arrives. The clock is
+// skewed past DISCONNECT_GRACE_MS so the test does not wait the real grace; the real sweep delay (about 10 to 70 s after a drop) is the relay's own.
+// The "Your opponent left" line is only reachable when gone arrives during a live match (a paused match), which this rig does not produce.
+test('Opponent gone after the stall win: the remaining page stays ended on the win line', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const { rig, a, b } = await startMatch(browser);
+  await new Promise((r) => setTimeout(r, 1500)); // let the match run before the drop
+  await a.close();
+  // Playwright may not report a page close to the route's onClose; tell the relay the socket closed (a repeat is a no-op, the record is already 'closed').
+  await rig.core.handleClose('a', rig.ctx);
+  await expect(b.locator('#quickStatus')).toContainText('stopped responding', { timeout: 30_000 });
+
+  rig.skewMs += DISCONNECT_GRACE_MS + 1000;
+  await rig.core.sweep(rig.ctx);
+  await expect.poll(() => rig.events.filter((e) => e.kind === 'peer-gone').length, { timeout: 15_000, message: 'relay peer-gone' }).toBe(1);
+  await expect(b.locator('#quickStatus')).toContainText('stopped responding');
+  await expect(b.locator('#quickFailure')).toBeHidden();
+  expect(rig.events.filter((e) => e.kind === 'match-start')).toHaveLength(1);
+  await expect(b.locator('#quickBack')).toBeVisible();
 });
