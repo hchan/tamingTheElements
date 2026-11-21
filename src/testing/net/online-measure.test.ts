@@ -43,6 +43,13 @@ describe('online measurement harness (virtual clock; figures are local, not esti
     expect(three.stalls).toBeLessThanOrEqual(base.stalls);
   });
 
+  it.each([5, 20])('batchEvery 3 / inputDelay 4 agrees with %i%% frame loss (a lost batch is repaired by the next)', async (lossPct) => {
+    const profile = { ...PROFILES['typical'], lossPct };
+    const r = await measureMatch({ ticks: 600, batchEvery: 3, inputDelay: 4, profile, netSeed: 7 });
+    expect(r.finalHashEqual).toBe(true);
+    expect(r.relayAgreed).toBe(true);
+  });
+
   it('is deterministic for a seed and survives duplicates and reordering', async () => {
     const o = { ticks: 200, profile: PROFILES['bad'], netSeed: 5 } as const;
     const a = await measureMatch(o);

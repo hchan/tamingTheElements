@@ -59,6 +59,24 @@ const tracedFetch: FetchLike = async (url, init) => {
   tr(`<<<   body: ${body}`);
   return res;
 };
+/** Raw BATCH seq arrivals per socket (ws1 = A, ws2 = B), in arrival order, counted before the reorder buffer. */
+const arrivals = new Map<string, number[]>();
+const noteArrival = (id: string, t: string): void => {
+  const bytes = decodeText(t);
+  const d = bytes === undefined ? undefined : decodeFrame(bytes);
+  if (d?.ok === true && d.frame.t === 'batch') arrivals.set(id, [...(arrivals.get(id) ?? []), d.frame.seq]);
+};
+/** One line per socket: raw arrivals, seqs missing below the highest seen, and arrivals that came after a higher seq. */
+export function summariseArrivals(seqs: readonly number[]): string {
+  const seen = new Set(seqs);
+  const max = Math.max(0, ...seqs);
+  const missing: number[] = [];
+  for (let i = 1; i <= max; i++) if (!seen.has(i)) missing.push(i);
+  let high = 0;
+  let late = 0;
+  for (const q of seqs) { if (q < high) late++; high = Math.max(high, q); }
+  return `raw=${String(seqs.length)} max=${String(max)} missing=[${missing.join(',')}] late-after-higher=${String(late)}`;
+}
 class TracedWs extends WebSocket {
   constructor(url: string) {
     super(url);
@@ -68,6 +86,7 @@ class TracedWs extends WebSocket {
     this.addEventListener('close', (e) => { tr(`=== ${id} closed code=${String(e.code)}`); });
     this.addEventListener('message', (e) => {
       const d: unknown = e.data;
+      if (typeof d === 'string') noteArrival(id, d);
       tr(typeof d === 'string' ? `<<< ${id} TEXT ${d}\n<<<     decoded: ${describeText(d)}` : `<<< ${id} BINARY ${String((d as ArrayBuffer).byteLength)} bytes`);
     });
   }
@@ -141,6 +160,8 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
       for (const s of [a, b]) { while (s.c.transport.receive() !== undefined) got[s.name as 'A' | 'B']++; }
     }
     if (Date.now() - drainStart > 0) step(`drained ${String(Date.now() - drainStart)} ms after the last send`);
+    for (const [id, seqs] of [...arrivals].sort((x, y) => (x[0] < y[0] ? -1 : 1))) step(`raw BATCH arrivals ${id}: ${summariseArrivals(seqs)}`);
+    for (const s of [a, b]) step(`${s.name} transport: staleMatch=${String(s.c.transport.staleMatch)} malformed=${String(s.c.transport.malformed)} lastError=${JSON.stringify(s.c.transport.lastError ?? null)}`);
     step(`batches received A=${String(got.A)} B=${String(got.B)} of ${String(BATCHES_PER_SIDE)} sent each way`);
     a.c.transport.sendResult(ma.matchId, 0, 0, 100, 0xabcd); await sleep(BATCH_GAP_MS);
     b.c.transport.sendResult(ma.matchId, 0, 0, 100, 0xabcd);
@@ -149,8 +170,13 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
     step(`result-ack A=${JSON.stringify(ra)} B=${JSON.stringify(rb)}`);
     const rtt = [a.c.rttMs(), b.c.rttMs()];
     step(`median rtt ms (measurement, live) A=${String(rtt[0])} B=${String(rtt[1])}`);
-    const lost = got.A < BATCHES_PER_SIDE || got.B < BATCHES_PER_SIDE;
-    step(lost ? 'FAIL: batches lost' : 'OK');
+    // Lost = a frame never reached the socket. A frame that arrived but was dropped by the client's reorder buffer (it came after a higher seq) is
+    // reported as "dropped as late" and is not a failure: the next BATCH repeats its inputs (docs/ONLINE-PROTOCOL.md sections 1 and 6).
+    const raw = [...arrivals.values()].map((q) => new Set(q).size);
+    const lost = raw.length < 2 || raw.some((n) => n < BATCHES_PER_SIDE);
+    const late = got.A < BATCHES_PER_SIDE || got.B < BATCHES_PER_SIDE;
+    if (!lost && late) step('dropped as late by the reorder buffer (arrived out of order); not lost on the wire');
+    step(lost ? 'FAIL: batches lost on the wire' : 'OK');
     return lost ? 1 : 0;
   } catch (e) {
     step(`FAIL: ${redact(e instanceof Error ? e.message : String(e))}`);
