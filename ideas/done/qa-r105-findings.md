@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 triaged: real (large, visual polish; live: item 5 terrain patch chips still drawn in open floor via PATCH_WORDS in src/game/fx/terrain-fx.ts, item 7 desktop first-run card placement in src/game/app/first-run-hint.ts; items 1-4 and 6 are portrait/landscape-phone work, obsolete since phone work dropped)
 added: 2026-11-17
 ---
@@ -41,3 +41,9 @@ No console or page errors, no banned words, no horizontal overflow in any script
 1. Item 5: shrink or edge-anchor the FIRE x2 / WATER +HP / AIR x2 patch labels (terrain-fx.ts, terrain-view.test.ts pins the words); needs a real-game screenshot.
 2. Item 7: move the desktop first-run card off the lower floor (first-run-hint.ts, covered by first-run-hint e2e); screenshot check.
 3. Items 1-4 and 6 (portrait/landscape phone) are dropped; "Not covered" match-end and online follow-ups belong to other QA ideas.
+
+## Progress (2026-11-21)
+
+- Item 5: already fixed before this check. `chipOwner` (terrain-fx.ts, commit 4590692cc, "one word chip per kind") draws a single chip per layout instead of one per patch, and `chipCentreX` keeps it inside the view; unit-tested in terrain-fx.test.ts. The words stay (PATCH_WORDS is pinned by help-arena-words.test.ts). No code change.
+- Item 7: closed as by design. The desktop card is a translucent strip at `bottom: 12%` (09-help-first-run.css), placed there on purpose: the top holds the HUD and the fighters start at the sides (QA r31/r33/r125). It fades on its own after 2.5 s of fight time, on the first input, or at Got it, and leaves at once for a super cut-in, tag call or round end. Moving it would only trade the floor for the HUD or fighters; no code change.
+- Items 1-4 and 6 stay dropped (phone work). All items closed, so the idea moved to done and the epic links now point at `../done/`.
