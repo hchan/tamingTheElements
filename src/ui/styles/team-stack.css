@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   gap: 0.5em;
-  font-size: 0.85em;
+  font-size: max(14px, 0.85em);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -101,7 +101,7 @@
 }
 .teamStack .tsStats {
   font-size: 0.8em;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .teamStack .tsEmpty {
   font-style: italic;
@@ -120,7 +120,8 @@
 }
 .teamStack .tsSuggested .tsName,
 .teamStack .tsSuggested .tsStats {
-  opacity: 0.6;
+  opacity: 1;
+  color: #bdb4a0;
 }
 .teamStack .tsRemove {
   margin-left: auto;
