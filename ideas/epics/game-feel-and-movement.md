@@ -27,7 +27,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [versus-local-closer-start](../brainstorm/versus-local-closer-start.md): Local Versus: closer start or auto-approach. A headless playthrough showed 800 ms of movement and 6 attacks leaving both heroes at 100%, because they start far apart.
 - [ranged-heroes-fight-at-melee-range](../brainstorm/ranged-heroes-fight-at-melee-range.md): Ranged heroes land their hits at point-blank range. Found with pnpm range:probe (tools/sim/range-probe.ts, docs/TESTING.md):
 - [ranged-primary-spam](../brainstorm/ranged-primary-spam.md): Ranged primary spam: 7 heroes cast one shot for 85-99% of casts. pnpm ability:usage flags Cyclonius wind-cone, Fiara fireball, Ishimi slime-blast, Lavax crimson-fire, Morblass icicles, Rokcore rock-pellet and Sindar
-- [tag-in-opacity-frozen-through-hit-stop](../brainstorm/tag-in-opacity-frozen-through-hit-stop.md): The 0.8 tag-in opacity stays frozen through hit-stop. A hero that tags in is drawn at 0.8 opacity for its entrance;
+- [tag-in-opacity-frozen-through-hit-stop](../in-progress/tag-in-opacity-frozen-through-hit-stop.md): The 0.8 tag-in opacity stays frozen through hit-stop. A hero that tags in is drawn at 0.8 opacity for its entrance;
 - [manual-mode-pops-never-age](../done/manual-mode-pops-never-age.md): In ?manual=1 the white damage pops never age. With the driver paused (manual stepping) the shock layer's pops only advance when ageFx(true) is on, so a pop from a hit stays on screen at full alpha
 - [round-transition-pacing](../brainstorm/round-transition-pacing.md): Round transition pacing. The gap between rounds runs about 20 s in play.
 
@@ -37,7 +37,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### GF-1 Smoother movement and hit feel
 
-- Members: [smoother-fighter-movement](../brainstorm/smoother-fighter-movement.md), [qa-hit-feel-r34-r40](../brainstorm/qa-hit-feel-r34-r40.md), [fading-hit-strength](../brainstorm/fading-hit-strength.md), [tag-in-opacity-frozen-through-hit-stop](../brainstorm/tag-in-opacity-frozen-through-hit-stop.md), [round-transition-pacing](../brainstorm/round-transition-pacing.md)
+- Members: [smoother-fighter-movement](../brainstorm/smoother-fighter-movement.md), [qa-hit-feel-r34-r40](../brainstorm/qa-hit-feel-r34-r40.md), [fading-hit-strength](../brainstorm/fading-hit-strength.md), [tag-in-opacity-frozen-through-hit-stop](../in-progress/tag-in-opacity-frozen-through-hit-stop.md), [round-transition-pacing](../brainstorm/round-transition-pacing.md)
 - Size: L
 - Shared files: src/game/loop/*, src/game/fx/hit-feel.ts, motion.ts, pose-layer.ts, Arena.ts
 - Flags: needs browser/e2e; presentation only (no SIM bump); smoother-movement agents may already be working: check first

@@ -182,6 +182,7 @@ export class PoseLayer {
   private readonly guard = new Float64Array(SLOTS);
   private readonly kind = new Uint8Array(SLOTS);
   private readonly kindAt = new Float64Array(SLOTS);
+  private readonly kindFxAt = new Float64Array(SLOTS); // fxMs at pose start: the tag-in fade runs on it, past a hit-stop
   private readonly kindDir = new Float64Array(SLOTS);
   private readonly kindPower = new Float64Array(SLOTS);
   private readonly edge = new Uint8Array(SLOTS);
@@ -409,9 +410,8 @@ export class PoseLayer {
 
   private start(slot: number, kind: number, dir: number, power: number): void {
     this.kind[slot] = kind;
-    this.kindAt[slot] = this.animMs;
-    this.kindDir[slot] = dir;
-    this.kindPower[slot] = power;
+    this.kindAt[slot] = this.animMs; this.kindFxAt[slot] = this.fxMs;
+    this.kindDir[slot] = dir; this.kindPower[slot] = power;
   }
 
   private character(c: RenderCharacter): void {
@@ -553,7 +553,7 @@ export class PoseLayer {
       const k = this.kind[i] ?? 0;
       if (k !== 0) {
         if (this.animMs - (this.kindAt[i] ?? 0) >= (POSE_MS[k] ?? 0)) this.kind[i] = 0;
-        else applyPose(p, k, this.animMs - (this.kindAt[i] ?? 0), this.kindDir[i] ?? 1, this.kindPower[i] ?? 0, this.reduced);
+        else applyPose(p, k, this.animMs - (this.kindAt[i] ?? 0), this.kindDir[i] ?? 1, this.kindPower[i] ?? 0, this.reduced, this.fxMs - (this.kindFxAt[i] ?? 0));
       }
       if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
       this.abilityMotion(p, i, ddx, ddy, dist, dt);

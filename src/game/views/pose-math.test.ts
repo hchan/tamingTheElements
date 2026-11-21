@@ -153,6 +153,15 @@ describe('poses', () => {
     expect(slide.ox).toBeLessThan(0);
   });
 
+  it('the tag-in fade can run on its own clock while the pose age is held (hit-stop)', () => {
+    const held = fresh();
+    applyPose(held, PoseKind.tagIn, 0, 1, 1, false, ms(PoseKind.tagIn));
+    expect(held.alpha).toBeCloseTo(1, 6);
+    const same = fresh();
+    applyPose(same, PoseKind.tagIn, 0, 1, 1, false);
+    expect(same.alpha).toBeCloseTo(TAG_IN_MIN_ALPHA, 6);
+  });
+
   it('a tag-in starts at the alpha floor, rises monotonically and ends opaque', () => {
     expect(tagInAlpha(0)).toBeCloseTo(TAG_IN_MIN_ALPHA, 10);
     // QA r71: a deep fade read as a ghost; the incoming hero stays mostly opaque.
