@@ -1,6 +1,7 @@
 # QA r117 findings (ranked)
 
 status: idea
+triaged: c (2026-11-21; fixed: help chips, first-run hint, More-below pill, hit-stop exists. Plan in order: 1 view-only: smaller hit burst + target flash (pose-vfx.ts:232), super cut-in damage number depth vs sub-label, FIGHT banner offset when close; 2 HUD vs picker life scale (bars.ts:279 vs hero-info.ts:193); 3 water stage props (terrain-ambient.ts, needs art-director); 4 AI footsies approach, src/core/agents, sim+golden+balance impact, Opus plan first)
 added: 2026-11-19
 
 Desktop 1280x720 only, headless Chromium (SwiftShader), test build of local main (7343dc41). Screenshots under `.scratch/qa-r117/` (worktree). Driven with `__TTE__.arena.step` (manual stepping), so animation timing is read from sim positions, not wall clock.
