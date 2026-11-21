@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (all findings are phone/portrait 390x844 and 360x640 layout; owner dropped phone/portrait/touch work 2026-11-18/19)
 added: 2026-11-17
 ---
 
