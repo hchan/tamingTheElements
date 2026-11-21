@@ -30,3 +30,7 @@ Banned-word scan (Classic, Arcade, ruleset, Capture) of Menu, Versus, Play/Tour 
 
 Fixed: help chip wrap (5-col grid, `src/ui/styles/help.css`); picker life (`heroLife` scaled, `src/ui/screens/arcade-versus.ts:40`, used by `tour.ts:275`); "More below" pill now in the footer bar (`src/ui/styles/main/10-picker-layout.css:85`); stage 1 dead walk (`openingRush`, `src/game/app/tour-match.ts:104`); Tour card vocabulary (hero ability names, `src/game/app/tour-controls.ts`); phone help text dropped (`src/ui/screens/help-guide.test.ts:6`). Not reproduced or info only: the rest.
 Open (c): hit numbers over the super cut-in title/label. HUD numbers sit at depth 101-102 (`src/game/scenes/Hud.ts:783,838`), the band at 5-8 (`src/game/fx/super-view.ts:96`). Plan: while `superCut` is live, hide or lower the HUD numbers over the band (render-only; Hud.ts is 1218 lines, so put the logic in a small helper under `src/game/hud/`). Low extra: first-fight hint contrast (`src/game/app/first-run-hint.ts`).
+
+## Progress note (item 3, damage numbers over the cut-in)
+
+2026-11-21: render-only fix written, NOT yet run (no node_modules in this worktree, no gate, no screenshot). `src/game/fx/super-view.ts` publishes the band rows under `tte.cutBand` while the cut-in is up (cleared at its end); `src/game/hud/cut-numbers.ts` (`cutNumberFadeOf`) returns 0.12 for a number whose box overlaps those rows; `Hud.ts` multiplies the number alpha by it (+1 import line). Unit test `src/game/hud/cut-numbers.test.ts`. Stays in brainstorm until the gate and a real-game super screenshot confirm it.
