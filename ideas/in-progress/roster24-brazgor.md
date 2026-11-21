@@ -16,4 +16,7 @@ Plan: .scratch/plans/roster24-one-hero.md (section 3, rank 2). Release set stays
   script, procedural KO keys (buckle, slump, edge-on roll, belly-up; tools/assets/portrait-rig/brazgor-ko-keys.py), sheet and map strip.
   Provenance: tools/assets/portrait-rig/provenance/brazgor-approval.json. Art stays hidden (RELEASED_ROSTER24 untouched). Follow-ups from
   the director: tilt the last KO frame a few degrees, darken its shadow ~15%, nudge walk frame 2, edge-on KO frame may flicker.
-- Still to do: flank-glow art fix, audit gate, hit FX (P2), lesson rows (P3), Pyre Totem ally no-flinch zone (slot 3, later), release flip (R).
+- 2026-11-20 P2 and P3 (presentation only, no src/core): brazgor-fx.ts (Forge Gore overhead arc plus impact ring, Molten Hide ember ring) painted in
+  ability-aura-view.ts from the action-bar readyTick rise, reduced motion held still; lesson words for forge-gore and molten-hide in
+  ability-lessons.ts; ABILITY-AUDIT rows updated. Not done: a hit-confirm FX on the foe (no sim event), thorns flash.
+- Still to do: flank-glow art fix, audit gate, Pyre Totem ally no-flinch zone (slot 3, later), release flip (R).

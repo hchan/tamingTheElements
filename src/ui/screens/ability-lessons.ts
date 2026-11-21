@@ -35,6 +35,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('translucent-flame', 'Become translucent for a moment so attacks pass through you.', 'Press it just as the foe fires.'),
   L('ember-bite', 'A rapid chain of light bites that hurt a little and recover fast.', 'Stay close and keep biting between the foe\'s attacks.'),
   L('cinder-spray', 'A close ring of embers bursts out all round you.', 'Fire it when the foe closes in from any side.'),
+  L('forge-gore', 'A slow overhead anvil blow that hits very hard.', 'Wait for the foe to step in, then bring it down; it leaves you open after.'),
+  L('molten-hide', 'Molten armour that cuts the harm you take and burns anyone who hits you up close.', 'Press it as the foe closes in for a melee trade.'),
   // Earth
   L('adrenaline', 'A short rush: you move faster and take less harm.', 'Press it before you close in.'),
   L('ground-shock', 'A slam that hits every foe around you.', 'Use it up close; it needs a moment to be ready again.'),

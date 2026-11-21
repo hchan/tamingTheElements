@@ -28,8 +28,8 @@ Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not 
 | Quarrak | Boulder Roll | range | roster-24 batch 1: slow heavy boulder, knockback | New hero, see Ember Bite | Art pending |
 | Hyalia (air, ranged) | Stinging Filament | range | roster-24 batch 1: thin fast filament, short stun; with flag withOverTime also leaves Venom (venom 19, halves healing) | New hero, see Ember Bite | Art pending |
 | Hyalia | Bell Pulse | range | roster-24 batch 1: slow pulse ring with knockback | New hero, see Ember Bite | Art pending |
-| Brazgor (fire, melee) | Forge Gore | melee | roster-24 batch 2: 30 dmg, 2 s cd, 600 ms recovery, 70x80 box, slow overhead anvil blow (SIM_VERSION 91 de-dupe) | New hero, fitted in SIM_VERSION 73 | Generated art, see fx batch k |
-| Brazgor | Molten Hide | buff | 3 s, -50% damage taken, thorns 4 per melee hit that lands on the bearer (WP 2.0 thorns) | New hero, see Forge Gore | Generated art |
+| Brazgor (fire, melee) | Forge Gore | melee | roster-24 batch 2: 30 dmg, 2 s cd, 600 ms recovery, 70x80 box, slow overhead anvil blow (SIM_VERSION 91 de-dupe); lesson words in ability-lessons.ts; cast FX in brazgor-fx.ts | New hero, fitted in SIM_VERSION 73 | Generated art, see fx batch k |
+| Brazgor | Molten Hide | buff | 3 s, -50% damage taken, thorns 4 per melee hit that lands on the bearer (WP 2.0 thorns); lesson words in ability-lessons.ts; cast glow in brazgor-fx.ts | New hero, see Forge Gore | Generated art |
 | Glimmaw (water, ranged) | Lure Orb | range | 14 dmg, hovers at 360 px for 80 ticks as a hazard (WP 2.0 hover) | New hero, see Forge Gore | Generated art |
 | Glimmaw | Abyss Flash | melee | 6 dmg centred 100x100 burst that stuns, 6 s cd (WP 2.0 centred box) | New hero, see Forge Gore | Generated art |
 | Durrok (earth, melee) | Tusk Gore | melee | 22 dmg, 3 s cd, lunges 180 px (WP 2.0 lunge) | New hero, see Forge Gore | Generated art |
