@@ -64,7 +64,7 @@ for d in DIRS:
       assert bb is not None
       # drop onto the floor line: lowest silhouette pixel sits at `floor`; x slid so the silhouette fits with a margin
       ox = max(min(H - dx, bb[0] - MARGIN), bb[2] + MARGIN - F)
-      oy = bb[3] - floor
+      oy = bb[3] - 1 - floor  # last silhouette row (bb[3] is exclusive) lands on the floor row
       oy = min(oy, bb[1] - MARGIN)
       out = big.crop((ox, oy, ox + F, oy + F))
       # flat floor shadow under the silhouette, wider as the body drops

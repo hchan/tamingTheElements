@@ -19,4 +19,4 @@ Plan: .scratch/plans/roster24-one-hero.md (section 3, rank 2). Release set stays
 - 2026-11-20 P2 and P3 (presentation only, no src/core): brazgor-fx.ts (Forge Gore overhead arc plus impact ring, Molten Hide ember ring) painted in
   ability-aura-view.ts from the action-bar readyTick rise, reduced motion held still; lesson words for forge-gore and molten-hide in
   ability-lessons.ts; ABILITY-AUDIT rows updated. Not done: a hit-confirm FX on the foe (no sim event), thorns flash.
-- Still to do: flank-glow art fix, audit gate, Pyre Totem ally no-flinch zone (slot 3, later), release flip (R).
+- Still to do: audit gate, Pyre Totem ally no-flinch zone (slot 3, later), release flip (R). Flank-glow art fix: the committed rig source already derives byte-for-byte from brazgor-96003-flankfix.png (re-keyed, mirrored and fitted 2026-11-20, no change); KO keys off-by-one fixed (oy = bb[3] - 1 - floor), re-baked.
