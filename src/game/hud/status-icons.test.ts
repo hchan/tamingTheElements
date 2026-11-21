@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { StatusId, type Element, type RenderStatus, type RenderView } from '@core/index';
 import { FRIENDLY_COLOR, HC_FRIENDLY_COLOR, HC_HOSTILE_COLOR, HOSTILE_COLOR } from './buffs';
-import { mainBar } from './bars';
+import { mainBar, sideOffset } from './bars';
+import { hudFrame } from './arcade-hud';
 import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, TRAP_PUDDLE_LINGER_TICKS } from '@core/index';
 import { CC_ICONS, CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, PORTRAIT_CHIP_MAX, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
 
@@ -235,5 +236,32 @@ describe('portrait chip cap', () => {
 
   it('is unchanged without max', () => {
     expect(chips({ statuses: three })).toHaveLength(3);
+  });
+});
+
+describe('chip rows on wide views', () => {
+  const six = [0, 1, 2, 3, 4, 5, 6].map((i) => ({ id: 1 + i }));
+  // 1280 (16:9), 1680 (21:9) and 2560 (32:9) logical px wide views: the HUD camera shows x from 640 - w/2 (hudFrame).
+  it.each([1280, 1680, 2560])('both teams, every scale: chips sit inside the central 1280 box and the readable bar span at view width %i', (viewW) => {
+    const frame = hudFrame(viewW);
+    for (const team of [0, 1]) {
+      for (const scale of [1, 1.5, 2, 3]) {
+        const off = sideOffset(team);
+        const row = collectStatusChips(viewWith({ statuses: six }), team, 1, 'fire', off, false, { scale, top: CHIP_Y });
+        const { minX, maxX } = mainBar(off);
+        expect(row.length).toBeGreaterThan(0);
+        for (const c of row) {
+          expect(c.x).toBeGreaterThanOrEqual(minX);
+          expect(c.x + c.w).toBeLessThanOrEqual(maxX);
+          expect(c.x).toBeGreaterThanOrEqual(frame.x);
+          expect(c.x + c.w).toBeLessThanOrEqual(frame.x + frame.w);
+          expect(c.x + c.w).toBeLessThanOrEqual(1280);
+        }
+      }
+    }
+  });
+  it('chip x does not depend on the view width (nothing moves at 16:9 or wider)', () => {
+    const a = collectStatusChips(viewWith({ statuses: six }), 1, 1, 'fire', sideOffset(1));
+    expect(a[0]?.x).toBe(mainBar(sideOffset(1)).minX);
   });
 });
