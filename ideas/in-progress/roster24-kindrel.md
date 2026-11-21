@@ -10,7 +10,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - **Element:** fire. **Style:** melee (`src/core/data/hero-style.ts`). **Hitbox:** size 70 (`src/core/data/size.ts`).
 - **Release order:** 1 of 12 (fire has no released melee yet; pilot hero (M:R after flip 6:7)).
 - **Abilities** (`src/core/data/characters.ts`, `abilities-c.ts`):
-  - Ember Bite: melee, 12 dmg, 0.5 s cd, max 2: a fast jab chain.
+  - Ember Bite: melee, 8 dmg, 340 ms cd, max 3, 48x34 box, forced light hit: a rapid light chain (SIM_VERSION 90).
   - Cinder Spray: omni, 8 dmg, 4 s cd: a close ring of embers.
   - **Super** WILDFIRE: beam, size 140, +3 speed for 150 ticks (`src/core/data/arcade-supers.ts`).
 - **Kit line (plan):** Ember Bite chain + Cinder Spray omni (AI rule exists); Cinder Brand later; drop the dash-strike idea (Tusk Gore, Stoop, Forge Gore already close gaps). Release pilot.
@@ -21,7 +21,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## WP checklist
 
 - [ ] WP-0 prerequisites (release set, audit gate; shared, done once for all heroes)
-- [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
+- [x] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [x] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
 - [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
@@ -35,3 +35,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - 2026-11-20 (P1 art, done): two revise rounds, then art-director APPROVE 4.0 (`tools/assets/portrait-rig/provenance/kindrel-approval.json`; walk 4.5, walkBack 4, cast 4, hurt 4, ko 3.5). `tools/assets/portrait-rig/tune-kindrel-anim.py` retunes the generated anim (gentler knees, reversed walkBack, crouch-and-lunge cast, 2-frame recoil hurt); the KO row comes from procedural keyframes (`kindrel-ko-keys.py`, rotated and squashed idle frame, all 5 directions, `imgWorkArea/rigs/kindrel/keys/ko`). Sheet, map strip and sheets.generated.json are committed. Follow-up (non-blocking): KO last frame to about 75 degrees with legs folded and a lower drop. Hurt stays 2 frames (spec-fixed). RELEASED_ROSTER24 not flipped.
 - 2026-11-20 (P3 text, done): ember-bite and cinder-spray lesson rows in ability-lessons.ts; docs/ABILITY-AUDIT.md rows carry the verified kit numbers (ember-bite 8 dmg, 340 ms, max 3; cinder-spray omni 8 dmg, speed 6, 4 s); GAME-DESIGN.md rows already matched. Stale size.ts comment now says fox (comment only). Note: the Abilities bullet above (12 dmg, 0.5 s, max 2) is stale versus abilities-c.ts. gate:commit passed.
 - 2026-11-20 (P2 FX, done): presentation only, no src/core change. `src/game/fx/kindrel-fx.ts` (pure, no Phaser, no Math.random) plus `kindrel-fx.test.ts`: Ember Bite = twin claw-slash arcs with a spark burst along the aim (fire orange, 14 view ticks); Cinder Spray = expanding ring of embers with a SPRAY pop (30 ticks). `ability-aura-view.ts` detects each cast from a rise of the action-bar slot's `readyTick` (same pattern as Fire Heal and Snag) and paints with the grim-fx helpers; reduced motion draws the same shapes held at mid-life. No hit-confirm spark beyond the existing event-fx hit sparks (the cast cue is the new part). e2e shot not run (P4).
+- 2026-11-20 (S sim, done, SIM_VERSION 95): Ember Bite and Cinder Spray have no twin in ALL_ABILITIES (kind, box, damage); pin test added in abilities-c.test.ts. Hit strength (ember-bite light override) and AI rule (cinder-spray omni) already existed from SIM_VERSION 90; no stun rows needed (default light 32 ticks). Round 1 (no change, level 3, full roster, Arcade): 1v1 45.9 (16 seeds), 2v2 46.7 (26 seeds), both in 45-55, so no maxHealth/damage retune. Stale Abilities bullet fixed. Goldens re-recorded (simVersion header only).
