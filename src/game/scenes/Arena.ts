@@ -33,6 +33,7 @@ import {
   type RenderView,
   type SimEvent,
   type SimWorld,
+  ROLLBACK_WINDOW,
 } from '@core/index';
 import { playSfx } from '../audio/sfx';
 import { heroName } from '../hud/tag-fx';
@@ -50,8 +51,6 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
-/** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
-const ROLLBACK_WINDOW = 6;
 import { Announcer, LOW_HEALTH, LowHealthWatch, announcementsFor, tagNotReady } from '../a11y/announcer';
 import type { PauseDialog } from '../a11y/pause-dialog';
 import { collectSide } from '../hud/bars';

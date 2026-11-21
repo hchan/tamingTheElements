@@ -15,6 +15,7 @@ import {
   PacketFlag,
   type HashEntry,
 } from './packet';
+import { BATCH_AHEAD_SLACK } from './limits';
 import type { Transport } from './transport';
 
 export type SessionStatus =
@@ -72,10 +73,12 @@ export interface UpdateResult {
 }
 
 export interface DesyncInfo {
-  /** First checkpoint tick at which the two hashes differ. */
+  /** First checkpoint tick at which the two hashes differ; for 'restore' and batch-* checks, the sim tick at detection. */
   readonly tick: number;
   readonly local: number;
   readonly remote: number;
+  /** What detected it (absent on old callers): checkpoint hash, rollback restore, or an impossible batch. */
+  readonly check?: 'hash' | 'restore' | 'batch-ack' | 'batch-first' | 'batch-ahead';
 }
 
 export interface SessionStats {
@@ -559,7 +562,7 @@ export class LockstepSession {
     }
     if (bad >= 0 && !ring.restoreTick(this.world.state, bad)) {
       // Cannot happen while the ring holds window + 2 snapshots; fail loudly instead of drifting to a later hash mismatch.
-      if (this.desync === undefined || bad < this.desync.tick) this.desync = { tick: bad, local: 0, remote: 0 };
+      if (this.desync === undefined || bad < this.desync.tick) this.desync = { tick: bad, local: 0, remote: 0, check: 'restore' };
     } else if (bad >= 0) {
       this.stats.rollbacks++;
       this.stats.maxRollbackDepth = Math.max(this.stats.maxRollbackDepth, target - bad);
@@ -630,8 +633,10 @@ export class LockstepSession {
     const l = this.localHashes.get(tick);
     const r = this.remoteHashes.get(tick);
     if (l === undefined || r === undefined || l === r) return;
+    // A batch-* cause is the first evidence of a broken peer; a later hash mismatch must not overwrite it.
+    if (this.desync?.check?.startsWith('batch-') === true) return;
     if (this.desync === undefined || tick < this.desync.tick)
-      this.desync = { tick, local: l, remote: r };
+      this.desync = { tick, local: l, remote: r, check: 'hash' };
   }
 
   private sampleAdvantage(): void {
@@ -660,6 +665,21 @@ export class LockstepSession {
       if ((p.flags & PacketFlag.forfeit) !== 0 && this.forfeitReason === undefined && !this.ended) {
         this.forfeitReason = 'remote-conceded';
         this.winner = this.side;
+      }
+      if (this.desync === undefined && !this.ended && this.forfeitReason === undefined) {
+        // Order-independent impossibilities (an honest peer, even with loss, duplication or reorder, never sends these).
+        const check =
+          p.ack > this.sentUpTo
+            ? 'batch-ack'
+            : p.firstTick > this.remoteNeeded
+              ? 'batch-first'
+              : p.firstTick + p.inputs.length > this.local.length + BATCH_AHEAD_SLACK
+                ? 'batch-ahead'
+                : undefined;
+        if (check !== undefined) {
+          this.desync = { tick: this.simTick, local: 0, remote: 0, check };
+          continue;
+        }
       }
       this.remoteAck = Math.min(Math.max(this.remoteAck, p.ack), this.local.length);
       const now = this.ring === undefined ? this.simTick : this.confirmed;
