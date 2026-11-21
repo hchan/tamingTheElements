@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (art items noted, rest fixed or dropped)
 added: 2026-11-16
 ---
 
@@ -28,3 +29,8 @@ Screenshots in ~/claudetmp/qa-r75/. Re-check of the qa-r74 list.
 ## Verification
 
 Playwright dev-build runs printed no console errors. e2e subset (first-run-hint, arcade-super, arcade-tag): 19 passed. Note the e2e "hint is gone the moment a super cut-in starts" passes, yet the screenshots (manual-step harness, hint card not yet dismissed or faded) still show the card across the band, so the test does not cover the 844x390 and 667x375 geometry or the manual-step path.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: hint card over the super band (`ideas/done/hint-card-waits-for-super-band.md`, verified r77); Pause gutter; KO ghost (r76); SNAG behind chips (r77); damage-number collisions (r78); far chip fade (FLOOR-TAGS-1, `src/game/fx/terrain-view.ts:248`). Dropped (phone/portrait): item 3 (in-fight portrait). Art only, noted: Wispera orb, Echo/Cyclonius icons (`ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`).
+Open: none.
