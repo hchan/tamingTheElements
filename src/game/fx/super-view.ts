@@ -7,7 +7,7 @@ import { DOLLY_MAX, DROP_K } from '../views/pose-depth';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { punchAnchor } from './arena-camera';
 import { ELEMENT_COLORS } from './element-colors';
-import { CUT_BAND_KEY } from '../hud/cut-numbers';
+import { setCutBand } from '../hud/cut-numbers';
 import { PUNCH_ZOOM, TICK_MS, superFrame, titleAlpha, type SuperFrame } from './super-cinematic';
 import { BURST_COLOR, BURST_REACH, BURST_SHAPE, burstRadius, superBurst } from './super-burst';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
@@ -374,9 +374,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     running = false;
     scene.events.off('update', update);
     if (scene.registry.get('tte.band') === true) scene.registry.set('tte.band', false);
-    // Releases the rings and numbers the shock layer held back while the band was up (shock-view.ts).
-    scene.registry.set('tte.cut', false);
-    scene.registry.set(CUT_BAND_KEY, undefined);
+    setCutBand(scene.registry, undefined); // releases the rings and numbers the shock layer held back (shock-view.ts)
     if (live) {
       lifted?.setDepth(0);
       for (const f of liftedFoes) f.img.setDepth(f.depth);
@@ -542,8 +540,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
         parts.glow.setVisible(false);
       }
       scene.registry.set('tte.band', bandHidesWeather(bandY, bandK));
-      scene.registry.set('tte.cut', true);
-      scene.registry.set(CUT_BAND_KEY, { top: bandY - bandExt(bandK), bottom: bandY + bandExt(bandK) });
+      setCutBand(scene.registry, { top: bandY - bandExt(bandK), bottom: bandY + bandExt(bandK) });
       // Over the band, rules and glow (under the text) when the band must cross the caster; else just over the dim.
       liftedFoes = [];
       spans.forEach((sp, i) => {

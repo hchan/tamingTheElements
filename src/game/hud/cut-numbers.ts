@@ -27,3 +27,9 @@ export function cutNumberFade(band: CutBand | undefined, top: number, bottom: nu
 export function cutNumberFadeOf(r: Registry, top: number, bottom: number): number {
   return cutNumberFade(r.get(CUT_BAND_KEY) as CutBand | undefined, top, bottom);
 }
+
+/** Sets 'tte.cut' (band up) and publishes or clears the band rows in one call (keeps super-view.ts under its size cap). */
+export function setCutBand(r: { set(key: string, v: unknown): void }, band: CutBand | undefined): void {
+  r.set('tte.cut', band !== undefined);
+  r.set(CUT_BAND_KEY, band);
+}
