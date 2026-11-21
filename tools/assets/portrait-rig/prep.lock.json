@@ -145,6 +145,20 @@
    "rig.json": "28cb13c5d8420f08f0278012bd92a10493f1672b2b21d366b33d9882a1967a0b"
   }
  },
+ "quarrak": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "37f61c160510a452b9e3041d1ec4e9a118ea8b78aee12ebb2bd76cb8ab9f9759",
+   "anim": "d05036f36ecea8488c62baa177ce7c2681a5c995006e583ea641e9f89c65bf62",
+   "portrait": "63662c98cbf16168f1c518c01c293658900eb73ad507e69db506ee31438dad59"
+  },
+  "outputs": {
+   "parts/body.png": "6f6f8228d1188cf9e0af594878b119e702f27cf07880bece5581be76479eba40",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "9fd1f0b46f834aa29a3575a94fcd93a350aaaac70fdb516a790648aa25cb22f8",
+   "rig.json": "9cff7b27e8a78a467522b7bdab0e85b9b5a6261ccf96e17cf243b930d0adbcd6"
+  }
+ },
  "rokcore": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
