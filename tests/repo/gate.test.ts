@@ -9,6 +9,7 @@ import {
   e2eFingerprint,
   hookMayRunT1,
   isT1Neutral,
+  loadEnv,
   parseArgs,
   parseRanOn,
   pruneList,
@@ -276,5 +277,15 @@ describe('runPassed', () => {
     expect(runPassed(1, 'VERDICT: NO VERDICT: the run did not finish')).toBe(false);
     expect(runPassed(1, 'PUSH OK mentioned mid-line, no verdict')).toBe(false);
     expect(runPassed(1, '')).toBe(false);
+  });
+});
+
+describe('loadEnv (vitest worker cap under load)', () => {
+  it('caps workers only when load1 is above the core count, and keeps an explicit value', () => {
+    expect(loadEnv({}, 10, 14)['VITEST_MAX_WORKERS']).toBeUndefined();
+    expect(loadEnv({}, 14, 14)['VITEST_MAX_WORKERS']).toBeUndefined();
+    expect(loadEnv({}, 300, 14)['VITEST_MAX_WORKERS']).toBe('3');
+    expect(loadEnv({}, 300, 4)['VITEST_MAX_WORKERS']).toBe('2');
+    expect(loadEnv({ VITEST_MAX_WORKERS: '8' }, 300, 14)['VITEST_MAX_WORKERS']).toBe('8');
   });
 });

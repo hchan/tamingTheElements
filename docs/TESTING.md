@@ -36,6 +36,14 @@ table (`--fast` skips browsers); use it instead of waiting for Actions. See [DEP
 
 Browser engines for `test:browser` and `e2e` need `pnpm exec playwright install chromium firefox webkit` once (e2e uses chromium only).
 
+### Running the suite while other agents build
+
+Run the full suite (`gate:commit`, `pnpm test`) in one place at a time; several full runs plus agent builds push load1 to 100+ and
+turn heavy tests into timing-only failures. Check `uptime` first and wait if load1 is above about 40. `gate:commit` caps vitest
+workers (`VITEST_MAX_WORKERS`, a quarter of the cores, minimum 2) whenever load1 is above the core count (`loadEnv` in
+`tools/ci/gate.ts`; an explicit `VITEST_MAX_WORKERS` wins); this changes only how many files run at once, never the results.
+The slow property cases carry an explicit 900 s timeout, a hang guard that asserts nothing.
+
 ### Property tests
 
 `src/core/sim/sim.property.test.ts` uses fast-check. Environment variables:

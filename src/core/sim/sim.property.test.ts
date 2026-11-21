@@ -783,7 +783,8 @@ describe('sim properties: invariants', () => {
       { ...FC, numRuns: RUNS > 100 ? RUNS : 12 },
     );
     expect(ended).toBeGreaterThan(0);
-  });
+    // Explicit generous timeout: same 12 runs x 2500 ticks, stretches 10x+ under load 100+; it only guards against hangs.
+  }, 900_000);
 
   it('hold in Arcade with tapped buttons: a buffered cast uses one fresh press, once; Classic never buffers', () => {
     let buffered = 0;

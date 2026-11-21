@@ -7,6 +7,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { cpus, loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { lintPlan } from './lint-targets';
 import { remoteAlias } from './redact';
@@ -255,9 +256,19 @@ const recentCommitStamps = (cwd: string): { totalSec: number }[] => {
     .map((n) => JSON.parse(readFileSync(join(dir, n), 'utf8')) as { totalSec: number });
 };
 
+/**
+ * Vitest worker cap under machine load: when load1 is above the core count, step children get `VITEST_MAX_WORKERS` (a quarter
+ * of the cores, at least 2) so the gate stops fighting other agents for CPU. It only changes how many files run at once, not
+ * which tests run or what they assert. An explicit `VITEST_MAX_WORKERS` is kept.
+ */
+export function loadEnv(env: NodeJS.ProcessEnv = process.env, load1: number = loadavg()[0] ?? 0, cores: number = cpus().length): NodeJS.ProcessEnv {
+  if (env['VITEST_MAX_WORKERS'] || !(load1 > cores)) return env;
+  return { ...env, VITEST_MAX_WORKERS: String(Math.max(2, Math.floor(cores / 4))) };
+}
+
 const runStep = (cwd: string, step: string, quiet: boolean): { code: number; sec: number; tail: string } => {
   const t0 = Date.now();
-  const r = spawnSync('corepack', ['pnpm', 'run', step], { cwd, encoding: 'utf8', stdio: quiet ? 'pipe' : 'inherit', maxBuffer: 1 << 28 });
+  const r = spawnSync('corepack', ['pnpm', 'run', step], { cwd, encoding: 'utf8', stdio: quiet ? 'pipe' : 'inherit', maxBuffer: 1 << 28, env: loadEnv() });
   const tail = quiet ? `${r.stdout}${r.stderr}`.trim().split('\n').slice(-30).join('\n') : '';
   return { code: r.status ?? 1, sec: Math.round((Date.now() - t0) / 100) / 10, tail };
 };
@@ -275,7 +286,7 @@ const CONCURRENT = ['lint', 'test'] as const;
 export function runStepAsync(cwd: string, step: string, run: readonly string[] = PNPM_RUN, argv?: readonly string[]): { done: Promise<StepResult>; kill: () => void } {
   const t0 = Date.now();
   const cmd = argv ?? [...run, step];
-  const child = spawn(cmd[0] as string, cmd.slice(1), { cwd, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  const child = spawn(cmd[0] as string, cmd.slice(1), { cwd, stdio: ['ignore', 'pipe', 'pipe'], detached: true, env: loadEnv() });
   const chunks: Buffer[] = [];
   child.stdout.on('data', (d: Buffer) => chunks.push(d));
   child.stderr.on('data', (d: Buffer) => chunks.push(d));
