@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { earthPulse, columnMarks, dangerGlyphAlpha, WARN_CORE, edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, dustLook, DUST_TICKS, warnProgress } from './hazard-view';
+import { earthPulse, columnMarks, dangerGlyphAlpha, WARN_CORE, edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, dustLook, DUST_TICKS, warnProgress, chipAvoidRect, publishAvoidSlot } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -107,3 +107,22 @@ describe('rockfall and fire telegraph helpers (r21)', () => {
     expect(dustLook(20, true)?.alpha).toBeLessThan(dustLook(3, true)?.alpha ?? 0);
   });
 });
+
+describe('hazard warning chip as a HUD avoid source', () => {
+  it('maps a centred world box to a HUD rect through the camera view', () => {
+    const from = { x: 100, y: 50, w: 640, h: 360 };
+    const to = { x: 0, y: 0, w: 1280, h: 720 };
+    // Centre (420, 230) is the view centre; a 100 x 30 box doubles to 200 x 60 and sits centred on (640, 360).
+    expect(chipAvoidRect(420, 230, 100, 30, from, to)).toEqual({ x: 540, y: 330, w: 200, h: 60 });
+  });
+
+  it('fills the lower empty slot, replaces the rect and clears on undefined', () => {
+    const all: { x: number; y: number; w: number; h: number }[][] = [];
+    const r = { x: 1, y: 2, w: 3, h: 4 };
+    publishAvoidSlot(all, 1, r);
+    expect(all).toEqual([[], [r]]);
+    publishAvoidSlot(all, 1, undefined);
+    expect(all).toEqual([[], []]);
+  });
+});
+
