@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (r103 snapshot: P1 and most P2/P3 are phone/portrait work, dropped 2026-11-18; remaining desktop polish items 4-7, 10, 11 are cosmetic and superseded by later QA rounds)
 added: 2026-11-17
 ---
 
