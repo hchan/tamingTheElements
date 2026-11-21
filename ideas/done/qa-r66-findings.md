@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (remaining items tracked in r65 triage and other idea files)
 added: 2026-11-15
 ---
 
@@ -29,3 +30,8 @@ Headless Chromium SwiftShader, port 7966, screenshots in `~/claudetmp/qa-r66/s/`
 ## Process
 
 - `node_modules` came from `pnpm install --offline` in the worktree; the scripts import Playwright from the main checkout. After a KO `__TTE__.arena` is undefined while the next round loads, so the passive probe's "Got it" click timed out after about 67 s (script issue, not a game error).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: tag-key notice for a stunned hero (`Can't swap: stunned`); round pips (bigger, WINS caption, r68); Tour Controls chips (WP T2, verified r68); Wispera splash scaling (WP T2). By design: equal-length life bars with 100 HP notches (WP-HF1). Dropped (owner, 2026-11-18, no phone/portrait/touch work): the 390x844 and 812x375 picker/2v2 items.
+Carried elsewhere, not open here: left-wall pin and the super punch-in crop (r65 triage item 3, `ideas/brainstorm/qa-r125-tag-entry-left-wall-overlap.md`; Hard has `wallHold`, `src/core/agents/scripted-ai/arcade-ai.ts:477`); Tag press with a healthy hero gives no line (r65 triage item 2); hi-res Wispera art (art only, `ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`).

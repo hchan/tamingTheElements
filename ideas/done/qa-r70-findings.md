@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (Treenoc/Cyclonius fixed in r71/r72, rest tracked elsewhere)
 added: 2026-11-16
 ---
 
@@ -35,3 +36,7 @@ Build main 4d383fa3, headless only. Screenshots in ~/claudetmp/qa-r70/. Scripts 
 3. Anchor the element tags off the name and off-screen edges; hide tags that are clipped.
 4. Keep a hero fully on-screen at a side wall (camera pad), and consider Normal step-apart.
 5. Rework the portrait phone fight layout (arena fills the width, bar one row, hint card compact).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Treenoc shards at round start and Cyclonius identity (r71/r72 re-checks); element tags on heroes (r72); Normal AI sitting inside a wall-pinned player (step-apart, `src/core/agents/scripted-ai/step-apart.test.ts`). Dropped (phone): portrait/landscape layout items 6 and 7. Tracked elsewhere: wall clipping at x=0 (r65 triage item 3); first-run hint over low heroes (`ideas/done/hint-card-waits-for-super-band.md`, `ideas/brainstorm/qa-r18-first-blood-hint-covers-arena.md`). Low, dropped: Cyclonius label touching the tile border.

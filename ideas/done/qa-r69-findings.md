@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete or fixed (e2e flakes fixed, banner calls fixed, rest cosmetic or phone)
 added: 2026-11-15
 ---
 
@@ -42,3 +43,8 @@ Weak:
 2. Make versus-stage-pick wait for terrain().stage; add retry guard to idle-aura pixel tests.
 3. Shrink and re-anchor the IN! call, keep it off the damage numbers.
 4. Show TAG! after the FIGHT! banner clears instead of dropping it.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: hit-mark separation (the spec now measures marks hidden vs shown on the same frame, commit bf05de0ca, `tests/e2e/hit-mark-element.spec.ts`); versus-stage-pick race (`expect.poll` on the drawn stage, commit 33c836b11); idle-aura flake (settle frames, same commit); TAG! dropped during FIGHT! (`BANNER_WAIT_TICKS` in `src/game/hud/banner-lanes.ts`); PAX IN! over the damage number (`ideas/done/qa-r34-pax-in-overlap.md`). Dropped (phone): portrait/landscape HUD size and "Play anyway". Not re-reported in later rounds, dropped as stale: pale swap flash, faint hero names during the round banner, fire aura glyphs, enemy/player bar colours.
+Open: none new; the e2e fixes are covered by the nightly full run.
