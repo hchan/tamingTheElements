@@ -20,3 +20,12 @@ Plan: .scratch/plans/roster24-one-hero.md (section 3, rank 3). Release set stays
   2v2: Ouroth 45.3, Durrok 47.8, Nykra 59.7, Glimmaw 54.6, Brazgor 46.8, Kindrel 48.3.
   Ouroth is in band 0.45-0.55 in both, so no life retune. Nykra 2v2 59.7 is out of band but its kit is unchanged in this bump (it was 56.2 to 59.7 across runs); flagged for a later look.
 - Still to do: tail margin art fix, rig spec/audit gate (P1), AI rule, hit FX (P2), lesson rows (P3), Brimstone Coil slot 3 (later), release flip (R).
+- 2026-11-20 P1 art and rig (art-director APPROVE 4.0 after 1 REVISE round; provenance/ouroth-approval.json): source ouroth.png rebuilt on a 340x320 canvas
+  (make-rig-source.py SIZES ouroth 400x180 -> 340x320; clear-enclosed-grey.py removes enclosed backdrop pockets, key-grey-box.py keys the leaked grey spot in the left loop).
+  New body plan body_plans/serpent.py (chain of capsule bones along the S, travelling slither wave) with r24/ouroth.landmarks.json; tune-ouroth-anim.py adds walkBack (E only);
+  ouroth-ko-keys.py writes the procedural KO (off-by-one fixed: oy = bb[3] - 1 - floor, rot capped at 8 deg). Round 1 REVISE (3.5): grey spot, walk/idle too alike, weak dash/cast, flat KO.
+  Follow-ups: KO is subtle (sink and shrink); walk reads as sway, not stride; check SE/NE in play. Still to do: AI rule, hit FX (P2), lesson rows (P3), release flip (R).
+  Review follow-ups (2026-11-20): scripts live in tools/assets/roster24-art/ (make-rig-source.py, clear-enclosed-grey.py, key-grey-box.py) and tools/assets/portrait-rig/
+  (body_plans/serpent.py, r24/ouroth.landmarks.json, tune-ouroth-anim.py, ouroth-ko-keys.py). Keying step used on the source: key-grey-box.py with box 65 135 115 185 (defaults lum 105, sat 0.2).
+  Art box is now 170x160 (squarish coil) but the sim body is still ouroth [200, 90] in src/core/data/size.ts: check the hurtbox in a real-game screenshot and retune the size (sim change, not part of P1).
+  brazgor-ko-keys.py still has the old off-by-one (oy = bb[3] - floor), so Brazgor KO frames sit 1 px high: fix on a Brazgor re-bake. docs/REPO-MAP.md and portrait-rig/README.md rows for serpent/r24/new scripts left for the REPO-MAP owner (shared file).

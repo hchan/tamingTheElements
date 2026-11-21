@@ -114,6 +114,21 @@
    "rig.json": "b413a7f8a15b8ecf566309457f4bd3bba6fed573229dbdf12ad962488e751e7e"
   }
  },
+ "ouroth": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "ef6ff25e033ac79c837f052797253758ca8274fa3cac4ab704bb7019570c7d46",
+   "anim": "b129a24a783b554ea55f3db46bd13ca72a866fba446a5acca7d5b547d65f1b85",
+   "portrait": "34453b74f6c45e41082f7d239acd7ff1b0b89f822d1d1107e91dd8cc4e255be8"
+  },
+  "outputs": {
+   "parts/body.png": "202831a897284832a3aefa2aed92e91154291364f20a5d57efecfa911ba0f397",
+   "parts/shadow.png": "9350bf7957be0f596adb024bba92c9b6eb551ee791afe51077a97cd99527d038",
+   "parts/eye.png": "5d71daa3aefab33b7a9127abc4fe7dde4833c14f84b5dfd92ee04b44994a928a",
+   "parts/maw.png": "cd19bd1a6b255b24af2be8da6185c787ddfd1b68c75863c29d9b787f8256efaf",
+   "rig.json": "2e04e323622fdbb8baa802dd410538ab6b9ad884ba19e5601eb7d1a06cc59393"
+  }
+ },
  "pax": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",

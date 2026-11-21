@@ -1,6 +1,6 @@
 """Writes the rig source image (rig.png) for a roster24 hero: the cleaned cutout fitted (Lanczos) into a canvas of exactly box size x res,
 so portrait-rig/prep.py can use it 1:1 (its check: box w/h x res == image px). Canvas per hero (px): 400x400 for most, 250x400 Hyalia
-(box 125x200), 400x180 Ouroth (box 200x90) - see SIZES; other ids use 400x400.
+(box 125x200), 340x320 Ouroth (box 170x160) - see SIZES; other ids use 400x400.
 Usage: ~/claudetmp/venv-rig/bin/python -I tools/assets/roster24-art/make-rig-source.py HERO CUTOUT OUT.png [--pad 10] [--margin 10]
 The creature (alpha bbox) is scaled to fit inside the canvas minus pad (sides, top) and margin (bottom), never stretched, and sits at the
 bottom centre. Needs Pillow only; deterministic. Never touches <hero>Large.png (the menu portrait)."""
@@ -8,7 +8,7 @@ import argparse
 from PIL import Image
 
 RES = 2
-SIZES = {"hyalia": (250, 400), "ouroth": (400, 180)}
+SIZES = {"hyalia": (250, 400), "ouroth": (340, 320)}
 
 ap = argparse.ArgumentParser()
 ap.add_argument("hero"); ap.add_argument("src"); ap.add_argument("out")
