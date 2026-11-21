@@ -13,7 +13,7 @@ Runs Taming the Elements on your machine. Use `corepack pnpm` (`pnpm` may not be
 
 Run the script (it checks the port, starts the server detached, waits until it answers, opens the browser, prints one line):
 
-`tools/dev/play-local.sh [dev|preview] [port] [query]` e.g. `tools/dev/play-local.sh dev 5173 '?ff=play&seed=7'`
+`tools/dev/play-local.sh [dev|preview] [port] [query]` e.g. `tools/dev/play-local.sh dev 5173 '?ff=arenaDemo&seed=7'`
 
 Mode default `dev`, port default `5173`; it refuses the reserved e2e ports. Preview builds first (URL flags do NOT work there). If the port is already serving, it just opens the browser. Report the printed URL and pid. When finished, `kill <pid>` (never `pkill -f vite`).
 
@@ -22,13 +22,13 @@ Mode default `dev`, port default `5173`; it refuses the reserved e2e ports. Prev
 | URL | What you get |
 | --- | --- |
 | `/` | Normal menu, Classic game (Skip is canvas-drawn at about (1150,46); the starting hero is random) |
-| `/?ff=play` | Straight into play |
+| `/?ff=play` | Loads Phaser and stops on the Preload bar (by design: no arena starts; `createGame(..., false)` stays on Preload). Use `?ff=arenaDemo` for a fight |
 | `/?ff=arenaDemo` | Arena demo |
 | `/?hero=curomo&foe=rokcore` | Starts a demo fight with the chosen heroes (any character slug; each flag alone swaps one side; implies `arenaDemo`; add `&manual=1` and drive it with `__TTE__.arena.step`) |
 | `/?manual=1` | Manual stepping for debugging |
 | `/?seed=123` | Fixed seed for repeatable runs |
 
-Combine with `&`, e.g. `/?ff=play&seed=7`. Tester mode (full garrison and abilities) is in the in-game settings; see docs/TESTER-MODE.md. The Arcade ruleset is opt-in from the menu.
+Combine with `&`, e.g. `/?ff=arenaDemo&seed=7`. Tester mode (full garrison and abilities) is in the in-game settings; see docs/TESTER-MODE.md. The Arcade ruleset is opt-in from the menu.
 
 ## Controls and display
 
