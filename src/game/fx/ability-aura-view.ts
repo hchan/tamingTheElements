@@ -6,6 +6,7 @@ import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from
 import { popCeil, popLaneLift } from './pop-lanes';
 import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } from '../hud/arcade-hud';
 import { viewHeight, viewWidth } from '../boot/viewport';
+import { BITE_COLOR, BITE_POP, BITE_SPRITE, BITE_TICKS, SPRAY_COLOR, SPRAY_POP, SPRAY_SPRITE, SPRAY_TICKS, cinderSpray, emberBite } from './kindrel-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
@@ -54,6 +55,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
+  let kfx: { kind: 'bite' | 'spray'; x: number; y: number; dir: number; born: number }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   const lastReady = new Map<number, number>();
@@ -108,6 +110,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         for (const p of pops) p.text?.destroy();
         pops = [];
         lashes = [];
+        kfx = [];
         lastReady.clear();
       }
       lastRound = round;
@@ -133,6 +136,49 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         pops.push({ id: ++popId, word: 'SNAG', team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
       }
     }
+    // Kindrel (roster24): Ember Bite slashes and Cinder Spray rings, read from the slot's readyTick like the casts above.
+    const kindrelCasts = [
+      { sprite: BITE_SPRITE, kind: 'bite' as const, word: BITE_POP, base: 4 },
+      { sprite: SPRAY_SPRITE, kind: 'spray' as const, word: SPRAY_POP, base: 6 },
+    ];
+    for (const team of [0, 1]) {
+      for (const k of kindrelCasts) {
+        const slot = view.actionBar(team)?.abilities.find((s) => s.sprite === k.sprite);
+        if (!slot) continue;
+        const key = team + k.base * 2;
+        const prev = lastReady.get(key);
+        lastReady.set(key, slot.readyTick);
+        const at = aim.get(team);
+        if (prev === undefined || slot.readyTick <= prev || !at) continue;
+        kfx.push({ kind: k.kind, ...at, born: now });
+        if (k.kind === 'spray') {
+          const py = anchor.get(team)?.y ?? at.y - 8;
+          pops.push({ id: ++popId, word: k.word, team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
+        }
+      }
+    }
+    kfx = kfx.filter((f) => {
+      const age = now - f.born;
+      if (f.kind === 'bite') {
+        const b = emberBite(f.x, f.y, f.dir, age, reduced);
+        if (!b) return false;
+        for (const arc of b.arcs) {
+          const pts = toPts(arc);
+          gfx.lineStyle(7, 0x000000, 0.2 * b.alpha).strokePoints(pts, false);
+          gfx.lineStyle(3.5, BITE_COLOR, 0.75 * b.alpha).strokePoints(pts, false);
+          glow.lineStyle(9, BITE_COLOR, 0.12 * b.alpha).strokePoints(pts, false);
+        }
+        paintEmbers(glow, b.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: b.alpha })), BITE_COLOR, 0.9);
+        return age <= BITE_TICKS;
+      }
+      const sp = cinderSpray(f.x, f.y, age, reduced);
+      if (!sp) return false;
+      gfx.lineStyle(6, 0x000000, 0.18 * sp.alpha).strokeCircle(sp.ring.x, sp.ring.y, sp.ring.r);
+      gfx.lineStyle(2.5, SPRAY_COLOR, 0.6 * sp.alpha).strokeCircle(sp.ring.x, sp.ring.y, sp.ring.r);
+      glow.lineStyle(10, SPRAY_COLOR, 0.1 * sp.alpha).strokeCircle(sp.ring.x, sp.ring.y, sp.ring.r);
+      paintEmbers(glow, sp.embers.map((e) => ({ x: e.x, y: e.y, r: e.r, a: sp.alpha })), SPRAY_COLOR, 0.9);
+      return age <= SPRAY_TICKS;
+    });
     lashDrawn = [];
     lashes = lashes.filter((l) => {
       const age = now - l.born;
@@ -166,7 +212,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const look = popLook(age, reduced);
       // SNAG is a pale parchment with a thick dark outline (it was a dim tan that read grey over the lava floor, QA r77).
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP ? '#f0b070' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);
@@ -198,6 +244,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     pops = [];
     ceils.clear();
     lashes = [];
+    kfx = [];
   };
   arena.events.on('postupdate', draw);
   arena.events.once('shutdown', off).once('destroy', off);
