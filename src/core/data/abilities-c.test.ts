@@ -118,4 +118,16 @@ describe('abilities-c tick values', () => {
       expect(twins.map((t) => t.id), a.id).toEqual([]);
     }
   });
+  it('pins the Vortigal kit: Stoop melee 22 damage, 175 cooldown ticks, 90x60 box, lunge 200; Talon Rake melee 12 damage, 45 cooldown ticks, max 2, 60x40 box (no other ability shares kind, box and damage with either)', () => {
+    const stoop = get('stoop');
+    expect([stoop?.kind, stoop?.damage, stoop?.cooldownTicks, stoop?.maxActive, stoop?.w, stoop?.h, stoop?.lungePx]).toEqual(['melee', 22, 175, 1, 90, 60, 200]);
+    const rake = get('talon-rake');
+    expect([rake?.kind, rake?.damage, rake?.cooldownTicks, rake?.maxActive, rake?.w, rake?.h]).toEqual(['melee', 12, 45, 2, 60, 40]);
+    for (const a of [stoop, rake].flatMap((x) => (x ? [x] : []))) {
+      const twins = ALL_ABILITIES.filter(
+        (o) => o.id !== a.id && o.kind === a.kind && o.w === a.w && o.h === a.h && o.damage === a.damage,
+      );
+      expect(twins.map((t) => t.id), a.id).toEqual([]);
+    }
+  });
 });

@@ -31,3 +31,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20: S step (SIM_VERSION 94). Kit has no twin (pinned in abilities-c.test.ts). Full roster, Arcade, level 3: 1v1 51.9 (16 seeds, in band); 2v2 was 41.6 at 665, 49.0 at 740 (26 seeds; 1 retune round). `ARCADE_2V2_LIFE_PM` vortigal 665 -> 740. The planned Stoop airborne-dive rework and Talon Rake wound swap are NOT done (deferred: sim-behaviour change plus art/FX dependency); S checkbox stays open for that. Goldens re-recorded: Arcade 2v2 match with Vortigal changed, others header only.

@@ -341,5 +341,9 @@
  *    Stinging Filament or Bell Pulse), so only a life retune: Hyalia maxHealth 95 -> 99 (95 gave 42.1 percent 1v1; 105 gave 55.4; 102 gave 54.1 1v1 but 57.4 2v2).
  *    Win rates at 99 (full roster, level 3): 1v1 49.2, 2v2 53.1 percent. Release set stays empty. See ideas/in-progress/roster24-hyalia.md.
  *    Re-record reason: a recorded Arcade match with Hyalia changes; every other golden changes only the simVersion header.
+ * 94: Arcade 2v2/3v3 only (Classic and Arcade 1v1 hashes unchanged). Roster-24 step S for Vortigal: the kit is already unique (no other ability shares kind,
+ *    box and damage with Stoop or Talon Rake), so only a 2v2 life retune: ARCADE_2V2_LIFE_PM vortigal 665 -> 740 (665 gave 41.6 percent in 2v2).
+ *    Win rates (full roster, level 3): 1v1 51.9 (unchanged), 2v2 49.0 percent. Release set stays empty. See ideas/in-progress/roster24-vortigal.md.
+ *    Re-record reason: a recorded Arcade 2v2 match with Vortigal changes; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 93;
+export const SIM_VERSION = 94;
