@@ -40,7 +40,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 
 - [qa-r103-findings](../done/qa-r103-findings.md): QA r103 findings
 - [qa-r104-findings](../done/qa-r104-findings.md): QA r104 findings
-- [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings
+- [qa-r105-findings](../done/qa-r105-findings.md): QA r105 findings
 - [qa-r106-findings](../done/qa-r106-findings.md): QA r106 findings
 - [qa-r107-findings](../done/qa-r107-findings.md): QA r107 findings
 
@@ -60,7 +60,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-2 Label and hazard chip clutter
 
-- Members: [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md), [qa-r6-floor-label-clutter-and-hud-pips](../done/qa-r6-floor-label-clutter-and-hud-pips.md), [qa-r10-fight-readability](../done/qa-r10-fight-readability.md), [qa-r13-visual-readability](../done/qa-r13-visual-readability.md), [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md)
+- Members: [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md), [qa-r6-floor-label-clutter-and-hud-pips](../done/qa-r6-floor-label-clutter-and-hud-pips.md), [qa-r10-fight-readability](../done/qa-r10-fight-readability.md), [qa-r13-visual-readability](../done/qa-r13-visual-readability.md), [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md), [qa-r105-findings](../done/qa-r105-findings.md)
 - Size: M
 - Shared files: Hud.ts, src/game/fx/hazard-view.ts, terrain-view.ts, main.css
 - Flags: needs browser/e2e

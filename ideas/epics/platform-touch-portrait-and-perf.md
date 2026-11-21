@@ -29,7 +29,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [qa-r102-findings](../done/qa-r102-findings.md): QA r102 findings
 - [qa-r103-findings](../done/qa-r103-findings.md): QA r103 findings
 - [qa-r104-findings](../done/qa-r104-findings.md): QA r104 findings
-- [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings
+- [qa-r105-findings](../done/qa-r105-findings.md): QA r105 findings
 - [qa-r106-findings](../done/qa-r106-findings.md): QA r106 findings
 - [qa-r107-findings](../done/qa-r107-findings.md): QA r107 findings
 
