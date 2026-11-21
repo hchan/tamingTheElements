@@ -39,7 +39,7 @@ export const ROSTER_24_CHARACTERS: readonly CharacterDef[] = Object.freeze([
   def('kindrel', { element: 'fire', alignment: 'neutral', maxHealth: 85, speed: 8, sprite: 'kindrel' }, ['ember-bite', 'cinder-spray']),
   def('nykra', { element: 'water', alignment: 'neutral', maxHealth: 100, speed: 7, sprite: 'nykra' }, ['hoof-crash', 'kelp-lash']),
   def('quarrak', { element: 'earth', alignment: 'neutral', maxHealth: 140, speed: 4, sprite: 'quarrak' }, ['hurl-rock', 'boulder-roll']),
-  def('hyalia', { element: 'air', alignment: 'neutral', maxHealth: 95, speed: 5, sprite: 'hyalia' }, ['stinging-filament', 'bell-pulse']),
+  def('hyalia', { element: 'air', alignment: 'neutral', maxHealth: 99, speed: 5, sprite: 'hyalia' }, ['stinging-filament', 'bell-pulse']),
   // Batch 2 (SIM_VERSION 73): Brazgor, Glimmaw, Durrok, Zephra.
   def('brazgor', { element: 'fire', alignment: 'neutral', maxHealth: 150, speed: 5, sprite: 'brazgor' }, ['forge-gore', 'molten-hide']),
   def('glimmaw', { element: 'water', alignment: 'neutral', maxHealth: 95, speed: 6, sprite: 'glimmaw' }, ['lure-orb', 'abyss-flash']),
