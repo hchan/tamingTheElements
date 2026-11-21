@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 # QA r12 scorecard and status (headless Playwright, 1280x720, 844x390, 390x844 touch)
@@ -17,3 +17,5 @@ Method: test build on port 7970, real-time keyboard fights, Versus 1v1 and 2v2, 
 Covered now: C throws Snag (works for Curomo; rope lash and SNAG word; slot greys on cooldown), 2v2 Tag key 3 (TAG! call, IN/BENCH lines, cooldown), gamepad stick moves the hero, touch controls present in fight, Key Bindings screen.
 Not found: an SF key preset in Key Bindings (only Reset to defaults), see qa-r12-keybindings-gaps.
 New findings: qa-r12-touch-fight-layout, qa-r12-keybindings-gaps, qa-r12-tag-and-snag-feedback, qa-r12-roundend-not-reached.
+
+triaged: 2026-11-21, obsolete: scorecard; findings live in their own files.

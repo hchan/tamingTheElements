@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 # QA r11 scorecard and status (headless Playwright, 1280x720 plus 390x844 / 844x390)
@@ -22,3 +22,5 @@ Not covered: in-fight touch controls on mobile (only the Play picker was checked
 - Not re-verified: floor chips vs ROUND/FIGHT overlap (none seen), earth crystal prop, settings seam. Default fighters still lopsided (Sindarosa 272 life vs Ishimi 588 in the Versus test).
 - Holding: menu, Play and Versus wording is clean (no Classic, Arcade, ruleset or Capture); Dash/Weather tooltip not stuck.
 - New findings: qa-r11-round-end-panel, qa-r11-snag-discoverability, qa-r11-menus-and-picker-polish, qa-r11-mobile-portrait-picker, qa-r11-first-run-card.
+
+triaged: 2026-11-21, obsolete: scorecard; findings live in their own files.
