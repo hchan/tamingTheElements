@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-18
+triaged: d (scorecard duplicates qa-r110-findings.md; low scores are landscape and portrait phone work, dropped 2026-11-18)
 ---
 
 # QA r110 scorecard (0-5)

@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-18
+triaged: d (items 1-4, 6, 7 are phone, portrait or touch, dropped 2026-11-18; item 5 is a nit, super cut-in avoids the HUD band, src/game/fx/super-view.ts:57)
 ---
 
 # QA r111 findings
