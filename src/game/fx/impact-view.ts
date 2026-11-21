@@ -9,7 +9,16 @@ export const IMPACT_FRAME = 128;
 export const IMPACT_MS = 360;
 export const IMPACT_POOL = 12;
 /** Drawn size of a frame in logical px (the art leaves a margin, so this reads about as wide as a character). */
-export const IMPACT_SIZE = 112;
+export const IMPACT_SIZE = 72;
+/** Peak opacity of an impact: translucent so the victim's torso stays readable under the burst (QA r117 item 5). */
+export const IMPACT_ALPHA = 0.8;
+
+/** Opacity of an impact `age` ms in: the peak, easing to 0 over the last half so the mark does not sit on the body. */
+export function impactAlphaAt(age: number, ms = IMPACT_MS): number {
+  if (age < 0 || age >= ms) return 0;
+  const t = age / ms;
+  return IMPACT_ALPHA * (t < 0.5 ? 1 : 2 * (1 - t));
+}
 
 const KEY: Readonly<Record<Element, string>> = {
   fire: 'sprite:impactFire',
@@ -65,7 +74,7 @@ export function createImpactLayer(scene: Phaser.Scene, paused: () => boolean): I
         slots[live] = s;
         continue;
       }
-      s.image.setFrame(`i${String(f)}`);
+      s.image.setFrame(`i${String(f)}`).setAlpha(impactAlphaAt(s.age));
     }
     if (live === 0) detach();
   }
@@ -83,7 +92,7 @@ export function createImpactLayer(scene: Phaser.Scene, paused: () => boolean): I
         s = { image: scene.add.image(0, 0, key, 'i0').setDepth(11), age: 0, frames, key };
         slots.push(s);
       }
-      s.image.setTexture(key, 'i0').setPosition(x, y).setDisplaySize(IMPACT_SIZE, IMPACT_SIZE).setVisible(true).setAlpha(1);
+      s.image.setTexture(key, 'i0').setPosition(x, y).setDisplaySize(IMPACT_SIZE, IMPACT_SIZE).setVisible(true).setAlpha(IMPACT_ALPHA);
       s.age = 0;
       s.frames = frames;
       s.key = key;
