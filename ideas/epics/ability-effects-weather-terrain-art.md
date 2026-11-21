@@ -27,7 +27,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [own-element-tile-effects](../in-progress/own-element-tile-effects.md) (in progress): Hero standing on a tile of its own element. Owner request (2026-11-13): when a hero stands on a stage patch of its own element, show an animation, and one for each element:
 - [grim-arena-environments](../in-progress/grim-arena-environments.md) (in progress): Grim arena environments (floor, props, atmosphere). Owner feedback on a real screenshot: the arena was a flat muddy-brown grid with random cracks, the rocks were brick boxes with text labels, and
 - [tilemap-environments](../in-progress/tilemap-environments.md) (in progress): Randomised tilemap environments. Fire, water, air, earth arenas as seeded tile maps with better art.
-- [qa-arena-art-and-stage-choice](../brainstorm/qa-arena-art-and-stage-choice.md): QA: arena art is flat and terrain labels read as UI stickers. Floors are repeated brick or water tiles with a silhouette crowd, no depth, lighting or parallax.
+- [qa-arena-art-and-stage-choice](../done/qa-arena-art-and-stage-choice.md): QA: arena art is flat and terrain labels read as UI stickers. Floors are repeated brick or water tiles with a silhouette crowd, no depth, lighting or parallax.
 - [weather-particle-art](../in-progress/weather-particle-art.md) (in progress): Weather particle art pass (view only). Per element weather (Sun, Rain, Sandstorm, Gale) three grim, desaturated, textured Phaser 4 particle layers (haze behind, flecks in front) over four g
 - [dynamic-weather-during-match](../brainstorm/dynamic-weather-during-match.md): Dynamic weather that changes during a match. Goal: weather that changes mid-match per element arena:
 - [weather-secondary-effects](../brainstorm/weather-secondary-effects.md): Weather secondary effects: Sandstorm and Gale. Split from dead-ability-cleanup: Sandstorm slows projectiles, Gale pushes knockback further (sim change, SIM_VERSION bump).
@@ -57,7 +57,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### AE-3 Terrain and arena art
 
-- Members: [floor-tags-1](../in-progress/floor-tags-1.md), [own-element-tile-effects](../in-progress/own-element-tile-effects.md), [grim-arena-environments](../in-progress/grim-arena-environments.md), [tilemap-environments](../in-progress/tilemap-environments.md), [qa-arena-art-and-stage-choice](../brainstorm/qa-arena-art-and-stage-choice.md)
+- Members: [floor-tags-1](../in-progress/floor-tags-1.md), [own-element-tile-effects](../in-progress/own-element-tile-effects.md), [grim-arena-environments](../in-progress/grim-arena-environments.md), [tilemap-environments](../in-progress/tilemap-environments.md), [qa-arena-art-and-stage-choice](../done/qa-arena-art-and-stage-choice.md)
 - Size: L
 - Shared files: src/game/fx/terrain-*, Arena.ts, asset manifest, main.css (stage chips)
 - Flags: needs browser/e2e, owner art review; PC for image generation
