@@ -135,7 +135,7 @@ QA evaluator rounds (kept unchanged; newest first, the latest rounds hold the op
 - [qa-r17-scorecard](../brainstorm/qa-r17-scorecard.md)
 - [qa-r16-scorecard](../brainstorm/qa-r16-scorecard.md)
 - [qa-r15-scorecard](../brainstorm/qa-r15-scorecard.md)
-- [qa-r14-scorecard](../brainstorm/qa-r14-scorecard.md)
+- [qa-r14-scorecard](../done/qa-r14-scorecard.md)
 - [qa-r13-scorecard](../brainstorm/qa-r13-scorecard.md)
 - [qa-r12-scorecard-and-status](../brainstorm/qa-r12-scorecard-and-status.md)
 - [qa-r11-scorecard-and-status](../brainstorm/qa-r11-scorecard-and-status.md)

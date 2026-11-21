@@ -22,7 +22,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [callout-pop-limits](../brainstorm/callout-pop-limits.md): Follow-up limits of the call-out placement (upward snap, ceiling-pinned overlaps, aura word pops).
 - [combo-counter-anchoring](../done/combo-counter-anchoring.md): Combo counter anchoring. Anchor the combo counter to the victim in screen space with the same clamp as damage numbers, so it never leaves the picture on a panned camera.
 - [qa-r10-fight-readability](../done/qa-r10-fight-readability.md): QA r10: fight readability and intro. - ROUND 1 banner sits on the centre floor chip ("PAX x2" bleeds through the letters, fire-t1900.png);
-- [qa-r13-visual-readability](../brainstorm/qa-r13-visual-readability.md): Readability and art notes (r13). Play screen: the "More heroes below" pill overlaps the hero stat row at 1280x720 and the intro paragraph is long (02-play.png).
+- [qa-r13-visual-readability](../done/qa-r13-visual-readability.md): Readability and art notes (r13). Play screen: the "More heroes below" pill overlaps the hero stat row at 1280x720 and the intro paragraph is long (02-play.png).
 - [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md): QA r41: fight polish (desktop 1280x720). Verified from r40: ghost trail shows on Sindarosa fading (2v2-hit.png, translucent red trail plus ring and FADE 2s chip);
 - [qa-r30-round-banner-contrast](../brainstorm/qa-r30-round-banner-contrast.md): ROUND 2 banner is washed out. The big grey ROUND 2 with fighter names has low contrast on the fire stage.
 - [fight-banner-contact-cut](../in-progress/fight-banner-contact-cut.md): FIGHT! banner: cut it short on first contact. The FIGHT! banner now shows for 30 ticks (0.6 s, FIGHT_BANNER_TICKS).
@@ -60,7 +60,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-2 Label and hazard chip clutter
 
-- Members: [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md), [qa-r6-floor-label-clutter-and-hud-pips](../brainstorm/qa-r6-floor-label-clutter-and-hud-pips.md), [qa-r10-fight-readability](../done/qa-r10-fight-readability.md), [qa-r13-visual-readability](../brainstorm/qa-r13-visual-readability.md), [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md)
+- Members: [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md), [qa-r6-floor-label-clutter-and-hud-pips](../brainstorm/qa-r6-floor-label-clutter-and-hud-pips.md), [qa-r10-fight-readability](../done/qa-r10-fight-readability.md), [qa-r13-visual-readability](../done/qa-r13-visual-readability.md), [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md)
 - Size: M
 - Shared files: Hud.ts, src/game/fx/hazard-view.ts, terrain-view.ts, main.css
 - Flags: needs browser/e2e

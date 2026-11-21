@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -18,3 +18,5 @@ Open: Echo/Pax air-stage contrast (Echo already has a pale additive glow; a norm
 Progress 2026-11-14 (air contrast): `CharacterView.placeAura` adds a normal-blend deep-indigo soft aura behind every hero (above the additive glow, below the sprite; presentation only). It gives Echo and Pax a dark edge on the bright air floor and tames Echo's blown-out additive glow; fire, water and earth floors are unchanged to the eye. Before/after shots (echo, pax on all four stages) in ~/claudetmp/aircontrast/{before,after}. Remaining open: Rokcore re-bake verification only; status stays idea.
 
 Progress 2026-11-14 (echo-air-contrast): on the air stage Echo and Wispera drop the additive pale glow/halo (it washed out on the bright floor) and get a deeper, wider indigo aura (setBrightFloor in character-view.ts, fed by Arena from the arcade stage). Phone-portrait Versus picker now has a slim fade plus a small gold chevron above the Fight bar (main.css) as a scroll hint. Bench portraits vs SUPER label on phone remain open (qa-r12-touch-fight-layout). Shots in ~/claudetmp/air.
+
+Triaged 2026-11-21: every item is shipped (pill in sticky bar, Tour card fits, bench chips 68 px, air aura and Echo/Wispera bright-floor, hi-res Rokcore and Lavax rigs); closed as done.
