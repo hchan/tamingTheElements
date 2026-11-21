@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: d (scores only, no actionable items; phone/portrait columns dropped 2026-11-18; duplicates the r112 findings file)
 added: 2026-11-18
 ---
 
