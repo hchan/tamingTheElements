@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-18
+triaged: d (phone/portrait scorecard, work dropped 2026-11-18)
 ---
 
 # QA r112 scorecard
