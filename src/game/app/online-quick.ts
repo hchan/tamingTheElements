@@ -80,6 +80,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   let gen = 0;
   let view: QuickView | undefined;
   let state: QuickState = 'idle';
+  let stoppedMatch = -1; // the match id the lockstep session stopped (forfeit or desync): its end line is already on screen
   let client: OnlineClient | undefined;
   /** The socket is open (connect() succeeded and no final close yet). */
   let connected = false;
@@ -213,6 +214,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         if (g !== gen || current !== m) return;
         session = sess;
         reporter.update(sess);
+        if (st === 'forfeit' || st === 'desync') stoppedMatch = m.matchId;
         const t = netStatusText(st, sess.forfeitReason);
         if (t !== undefined) view?.say(t);
         if (st === 'desync') view?.reportButton(true);
@@ -269,6 +271,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         break;
       case 'peer':
         if (current === undefined || e.matchId !== current.matchId) break;
+        if (state === 'ended' || e.matchId === stoppedMatch) break; // the match is over and its end line stands (a late gone or away must not replace it)
         if (e.status === 'disconnected') view?.say(OPPONENT_AWAY_TEXT);
         else if (e.status === 'back') view?.say(base);
         else {
