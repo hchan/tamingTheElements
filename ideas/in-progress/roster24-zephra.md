@@ -31,3 +31,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 ## Progress
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
+- 2026-11-20: S step (no sim change, SIM_VERSION stays 92). Kit de-dupe checked: no other ability shares kind, box and damage with Static Mote (range 16x16, 8 dmg, speed 10; Abyssal Pull shares only the 8 damage) or Skitter (buff, 140 px backward lunge, no damage). Pinned in `src/core/data/abilities-c.test.ts`. Win rate at SIM_VERSION 92, Arcade, AI level 3, full roster: 1v1 (16 seeds) 0.512; 2v2 (26 seeds, 598 games) 0.527; both in 0.45-0.55, no tuning, no golden re-record. AI rule: hop rule already exists.

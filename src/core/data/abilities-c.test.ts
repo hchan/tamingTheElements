@@ -92,4 +92,14 @@ describe('abilities-c tick values', () => {
       expect(twins.map((a) => a.id)).toEqual([]);
     }
   });
+
+  it('pins the Zephra kit: Static Mote 8 damage at speed 10, 16x16 box, 20 cooldown ticks, max 3 (no other ability shares its box; Abyssal Pull shares only damage); Skitter 150 cooldown ticks, 140 px backward lunge, no damage', () => {
+    const mote = get('static-mote');
+    expect([mote?.damage, mote?.speed, mote?.cooldownTicks, mote?.maxActive]).toEqual([8, 10, 20, 3]);
+    expect([mote?.w, mote?.h]).toEqual([16 / 80, 16 / 80]);
+    const hop = get('skitter');
+    expect([hop?.cooldownTicks, hop?.lungePx, hop?.damage ?? 0]).toEqual([150, -140, 0]);
+    const sameBox = ALL_ABILITIES.filter((a) => a.id !== 'static-mote' && a.w === mote?.w && a.h === mote?.h);
+    expect(sameBox.map((a) => a.id)).toEqual([]);
+  });
 });
