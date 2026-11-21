@@ -266,6 +266,104 @@
         "beats_shipped": true,
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
+    },
+    "cinder_spray": {
+      "url": "img/hud/ability-icons-ai/cinder_spray.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "73e409f01ae14071f38eb63b1aa7e8cd59342944fa996caee11248148e4e2a6c",
+      "source": "cinder_spray.png",
+      "approval": {
+        "approved": "cinder_spray.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "static_mote": {
+      "url": "img/hud/ability-icons-ai/static_mote.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "ded2057ea96ec83631ac164a0728a55e419b35d36e8d39f0f290e816d2c1153e",
+      "source": "static_mote.png",
+      "approval": {
+        "approved": "static_mote.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "quake": {
+      "url": "img/hud/ability-icons-ai/quake.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "9f8fb810daa9f492736a45fc7b6b3c255c441bdd7e04288b5be7edd2b9ec0b87",
+      "source": "quake.png",
+      "approval": {
+        "approved": "quake.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "mist_veil": {
+      "url": "img/hud/ability-icons-ai/mist_veil.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "c9e5c68ee2bf4f69b77a48a16aaed0bf74637e20dda35facb3b87b24ad77d21f",
+      "source": "mist_veil.png",
+      "approval": {
+        "approved": "mist_veil.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "kelp_whip": {
+      "url": "img/hud/ability-icons-ai/kelp_whip.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "c92cb8a2e1aaf9e323f29f1a26229a24f2f754b12f7733404aaee71dd64049f0",
+      "source": "kelp_whip.png",
+      "approval": {
+        "approved": "kelp_whip.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "gust": {
+      "url": "img/hud/ability-icons-ai/gust.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "4d428468719f6a452233e01b65c76007460235abf6acc80dcd1afd770b12e298",
+      "source": "gust.png",
+      "approval": {
+        "approved": "gust.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "bristle_stomp": {
+      "url": "img/hud/ability-icons-ai/bristle_stomp.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "3f4b246b93cc0194419f1c849420f6de1af197d7bb1763e82c8d77cccc204302",
+      "source": "bristle_stomp.png",
+      "approval": {
+        "approved": "bristle_stomp.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
     }
   }
 }

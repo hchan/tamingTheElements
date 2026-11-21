@@ -112,5 +112,47 @@
     "reviewer": "art-director",
     "date": "2026-11-20",
     "beats_shipped": true
+  },
+  "cinder_spray": {
+    "approved": "cinder_spray.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "static_mote": {
+    "approved": "static_mote.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "quake": {
+    "approved": "quake.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "mist_veil": {
+    "approved": "mist_veil.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "kelp_whip": {
+    "approved": "kelp_whip.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "gust": {
+    "approved": "gust.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "bristle_stomp": {
+    "approved": "bristle_stomp.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true
   }
 }

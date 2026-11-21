@@ -4,6 +4,7 @@ import type Phaser from 'phaser';
  * The approved AI-generated ability icons (`tools/assets/icon-gen/install-ai-ability-icons.py`, `public/assets/img/hud/ability-icons-ai/`).
  * An ability slot wears its icon in place of the ability's projectile sprite. Display only; the sim is untouched.
  * `tide_surge`, `whirlpool` and `heal_spring` are installed but have no ability yet (no sensible slot), so no sprite maps to them.
+ * `quake`, `mist_veil`, `kelp_whip` and `gust` (procedural, `gen-procedural-icons.py`) are likewise installed without an ability. `skitter` failed review and is not installed.
  */
 
 /** Icon slots in the folder, each a 128 px PNG named `<slot>.png`. */
@@ -12,6 +13,7 @@ export const AI_ICON_SLOTS = [
   'mycelium_mend', 'stinging_filament', 'stoop', 'forge_gore', 'tusk_gore', 'boulder_roll',
   'kelp_lash', 'molten_hide', 'whirlpool',
   'bell_pulse', 'heal_spring', 'scorch_breath', 'wyrm_coil', 'spore_burst',
+  'cinder_spray', 'static_mote', 'quake', 'mist_veil', 'kelp_whip', 'gust', 'bristle_stomp',
 ] as const;
 export type AiIconSlot = (typeof AI_ICON_SLOTS)[number];
 
@@ -33,6 +35,9 @@ const BY_SPRITE: Readonly<Record<string, AiIconSlot>> = {
   scorchBreath: 'scorch_breath',
   wyrmCoil: 'wyrm_coil',
   sporeBurst: 'spore_burst',
+  cinderSpray: 'cinder_spray',
+  staticMote: 'static_mote',
+  bristleStomp: 'bristle_stomp',
 };
 
 /** Phaser texture key of an icon slot. */
