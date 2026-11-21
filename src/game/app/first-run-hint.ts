@@ -294,7 +294,6 @@ export function firstRunHint(
   else if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner, names)));
   else if (short && window.innerHeight <= 500 && isTouchFirst() && window.matchMedia('(orientation: landscape)').matches) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
   else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner, names)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
-  if (short && window.innerHeight > 500 && !portraitOne) card.style.fontSize = '11px';
   if (!short && !portraitOne) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');

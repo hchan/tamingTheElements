@@ -157,3 +157,21 @@ test('first-run hint text scales up at 1920x1080', async ({ page }) => {
   await page.screenshot({ path: '.scratch/first-run-1920.png' });
   expect(errors).toEqual([]);
 });
+
+// qa-r119 N1 (long gate: visual, about 10 s): at 1280x720 the card is at least 16px, on a solid backing, and clear of the action bar.
+test('first-run hint is readable at 1280x720', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByRole('button', { name: /^Fight/ }).click();
+  await waitForArena(page);
+  await page.evaluate(PAST_BANNER);
+  const card = page.locator('#firstRunHint');
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  const s = await page.evaluate<{ px: number; bg: string; op: number }>(`(() => { const c = getComputedStyle(document.getElementById('firstRunHint')); return { px: parseFloat(c.fontSize), bg: c.backgroundColor, op: parseFloat(c.opacity) }; })()`);
+  expect(s.px).toBeGreaterThanOrEqual(16);
+  expect(s.bg).toMatch(/^rgb\(/);
+  expect(s.op).toBeGreaterThanOrEqual(0.9);
+  await page.screenshot({ path: '.scratch/first-run-720.png' });
+  expect(errors).toEqual([]);
+});
