@@ -179,7 +179,7 @@ describe('WebSocketTransport unit behaviour', () => {
     expect(b.peerPause).toBeUndefined();
   });
 
-  it('delivers a gap after 40 ms and drops a duplicate', () => {
+  it('delivers a gap after 40 ms, accepts the late frame once and drops a duplicate', () => {
     const { clock, relay, b } = mk();
     const batch = (seq: number) => encodeFrame({ t: 'batch', seq, packet: pkt(seq) });
     const feed = (bytes: Uint8Array) => { relay.b.deliver(encodeText(bytes)); };
@@ -189,6 +189,8 @@ describe('WebSocketTransport unit behaviour', () => {
     clock.ms = 40;
     expect(b.receive()).toBeDefined();
     expect(b.receive()).toBeUndefined();
+    feed(batch(0)); // Skipped over, now late: a BATCH is idempotent, so it is delivered once.
+    expect(b.receive()).toBeDefined();
     feed(batch(0));
     expect(b.receive()).toBeUndefined();
   });

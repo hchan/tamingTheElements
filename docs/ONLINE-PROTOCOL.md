@@ -155,7 +155,7 @@ Details:
   - `seq` more than `REORDER_LEAD_MAX = 512` ahead of `nextSeq` [choice]: **dropped** (a buggy or hostile relay could otherwise push `nextSeq` far ahead and make every real frame stale).
   - `seq == nextSeq`: delivered, `nextSeq++`, then any consecutive held frames are delivered.
   - `seq > nextSeq` (within the cap): held. If the gap does not fill within 40 ms (2 ticks) [choice] or the buffer is full, the receiver **skips ahead**: delivers the held frames in order and
-    sets `nextSeq` past them. A frame that arrives after being skipped is dropped as stale.
+    sets `nextSeq` past them. A BATCH that arrives after being skipped (one of the last `REORDER_GAPS_MAX = 64` skipped seqs [choice]) is delivered once, because its inputs are idempotent and order independent; any other late frame, and every PAUSE, is dropped as stale.
 - Skipping is safe because BATCH is redundant: the next batch re-sends every input the peer has not acked, and `ack` tells the sender what is still needed. Frames
   that are not redundant are **retried by the sender**: DESYNC is resent every 500 ms [choice] until the match ends, RESULT every 500 ms [choice] until RESULT_ACK, and PAUSE is repeated in
   the next BATCH's `flags`. When both carry the pause state, either one sets it and the BATCH bit wins on conflict. So the reorder buffer trades a few ms of delay against fewer rollbacks, and its worst case is a late input.
