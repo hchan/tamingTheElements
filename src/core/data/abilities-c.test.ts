@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ABILITIES_C } from './abilities-c';
 import { ALL_ABILITIES } from './abilities-all';
 import { CHARACTERS } from './characters';
+import { HIT_STRENGTH_OVERRIDE, HitStrength } from './arcade';
 
 const get = (id: string) => ABILITIES_C.find((a) => a.id === id);
 
@@ -124,6 +125,21 @@ describe('abilities-c tick values', () => {
     const rake = get('talon-rake');
     expect([rake?.kind, rake?.damage, rake?.cooldownTicks, rake?.maxActive, rake?.w, rake?.h]).toEqual(['melee', 12, 45, 2, 60, 40]);
     for (const a of [stoop, rake].flatMap((x) => (x ? [x] : []))) {
+      const twins = ALL_ABILITIES.filter(
+        (o) => o.id !== a.id && o.kind === a.kind && o.w === a.w && o.h === a.h && o.damage === a.damage,
+      );
+      expect(twins.map((t) => t.id), a.id).toEqual([]);
+    }
+  });
+  it('pins the Kindrel kit: Ember Bite melee 8 damage, 340 ms cooldown, max 3, 48x34 box, forced light hit; Cinder Spray omni 8 damage at speed 6, 20x20 box (scaled), 4000 ms cooldown (no other ability shares kind, box and damage with either)', () => {
+    const bite = get('ember-bite');
+    expect([bite?.kind, bite?.damage, bite?.cooldownTicks, bite?.maxActive]).toEqual(['melee', 8, 17, 3]);
+    expect([bite?.w, bite?.h]).toEqual([48, 34]);
+    expect(HIT_STRENGTH_OVERRIDE['ember-bite']).toBe(HitStrength.light);
+    const spray = get('cinder-spray');
+    expect([spray?.kind, spray?.damage, spray?.speed, spray?.cooldownTicks, spray?.maxActive]).toEqual(['omni', 8, 6, 200, 1]);
+    expect([spray?.w, spray?.h]).toEqual([20 / 80, 20 / 80]);
+    for (const a of [bite, spray].flatMap((x) => (x ? [x] : []))) {
       const twins = ALL_ABILITIES.filter(
         (o) => o.id !== a.id && o.kind === a.kind && o.w === a.w && o.h === a.h && o.damage === a.damage,
       );
