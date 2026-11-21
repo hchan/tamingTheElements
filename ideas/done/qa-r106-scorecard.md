@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (scorecard report, no new code items; landscape-phone Defeat overflow and portrait crowding are phone work dropped 2026-11-18; desktop first-run card crowding fixed by first-run-hint.ts auto-fade; floor chip limit per qa-r106-findings)
 added: 2026-11-17
 ---
 
