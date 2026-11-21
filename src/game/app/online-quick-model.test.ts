@@ -7,7 +7,7 @@ import {
 } from './online-quick-model';
 
 const FORBIDDEN = /\b(classic|arcade|ruleset|capture|room|friend)\b/i;
-const STATES: readonly QuickState[] = ['idle', 'connecting', 'queued', 'matched', 'waiting-pick', 'checking', 'playing', 'ended', 'resting', 'update', 'busy', 'failed'];
+const STATES: readonly QuickState[] = ['idle', 'connecting', 'queued', 'matched', 'waiting-pick', 'checking', 'playing', 'ended', 'resting', 'update', 'busy', 'failed', 'unavailable'];
 
 const match = (o: Partial<{ slot: number; inputDelay: number; batchEvery: number; simVersion: number }> = {}) => ({
   t: 'match' as const, matchId: 1, slot: 0, seed: 5, inputDelay: 2, simVersion: 86, batchEvery: 1, resumed: false, ...o,
@@ -19,6 +19,7 @@ describe('online quick match model', () => {
     expect(controlsFor('playing')).not.toContain('quickBack');
     expect(controlsFor('resting')).toEqual(['quickBack']);
     expect(controlsFor('update')).not.toContain('quickRetry');
+    expect(controlsFor('unavailable')).toEqual(['quickBack']);
   });
 
   it('formats the wait as m:ss', () => {
@@ -38,7 +39,7 @@ describe('online quick match model', () => {
     expect(failureView({ kind: 'resting', retryAfterSec: 0 }).text).toContain('about 1 h');
     expect(failureView({ kind: 'network' }).state).toBe('failed');
     expect(failureView({ kind: 'bad-response' }).state).toBe('failed');
-    expect(failureView({ kind: 'not-configured' }).state).toBe('failed');
+    expect(failureView({ kind: 'not-configured' }).state).toBe('unavailable');
   });
 
   it('never shows forbidden words for any failure, server code or state text', () => {

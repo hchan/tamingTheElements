@@ -8,7 +8,9 @@ import { friendlyMessage, restingSec, type OnlineEvent, type OnlineFailure } fro
  */
 export type QuickState =
   | 'idle' | 'connecting' | 'queued' | 'matched' | 'waiting-pick' | 'checking' | 'playing'
-  | 'ended' | 'resting' | 'update' | 'busy' | 'failed';
+  | 'ended' | 'resting' | 'update' | 'busy' | 'failed'
+  /** Online play is not built into this version: retrying cannot help, so no Try again. */
+  | 'unavailable';
 
 export type ControlId =
   | 'quickFind' | 'quickCancel' | 'quickPick' | 'quickReady' | 'quickRetry' | 'quickReload'
@@ -25,7 +27,8 @@ export function controlsFor(state: QuickState): readonly ControlId[] {
     case 'checking': return ['quickLeave'];
     case 'playing': return ['quickLeave', 'quickLink'];
     case 'ended': return ['quickAgain', 'quickBack'];
-    case 'resting': return ['quickBack'];
+    case 'resting':
+    case 'unavailable': return ['quickBack'];
     case 'update': return ['quickReload', 'quickBack'];
     case 'busy':
     case 'failed': return ['quickRetry', 'quickBack'];
@@ -80,7 +83,7 @@ export function rejectText(reason: string | undefined): string {
 }
 
 export interface FailureView {
-  readonly state: 'busy' | 'update' | 'failed' | 'resting';
+  readonly state: 'busy' | 'update' | 'failed' | 'resting' | 'unavailable';
   readonly text: string;
 }
 
@@ -93,6 +96,7 @@ export function failureView(f: OnlineFailure): FailureView {
     if (f.code === 10) return { state: 'update', text: UPDATE_TEXT };
     if (f.code === 6 || f.code === 7) return { state: 'failed', text: GENERIC_TEXT };
   }
+  if (f.kind === 'not-configured') return { state: 'unavailable', text: friendlyMessage(f) };
   return { state: 'failed', text: friendlyMessage(f) };
 }
 
