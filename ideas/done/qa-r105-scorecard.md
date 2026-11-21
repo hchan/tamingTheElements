@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: obsolete (scorecard report; live items are phone-only: landscape bare life number and "Strike 1 / 2" labels, portrait sky band, crowded portrait 2v2 HUD, phone super band clipped on one mid-animation frame; phone work dropped 2026-11-18. Desktop findings are positive, no defects. Not-done gaps: match-end cards covered by match-end work and e2e, online needs a real connection, first-run toast see-through pinned by first-run-hint and touch-fight-layout e2e)
 added: 2026-11-17
 ---
 
