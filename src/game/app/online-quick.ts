@@ -3,6 +3,7 @@ import { navigateHash } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { buildDesyncReport } from '../net/desync-report';
 import { linkLine } from '../net/link-quality';
+import { ACK_STATUS, MatchReporter } from '../net/ws/match-report';
 import { onlineConfig } from '../net/ws/config';
 import { friendlyMessage, OnlineClient, restingSec, type OnlineEvent, type OnlineFailure } from '../net/ws/online-client';
 import type { ArenaLaunch } from '../scenes/launch';
@@ -11,7 +12,7 @@ import { destroyGame } from './game-handle';
 import { launchOnlineArena, type OnlineArena } from './online-arena';
 import {
   checkMatch, CHECKING_TEXT, GATEWAY_NOTICE_TEXT, CONNECTING_TEXT, endText, failureView, IDLE_TEXT, MATCHED_TEXT, netStatusText, OPPONENT_AWAY_TEXT,
-  OPPONENT_LEFT_TEXT, GENERIC_TEXT, reconnectText, rejectText, restStore, waitText, WAITING_PICK_TEXT, type QuickState,
+  OPPONENT_LEFT_TEXT, GENERIC_TEXT, reconnectText, RESULT_DISAGREE_TEXT, rejectText, restStore, waitText, WAITING_PICK_TEXT, type QuickState,
 } from './online-quick-model';
 import { QuickSetup } from './online-quick-setup';
 import { createQuickView, type QuickView } from './online-quick-view';
@@ -186,6 +187,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     if (s === undefined || c === undefined || m === undefined || ok === undefined || !ok.ok) return;
     setup = s;
     side = ok.slot;
+    const reporter = new MatchReporter(c.transport, m.matchId, deps.now);
     set('playing', '');
     view?.fail('');
     const a = await launchOnlineArena({
@@ -198,6 +200,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       batchEvery: ok.batchEvery,
       onEnd: (end) => {
         if (g !== gen || current !== m) return;
+        if (session !== undefined) reporter.finish(session, end.winner);
         // The finished arena stays up (its session keeps answering the opponent) until the next match or the screen closes.
         if (restAfter) {
           restAfter = false;
@@ -209,6 +212,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       onStatus: (st, sess) => {
         if (g !== gen || current !== m) return;
         session = sess;
+        reporter.update(sess);
         const t = netStatusText(st, sess.forfeitReason);
         if (t !== undefined) view?.say(t);
         if (st === 'desync') view?.reportButton(true);
@@ -270,6 +274,13 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         else {
           dropMatch();
           set('ended', OPPONENT_LEFT_TEXT);
+        }
+        break;
+      case 'result-ack':
+        // The relay compared both RESULTs (or the hashes): 0 agreed, 2 the games disagree; 1 (waiting) changes nothing.
+        if (e.status === ACK_STATUS.disagreed) {
+          view?.say(RESULT_DISAGREE_TEXT);
+          view?.reportButton(true);
         }
         break;
       case 'gateway-notice':
