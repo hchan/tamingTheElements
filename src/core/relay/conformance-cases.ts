@@ -142,6 +142,9 @@ const batchPacket = (match: number, tick: number): Uint8Array =>
   fromHex(`${match.toString(16).padStart(2, '0')} 00 00000000 ${tick.toString(16).padStart(8, '0')} 01 00000001 00`);
 const batchFrame = (seq: number, match: number): Frame => ({ t: 'batch', seq, match, packet: batchPacket(match, seq) });
 
+/** Cases that send two frames back to back from different players (or one player) and need them handled in that order. */
+const ORDER_SENSITIVE: ReadonlySet<string> = new Set(['hash.consumed', 'batch.far-ahead-seq']);
+
 function testCase(
   id: string,
   spec: string,
@@ -152,6 +155,7 @@ function testCase(
     id,
     spec,
     title,
+    ...(ORDER_SENSITIVE.has(id) ? { orderSensitive: true as const } : {}),
     async run(adapter, hooks) {
       const env: Env = {
         hooks,

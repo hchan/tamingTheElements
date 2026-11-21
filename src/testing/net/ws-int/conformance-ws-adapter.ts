@@ -200,6 +200,7 @@ export async function runConformanceCli(argv: readonly string[], env: Readonly<R
         'strict-text': { type: 'boolean', default: false },
         'advisory-close': { type: 'boolean', default: false },
         'no-binary': { type: 'boolean', default: false },
+        'retry-ordering': { type: 'string', default: '0' },
       },
     }));
   } catch (e) {
@@ -212,11 +213,13 @@ export async function runConformanceCli(argv: readonly string[], env: Readonly<R
   const timeoutMs = Number(values['timeout-ms']);
   const settleMs = Number(values['settle-ms']);
   if (!Number.isInteger(timeoutMs) || timeoutMs <= 0 || !Number.isInteger(settleMs) || settleMs < 0) return bad('relay:conformance: --timeout-ms must be a positive and --settle-ms a non-negative integer');
+  const retryOrdering = Number(values['retry-ordering']);
+  if (!Number.isInteger(retryOrdering) || retryOrdering < 0 || retryOrdering > 10) return bad('relay:conformance: --retry-ordering must be an integer from 0 to 10');
   const only = values.only?.split(',').map((s) => s.trim()).filter((s) => s !== '');
   if (only !== undefined && !conformanceCases.some((c) => only.some((p) => c.id.startsWith(p)))) return bad(`relay:conformance: --only matches no case; groups: ${groupsOf().join(', ')}`);
 
   const { adapter, hooks, stats } = createWsConformance({ baseUrl, timeoutMs, settleMs, strictText: values['strict-text'], advisoryClose: values['advisory-close'], noBinary: values['no-binary'], ...(deps === undefined ? {} : { deps }) });
-  const report: ConformanceReport = await runAll(adapter, hooks, only === undefined ? {} : { only });
+  const report: ConformanceReport = await runAll(adapter, hooks, { retryOrderSensitive: retryOrdering, ...(only === undefined ? {} : { only }) });
   const delivery: Delivery = { text: stats.text, binary: stats.binary, notices: stats.notices };
   const connections = { ok: stats.connected, failed: stats.connectFailures };
   if (values.json) io.out(JSON.stringify({ report, delivery, connections }, null, 2));

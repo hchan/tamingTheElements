@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Relay conformance (MINOR): `ConformanceCase.orderSensitive` and `RunOptions.retryOrderSensitive`; `relay:conformance --retry-ordering <n>` retries the two order-sensitive cases on a concurrent-invocation deployment. Default off.
 - Relay conformance (MINOR, no wire or sim change): `ConformanceAdapter.connect` takes an optional `{ sameIdentityAs }` so resume cases reconnect as the same player (`resume.within-grace` and `resume.after-grace` now do; against a relay that ties sessions to identity the old reconnect was a different player). The `relay:conformance` runner gains `--advisory-close` and `--no-binary` (docs/RELAY-PACKAGE.md). The WebSocket client shows a gateway failure notice as a status instead of a malformed frame.
 
 - Roster24 Ouroth kit de-dupe (step S, `SIM_VERSION` 92): Wyrm Coil box 90x60 -> 80x70 (stays the only grab-throw) and Scorch Breath box 130x50 -> 110x70 (a short tall gout, no longer a third wide sweep). Abyss Flash recovery 250 -> 240 ms (13 -> 12 ticks); the 240 ms change was not shipped for Hoof Crash, Kelp Lash and Bristle Stomp (it moved Durrok out of the win-rate band). Arcade only; the release set stays empty. Re-record reason: a recorded Arcade match with Ouroth or Glimmaw changes.
