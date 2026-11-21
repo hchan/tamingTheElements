@@ -9,7 +9,7 @@
     "src/game/hud/action-bar-view.ts": 522,
     "src/game/hud/action-bar.ts": 695,
     "src/game/scenes/Arena.ts": 824,
-    "src/game/scenes/Hud.ts": 1070,
+    "src/game/scenes/Hud.ts": 753,
     "src/game/views/character-view.ts": 523,
     "src/game/views/pose-layer.ts": 966,
     "src/ui/screens/arcade-versus.ts": 972,
