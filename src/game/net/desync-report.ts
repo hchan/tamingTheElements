@@ -1,4 +1,4 @@
-import { createMatch, hash, headerFromSetup, rleEncode, HASH_INTERVAL, type DesyncInfo, type LockstepSession, type MatchSetup, type ReplayFile, type SessionStats } from '@core/index';
+import { createMatch, hash, headerFromSetup, rleEncode, HASH_INTERVAL, type DesyncInfo, type LockstepSession, type ReplayEnd, type MatchSetup, type ReplayFile, type SessionStats } from '@core/index';
 
 /** What "Save report" downloads: where the two games parted, plus a `replay` member that `pnpm replay:verify` can re-run (extract it to its own file). */
 export interface DesyncReport {
@@ -7,6 +7,8 @@ export interface DesyncReport {
   readonly side: 0 | 1;
   readonly desync: DesyncInfo | undefined;
   readonly stats: SessionStats;
+  /** How the match ended on this side, when known. */
+  readonly end?: ReplayEnd;
   readonly localCheckpoints: readonly (readonly [number, number])[];
   /** Replay format: commands as stepped on this side, hashes as this side computed them, up to the last consecutive checkpoint. */
   readonly replay: ReplayFile;
@@ -15,7 +17,7 @@ export interface DesyncReport {
 type Evidence = Pick<LockstepSession, 'side' | 'desync' | 'stats' | 'checkpoints' | 'commandLog' | 'simTick'>;
 
 /** Pure: builds the report from the setup and a session's read-only evidence. */
-export function buildDesyncReport(setup: MatchSetup, session: Evidence): DesyncReport {
+export function buildDesyncReport(setup: MatchSetup, session: Evidence, end?: ReplayEnd): DesyncReport {
   const checkpoints = session.checkpoints();
   const byTick = new Map<number, number>(checkpoints.map(([t, h]) => [t, h]));
   // Tick 0 is not a session checkpoint; the replay needs it and it depends only on the setup.
@@ -34,6 +36,7 @@ export function buildDesyncReport(setup: MatchSetup, session: Evidence): DesyncR
     inputs: [rleEncode(c0.slice(0, ticks)), rleEncode(c1.slice(0, ticks))],
     hashes,
     finalHash: byTick.get(ticks) as number,
+    ...(end === undefined ? {} : { end }),
   };
-  return { kind: 'tte-desync-report', setup, side: session.side, desync: session.desync, stats: { ...session.stats }, localCheckpoints: checkpoints, replay };
+  return { kind: 'tte-desync-report', setup, side: session.side, desync: session.desync, stats: { ...session.stats }, localCheckpoints: checkpoints, ...(end === undefined ? {} : { end }), replay };
 }

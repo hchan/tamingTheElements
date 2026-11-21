@@ -4,6 +4,7 @@ import type { Screen } from '@ui/screens/screen';
 import { buildDesyncReport } from '../net/desync-report';
 import { linkLine } from '../net/link-quality';
 import { ACK_STATUS, MatchReporter } from '../net/ws/match-report';
+import { END_DETAIL, type MatchEndRecord } from '../net/match-end';
 import { onlineConfig } from '../net/ws/config';
 import { friendlyMessage, OnlineClient, restingSec, type OnlineEvent, type OnlineFailure } from '../net/ws/online-client';
 import type { ArenaLaunch } from '../scenes/launch';
@@ -96,6 +97,9 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   let side: 0 | 1 = 0;
   let arena: OnlineArena | undefined;
   let session: Session | undefined;
+  let reporter: MatchReporter | undefined;
+  /** How the last match ended; survives dropMatch (which clears the live reporter). */
+  let lastEnd: MatchEndRecord | undefined;
   /** A resting notice that arrived during a match: shown when it ends. */
   let restAfter = false;
   let onPageHide: (() => void) | undefined;
@@ -121,6 +125,8 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     view?.reportButton(false);
   };
   const dropMatch = (): void => {
+    lastEnd = reporter?.end ?? lastEnd;
+    reporter = undefined;
     stopTicker();
     stopArena();
     qs = undefined;
@@ -188,7 +194,9 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     if (s === undefined || c === undefined || m === undefined || ok === undefined || !ok.ok) return;
     setup = s;
     side = ok.slot;
-    const reporter = new MatchReporter(c.transport, m.matchId, deps.now);
+    const rep = new MatchReporter(c.transport, m.matchId, deps.now);
+    reporter = rep;
+    lastEnd = undefined;
     set('playing', '');
     view?.fail('');
     const a = await launchOnlineArena({
@@ -201,7 +209,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       batchEvery: ok.batchEvery,
       onEnd: (end) => {
         if (g !== gen || current !== m) return;
-        if (session !== undefined) reporter.finish(session, end.winner);
+        if (session !== undefined) rep.finish(session, end.winner);
         // The finished arena stays up (its session keeps answering the opponent) until the next match or the screen closes.
         if (restAfter) {
           restAfter = false;
@@ -213,7 +221,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       onStatus: (st, sess) => {
         if (g !== gen || current !== m) return;
         session = sess;
-        reporter.update(sess);
+        rep.update(sess);
         if (st === 'forfeit' || st === 'desync') stoppedMatch = m.matchId;
         const t = netStatusText(st, sess.forfeitReason);
         if (t !== undefined) view?.say(t);
@@ -275,6 +283,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         if (e.status === 'disconnected') view?.say(OPPONENT_AWAY_TEXT);
         else if (e.status === 'back') view?.say(base);
         else {
+          reporter?.left(session?.simTick ?? 0);
           dropMatch();
           set('ended', OPPONENT_LEFT_TEXT);
         }
@@ -317,6 +326,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         break;
       case 'closed':
         connected = false;
+        if (state === 'playing') reporter?.noteLink(END_DETAIL.relayClosed);
         if (state === 'playing' || state === 'ended' || state === 'idle') break;
         failWith(e.failure ?? { kind: 'network' });
         break;
@@ -386,7 +396,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     set('waiting-pick', WAITING_PICK_TEXT);
   };
   const saveReport = (): void => {
-    if (setup !== undefined && session !== undefined) downloadReport(buildDesyncReport(setup, session));
+    if (setup !== undefined && session !== undefined) downloadReport(buildDesyncReport(setup, session, reporter?.end ?? lastEnd));
   };
 
   const teardown = (): void => {

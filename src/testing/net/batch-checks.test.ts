@@ -27,12 +27,13 @@ const SETUP: MatchSetup = {
 
 function make(opts: { hashInterval?: number } = {}) {
   const inbox: Uint8Array[] = [];
-  const transport: Transport = { send: () => undefined, receive: () => inbox.shift() };
+  const sent: Uint8Array[] = [];
+  const transport: Transport = { send: (b) => { sent.push(b); }, receive: () => inbox.shift() };
   const s = new LockstepSession({ world: createMatch(SETUP), side: 0, transport, ...opts });
   const inject = (p: Partial<Packet>): void => {
     inbox.push(encodePacket({ match: 0, flags: 0, ack: 0, firstTick: 0, inputs: [], hashes: [], ...p }));
   };
-  return { s, inject };
+  return { s, inject, sent };
 }
 
 /** Warm up: peer sends honest inputs for ticks 0..9 and acks what we sent. */
@@ -173,5 +174,28 @@ describe('LockstepSession batch checks', () => {
         for (const s of sessions) expect(s.desync).toBeUndefined();
       }
     }
+  });
+
+  it('after a batch-* desync we go silent (the peer times out in 5 s), even for forfeit and hidden', () => {
+    const { s, inject, sent } = warm();
+    inject({ ack: s.captureSnapshot().local.length + 1 });
+    s.update(0);
+    expect(s.desync?.check).toBe('batch-ack');
+    const n = sent.length;
+    for (let i = 0; i < 20; i++) s.update(0);
+    s.setHidden(true);
+    expect(sent.length).toBe(n);
+    expect(s.stats.packetsSent).toBe(n);
+  });
+
+  it('a hash desync still keeps sending packets', () => {
+    const { s, inject, sent } = warm({ hashInterval: 1 });
+    const [tick, h] = s.checkpoints()[0] as readonly [number, number];
+    inject({ hashes: [{ tick, hash: h ^ 1 }] });
+    s.update(0);
+    expect(s.desync?.check).toBe('hash');
+    const n = sent.length;
+    s.update(0);
+    expect(sent.length).toBeGreaterThan(n);
   });
 });

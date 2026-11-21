@@ -1,4 +1,5 @@
 import type { LockstepSession } from '@core/index';
+import { END_DETAIL, type MatchEndRecord } from '../match-end';
 import type { WebSocketTransport } from './transport';
 
 /**
@@ -23,6 +24,8 @@ export class MatchReporter {
   private lastHashAt = Number.NEGATIVE_INFINITY;
   private desyncSent = false;
   private resultSent = false;
+  private linkNote: string | undefined;
+  private record: MatchEndRecord | undefined;
 
   constructor(
     private readonly link: ReportLink,
@@ -30,12 +33,28 @@ export class MatchReporter {
     private readonly now: () => number,
   ) {}
 
+  /** How the match ended, once it has; the first cause is kept. */
+  get end(): MatchEndRecord | undefined {
+    return this.record;
+  }
+
+  /** The relay link closed while the match ran: a later timeout is then reported as relay-closed instead of stalled. */
+  noteLink(note: typeof END_DETAIL.relayClosed): void {
+    this.linkNote ??= note;
+  }
+
+  /** The relay said the opponent is gone: a local end (reason forfeit, nothing is sent; the relay already knows). */
+  left(tick: number): void {
+    this.record ??= { reason: RESULT_REASON.forfeit, detail: END_DETAIL.opponentLeft, tick, winner: RESULT_WINNER_NONE, resultSent: false };
+  }
+
   /** Call on every session update: sends the next unsent checkpoint (at most one per HASH_REPORT_MS) and reports a desync once. */
   update(s: ReportSession): void {
     const d = s.desync;
     if (d !== undefined) {
       if (this.desyncSent) return;
       this.desyncSent = true;
+      this.record ??= { reason: RESULT_REASON.desync, detail: d.check ?? 'hash', tick: d.tick, winner: RESULT_WINNER_NONE, resultSent: true };
       this.link.sendDesync(this.matchId, d.tick, d.local, d.remote);
       // The relay answers a RESULT, and that answer stops the DESYNC resend. Ticks and hash differ per side, so it never agrees.
       this.send(RESULT_WINNER_NONE, RESULT_REASON.desync, d.tick, d.local);
@@ -51,13 +70,23 @@ export class MatchReporter {
   }
 
   /** The match ended with `winner` (a team index, or -1 for nobody): sends RESULT once. */
-  finish(s: ReportSession, winner: number): void {
+  finish(s: ReportSession, winner: number, tickLimit?: number): void {
     if (this.resultSent || s.desync !== undefined) return;
     const w = winner === 0 || winner === 1 ? winner : RESULT_WINNER_NONE;
     const r = s.forfeitReason;
-    if (r === undefined) this.send(w, RESULT_REASON.natural, s.simTick, s.hashAt(s.simTick) ?? 0);
+    let reason: 0 | 1 | 2 = RESULT_REASON.natural;
+    let detail: string = tickLimit !== undefined && s.simTick >= tickLimit ? END_DETAIL.tickLimit : END_DETAIL.simEnd;
+    if (r === 'timeout') {
+      reason = RESULT_REASON.timeout;
+      detail = this.linkNote ?? END_DETAIL.stalled;
+    } else if (r !== undefined) {
+      reason = RESULT_REASON.forfeit;
+      detail = r === 'conceded' ? END_DETAIL.conceded : END_DETAIL.opponentConceded;
+    }
+    this.record ??= { reason, detail, tick: s.simTick, winner: w, resultSent: true };
+    if (reason === RESULT_REASON.natural) this.send(w, reason, s.simTick, s.hashAt(s.simTick) ?? 0);
     // A forfeit or timeout ends at different ticks on the two sides, so only the winner is compared.
-    else this.send(w, r === 'timeout' ? RESULT_REASON.timeout : RESULT_REASON.forfeit, 0, 0);
+    else this.send(w, reason, 0, 0);
   }
 
   private send(winner: number, reason: number, ticks: number, finalHash: number): void {
