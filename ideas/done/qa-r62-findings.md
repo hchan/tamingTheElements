@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -38,3 +39,8 @@ Headless Chromium SwiftShader, dev server port 7962, screenshots under `~/claude
 ## Coverage
 
 Menu at 1280x720, 667x375, 812x375, 390x844; Versus picker at 667x375, 812x375, 390x844; 1v1 on Fire and Earth (intro, close, hit, super, after-super); 2v2 on Water with tag swap; phone fights portrait and landscape. Not covered this round: Tour, Help, Water and Air 1v1.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: picker density (r62 itself); WEATHER box vs TAG! call (r119 N3 shows the tag call clean). The 2v2 picker e2e regression (`touch-fight-layout.spec.ts:166`) was a phone spec and was deleted with the phone work. Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: Fiara sprite, hit-effect clarity.

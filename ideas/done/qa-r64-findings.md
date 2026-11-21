@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only; open items carried to r65)
 added: 2026-11-15
 ---
 
@@ -28,3 +29,8 @@ Headless Chromium SwiftShader, port 7974 (7964 was taken by another agent), scre
 ## Process
 
 - `node_modules` symlinked from the main checkout (not committed). Server pid in `~/claudetmp/qa-r64/pid`. `heroLabels()` lives on `__TTE__.arena`, not `__TTE__`.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: 2v2 life scale (shared bar scale, ideas/done/qa-r15-life-totals-vs-bar-length.md), round pips (ideas/done/qa-hud-pips-and-bench-crowding.md), Help "tour" wording and pills (`help-guide.ts:80-97`); Easy-stage lopsided life is covered by r119 (`heroLife` scaled). Carried to r65: Tour fight HUD stage/continues, fighter clipped at the arena edge, tag feedback. Not re-raised since: the 20 s round gap (r64 only). Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: Fiara silhouette on lava, Wispera blob.

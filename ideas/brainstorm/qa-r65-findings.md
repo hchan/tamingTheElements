@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (3 real items open, see Triage)
 added: 2026-11-15
 ---
 
@@ -29,3 +30,13 @@ Headless Chromium SwiftShader, port 7965, screenshots in `~/claudetmp/qa-r65/s/`
 ## Process
 
 - `node_modules` symlinked from the main checkout (not committed). The `#heroes` route does not exist (falls back to the menu); hero selection lives in the Versus picker. After a KO `__TTE__.arena` goes undefined while the next round loads, so probes must tolerate that.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: AI level control in the picker (`src/ui/screens/arcade-versus.ts:732`); Help length and "tour" word; 2v2 life bars; round pips. Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Open (c), carried from r63/r64:
+1. Tour fight HUD shows no stage number or continues count (no stage string in `src/game/hud/` or `Hud.ts`; only the stage card and splash have it). Small: a one-line chip from the Tour run.
+2. A Tag press that does nothing (healthy hero, cooldown) gives no line. `actionRefusal` (`src/game/scenes/arena-logic.ts:52`) covers Super, Weather, Charge, Elemental and Run only; add Tag there, with a test.
+3. Fighters and hit numbers clipped at the left/right wall and the super punch-in cropping the caster: `src/game/fx/arena-pan.ts` follows the midpoint; wall clamp not verified in code (low confidence, needs a screenshot at x=0). Related: ideas/brainstorm/qa-r125-tag-entry-left-wall-overlap.md.
+4. Hard vs Normal AI feel nearly identical (design question, no change made).
+Art-only, noted: Wispera blob, Fire floor lava lines hiding Fiara.

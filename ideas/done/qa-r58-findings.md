@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -37,3 +38,8 @@ Screenshots under `~/claudetmp/qa-r58/s/`.
 ## Coverage
 
 Menu at 1280x720, 667x375, 390x844; Versus picker at 1280x720 and 667x375; 1v1 and 2v2 on Water with hit and super; phone landscape fight; phone portrait fight; Brazgor, Glimmaw, Durrok, Zephra (intro, hit, ability, super); E2E subset of 40 specs.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed or dropped: picker "More below" cue exists (footer pill, `src/ui/styles/main/10-picker-layout.css`); the on-body status marker is `src/game/fx/status-ring.ts`; the first-hint card is covered by ideas/done/qa-first-hint-covers-arena.md. Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: roster24 hero art (Zephra, Brazgor, Glimmaw, Durrok scale and outline) is hidden and art-director gated; Fiara halo and mane blending is hero art.
