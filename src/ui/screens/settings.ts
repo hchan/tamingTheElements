@@ -192,6 +192,15 @@ function touchGroup(current: TouchLayout): HTMLElement {
   return set;
 }
 
+/** True unless the device reports no coarse pointer at all (a desktop); unknown (no matchMedia) counts as touch-capable. */
+function hasTouchScreen(): boolean {
+  try {
+    return typeof window.matchMedia !== 'function' || window.matchMedia('(any-pointer: coarse)').matches;
+  } catch {
+    return true;
+  }
+}
+
 /** Reads the touch layout radios of the settings form (unknown values fall back to the defaults). */
 export function readTouchForm(form: HTMLFormElement): TouchLayout {
   const data = new FormData(form);
@@ -434,11 +443,13 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         notice,
       ),
     );
+    const touchShown = hasTouchScreen();
     const controls = section('Controls', 'settingsControls');
     const keys = el('a', 'menuLink', 'Key bindings');
     keys.href = '#keyBindings';
     keys.id = 'keyBindingsLink';
-    controls.append(touchGroup(readTouchLayout()), keys);
+    if (touchShown) controls.append(touchGroup(readTouchLayout()));
+    controls.append(keys);
     const audio = section('Audio', 'settingsAudio');
     audio.append(audioControls());
     const display = section('Display', 'settingsDisplay');
@@ -450,7 +461,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const values = readForm(form);
-      const touch = readTouchForm(form);
+      const touch = touchShown ? readTouchForm(form) : readTouchLayout();
       // Apply onto the freshest stored save (an import or another tab may have changed it) and never
       // write when it could not be read: that would replace real progress with an empty save.
       void store.load().then(async (r) => {
