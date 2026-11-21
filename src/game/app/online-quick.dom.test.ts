@@ -316,6 +316,19 @@ describe('quick match screen', () => {
     r.unmounts.forEach((u) => { u(); });
   });
 
+  it('a gateway notice after the match ended leaves the end line', async () => {
+    const r = rig();
+    const [a] = await play(r);
+    const ws = r.h.svc.sockets[0] as TestWs;
+    ws.serve(peerStatus(1, 2));
+    await r.h.flush();
+    const end = q(a, 'quickStatus').textContent;
+    ws.emit('message', { data: '{"message": "Too Many Requests"}' });
+    await r.h.flush();
+    expect(q(a, 'quickStatus').textContent).toBe(end);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
   it('a resumed reconnect starts no second game', async () => {
     const r = rig();
     await play(r);
