@@ -1,0 +1,159 @@
+{
+  "licence": "own work (AI-generated, SDXL on the project GPU box)",
+  "icons": {
+    "boulder_roll": {
+      "url": "img/hud/ability-icons-ai/boulder_roll.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "5f6beeb80f99dd21ea044c9e65d264660d569c82c11e6936f4e62722fc051e76",
+      "source": "r207-ic-boulder-roll_98024_512x512.png",
+      "approval": {
+        "approved": "r207-ic-boulder-roll_98024_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "ember_bite": {
+      "url": "img/hud/ability-icons-ai/ember_bite.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "b2d977af79165ab6427b242d5030ed0e3c4ee40a0e60b753712078e37a92f281",
+      "source": "r195-ic-ember-bite_97004_512x512.png",
+      "approval": {
+        "approved": "r195-ic-ember-bite_97004_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "forge_gore": {
+      "url": "img/hud/ability-icons-ai/forge_gore.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "a4dc816659cc092e9905d896df8848dd30ea383f531e8b40d82b6b229d9eaf9d",
+      "source": "r246-forge-gore_99432_512x512.png",
+      "approval": {
+        "approved": "r246-forge-gore_99432_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "gale_talon": {
+      "url": "img/hud/ability-icons-ai/gale_talon.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "7d7e2c170b790f591ab20516d51d312e02e25e3fdc504913607b81e0f49b2214",
+      "source": "r196-ic-gale-talon_97033_512x512.png",
+      "approval": {
+        "approved": "r196-ic-gale-talon_97033_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "hurl_rock": {
+      "url": "img/hud/ability-icons-ai/hurl_rock.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "a1dd50a4579e6905bb0cc89a84ca931da8e2dff2de9d500d6f18d8ee203ab4ad",
+      "source": "r198-ic-hurl-rock_97211_512x512.png",
+      "approval": {
+        "approved": "r198-ic-hurl-rock_97211_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "lure_orb": {
+      "url": "img/hud/ability-icons-ai/lure_orb.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "627ff1010c47a59be3336eece18249ccd8bb65b66ee55e624816a1cce88ca637",
+      "source": "r198-ic-lure-orb_97223_512x512.png",
+      "approval": {
+        "approved": "r198-ic-lure-orb_97223_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "mycelium_mend": {
+      "url": "img/hud/ability-icons-ai/mycelium_mend.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "dff125b131fb0934d0b4ae658ca09788bae1c6418d3c79f70cb298c489edf6a6",
+      "source": "r243-mycelium_99122_512x512.png",
+      "approval": {
+        "approved": "r243-mycelium_99122_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "stinging_filament": {
+      "url": "img/hud/ability-icons-ai/stinging_filament.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "93041e6b9a06ed17247e8039bb82ca96ec8577c51476032f86044c18c1b54b5c",
+      "source": "r244-stinging-filament_99232_512x512.png",
+      "approval": {
+        "approved": "r244-stinging-filament_99232_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "stoop": {
+      "url": "img/hud/ability-icons-ai/stoop.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "3f5460a7a57458228bae1307231f006782f62b9ae1c9065a38c9f8761e55a19b",
+      "source": "r245-stoop_99324_512x512.png",
+      "approval": {
+        "approved": "r245-stoop_99324_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "tide_surge": {
+      "url": "img/hud/ability-icons-ai/tide_surge.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "74c88c9f55e169638d1531548ab83b437a0c0f0652c7743582c4a1c2c49f696e",
+      "source": "r196-ic-tide-surge_97024_512x512.png",
+      "approval": {
+        "approved": "r196-ic-tide-surge_97024_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "tusk_gore": {
+      "url": "img/hud/ability-icons-ai/tusk_gore.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "b53ca365f9daababd6c4a74d1f6d9f363242c85f71d0cf6847d7c00eedde762f",
+      "source": "r247-tusk-gore_99524_512x512.png",
+      "approval": {
+        "approved": "r247-tusk-gore_99524_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    }
+  }
+}

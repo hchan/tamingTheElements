@@ -6,6 +6,7 @@
     "a11y-focus.spec.ts": "P1",
     "a11y-trap.spec.ts": "P2",
     "a11y.spec.ts": "P1",
+    "ability-icons-shot.spec.ts": "P2",
     "ability-fx.spec.ts": "P1",
     "action-bar-groups.spec.ts": "P2",
     "app-flow.spec.ts": "P0",

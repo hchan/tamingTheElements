@@ -11,6 +11,7 @@ import { syncTouchOverlays } from './touch-overlay';
 import { isPortraitPlay, setPanelTop } from '../boot/portrait-play';
 import { cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
+import { wearAiIcon } from './ability-icon-art';
 import { ACTION_SHEET, BAR_Y, CAPTURE_READY_COLOR, COOLDOWN_COLOR, DEFAULT_KEY_LABELS, ELEMENT_TINT, ICON_FRAME, ICON_PAD, KIND_TINT, LOGICAL_HEIGHT, MAX_SLOTS, MIRROR_SIDE, READY_FLASH_COLOR, SHEET_CELL, SHEET_COLS, SLOT_SIDE, TIP_LONG_PRESS_MS, TIP_SUPER_QUIET_MS, TOP_BORDER, arcadeBarOf, barTop, buildSlots, captureHint, commandAt, cooldownLook, fitIcon, fitTextScale, gradedTexture, mirrorSlots, portraitBarSlots, readyEdge, showStrikeCues, slotParts, slotTip, slotWord, strikeCues, tipExpired, tipPlacement, withoutStrikeTiles, type ActionSlot, type CooldownLook, type GroupHeader, type GroupedBar, type KeyLabels } from './action-bar';
 /** Where the 1280x720 screen sits in world px: top-left `x`,`y` and world px per logical px (`scale`). Identity for a fixed camera. */
 export interface ScreenBox {
@@ -426,11 +427,8 @@ export class ActionBarView {
 
   /** The slot's icon: the character's sprite where it has one, else its cell on the generated `hud:actions` sheet (never graded: it is already grim). */
   private drawIcon(i: number, s: ActionSlot): void {
-    let icon = this.icons[i];
-    if (!icon) {
-      icon = this.scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99);
-      this.icons[i] = icon;
-    }
+    const icon = (this.icons[i] ??= this.scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99));
+    if (s.kind === 'ability' && wearAiIcon(icon, s.sprite, this.scene.textures, this.dressed() ? slotParts(s.x, s.y, s.size, s.label.length).icon : undefined, s, this.box.scale, (x) => this.wx(x), (y) => this.wy(y))) return;
     const found = lookup(s.sprite);
     if (found && this.scene.textures.exists(found.key)) {
       const key = this.styled ? gradedTexture(this.scene, found.key) : found.key;

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { manifestToLoadList } from '../assets/load-list';
 import { ACTION_SHEET } from '../hud/action-bar';
+import { AI_ICON_SLOTS, aiIconKey, aiIconUrl } from '../hud/ability-icon-art';
 import { PAINT_TEXTURE, PAINT_URL, STAGE_TEXTURE, STAGE_URL, TILE_TEXTURE, TILE_URL } from './launch';
 import { PRELOAD_READY } from './launch';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
@@ -43,6 +44,7 @@ export class Preload extends Phaser.Scene {
     }
     // The generated action-bar icon sheet (tools/assets/hud-gen/actions.py), outside the manifest.
     this.load.image(ACTION_SHEET, `${import.meta.env.BASE_URL}assets/img/hud/actions.png`);
+    for (const slot of AI_ICON_SLOTS) this.load.image(aiIconKey(slot), `${import.meta.env.BASE_URL}${aiIconUrl(slot)}`);
     // The stage art (skyline and crowd, painted floor, floor details) is loaded here, before the bar ends, so the arena never shows
     // a bare dark floor that the art then pops into; the terrain view finds the textures present and skips its own lazy load.
     for (const [key, url] of [[STAGE_TEXTURE, STAGE_URL], [PAINT_TEXTURE, PAINT_URL], [TILE_TEXTURE, TILE_URL]] as const) this.load.image(key, `${import.meta.env.BASE_URL}assets/${url}`);
