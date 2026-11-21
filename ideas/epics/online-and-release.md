@@ -39,7 +39,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [short-and-long-gate](../in-progress/short-and-long-gate.md): Short gate on every merge, long gate once a day
 - [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
 - [qa-r101-findings](../done/qa-r101-findings.md): QA r101 findings
-- [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
+- [qa-r102-findings](../done/qa-r102-findings.md): QA r102 findings
 
 ## Bundles (2026-11-17)
 
@@ -47,7 +47,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### OR-1 Online flow, lobby and quick join
 
-- Members: [online-play](../brainstorm/online-play.md), [online-lobby](../brainstorm/online-lobby.md), [online-quick-join-slots](../brainstorm/online-quick-join-slots.md), [sf-versus-join-in](../brainstorm/sf-versus-join-in.md), [qa-r102-findings](../brainstorm/qa-r102-findings.md)
+- Members: [online-play](../brainstorm/online-play.md), [online-lobby](../brainstorm/online-lobby.md), [online-quick-join-slots](../brainstorm/online-quick-join-slots.md), [sf-versus-join-in](../brainstorm/sf-versus-join-in.md), [qa-r102-findings](../done/qa-r102-findings.md)
 - Size: L
 - Shared files: src/game/net/*, src/core/net/*, src/core/relay/*, online UI, main.css
 - Flags: OWNER-GATED: quick join is parked (manual codes only, owner 2026-11-17); the lobby needs an AWS decision (outward-facing). Only the qa-r102 copy fixes are free to do now. needs browser/e2e
