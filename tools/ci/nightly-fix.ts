@@ -2,7 +2,7 @@
  * Nightly fix loop (runs after `nightly:collect` when the status is red with unrecorded failures):
  *   pnpm nightly:fix [--dry-run]            fix loop only (needs a fresh collected red status)
  *   nightly-fix.ts collect-and-fix          collect (retry every 20 min until 04:30 while the 23:00 full run is unfinished), then the fix loop (the 02:00 LaunchAgent)
- *   nightly-fix.ts report                   read-only morning report to tte-gate/nightly-morning-report.md (the 07:00 LaunchAgent)
+ *   nightly-fix.ts report                   read-only morning report to tte-gate/nightly-morning-report.md (the 09:00 LaunchAgent)
  * Per failure: a sandboxed headless `claude -p` round (file tools only, no user/project settings, see nightly-fix-logic.ts) in a
  * fresh worktree from origin/main (.scratch/nightly-fix-wt), then a re-run of that spec only via the router (`--pc`: PC only, never
  * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). At most 3 rounds, at most 3 failures, one run at a time (lock file).
@@ -486,7 +486,7 @@ function collectWithRetry(d: FixDeps, start: Date): void {
   }
 }
 
-/** Read-only morning report (the 07:00 job): the nightly status plus the fix result, written to nightly-morning-report.md. */
+/** Read-only morning report (the 09:00 job): the nightly status plus the fix result, written to nightly-morning-report.md. */
 export function report(d: FixDeps): number {
   const lines = describeStatus(readStatus(d.statusDir), d.now().getTime());
   lines.push(...describeFix(readFixStatus(d.statusDir)));
