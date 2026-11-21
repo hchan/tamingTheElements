@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- KO frames (ko-frames): rig-only KO poses for Glimmaw, Treenoc and Pax in `public/assets/img/ko/` (rotate, squash, tint, shadow of the map portraits), art-director approved (Fiara parked), generator `tools/assets/ko-gen/ko-rigonly.py`, sha256 pins in `tools/assets/ko-gen/approval.json`. Not wired to the scene yet. Art only: no sim, golden or `SIM_VERSION` change.
+
 - Relay conformance (MINOR): `ConformanceCase.orderSensitive` and `RunOptions.retryOrderSensitive`; `relay:conformance --retry-ordering <n>` retries the two order-sensitive cases on a concurrent-invocation deployment. Default off.
 - Relay conformance (MINOR, no wire or sim change): `ConformanceAdapter.connect` takes an optional `{ sameIdentityAs }` so resume cases reconnect as the same player (`resume.within-grace` and `resume.after-grace` now do; against a relay that ties sessions to identity the old reconnect was a different player). The `relay:conformance` runner gains `--advisory-close` and `--no-binary` (docs/RELAY-PACKAGE.md). The WebSocket client shows a gateway failure notice as a status instead of a malformed frame.
 

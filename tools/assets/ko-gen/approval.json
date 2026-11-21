@@ -1,0 +1,31 @@
+{
+ "ko_glimmaw": {
+  "approved": "sheet.png (glimmaw KO rig-only)",
+  "reviewer": "art-director",
+  "date": "2026-11-20",
+  "beats_shipped": true,
+  "sha256": "9bd26e0a2161a5ec510063b43fbb3a9346f4d74a818ba7f9b051f512441cf797"
+ },
+ "ko_pax": {
+  "approved": "sheet.png (pax KO rig-only)",
+  "reviewer": "art-director",
+  "date": "2026-11-20",
+  "beats_shipped": true,
+  "sha256": "8c2dd5cd01833ff7e9fee949bc1b8abf36ae856b169e397de902d46b3e970730"
+ },
+ "ko_treenoc": {
+  "approved": "sheet.png (treenoc KO rig-only)",
+  "reviewer": "art-director",
+  "date": "2026-11-20",
+  "beats_shipped": true,
+  "sha256": "3b863a1ad789b3b5a9c5e7946bee59819ec32c70905a8104404a316f879a8a36"
+ },
+ "ko_fiara": {
+  "approved": null,
+  "reviewer": "art-director",
+  "date": "2026-11-20",
+  "beats_shipped": false,
+  "verdict": "REJECT round 3: park Fiara KO",
+  "note": "unreadable fragmented wing pieces, white holes, jagged cut edges, no body; hard reject (not a full-body hero)"
+ }
+}
