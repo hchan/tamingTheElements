@@ -357,9 +357,8 @@ export class OnlineClient {
 
   /** Asking for a queue or a room means the last match is over: the idle reconnect budget applies again. */
   private lobbyAction(bytes: number[]): boolean {
-    this.transport.endMatch(); // Before the send: a MATCH_START answering it must start the next match, not be ended by this one.
-    const sent = this.sendLobby(bytes);
-    if (sent) this.leaveMatch();
+    this.transport.endMatch(); // Before the send: a MATCH_START answering it must start the next match.
+    const sent = this.sendLobby(bytes); if (sent) this.leaveMatch();
     return sent;
   }
 
@@ -408,8 +407,7 @@ export class OnlineClient {
       }
       case 'result-ack':
         if (this.transport.matchId !== undefined && w.matchId !== this.transport.matchId) break; // Answer for an earlier match.
-        this.transport.stopRetry();
-        this.transport.endMatch();
+        this.transport.stopRetry(); this.transport.endMatch();
         this.leaveMatch();
         this.onEvent(w);
         break;
