@@ -28,6 +28,6 @@ describe('first-run card vs the action bar', () => {
   it('scales its base font with the window height instead of a fixed 11px (qa-r125)', () => {
     const start = css.indexOf('.firstRunHint {');
     const block = css.slice(start, css.indexOf('}', start));
-    expect(block).toMatch(/font-size: clamp\(11px, [\d.]+vh, \d+px\);/);
+    expect(block).toMatch(/font-size: clamp\(16px, [\d.]+vh, \d+px\);/);
   });
 });

@@ -555,3 +555,11 @@ describe('firstRunHint in portrait play', () => {
     expect(card.querySelector('.firstRunMore')).not.toBeNull();
   });
 });
+
+describe('first-run card font (qa-r119 N1)', () => {
+  it('sets no inline font size on a 720p window (the CSS owns it, at least 16px)', () => {
+    Object.defineProperty(window, 'innerHeight', { value: 720, configurable: true });
+    const card = firstRunHint(memory());
+    expect(card?.style.fontSize).toBe('');
+  });
+});
