@@ -1,5 +1,5 @@
 # QA r120 scorecard (0-5 vs Street Fighter / Marvel vs Capcom)
-status: idea
+status: done
 added: 2026-11-19
 
 Desktop 1280x720, headless, main f1d3ba53. Details in qa-r120-findings.md. Screenshots in `.scratch/qa-r120/`.
@@ -18,3 +18,4 @@ Desktop 1280x720, headless, main f1d3ba53. Details in qa-r120-findings.md. Scree
 | Tour briefing (`k-tour0.png`) | 3 | 4 | 4 | Clear ladder; loading interstitial after Fight. |
 
 Overall: fun 3.0, graphics 3.8, readability 3.8. Smoke: PC, 15 passed. No console errors.
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r120 findings.

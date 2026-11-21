@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-19
 ---
 # QA r129 scorecard
@@ -18,3 +18,4 @@ Shots: `.scratch/qa-r129/` (01-menu, 02-picker, 10-fight-banner, 11/12-stage-{fi
 | Help | - | 3 | 3 | Jump-to chips ragged (qa-r127-help-chips-ragged) |
 
 Versus picker at 720p still clips the footer text under the "More below" chip (qa-r127-more-below-chip-covers-text).
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r129 findings.

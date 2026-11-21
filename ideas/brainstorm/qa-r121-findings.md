@@ -86,3 +86,5 @@ severity: medium
 Idea: put Back (and Save) first in the tab order on Key Bindings as on Settings, or raise the budget and add a skip link.
 
 > Caveat (coordinator): this round built origin/main 724b7ce1, which lacks the local results/Escape, Help text and Tour wording merges (2026-11-19). Findings on those three areas are stale; the keyboard.spec.ts:93 failure is real on that base. r122 must build local main.
+
+triaged: 2026-11-21 partly fixed: item 2 (Escape on slider) in src/ui/keyboard.ts; item 7 by 81ce03a2 (first-run hint scales). Items 1, 3, 4, 5, 6 not code-checked as small; keep open, re-QA live.

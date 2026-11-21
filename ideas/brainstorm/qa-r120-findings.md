@@ -28,3 +28,5 @@ Banned-word scan (Classic, Arcade, ruleset, Capture) of Menu, Versus, Play/Tour 
 - N7 (info) Parry feedback is a small gold "PARRY" word near the defender plus a ring; against SF or MvC (big spark, freeze, shout) it reads quietly. Consider a hit-stop flash and a larger word.
 - N8 (info) A naive bot (walk toward the foe and fire) as Fiara on Easy against Rokcore was stun-juggled to the left wall and lost 0-2 without dealing any damage in about 190 s (`d-fight-*.png`); as Treenoc it lost one round in 24 s. A real player guards and dashes, so this is not a bug, but Easy punishes a passive player hard (same stun lock as r119 N2).
 - N9 (info) Tour fight 1 shows a "Loading..." interstitial for over a second (`k-tour1a.png`) between the briefing and the arena.
+
+triaged: 2026-11-21 partly fixed: Escape from sliders/menus handled in src/ui/keyboard.ts (N2). Still open and unverified: N5 Display size effect, N6 touch-only Settings rows, N7 parry feedback size. Plan: re-QA live; split N5/N7 into own ideas if still seen.

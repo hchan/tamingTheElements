@@ -1,6 +1,6 @@
 # QA r123 scorecard
 
-status: idea
+status: done
 added: 2026-11-19
 
 Build: main at 602f205d, headless Chromium with SwiftShader, 1280x720, live keyboard input for one full 1v1, one full 2v2 and a four-stage Tour walk; stepped play for the stage sweep and the tag and super frames.
@@ -27,3 +27,4 @@ Console errors across all runs: none.
 | 2v2 and results | 3 | 4 | 4 | Results clear, Rematch focused |
 | Tour | 3 | 4 | 4 | Stage 1 now opens with contact; carried damage not shown on the card |
 | Menus, Help, Settings | n/a | 3 | 3 | Help chips ragged; Key Bindings opens scrolled down |
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r123 findings.

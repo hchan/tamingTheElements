@@ -1,6 +1,6 @@
 # QA r121 scorecard
 
-status: idea
+status: done
 added: 2026-11-19
 
 Build: main at 724b7ce1 (`Merge tour chips and Help height`), dev server in test mode, headless Chromium with SwiftShader, `?manual=1&seed=7&ff=arcade`, 1280x720 only (no phone viewport this round).
@@ -40,3 +40,4 @@ Smoke: `e2e ran on: PC (job 20261119-133024-short-dcd97a, short lane) -> exit 0`
 Overall: fun 3.5, graphics 3.5, readability 3.5.
 
 > Caveat (coordinator): this round built origin/main 724b7ce1, which lacks the local results/Escape, Help text and Tour wording merges (2026-11-19). Findings on those three areas are stale; the keyboard.spec.ts:93 failure is real on that base. r122 must build local main.
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r121 findings.

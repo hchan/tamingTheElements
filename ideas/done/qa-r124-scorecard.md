@@ -1,6 +1,6 @@
 # QA r124 scorecard
 
-status: idea
+status: done
 added: 2026-11-19
 
 Build: main at da78a9da, headless Chromium with SwiftShader, 1280x720. Stepped play for stage sweeps and Tour stage 2, live keyboard for the 2v2 (tag, super, loss to results).
@@ -26,3 +26,4 @@ Menu (`01`), Versus picker 1v1 and 2v2 (`02`, `04`), 1v1 on four stages (`10-1v1
 ## r123 items still open
 
 Help chip layout, picker "More below" chip, Key Bindings scroll from Settings, super cut-in over chips, no hit-stop. See `qa-r124-findings.md`.
+triaged: 2026-11-21 closed as obsolete; scorecard table duplicates qa-r124 findings.

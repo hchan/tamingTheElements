@@ -11,3 +11,5 @@ Repro: ?manual=1&seed=7&ff=arcade#tour, pick Fiara, Rokcore, Curomo, Start tour,
 Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a84dea11ac10d7faf/.scratch/qa-r126/shots/52-tour-after.png (bad frame); good frame /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a84dea11ac10d7faf/.scratch/qa-r126/shots/53-tour-fight.png
 
 Suggested fix: make viewsReady include the stage floor and crowd, or hold the ROUND banner until they are drawn.
+
+triaged: 2026-11-21 real, medium: draw order / viewsReady for floor and crowd in Tour; needs a bisect. Plan: medium planner.
