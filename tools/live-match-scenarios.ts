@@ -62,14 +62,17 @@ async function resume(rig: Rig, a: Peer, b: Peer, m: MatchEv): Promise<boolean> 
   const first = await exchange(rig, a, b, m, 0, 5);
   rig.step(`resume: before the drop A got ${String(first.A)}, B got ${String(first.B)}`);
   rig.drop(a);
-  const back = await until(rig, 'A reconnected', PEER_GRACE_MS + GONE_MARGIN_MS, () => a.events.some((e) => e.t === 'reconnected'));
-  const again = a.events.find((e) => e.t === 'match' && e.resumed);
+  const back = await until(rig, 'A reconnected', PEER_GRACE_MS + 5000, () => a.events.some((e) => e.t === 'reconnected'));
+  const resumedEv = (): OnlineEvent | undefined => a.events.find((e) => e.t === 'match' && e.resumed);
+  await until(rig, 'resumed MATCH_START on A', REACTION_WAIT_MS, () => resumedEv() !== undefined); // It follows WELCOME in a later frame, so `reconnected` alone is too early.
+  const again = resumedEv();
   const ev = (s: string): boolean => b.events.some((e) => e.t === 'peer' && e.status === s);
   await until(rig, 'peer back on B', PEER_GRACE_MS, () => ev('back'));
   rig.step(`resume: A reconnected=${String(back)} resumed-match=${String(again !== undefined)} B saw disconnected=${String(ev('disconnected'))} back=${String(ev('back'))}`);
   const next = await exchange(rig, a, b, m, 5, 5);
   rig.step(`resume: after the resume A got ${String(next.A)}, B got ${String(next.B)}`);
-  return back && again !== undefined && ev('disconnected') && ev('back') && next.B > 0;
+  // The relay sends `disconnected` and `back` only if it recorded the close before A returned (sct-27), so seeing neither is not a failure; seeing one without the other is.
+  return back && again !== undefined && ev('disconnected') === ev('back') && next.B > 0;
 }
 
 async function gone(rig: Rig, a: Peer, b: Peer, m: MatchEv): Promise<boolean> {
@@ -115,8 +118,14 @@ async function disagree(rig: Rig, a: Peer, b: Peer, m: MatchEv): Promise<boolean
 
 async function malformed(rig: Rig, a: Peer, b: Peer, m: MatchEv): Promise<boolean> {
   const junk = ['not base64 !!', encodeText(Uint8Array.of(0xff, 1, 2)), encodeText(Uint8Array.of(0x40, 0, 0, 0, 9)), encodeText(new Uint8Array(0))];
-  for (const text of junk) await sendCounted(rig, a, () => { rig.raw(a, text); });
-  await sendCounted(rig, a, () => { a.c.transport.send(encodePacket({ match: (m.matchId + 1) & 0xff, flags: 0, ack: 0, firstTick: 0, inputs: [], hashes: [] })); });
+  let sentJunk = 0;
+  // The live relay answers a bad frame with an error and a close, so the next send may find no socket: that is a finding, not a tool failure.
+  for (const text of junk) {
+    if (count(a, 'error') > 0 || count(a, 'reconnecting') > 0) break;
+    try { await sendCounted(rig, a, () => { rig.raw(a, text); }); sentJunk++; } catch (e) { rig.step(`malformed: send refused after ${String(sentJunk)} bad frames (${e instanceof Error ? e.message : 'error'})`); break; }
+  }
+  rig.step(`malformed: relay reacted after ${String(sentJunk)} bad frames: A errors=${String(count(a, 'error'))} reconnecting=${String(count(a, 'reconnecting'))}`);
+  if (count(a, 'error') === 0) await sendCounted(rig, a, () => { a.c.transport.send(encodePacket({ match: (m.matchId + 1) & 0xff, flags: 0, ack: 0, firstTick: 0, inputs: [], hashes: [] })); });
   const got = await exchange(rig, a, b, m, 0, 5);
   const alive = !a.events.some((e) => e.t === 'closed') && !b.events.some((e) => e.t === 'closed');
   rig.step(`malformed: ${String(junk.length + 1)} bad frames sent; then A got ${String(got.A)}, B got ${String(got.B)}; alive=${String(alive)} errors A=${String(count(a, 'error'))} B=${String(count(b, 'error'))} B.malformed=${String(b.c.transport.malformed)} B.staleMatch=${String(b.c.transport.staleMatch)}`);

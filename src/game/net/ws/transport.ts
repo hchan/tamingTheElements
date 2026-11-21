@@ -52,6 +52,8 @@ export class WebSocketTransport implements Transport {
   private readonly retries = new Map<number, { frame: Resendable; at: number }>();
   private seq = 0;
   private nonce = 0;
+  /** The match is over (`endMatch`): late BATCH and PAUSE from a session that is still shutting down are dropped, not sent as a bad frame for the next lobby state. */
+  private ended = false;
 
   constructor(
     private readonly socket: SocketLike,
@@ -69,6 +71,7 @@ export class WebSocketTransport implements Transport {
    */
   startMatch(matchId: number, resumed: boolean): void {
     this.matchId = matchId;
+    this.ended = false;
     if (resumed) return;
     this.seq = 0;
     this.reorder = new ReorderBuffer<Frame>();
@@ -78,8 +81,13 @@ export class WebSocketTransport implements Transport {
     this.peerPause = undefined;
   }
 
+  /** The match is over: stop sending match frames until the next `startMatch`. */
+  endMatch(): void {
+    this.ended = true;
+  }
+
   send(packet: Uint8Array): void {
-    if (packet.length + 5 > MAX_BATCH_BYTES) return;
+    if (this.ended || packet.length + 5 > MAX_BATCH_BYTES) return;
     this.raw({ t: 'batch', seq: this.nextSeq(), packet });
   }
 
@@ -89,6 +97,7 @@ export class WebSocketTransport implements Transport {
   }
 
   sendPause(matchId: number, flags: number): void {
+    if (this.ended) return;
     this.raw({ t: 'pause', seq: this.nextSeq(), matchId, flags });
   }
 

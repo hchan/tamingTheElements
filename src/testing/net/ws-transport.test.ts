@@ -110,6 +110,18 @@ describe('WebSocketTransport unit behaviour', () => {
     expect(relay.a.sent.map((m) => (decodeFrame(m) as { seq: number }).seq)).toEqual([0, 1]);
   });
 
+  it('endMatch drops late BATCH and PAUSE until the next startMatch', () => {
+    const { relay, a } = mk();
+    a.startMatch(1, false);
+    a.endMatch();
+    a.send(pkt(0));
+    a.sendPause(1, 1);
+    expect(relay.a.sent).toEqual([]);
+    a.startMatch(2, false);
+    a.send(pkt(0));
+    expect(relay.a.sent).toHaveLength(1);
+  });
+
   it('drops oversize packets, closed-socket sends and non-binary or malformed messages without throwing', () => {
     const { relay, a, b } = mk();
     a.send(new Uint8Array(500));
