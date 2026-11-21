@@ -1,7 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-17
-triaged: c (items 6-9 are desktop/landscape match-end polish that needs a browser screenshot to confirm; 1 fixed, 2/3/5/10/11 and 4 are phone/portrait so obsolete)
+triaged: done 2026-11-21 (7 fixed: loss-tone flat plate replaced by a feathered radial in match-end.css; 8 fixed: draw tiles top-aligned; 9 obsolete, 667x375 is phone-ish; 6 design call kept; 1 fixed; 2/3/4/5/10/11 phone/portrait obsolete). Shots: .scratch/shots/{lose,draw}-{before,after}.png at 1920x1080
 ---
 
 # QA r107 findings
