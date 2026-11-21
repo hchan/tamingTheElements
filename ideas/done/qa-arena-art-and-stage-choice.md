@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 triaged: already-fixed (stage picker: src/ui/screens/arcade-versus.ts Arena select + dom test arcadeStage; labels now a terrain-view badge/HUD text; art part duplicates arena art work)
 ---
