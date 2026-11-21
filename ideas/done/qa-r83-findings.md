@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait dropped; rest fixed or art-only)
 added: 2026-11-16
 ---
 
@@ -55,3 +56,8 @@ The "+N more" status chip was not triggered in any scripted fight. First-run car
 ## Method notes
 
 Load was 11 to 16 for most of the run (other agents), above the requested 10. One e2e flake (World Tour portrait-rig test at 1280x720, 20 s timeout) passed on rerun; its error text was not captured.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: bar skirts, stale e2e, 568-style overlap, Arcade floors. Dropped (phone/portrait): P1, P2, P5, P6. Art only, noted: P3 Wispera small and low-contrast (`ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`). Not a bug: P4 life values differ per hero by design (per-hero max life in `src/core/data`); desktop shows current/max.
+Open: none.

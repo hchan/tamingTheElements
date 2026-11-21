@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait/touch dropped; rest fixed or tracked)
 added: 2026-11-16
 ---
 
@@ -61,3 +62,8 @@ Tour at 390 portrait (bench cards under HUD names, r84 P5) and Tag 2 after the f
 - 360x640 portrait reads well. Shots: `.scratch/r85/t360-2-spawn.png`.
 - Desktop menu, Versus picker, four stages, 2v2 HUD and Help render with no console errors. Shots: `.scratch/r85/d-menu.png`, `d-select.png`, `d-stage-*.png`, `d-2v2.png`, `d-help.png`.
 - Stable e2e subset ran three times, one at a time: 91, 91, 91 passed, 0 flaky.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Water vs Air stages, tag swap (P8 carry-over passed in r86+). Dropped (phone/portrait/touch): P1 to P6, P8. Art only, tracked: P7 Fire lava contrast (`ideas/brainstorm/qa-r128-fire-stage-hero-blend.md`).
+Open: none.

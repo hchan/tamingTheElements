@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (portrait items fixed or dropped; rest fixed)
 added: 2026-11-16
 ---
 
@@ -34,3 +35,8 @@ portrait-play, responsive, phone-layout, touch-fight-layout: 87 passed, 2 failed
 ## Menus
 
 Menu at 390x844 and 1280x720: five entries (Play, Versus, Online, Settings, Help), no mode words, version v0.1.0 (d96baa44). Help at 390: jump chips wrap cleanly. No console errors in any run.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: skirts under the bar slots, stale portrait-play assertion, Arcade picker floor per element (verified r83). Dropped (phone/portrait/touch): items 1, 4 and the status-chip check. Not player-facing: item 6 (Classic demo HUD, no menu entry).
+Open: none.

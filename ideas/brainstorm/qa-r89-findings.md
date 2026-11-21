@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (P3 long-fight damage numbers and combo digits swamp fighters)
 added: 2026-11-16
 ---
 
@@ -47,3 +48,8 @@ Between the HUD and the horizon about 215 CSS px stay a flat gradient, partly co
 - Menu: Play, Versus, Online, Settings, Help; 57px tall at 390, 50px at 360, 58px at 1280; no horizontal overflow; no banned words.
 - Strike 2 and every bar tile fire when held across a tick; Super cut-in plays for Curomo (GLACIER CRASH) and Sindarosa (HELLFIRE LANCE) at 390 and 360, band under the HUD and above the bar.
 - Touch targets at least 45px (Strike circles about 64px, Pause 44px+).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: r88 P3 HUD text, Help link sizes. Dropped (phone/portrait/touch): P1 name truncation, P2 Versus footer, P4 edge pin, P5 Help link alignment, P6 tile aria-labels, P7 sky void.
+Open (low): P3 damage numbers pile up in a long fight; `src/game/hud/arcade-hud.ts` pools 16 slots with a fan-out but does not merge hits within a few ticks, so the desktop readability issue may remain (no screenshot check made).
