@@ -105,7 +105,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   zephra: 760,
   ouroth: 590,
   abyssor: 430,
-  vortigal: 665,
+  vortigal: 740, // 665 before SIM_VERSION 94 (41.6% in 2v2)
   umbrel: 660,
 };
 /**
