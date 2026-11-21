@@ -1,20 +1,6 @@
 {
   "licence": "own work (AI-generated, SDXL on the project GPU box)",
   "icons": {
-    "boulder_roll": {
-      "url": "img/hud/ability-icons-ai/boulder_roll.png",
-      "w": 128,
-      "h": 128,
-      "sha256": "5f6beeb80f99dd21ea044c9e65d264660d569c82c11e6936f4e62722fc051e76",
-      "source": "r207-ic-boulder-roll_98024_512x512.png",
-      "approval": {
-        "approved": "r207-ic-boulder-roll_98024_512x512.png",
-        "reviewer": "art-director",
-        "date": "2026-11-20",
-        "beats_shipped": true,
-        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
-      }
-    },
     "ember_bite": {
       "url": "img/hud/ability-icons-ai/ember_bite.png",
       "w": 128,
@@ -29,20 +15,6 @@
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
     },
-    "forge_gore": {
-      "url": "img/hud/ability-icons-ai/forge_gore.png",
-      "w": 128,
-      "h": 128,
-      "sha256": "a4dc816659cc092e9905d896df8848dd30ea383f531e8b40d82b6b229d9eaf9d",
-      "source": "r246-forge-gore_99432_512x512.png",
-      "approval": {
-        "approved": "r246-forge-gore_99432_512x512.png",
-        "reviewer": "art-director",
-        "date": "2026-11-20",
-        "beats_shipped": true,
-        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
-      }
-    },
     "gale_talon": {
       "url": "img/hud/ability-icons-ai/gale_talon.png",
       "w": 128,
@@ -51,6 +23,20 @@
       "source": "r196-ic-gale-talon_97033_512x512.png",
       "approval": {
         "approved": "r196-ic-gale-talon_97033_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "tide_surge": {
+      "url": "img/hud/ability-icons-ai/tide_surge.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "74c88c9f55e169638d1531548ab83b437a0c0f0652c7743582c4a1c2c49f696e",
+      "source": "r196-ic-tide-surge_97024_512x512.png",
+      "approval": {
+        "approved": "r196-ic-tide-surge_97024_512x512.png",
         "reviewer": "art-director",
         "date": "2026-11-20",
         "beats_shipped": true,
@@ -127,14 +113,14 @@
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
     },
-    "tide_surge": {
-      "url": "img/hud/ability-icons-ai/tide_surge.png",
+    "forge_gore": {
+      "url": "img/hud/ability-icons-ai/forge_gore.png",
       "w": 128,
       "h": 128,
-      "sha256": "74c88c9f55e169638d1531548ab83b437a0c0f0652c7743582c4a1c2c49f696e",
-      "source": "r196-ic-tide-surge_97024_512x512.png",
+      "sha256": "a4dc816659cc092e9905d896df8848dd30ea383f531e8b40d82b6b229d9eaf9d",
+      "source": "r246-forge-gore_99432_512x512.png",
       "approval": {
-        "approved": "r196-ic-tide-surge_97024_512x512.png",
+        "approved": "r246-forge-gore_99432_512x512.png",
         "reviewer": "art-director",
         "date": "2026-11-20",
         "beats_shipped": true,
@@ -149,6 +135,132 @@
       "source": "r247-tusk-gore_99524_512x512.png",
       "approval": {
         "approved": "r247-tusk-gore_99524_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "boulder_roll": {
+      "url": "img/hud/ability-icons-ai/boulder_roll.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "5f6beeb80f99dd21ea044c9e65d264660d569c82c11e6936f4e62722fc051e76",
+      "source": "r207-ic-boulder-roll_98024_512x512.png",
+      "approval": {
+        "approved": "r207-ic-boulder-roll_98024_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "kelp_lash": {
+      "url": "img/hud/ability-icons-ai/kelp_lash.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "eb5a84bcb31ff6027efa9585142bacb6538eba142fcff1d621e9e139d8892532",
+      "source": "r253-kelp-lash_100002_512x512.png",
+      "approval": {
+        "approved": "r253-kelp-lash_100002_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "molten_hide": {
+      "url": "img/hud/ability-icons-ai/molten_hide.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "465ee6c1d74f3710ea1bee30b00c69a277b115591e9e3b9a4a2c248244250027",
+      "source": "r253-molten-hide_99980_d0.45_512x512.png",
+      "approval": {
+        "approved": "r253-molten-hide_99980_d0.45_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "whirlpool": {
+      "url": "img/hud/ability-icons-ai/whirlpool.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "76fbca69ecc6ed90b90e27bd7ed7067cdf04ef1b1e767f2acba7f54addcfadee",
+      "source": "r207-ic-whirlpool_98034_512x512.png",
+      "approval": {
+        "approved": "r207-ic-whirlpool_98034_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "bell_pulse": {
+      "url": "img/hud/ability-icons-ai/bell_pulse.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "cadcd10ebb1d1e9a81d89e69c54c74393af893ad29a993e0cec82ec3b76ca2f8",
+      "source": "r256-bell-pulse_100253_512x512.png",
+      "approval": {
+        "approved": "r256-bell-pulse_100253_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "heal_spring": {
+      "url": "img/hud/ability-icons-ai/heal_spring.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "f7831b1401cf2ae5e788ff907551951c86fde10af9f83626c188f951db3db568",
+      "source": "r256-heal-spring_100220_512x512.png",
+      "approval": {
+        "approved": "r256-heal-spring_100220_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "scorch_breath": {
+      "url": "img/hud/ability-icons-ai/scorch_breath.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "6a6e5a9a27612647d848363d0f4625e9defbf468188bab78d84189ccc584f6e6",
+      "source": "r257-scorch-breath_100311_512x512.png",
+      "approval": {
+        "approved": "r257-scorch-breath_100311_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "wyrm_coil": {
+      "url": "img/hud/ability-icons-ai/wyrm_coil.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "41eb19f841f57a0340f170bb967e4d817f94465b01e59b4c843d5897355a3b23",
+      "source": "r262-wyrm-coil_100602_512x512.png",
+      "approval": {
+        "approved": "r262-wyrm-coil_100602_512x512.png",
+        "reviewer": "art-director",
+        "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "spore_burst": {
+      "url": "img/hud/ability-icons-ai/spore_burst.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "ee27dd28a566329bee9c8f9cf6af8cd44ec1d3adf8a1b9860e601068529ec262",
+      "source": "r263-spore-burst_100731_512x512.png",
+      "approval": {
+        "approved": "r263-spore-burst_100731_512x512.png",
         "reviewer": "art-director",
         "date": "2026-11-20",
         "beats_shipped": true,

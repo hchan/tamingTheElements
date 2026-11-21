@@ -21,12 +21,30 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
       expect(aiIconUrl(slot)).toBe(`assets/${index.icons[slot]?.url ?? ''}`);
     }
   });
+  it('ties each keyed-output approval to the shipped bytes', () => {
+    const keyed = JSON.parse(readFileSync('tools/assets/icon-gen/provenance/keyed-approval.json', 'utf8')) as Record<string, { reviewer?: string; sha256?: string }>;
+    for (const [slot, v] of Object.entries(keyed)) {
+      if (slot === '_note') continue;
+      expect(v.reviewer, slot).toBe('art-director');
+      expect(v.sha256, slot).toBe(index.icons[slot]?.sha256);
+    }
+  });
   it('maps the abilities that have an icon and no others', () => {
     expect(aiIconKeyOfSprite('emberBite')).toBe('hud:ability:ember_bite');
     expect(aiIconKeyOfSprite('talonRake')).toBe('hud:ability:gale_talon');
     expect(aiIconKeyOfSprite('stoop')).toBe('hud:ability:stoop');
     expect(aiIconKeyOfSprite('myceliumMend')).toBe('hud:ability:mycelium_mend');
     expect(aiIconKeyOfSprite('boulderRoll')).toBe('hud:ability:boulder_roll');
+    expect(aiIconKeyOfSprite('abyssalPull')).toBeUndefined(); // REVISEd twice: reads as a twin of whirlpool, not installed
+    expect(aiIconKeyOfSprite('kelpLash')).toBe('hud:ability:kelp_lash');
+    expect(aiIconKeyOfSprite('moltenHide')).toBe('hud:ability:molten_hide');
+    expect(aiIconKeyOfSprite('bellPulse')).toBe('hud:ability:bell_pulse');
+    expect(aiIconKeyOfSprite('scorchBreath')).toBe('hud:ability:scorch_breath');
+    expect(aiIconKeyOfSprite('wyrmCoil')).toBe('hud:ability:wyrm_coil');
+    expect(aiIconKeyOfSprite('sporeBurst')).toBe('hud:ability:spore_burst');
+    expect(aiIconKeyOfSprite('healSpring')).toBeUndefined();
+    expect(aiIconKeyOfSprite('tideSurge')).toBeUndefined();
+    expect(aiIconKeyOfSprite('whirlpool')).toBeUndefined();
     expect(aiIconKeyOfSprite('fireball')).toBeUndefined();
     expect(aiIconKeyOfSprite('')).toBeUndefined();
   });
