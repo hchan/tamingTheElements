@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -33,3 +34,8 @@ Headless Chromium SwiftShader, dev server port 7982 (7981 was taken by another a
 ## Coverage
 
 Menu at 1280x720, 667x375, 390x844; Versus picker (1v1 per stage, 2v2, phone sizes); 1v1 on Fire, Water, Earth, Air (intro, close, hit, super, after-super); 2v2 with tag swap; Tour; Help; phone portrait and landscape fights.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: picker at 667x375 (r62 confirmed), WEATHER box, first-hint card; Cleanse is explained in `src/ui/screens/help-guide.ts`; status chip size is covered by ideas/done/qa-r30-status-chip-duplication.md. Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: Fiara sprite, Wispera portrait.

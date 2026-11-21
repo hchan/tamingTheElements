@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only; tour HUD and tag refusal carried to r65)
 added: 2026-11-15
 ---
 
@@ -51,3 +52,8 @@ Headless Chromium SwiftShader, port 7963, screenshots under `~/claudetmp/qa-r63/
 ## Process
 
 - `node_modules` symlinked from the main checkout (not committed). Server pid in `~/claudetmp/qa-r63/pid`.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: the Tour splash shows "Stage N of 9" and the enemy bench under the lead (`src/ui/screens/tour.ts:123,141-190`); Help now covers World Tour, Versus, Online, 2v2/3v3 and the floor pills (`help-guide.ts:80-97`, pinned by `help.dom.test.ts:136`); life bars share one scale (ideas/done/qa-r15-life-totals-vs-bar-length.md); the super band was reworked (r119 N4 shows it working). The "tag swap shows nothing" sub-item is the same as r65's open tag feedback (carried there). Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: Wispera grey blob, Hellfire Lance art, Air floor contrast, LOCKED chip label contrast (tour-select silhouettes).

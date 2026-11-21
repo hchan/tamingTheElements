@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -36,3 +37,8 @@ Screenshots under `~/claudetmp/qa-r59/s/`. Headless Chromium SwiftShader against
 ## Coverage
 
 Menu at 1280x720 / 667x375 / 390x844; Versus picker (desktop and 667x375); 1v1 on Fire, Water, Earth, Air (intro, close, hit attempt, super, after-super); 2v2 on Water with a tag swap; Tour pick, stage card and in-fight; Help; phone landscape and portrait fight with super; E2E subset (see scorecard).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: WEATHER box moved off the arena top edge (badge y 146, charge y 160, `src/game/fx/weather-view.ts:43,53`); picker "More below" cue; first-hint card (ideas/done/qa-first-hint-covers-arena.md); TAG! call and bench cards re-checked clean in r119 (N3). Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: Sindarosa/Fiara rough sprite and triangle aura markers; Wispera and Cyclonius low-res tour portraits.

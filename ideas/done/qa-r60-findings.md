@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: a (fixed, dropped or art-only)
 added: 2026-11-15
 ---
 
@@ -30,3 +31,8 @@ Landing hits needed `Cmd` 16 (Sindarosa's ranged Fire Blast) with the pair 80 px
 ## Coverage
 
 Menu at 1280x720, 667x375, 390x844; Versus picker at 1280x720, 667x375, 390x844; 1v1 on Fire, Water, Earth, Air (intro, close, hit, super, after-super); 2v2 with tag swap; Tour; Help; phone landscape and portrait fights; e2e subset.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: picker structure (own Fight bar row and cue), WEATHER box position (`weather-view.ts:43,53`), first-hint card. The hit-number-covers-victim point is generic combat-text sizing (`src/game/hud/combat-text.ts`), tuned in ideas/done/qa-r17-super-band-hides-first-hit-number.md and not re-raised since r62. Dropped by owner decision (2026-11-18, no phone/portrait/touch work): every phone, portrait, 667x375 and 812x375 item, plus the touch-fight-layout e2e specs (deleted).
+Art-only, noted: Fiara sprite and aura markers.
