@@ -1,6 +1,7 @@
 ---
-status: idea
+status: done
 added: 2026-11-18
+triaged: d (obsolete: scorecard duplicates qa-r109-findings.md, which carries the actionable items; phone rows dropped 2026-11-18; Gamepad Run row now at src/ui/screens/help-controls.ts:75)
 ---
 
 # QA round 109 scorecard
