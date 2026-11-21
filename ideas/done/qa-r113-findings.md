@@ -3,9 +3,12 @@
 Build: main at c9ff2bad. Screenshots live under `.scratch/qa-r113/` (viewports `desk` 1280x720, `p390` 390x844, `p360` 360x640, `land` 844x390). Scores are in `qa-r113-scorecard.md`.
 Each entry below is its own idea.
 
+status: done
+triaged: d (items 1-9 are phone/portrait/touch layout, dropped 2026-11-18; item 10 gamepad Run is documented in src/ui/screens/help-controls.ts:27,75, no defect; smoke note is stale)
+
 ## 1. Portrait menu: Settings and Help rows still misaligned
 
-status: idea
+status: done
 added: 2026-11-18
 severity: medium
 
@@ -15,7 +18,7 @@ Idea: give all five rows one min-height and one baseline; drop the underline on 
 
 ## 2. Portrait fight: empty sky, tiny fighters
 
-status: idea
+status: done
 added: 2026-11-18
 severity: high
 
@@ -25,7 +28,7 @@ Idea: in portrait, crop or zoom the camera so the fighters fill at least a third
 
 ## 3. 360x640: fighter name truncates
 
-status: idea
+status: done
 added: 2026-11-18
 severity: low
 
@@ -35,7 +38,7 @@ Idea: shrink-to-fit the name (or use short names) when the available width is un
 
 ## 4. Tag labels and timers are tiny (about 7 px)
 
-status: idea
+status: done
 added: 2026-11-18
 severity: medium
 
@@ -45,7 +48,7 @@ Idea: apply the portrait HUD scale to the bench strip; at least 11 px.
 
 ## 5. Portrait super: caster cut off
 
-status: idea
+status: done
 added: 2026-11-18
 severity: medium
 
@@ -55,7 +58,7 @@ Idea: anchor the cut-in art by its face centre and scale to the viewport width.
 
 ## 6. Rotate overlay blocks first portrait play
 
-status: idea
+status: done
 added: 2026-11-18
 severity: low
 
@@ -64,7 +67,7 @@ Screenshots: `.scratch/qa-r113/p390-fight-fire.png` (after the tap; the overlay 
 
 ## 7. Versus picker: header clip and lowercase labels
 
-status: idea
+status: done
 added: 2026-11-18
 severity: low
 
@@ -74,7 +77,7 @@ Idea: title-case the labels, allow the header to wrap, and give the select a vis
 
 ## 8. Tour tiles clipped behind the pinned FIGHT
 
-status: idea
+status: done
 added: 2026-11-18
 severity: low
 
@@ -83,7 +86,7 @@ Screenshots: `.scratch/qa-r113/p390-tour-card.png`, `.scratch/qa-r113/p360-tour-
 
 ## 9. Landscape phone: first-run card covers the arena
 
-status: idea
+status: done
 added: 2026-11-18
 severity: low
 
@@ -93,7 +96,7 @@ Idea: auto-dismiss the card on first input and keep controls inside the safe are
 
 ## 10. Gamepad Run button not exercised
 
-status: idea
+status: done
 added: 2026-11-18
 severity: info
 

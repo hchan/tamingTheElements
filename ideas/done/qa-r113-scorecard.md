@@ -1,7 +1,8 @@
 # QA r113 scorecard
 
-status: idea
+status: done
 added: 2026-11-18
+triaged: d (duplicates qa-r113-findings.md; phone-heavy, phone/portrait work dropped 2026-11-18)
 
 Build: main at c9ff2bad (`Merge fight HUD phone text`), dev server in test mode, headless Chromium with SwiftShader, `?manual=1&seed=7&ff=arcade`.
 Screenshots: `.scratch/qa-r113/<viewport>-<shot>.png` with viewport = `desk` (1280x720), `p390` (390x844), `p360` (360x640), `land` (844x390).
