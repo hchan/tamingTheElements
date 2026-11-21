@@ -42,6 +42,10 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
     expect(aiIconKeyOfSprite('scorchBreath')).toBe('hud:ability:scorch_breath');
     expect(aiIconKeyOfSprite('wyrmCoil')).toBe('hud:ability:wyrm_coil');
     expect(aiIconKeyOfSprite('sporeBurst')).toBe('hud:ability:spore_burst');
+    expect(aiIconKeyOfSprite('cinderSpray')).toBe('hud:ability:cinder_spray');
+    expect(aiIconKeyOfSprite('staticMote')).toBe('hud:ability:static_mote');
+    expect(aiIconKeyOfSprite('bristleStomp')).toBe('hud:ability:bristle_stomp');
+    expect(aiIconKeyOfSprite('skitter')).toBeUndefined(); // failed five review rounds, not installed
     expect(aiIconKeyOfSprite('healSpring')).toBeUndefined();
     expect(aiIconKeyOfSprite('tideSurge')).toBeUndefined();
     expect(aiIconKeyOfSprite('whirlpool')).toBeUndefined();

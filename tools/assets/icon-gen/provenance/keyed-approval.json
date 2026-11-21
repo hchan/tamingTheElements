@@ -65,5 +65,68 @@
     "beats_shipped": true,
     "score": 4,
     "sha256": "ee27dd28a566329bee9c8f9cf6af8cd44ec1d3adf8a1b9860e601068529ec262"
+  },
+  "cinder_spray": {
+    "approved": "cinder_spray.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "73e409f01ae14071f38eb63b1aa7e8cd59342944fa996caee11248148e4e2a6c"
+  },
+  "static_mote": {
+    "approved": "static_mote.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "ded2057ea96ec83631ac164a0728a55e419b35d36e8d39f0f290e816d2c1153e"
+  },
+  "quake": {
+    "approved": "quake.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "9f8fb810daa9f492736a45fc7b6b3c255c441bdd7e04288b5be7edd2b9ec0b87"
+  },
+  "mist_veil": {
+    "approved": "mist_veil.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "c9e5c68ee2bf4f69b77a48a16aaed0bf74637e20dda35facb3b87b24ad77d21f"
+  },
+  "kelp_whip": {
+    "approved": "kelp_whip.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "c92cb8a2e1aaf9e323f29f1a26229a24f2f754b12f7733404aaee71dd64049f0"
+  },
+  "gust": {
+    "approved": "gust.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "4d428468719f6a452233e01b65c76007460235abf6acc80dcd1afd770b12e298"
+  },
+  "bristle_stomp": {
+    "approved": "bristle_stomp.png",
+    "reviewer": "art-director",
+    "date": "2026-11-20",
+    "beats_shipped": true,
+    "score": 4,
+    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
+    "sha256": "3f4b246b93cc0194419f1c849420f6de1af197d7bb1763e82c8d77cccc204302"
   }
 }

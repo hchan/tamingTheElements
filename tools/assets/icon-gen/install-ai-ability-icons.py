@@ -14,7 +14,8 @@ OUT = os.path.join(HERE, "..", "..", "..", "public", "assets", "img", "hud", "ab
 APPROVAL_REL = "tools/assets/icon-gen/provenance/ai-approval.json"
 SLOTS = ["ember_bite", "gale_talon", "tide_surge", "hurl_rock", "lure_orb",
          "mycelium_mend", "stinging_filament", "stoop", "forge_gore", "tusk_gore", "boulder_roll",
-         "kelp_lash", "molten_hide", "whirlpool", "bell_pulse", "heal_spring", "scorch_breath", "wyrm_coil", "spore_burst"]
+         "kelp_lash", "molten_hide", "whirlpool", "bell_pulse", "heal_spring", "scorch_breath", "wyrm_coil", "spore_burst",
+         "cinder_spray", "static_mote", "quake", "mist_veil", "kelp_whip", "gust", "bristle_stomp"]
 SIDE = 128
 BACKDROP = (22, 20, 19)  # the dark ground the earlier icons sit on
 # Slots whose source has a light studio/paper background get keyed onto BACKDROP before resizing:
