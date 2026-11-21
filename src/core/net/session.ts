@@ -699,6 +699,8 @@ export class LockstepSession {
   }
 
   private sendPacket(): void {
+    // After a batch-* desync the peer is broken: go silent so it times out in about 5 s and the relay sees the disagreement.
+    if (this.desync?.check?.startsWith('batch-') === true) return;
     this.sinceSend = 0;
     const first = Math.min(this.remoteAck, this.local.length);
     const inputs = this.local.slice(first, first + MAX_INPUTS_PER_PACKET);

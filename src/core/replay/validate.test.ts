@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { REPLAY_END_DETAIL_MAX } from './format';
 import { parseReplayChecked, validateReplay, MAX_REPLAY_TICKS } from './validate';
 
 const BASE: Record<string, unknown> = {
@@ -32,6 +33,20 @@ describe('validateReplay', () => {
   });
 
   const base = BASE;
+  const withEnd = (end: unknown): unknown => mutate(base, (_h, r) => { r['end'] = end; });
+  const GOOD_END = { reason: 3, detail: 'batch-ack', tick: 40, winner: 2, resultSent: true };
+
+  it('accepts a good end note and rejects a bad one', () => {
+    expect(validateReplay(withEnd(GOOD_END)).ok).toBe(true);
+    for (const bad of [
+      { ...GOOD_END, reason: 4 },
+      { ...GOOD_END, reason: 1.5 },
+      { ...GOOD_END, detail: 'x'.repeat(REPLAY_END_DETAIL_MAX + 1) },
+      { ...GOOD_END, detail: 5 },
+      { ...GOOD_END, tick: -1 },
+      'nope',
+    ]) expect(validateReplay(withEnd(bad)).ok).toBe(false);
+  });
   const setup = (h: Record<string, unknown>): Record<string, unknown> => h['setup'] as Record<string, unknown>;
 
   it.each([

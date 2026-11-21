@@ -2,7 +2,7 @@ import { GARRISON_MAX_SIZE } from '../data/chapters';
 import { CHARACTERS, LEGACY_CHARACTERS } from '../data/characters';
 import { decodeFlags, type SimFlags } from '../flags';
 import { CMD_MAX, inputMaskFor } from '../sim/commands';
-import { HASH_INTERVAL, isCheatHeader, type ReplayFile } from './format';
+import { HASH_INTERVAL, isCheatHeader, REPLAY_END_DETAIL_MAX, type ReplayFile } from './format';
 
 /** Two hours of play at 50 Hz: anything longer is not a real match and would cost real memory to decode. */
 export const MAX_REPLAY_TICKS = 50 * 60 * 120;
@@ -95,6 +95,12 @@ export function validateReplay(raw: unknown): ReplayCheck {
       return { ok: false, message: 'The replay checkpoints are invalid.' };
     }
     if (typeof raw['finalHash'] !== 'number') return { ok: false, message: 'The replay has no final hash.' };
+    const end = raw['end'];
+    if (end !== undefined) {
+      if (!isObj(end) || !isInt(end['reason'], 0, 3) || typeof end['detail'] !== 'string' || end['detail'].length > REPLAY_END_DETAIL_MAX || !isInt(end['tick'], 0, Number.MAX_SAFE_INTEGER)) {
+        return { ok: false, message: 'The replay has an invalid end note.' };
+      }
+    }
     return { ok: true, value: raw as unknown as ReplayFile };
   } catch {
     return { ok: false, message: 'The replay file could not be read.' };
