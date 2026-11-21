@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (art items noted, rest fixed or dropped)
 added: 2026-11-16
 ---
 
@@ -37,3 +38,9 @@ Screenshots: ~/claudetmp/qa-r74/ (f-*, k-* banner/swap/KO at 3 sizes, p-* played
 ## Not a bug
 
 - Fiara looked idle in manual-step shots: the harness steps the sim without live AI input timing, not a game fault.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: damage-number collisions (verified r78, `numberBoxes` probe, DMGNUM-1); KO ghost under the incoming hero (verified r76); SNAG label behind chips (`ideas/done/snag-pop-under-status-chips.md`, verified r77); floor chips clipped or behind heads and faint far chip (FLOOR-TAGS-1 merged: `chipCentreX`/`chipOwner` in `src/game/fx/terrain-fx.ts`, used at `src/game/fx/terrain-view.ts:248`; the chip eases down only by design while a fighter stands near). First-run 2v2 hint on the first swap: one-shot card in `src/game/app/first-run-hint.ts`, cosmetic. Not a bug: Fiara idle in manual-step shots.
+Art only, noted: Wispera plain orb; Echo and Cyclonius icons similar (`ideas/brainstorm/qa-r127-tour-foe-scale-wispera.md`).
+Open: none.

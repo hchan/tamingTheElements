@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (rest fixed or dropped)
 added: 2026-11-16
 ---
 
@@ -29,3 +30,8 @@ Sampling note: in manual stepping a number stays on screen while no real time pa
 ## Menu / Help / Settings
 
 Main menu (Play, Versus, Online, Settings, Help) correct at 1280, 844, 667, 568 and portrait; no mode words shown. Help (Key Bindings, Guide, Wiki, Watch the story, About, jump chips) and Settings (Difficulty, Garrison Sort Order, Save/Back) render at all sizes with scrollWidth equal to clientWidth (no horizontal overflow). Versus, Play and Online also open from the menu at every size. Evidence: menu-*.png, help-*.png, settings-*.png.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: DMGNUM-1 verified (r78 itself); Help jump-chip clipping at 568 (chevron cue, r79); "Play anyway" is a button (r79; `src/game/boot/presentation.dom.test.ts`). Dropped (phone/portrait): findings 1 and 2, and the phone first-run card near the exchange (finding 4). Noted, cosmetic: small numbers touching a GUARD pop box edge, nothing unreadable.
+Open: none.

@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (rest fixed or dropped)
 added: 2026-11-16
 ---
 
@@ -31,3 +32,8 @@ Five entries (Play, Versus, Online, Settings, Help) at 1280, 844, 667, 568 and 3
 ## Gaps
 
 Round-end screen not captured; e2e not run.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: WINS gap and fullscreen toggle over the counter at 568 (`ideas/done/qa-r79-hud-568.md`, verified r80); Help chip cue; Play anyway role. Dropped (phone/portrait): portrait fight layout (item 3). Gaps (round-end screen) were covered by later rounds.
+Open: none.

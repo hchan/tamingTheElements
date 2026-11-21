@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (art items noted, rest fixed or dropped)
 added: 2026-11-16
 ---
 
@@ -23,3 +24,8 @@ Screenshots in ~/claudetmp/qa-r76/. Re-check of the qa-r75 list. No console erro
 2. Wispera is still an orb; Echo and Cyclonius icons still similar.
 3. In-fight portrait is only screenshotted at start (port-arena0/1.png), not through a super.
 4. Prior-note caveat holds: the e2e "hint gone when super starts" passes but does not cover the manual-step phone geometry shown above.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: KO ghost; far chip (FLOOR-TAGS-1, `src/game/fx/terrain-view.ts:248`); hint card vs band on phones (r77 HINT-CUT-1); SNAG behind chips (r77); damage-number collisions (r78). Dropped (phone/portrait): item 3 and the phone hint geometry caveat. Art only, noted: Wispera orb, Echo/Cyclonius icons.
+Open: none.

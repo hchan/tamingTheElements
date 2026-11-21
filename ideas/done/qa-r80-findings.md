@@ -1,5 +1,6 @@
 ---
-status: idea
+status: done
+triaged: superseded (earth contrast moved to r81)
 added: 2026-11-16
 ---
 
@@ -39,3 +40,8 @@ Five entries (Play, Versus, Online, Settings, Help) at 1280, 844, 667, 568 and 3
 ## Gaps
 
 Round-end screen and a full Tour run not played; lint, typecheck, vitest not run.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: 568 HUD items (verified here); Versus picker roster cut at 720p (`ideas/done/qa-r127-more-below-chip-covers-text.md`, r119 triage: `src/ui/styles/main/10-picker-layout.css`); first-blood hint stays over the arena: slim strip that fades on its own or at first input (`src/ui/styles/main/09-help-first-run.css:51`); 2v2 and tag evidence ok. Dropped (phone/portrait): finding 1. Not a bug: E2E port clash (use a distinct `E2E_PORT`).
+Open: Earth stage flat next to the others, tracked in `ideas/brainstorm/qa-r81-findings.md` (finding 3 there); earlier lift in `ideas/done/qa-r24-earth-stage-murky.md`.
