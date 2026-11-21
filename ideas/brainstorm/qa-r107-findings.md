@@ -1,6 +1,7 @@
 ---
 status: idea
 added: 2026-11-17
+triaged: c (items 6-9 are desktop/landscape match-end polish that needs a browser screenshot to confirm; 1 fixed, 2/3/5/10/11 and 4 are phone/portrait so obsolete)
 ---
 
 # QA r107 findings
@@ -70,3 +71,11 @@ None found.
 - Viewport: P.
 - Repro: the same URL. Seven lines of intro text push the hero picker below the fold (Fire and Earth are under "More below").
 - Suggested fix: shorten the text or collapse it behind a "How it works" toggle.
+
+## Triage 2026-11-21
+
+- 1 fixed: `src/game/hud/action-bar.ts:360-361` returns `['Snag', 'Snag']` for the Snag sprite, so the circle matches the bar (epic note: merged 2026-11-17).
+- 2, 3, 5, 10, 11 obsolete: portrait/phone work was dropped 2026-11-18 (rotate card still in `src/game/boot/presentation.ts:93`).
+- 4 by design on phones: `src/game/scenes/Hud.ts:698-741` (`fitSlimLabel`) drops "Life" per side only when the text would not fit beside the SUPER label; desktop uses `lifeReadout` (`src/game/hud/bars.ts:279`) on both sides. Obsolete unless a desktop mismatch is shown.
+- 6 still present but intended: `src/ui/screens/arcade-versus.ts:946-956` renders both the ribbon ("Winner"/"You lost", shape + text) and `h1.matchEndWord`; pinned by `arcade-versus.dom.test.ts:425-428` and `tests/e2e/match-end.spec.ts:89`. Design call, low value.
+- 7, 8, 9 not confirmed from code: `src/ui/styles/match-end.css` has tone glows but no panel shadow rule seen; draw cards both use `matchEndMain` (line 941) with `align-items: flex-end` (line 15); buttons nowrap only on the ribbon (line 247). Plan: one Sonnet builder takes a desktop 1920x1080 and 667x375 screenshot of Defeat and Draw; fix only what the shots show (css only, `match-end.css`), then close this file.
