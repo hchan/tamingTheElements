@@ -24,7 +24,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
-- [qa-r100-findings](../brainstorm/qa-r100-findings.md): QA round 100 findings
+- [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
 - [qa-r101-findings](../brainstorm/qa-r101-findings.md): QA r101 findings
 - [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
 - [qa-r103-findings](../brainstorm/qa-r103-findings.md): QA r103 findings

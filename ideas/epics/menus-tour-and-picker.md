@@ -34,7 +34,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
 - [menu-cleanup](../brainstorm/menu-cleanup.md): Menu cleanup (big)
-- [qa-r100-findings](../brainstorm/qa-r100-findings.md): QA round 100 findings
+- [qa-r100-findings](../done/qa-r100-findings.md): QA round 100 findings
 - [qa-r106-findings](../brainstorm/qa-r106-findings.md): QA r106 findings
 - [qa-r107-findings](../brainstorm/qa-r107-findings.md): QA r107 findings
 
@@ -68,7 +68,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### MT-4 Match-end card fixes
 
-- Members: [qa-r100-findings](../brainstorm/qa-r100-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Members: [qa-r100-findings](../done/qa-r100-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
 - Size: S
 - Shared files: src/ui/* (match end card), main.css
 - Flags: needs browser/e2e (match-end specs); match-end agents may already be working: check first

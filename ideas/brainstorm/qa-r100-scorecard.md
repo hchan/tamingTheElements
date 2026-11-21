@@ -5,7 +5,7 @@ added: 2026-11-17
 
 # QA round 100 scorecard
 
-Build: main 8e09153e. Headless Chromium + SwiftShader, 1280x720, 390x844, 360x640. Shots in `.scratch/shots100/` (gitignored). Details in [qa-r100-findings.md](qa-r100-findings.md).
+Build: main 8e09153e. Headless Chromium + SwiftShader, 1280x720, 390x844, 360x640. Shots in `.scratch/shots100/` (gitignored). Details in [qa-r100-findings.md](../done/qa-r100-findings.md).
 
 ## Overall (0-5, vs Street Fighter / MvC)
 
