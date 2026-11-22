@@ -1,3 +1,5 @@
+import { handleChat, type ChatDeps, type ChatOutcome } from './chat';
+import { CHAT_CAP_BIT, CHAT_TYPE } from './chat-rules';
 import { decodeFrame, encodeFrame, type Frame, type FrameFields } from './codec';
 import { decodeText, encodeText } from './text-codec';
 import {
@@ -37,11 +39,15 @@ export type RelayEvent =
       readonly ticks: number;
       readonly finalHash: number;
     }
-  | { readonly kind: 'peer-gone'; readonly match: string; readonly slot: number };
+  | { readonly kind: 'peer-gone'; readonly match: string; readonly slot: number }
+  /** Counts only: never the text, never its length. */
+  | { readonly kind: 'chat'; readonly match: string; readonly slot: number; readonly outcome: ChatOutcome };
 
 export interface RelayOptions {
   readonly inputDelay?: number;
   readonly batchEvery?: number;
+  /** Relay chat (0x70, WELCOME caps bit0). Off by default: a 0x70 frame is then a bad frame. */
+  readonly chat?: boolean;
   readonly onEvent?: (e: RelayEvent) => void;
 }
 
@@ -120,7 +126,8 @@ export class RelayCore {
   async handle(conn: string, data: string, ctx: RelayCtx): Promise<void> {
     try {
       const bytes = typeof data === 'string' ? decodeText(data) : undefined;
-      const d = bytes === undefined ? undefined : decodeFrame(bytes, 'c2s');
+      const chatOff = bytes?.[0] === CHAT_TYPE && this.options.chat !== true;
+      const d = bytes === undefined || chatOff ? undefined : decodeFrame(bytes, 'c2s');
       if (bytes === undefined || d === undefined) await this.fail(conn, ErrorCode.badFrame, true);
       else if (!d.ok) await this.fail(conn, d.code, true);
       else await this.dispatch(conn, d.frame, bytes, ctx);
@@ -242,6 +249,8 @@ export class RelayCore {
       case 'batch':
       case 'pause':
         return this.onRelayFrame(conn, rec, f, raw);
+      case 'chat':
+        return handleChat(this.chatDeps(), conn, rec, f, raw, ctx.now());
       case 'hash':
         return this.onHash(conn, rec, f, ctx);
       case 'desync':
@@ -319,6 +328,7 @@ export class RelayCore {
       ver: PROTOCOL_VERSION,
       sessionId: rec.sid,
       resumed: resumed === undefined ? 0 : 1,
+      caps: this.options.chat === true ? CHAT_CAP_BIT : 0,
       serverHint: MAX_INPUTS_PER_BATCH,
     });
     if (resumed !== undefined) {
@@ -621,6 +631,18 @@ export class RelayCore {
       const n = ((cur ?? 0) % 255) + 1;
       return [n, n];
     });
+  }
+
+  private chatDeps(): ChatDeps {
+    return {
+      matchFor: (c, r) => this.matchFor(c, r as ConnRec),
+      getConn: (c) => this.getConn(c),
+      mutate: (k, e, fn) => this.mutate(k, e, fn as never),
+      keep: KEEP,
+      txRaw: (c, t) => this.txRaw(c, t),
+      sendError: (c, code, r, dt) => this.sendError(c, code, r, dt),
+      emit: (e) => this.options.onEvent?.(e),
+    };
   }
 
   private matchStart(m: MatchRec, slot: number): Frame {
