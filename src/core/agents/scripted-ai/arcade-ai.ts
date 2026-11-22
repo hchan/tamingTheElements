@@ -14,6 +14,15 @@ export const AI_NORMAL = 1;
 export const AI_HARD = 2;
 export type ArcadeAiLevel = typeof AI_EASY | typeof AI_NORMAL | typeof AI_HARD;
 
+/** Easy opening grace (SIM_VERSION 97, QA r110 #12): Easy drops these offensive bits for this many ticks after each round's FIGHT (3.5 s). */
+export const ARCADE_AI_EASY_OPENING_TICKS = 175;
+export const ARCADE_AI_EASY_OPENING_MASK: Command =
+  Cmd.primary | Cmd.secondary | Cmd.charge | Cmd.trap | Cmd.weather | Cmd.elemental | Cmd.super;
+/** True while an Easy agent is inside its opening grace; `openAt` is the first fight tick (a -1000 sentinel: no grace). */
+export function easyOpening(level: ArcadeAiLevel, tick: number, openAt: number): boolean {
+  return level === AI_EASY && tick - openAt < ARCADE_AI_EASY_OPENING_TICKS;
+}
+
 /** Personalities (FUN-DESIGN 2.11 table; Tagger waits for WP-arcade-tag): rows of ARCADE_AI_STYLES. */
 export const RUSHDOWN = 0;
 export const ZONER = 1;
