@@ -21,7 +21,7 @@ FIT = 246  # subject limit in art px (rim and stray specks included, keeps >= 8%
 OUTLINE = np.array([0x1a, 0x12, 0x0a], np.float32)
 MOSS = np.array([0x4e, 0x66, 0x2a], np.float32)
 MOSS_HI = np.array([0x8a, 0xa0, 0x4a], np.float32)
-EDGE_HI = np.array([0xb4, 0xa0, 0x70], np.float32)
+EDGE_HI = np.array([0xc8, 0x84, 0x2c], np.float32)  # warm amber
 ARM_POLY = [(540, 330), (885, 330), (885, 672), (640, 672), (540, 575), (545, 470), (560, 400)]  # in 1024 source px
 SHOULDER = (575, 430)
 KEEP_R = 30  # art px of the body kept under the arm so a rotation shows no gap
@@ -48,6 +48,15 @@ def key(src: Path):
     return rgb, a
 
 
+def warm_brown(c):
+    """Bark saturation x1.3 with the hue pushed to warm brown (about 28 deg) so it stops reading grey."""
+    hsv = np.asarray(Image.fromarray(np.clip(c, 0, 255).astype(np.uint8)).convert("HSV")).astype(np.float32)
+    target = 28 / 360 * 255
+    hsv[..., 0] = hsv[..., 0] + (target - hsv[..., 0]) * 0.75
+    hsv[..., 1] = np.clip(hsv[..., 1] * 1.3 + 25, 0, 255)
+    return np.asarray(Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")).astype(np.float32)
+
+
 def grade(rgb, a, rng):
     lum = rgb @ np.array([0.3, 0.59, 0.11], np.float32)
     grey = lum[..., None]
@@ -55,8 +64,9 @@ def grade(rgb, a, rng):
     olive = np.array([0x5a, 0x4a, 0x30], np.float32)
     t = np.clip(lum / 200, 0, 1)[..., None]
     c = c * 0.62 * (1 - 0.35) + (olive * (0.6 + 0.8 * t)) * 0.35
-    c = 255 * (np.clip(c, 0, 255) / 255) ** (1 / 1.3)  # mid-tone lift, gamma 1.3 (readability against the soil)
-    c = np.minimum(c, 180)
+    c = warm_brown(c)
+    c = 255 * (np.clip(c, 0, 255) / 255) ** (1 / 1.1)  # mild mid-tone lift, gamma 1.1
+    c = np.minimum(c, 150)
     h, w = a.shape
     yy = np.linspace(0, 1, h)[:, None]
     c = c * (0.85 + 0.15 * (1 - yy)[..., None])  # slightly lighter at the top
@@ -84,10 +94,10 @@ def thicken(rgb, a, zone):
 
 
 def edge_light(rgb, a):
-    """1 px lighter rim just inside the silhouette (trunk and antler edges)."""
+    """1 px warm amber rim (35%) just inside the silhouette (trunk and antler edges)."""
     er = np.asarray(Image.fromarray((a * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))).astype(np.float32) / 255
     inner = np.clip(a - er, 0, 1) * (a > 0.9)
-    return rgb + (EDGE_HI - rgb) * 0.7 * inner[..., None]
+    return rgb + (EDGE_HI - rgb) * 0.35 * inner[..., None]
 
 
 def rim(rgb, a):
