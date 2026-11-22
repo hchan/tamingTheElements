@@ -222,6 +222,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         if (g !== gen || current !== m) return;
         session = sess;
         rep.update(sess);
+        if (st === 'forfeit') rep.finishForfeit(sess);
         if (st === 'forfeit' || st === 'desync') stoppedMatch = m.matchId;
         const t = netStatusText(st, sess.forfeitReason);
         if (t !== undefined) view?.say(t);

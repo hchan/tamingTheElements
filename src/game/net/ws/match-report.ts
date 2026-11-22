@@ -89,6 +89,15 @@ export class MatchReporter {
     else this.send(w, reason, 0, 0);
   }
 
+  /**
+   * The session reported 'forfeit' (timeout or concession). The Arena stops there and never calls onEnd, so `finish` would never run:
+   * send the RESULT now, once. The winner is the session's own (a team index or null); nothing is sent without a forfeit reason.
+   */
+  finishForfeit(s: ReportSession & { readonly winner: number | null }): void {
+    if (s.forfeitReason === undefined) return;
+    this.finish(s, s.winner ?? -1);
+  }
+
   private send(winner: number, reason: number, ticks: number, finalHash: number): void {
     if (this.resultSent) return;
     this.resultSent = true;
