@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ELEMENTS, SimEventKind, type SimEvent } from '@core/index';
-import { BURST_FROM, BURST_R, ClashFx, burstAlpha, burstRadius, type ClashSink } from './clash-fx';
+import { BURST_FROM, BURST_R, ClashFx, burstAlpha, burstRadius, clashDim, CLASH_DIM, BURST_TICKS, type ClashSink } from './clash-fx';
 import { ELEMENT_COLORS } from './element-colors';
 
 let seq = 0;
@@ -57,5 +57,16 @@ describe('clash burst rules (FUN-DESIGN section 3: two-colour ring, winner eleme
     expect(burstRadius(1, false)).toBe(BURST_R);
     expect(burstRadius(0.5, false)).toBeGreaterThan(burstRadius(0.25, false));
     expect([burstAlpha(0), burstAlpha(0.5), burstAlpha(0.75), burstAlpha(1)]).toEqual([1, 1, 0.5, 0]);
+  });
+});
+
+describe('clash halos (qa-r109 #7): defence rings thin while a burst plays', () => {
+  it('full before and after, CLASH_DIM through the first half, easing back in the second', () => {
+    expect(clashDim(5, -Infinity)).toBe(1);
+    expect(clashDim(9, 10)).toBe(1);
+    expect(clashDim(10, 10)).toBe(CLASH_DIM);
+    expect(clashDim(10 + BURST_TICKS / 2 - 1, 10)).toBe(CLASH_DIM);
+    expect(clashDim(10 + BURST_TICKS * 0.75, 10)).toBeCloseTo((1 + CLASH_DIM) / 2, 9);
+    expect(clashDim(10 + BURST_TICKS, 10)).toBe(1);
   });
 });

@@ -57,3 +57,13 @@ export function burstRadius(p: number, flat: boolean): number {
 export function burstAlpha(p: number): number {
   return p < 0.5 ? 1 : 2 * (1 - p);
 }
+
+/** While a clash burst plays, the other rings (guard, spike, flash) thin to this share of their alpha so both heroes read. */
+export const CLASH_DIM = 0.35;
+
+/** Multiplier for defence rings at view time `now`, given the view time of the last clash (`from`, or -Infinity): dimmed for the burst, easing back over its second half. */
+export function clashDim(now: number, from: number): number {
+  const p = (now - from) / BURST_TICKS;
+  if (p < 0 || p >= 1) return 1;
+  return p < 0.5 ? CLASH_DIM : CLASH_DIM + (1 - CLASH_DIM) * 2 * (p - 0.5);
+}
