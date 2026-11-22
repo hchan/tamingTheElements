@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_FATIGUE_REFLEX_MAX, ARCADE_AI_FATIGUE_RESET_TICKS, ARCADE_AI_FATIGUE_WINDOW, ARCADE_AI_GUARD_AT, ARCADE_AI_KIT_CORNER_FOE_PX, ARCADE_AI_KIT_CORNER_PX, ARCADE_AI_KIT_HEAL_BELOW_PM, ARCADE_AI_KIT_HIDE_PX, ARCADE_AI_KIT_HOP_PX, ARCADE_AI_KIT_OMNI_PX, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, ccAvoidImmune, fatigueScale, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, ARCADE_AI_EASY_OPENING_MASK, easyOpening, ccAvoidImmune, fatigueScale, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, wallHold, weatherSensible, zoneStep, type ArcadeAiLevel, type KitKind, type Style,
 } from './arcade-ai';
 
@@ -226,14 +226,15 @@ const enum Mem {
   runX,
   runY,
   runStill,
+  openAt,
 }
 
 type Memory = [
   number, number, number, number, number, number, number, number, number, number,
   number, number, number, number, number, number, number, number, number, number,
-  number, number, number,
+  number, number, number, number,
 ];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1000];
 
 /**
  * Run Away / Run Towards (SIM_VERSION 89, Normal and Hard; FUN-DESIGN 2.29). A ranged hero runs away once the foe is within
@@ -327,6 +328,9 @@ export class ArcadeTactics {
   apply(view: ObservationView, base: Command, shot: Command = 0): Command {
     const a = view.arcade;
     if (a === undefined) return base;
+    // Easy opening grace (SIM_VERSION 97): starts on each round's first fight tick, ends early when the AI hero is hit.
+    if (a.phase !== RoundPhase.fight) this.mem[Mem.openAt] = view.tick + 1;
+    else if (view.self !== undefined && view.self.hp < this.mem[Mem.lastHp]) this.mem[Mem.openAt] = -1000;
     const cmd = this.avoidTraps(view, a, this.kitUse(view, a, this.decide(view, a, base, shot)));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
     const zoned = this.hazard(view, a, this.runStep(view, a, this.wallHoldStep(view, a, this.zone(view, a, out))));
@@ -339,7 +343,8 @@ export class ArcadeTactics {
     // and never press an ability whose CC rider the foe is immune to.
     const escape = ccEscape(this.level, a);
     if (escape !== -1) return escape;
-    return ccAvoidImmune(this.level, a, full, [slotReady(view, 0, a.snagSlot), slotReady(view, 1, a.snagSlot)]);
+    const final = ccAvoidImmune(this.level, a, full, [slotReady(view, 0, a.snagSlot), slotReady(view, 1, a.snagSlot)]);
+    return easyOpening(this.level, view.tick, this.mem[Mem.openAt]) ? final & ~ARCADE_AI_EASY_OPENING_MASK : final;
   }
 
   /**
@@ -773,7 +778,8 @@ export class ArcadeTactics {
   load(state: AgentState): void {
     const rec = stateRecord(state ?? { mem: FRESH, rng: null }, 'ArcadeTactics');
     const mem = [...(rec['mem'] as number[])];
-    while (mem.length < FRESH.length) mem.push(0);
+    // An older save pads with 0, except `openAt`: no grace (-1000), as a fresh agent first seen mid-round.
+    while (mem.length < FRESH.length) mem.push(mem.length === (Mem.openAt as number) ? -1000 : 0);
     this.mem = mem as Memory;
     this.rng.load(rec['rng'] ?? null);
   }

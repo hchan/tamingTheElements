@@ -354,5 +354,8 @@
  *    (1v1 45.7, 2v2 46.0 percent, full roster, level 3, both in the 45-55 band). The Pyre Totem ally no-flinch zone is out of scope (a new zone system, slot 3, later).
  *    Release set stays empty.
  *    Re-record reason: version bump only; every golden changes only the simVersion header.
+ * 97: Easy Arcade AI opening grace (QA r110 #12), AI only (precedent 55), no sim rule or data change: Easy drops its attack, charge, trap, weather, elemental
+ *    and super bits for 175 ticks after each round's FIGHT; a hit on the AI hero ends it early. New agent memory slot `openAt`; Normal and Hard commands are unchanged.
+ *    Re-record reason: version bump only; every golden changes only the simVersion header (goldens and balance baselines run Normal).
  */
-export const SIM_VERSION = 96;
+export const SIM_VERSION = 97;
