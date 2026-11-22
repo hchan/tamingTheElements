@@ -40,6 +40,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('forge-gore', 'A slow overhead anvil blow that hits very hard.', 'Wait for the foe to step in, then bring it down; it leaves you open after.'),
   L('molten-hide', 'Molten armour that cuts the harm you take and burns anyone who hits you up close.', 'Press it as the foe closes in for a melee trade.'),
   // Earth
+  L('tusk-gore', 'A lunging gore that hits hard and carries you forward. It takes a while to be ready again.', 'Wait for the foe to be a few steps away, then lunge in; you are open if it misses.'),
+  L('bristle-stomp', 'A short, quick stomp that hits close in front of you.', 'Stay close and stomp between the foe\'s attacks.'),
   L('adrenaline', 'A short rush: you move faster and take less harm.', 'Press it before you close in.'),
   L('ground-shock', 'A slam that hits every foe around you.', 'Use it up close; it needs a moment to be ready again.'),
   L('rock-armour', 'Stone skin that cuts the harm you take for a few seconds.', 'Press it when the foe is about to start a combo.'),
