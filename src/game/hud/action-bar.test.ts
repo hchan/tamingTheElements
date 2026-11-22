@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, SwapBlock, type RenderActionBar } from '@core/index';
-import { PORTRAIT_ROW_TILE_MAX_CSS, oneRowSide,oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
+import { PORTRAIT_ROW_TILE_MAX_CSS, oneRowSide,oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, readyEdge, ELEMENT_TINT, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -507,5 +507,13 @@ describe('Run slot', () => {
     expect(slotTip({ kind: 'run', cmd: 0, runAway: true }).title).toBe('Run Away');
     expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).title).toBe('Run Towards');
     expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).text).toMatch(/sticks to it/);
+  });
+});
+
+describe('Void element tint', () => {
+  it('Void (element 0) has its own edge colour, not the neutral one', () => {
+    expect(ELEMENT_TINT[0]).not.toBe(0xffffff);
+    expect(readyEdge(0)).not.toBe(readyEdge(undefined));
+    expect(readyEdge(0)).not.toBe(readyEdge(1));
   });
 });

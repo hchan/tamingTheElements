@@ -7,6 +7,7 @@ import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './mo
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
 import { createStreakLayer } from './hit-streak-view';
+import { lightFireCore } from './fire-core';
 import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, popSize, shakeBoost, sparkStyleFor } from './hit-feel';
 import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
@@ -233,11 +234,10 @@ export class EventFx {
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
     this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength, el);
-    this.sink.recoil?.(e['attacker'] ?? -1, target, strength);
-    this.sink.lunge?.(e['attacker'] ?? -1, target, strength);
+    this.sink.recoil?.(e['attacker'] ?? -1, target, strength); this.sink.lunge?.(e['attacker'] ?? -1, target, strength);
     if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
-    const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
-    this.sink.burst(target, this.fill(n), n, color, el);
+    const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES; this.sink.burst(target, this.fill(n), n, color, el);
+    const core = lightFireCore(el, strength); if (core !== undefined) this.sink.spark(target, core, el, e['attacker'] ?? -1);
     // Water hits (Ice Shock, Shards of Ice) leave a pale frost ring and a white-blue crystal burst, even on a light hit (QA r22).
     if (el === 'water' && strength < 3) {
       if (strength < RING_MIN_STRENGTH) this.sink.ring?.(target, FROST, 1);

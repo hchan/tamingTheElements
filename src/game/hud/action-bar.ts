@@ -199,12 +199,12 @@ export function tipExpired(since: number, now: number): boolean {
   return now - since >= TIP_MAX_MS;
 }
 
-/** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
-export const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
+/** Line colour per element kind (index 0 is Void, a violet, so a Void box is not left bone; a second cue only: the icon's shape and the slot's words say which). */
+export const ELEMENT_TINT: readonly number[] = [0xb48cff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
 
 /** A ready tile's edge: the tile's element colour dulled to ash, or bone when it has none (readiness is also the lit text and the missing cooldown shade). */
 export function readyEdge(element: number | undefined): number {
-  return element ? mute(ELEMENT_TINT[element] ?? 0xffffff, 0.5, 0.75) : 0xa89f88;
+  return element !== undefined ? mute(ELEMENT_TINT[element] ?? 0xffffff, 0.5, 0.75) : 0xa89f88;
 }
 
 /** Horizontal scale (at most 1) that keeps a text `width` wide inside a slot `size` wide, leaving `pad` px each side. */
@@ -574,7 +574,7 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     const el = arcade ? bar.elemental?.kind : undefined;
     add({
       kind: 'trap', cmd: Cmd.trap, sprite: '', icon: ACTION_ICON.trap, touch: arcade ? 'Trap' : '', highlight: false, disabled: false,
-      ...(el ? { element: el } : {}),
+      ...(el !== undefined ? { element: el } : {}),
       progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t, trapShortOfElement(el)),
     }, TRAP_LABEL);
   }

@@ -223,7 +223,7 @@ export class ActionBarView {
       const look = cooldownLook(s.progress, s.disabled, s.x, s.y, s.size, started === undefined ? -1 : now - started, this.reduced);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
-        const edge = this.dressed() ? mute(s.element ? (ELEMENT_TINT[s.element] ?? 0xffffff) : KIND_TINT[s.kind], 0.5, 0.75) : readyEdge(s.element);
+        const edge = this.dressed() ? mute(s.element !== undefined ? (ELEMENT_TINT[s.element] ?? 0xffffff) : KIND_TINT[s.kind], 0.5, 0.75) : readyEdge(s.element);
         g.lineStyle(s.highlight ? 3 : this.dressed() ? 2 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? edge : 0x2e2c29, 1);
         g.strokeRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       } else {
