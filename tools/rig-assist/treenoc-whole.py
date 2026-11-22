@@ -55,8 +55,8 @@ def grade(rgb, a, rng):
     olive = np.array([0x5a, 0x4a, 0x30], np.float32)
     t = np.clip(lum / 200, 0, 1)[..., None]
     c = c * 0.62 * (1 - 0.35) + (olive * (0.6 + 0.8 * t)) * 0.35
-    c = 255 * (np.clip(c, 0, 255) / 255) ** (1 / 1.5)  # mid-tone lift, gamma 1.5 (readability against the soil)
-    c = np.minimum(c, 205)
+    c = 255 * (np.clip(c, 0, 255) / 255) ** (1 / 1.3)  # mid-tone lift, gamma 1.3 (readability against the soil)
+    c = np.minimum(c, 180)
     h, w = a.shape
     yy = np.linspace(0, 1, h)[:, None]
     c = c * (0.85 + 0.15 * (1 - yy)[..., None])  # slightly lighter at the top
