@@ -125,7 +125,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | General documentation | `docs/` |
 | Anything touching the legacy game | Nothing: it is retired (git tag `legacy-crafty-1.0`); see [legacy/ARCHIVE.md](legacy/ARCHIVE.md) |
 
-`tools/ci/nightly-e2e.ts` (`pnpm nightly:submit|collect|status`), `nightly-status.ts` (pure status logic), `nightly-install.ts` (`pnpm nightly:install`) and `tools/ci/launchd/` (plist template) run the full e2e on the PC nightly; see [TESTING.md](TESTING.md) "Nightly full e2e".
+`tools/ci/nightly-e2e.ts` (`pnpm nightly:submit|collect|status`), `nightly-status.ts` (pure status logic), `nightly-install.ts` (`pnpm nightly:install`), `nightly-flake.ts` (opt-in 00:30 `flake:hunt` slice with skip guards; `tests/repo/nightly-flake.test.ts`) and `tools/ci/launchd/` (plist template) run the full e2e on the PC nightly; see [TESTING.md](TESTING.md) "Nightly full e2e".
 
 `tests/repo/file-size.test.ts` (size rule: 500 lines per `src/ui` and `src/game` file, ratcheted caps) and `tools/ci/size-grandfather.json` (grandfathered file caps and long-function files; read by the test and `eslint.config.js`).
 

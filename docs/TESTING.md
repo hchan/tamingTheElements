@@ -347,6 +347,7 @@ suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full
 - Schedule: `pnpm nightly:install` renders `tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl` into two LaunchAgents in
   `~/Library/LaunchAgents` (paths for the repo, corepack and PATH are filled in at install time, never committed; launchd runs a missed
   job once on wake). `--dry-run` prints them, `--uninstall` removes them.
+- Flake slice (opt-in): `pnpm nightly:install --with-flake` adds `dev.tte.nightly-flake` (00:30, `tools/ci/nightly-flake.ts run`), which runs `pnpm flake:hunt` with the minutes left until the 06:30 hard stop (killed then). It skips with exit 0 and one reason line when the PC probe is not `up`, GPU is 80 C or more, free RAM is under 4 GB, or a GPU job runs. It only does a `flake:hunt --dry-run` unless the gitignored file `.claude/flake-nightly.on` exists (or `TTE_FLAKE_NIGHTLY=1`). Test: `tests/repo/nightly-flake.test.ts`.
 - Tests: `tests/repo/nightly-status.test.ts` (pure logic), `tests/repo/nightly-e2e-cli.test.ts` (fake runner),
   `tests/repo/nightly-install.test.ts` (template has no host, user path or key). The live submit/attach path is untested until the first real night.
 

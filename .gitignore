@@ -47,3 +47,4 @@ __pycache__/
 # per-worktree scratch (agents)
 .scratch/
 .claude/agent-pool.on
+.claude/flake-nightly.on
