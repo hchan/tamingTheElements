@@ -8,7 +8,7 @@ import { badVersion, HELP, runPaired, SCENARIOS, type MatchEv, type Peer, type R
 import { main } from '../../tools/live-match';
 
 describe('live-match constants and flags', () => {
-  it('keeps pacing and budgets under the 10 frames/s grant', () => {
+  it('keeps pacing and budgets under the frames/s grant', () => {
     expect(SCENARIO_FRAMES_PER_SEC * 2).toBeLessThanOrEqual(GRANT_FRAMES_PER_SEC); // even if the grant were per match
     expect(SCENARIO_FRAMES_PER_SIDE).toBeLessThanOrEqual(25);
     expect(BATCH_GAP_MS).toBeGreaterThanOrEqual(100);

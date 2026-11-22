@@ -1,7 +1,7 @@
 // The one place for tools/live-match.ts pacing, waits and frame budgets. Each value is labelled CONTRACT (a number the relay or the protocol
 // docs state, owner of the number in brackets) or ESTIMATE (our own choice, not measured). tests/repo/live-match.test.ts imports this file.
 
-/** ESTIMATE: each side sends one batch per gap, so two sides stay under half the 10 frames/s stage limit. */
+/** ESTIMATE: each side sends one batch per gap, so two sides stay far below the 150 frames/s grant (scripted scenarios keep their older, lower pacing). */
 export const BATCH_GAP_MS = 250;
 /** ESTIMATE: gap between scripted-input packets (--inputs): 10 packets/s per client, the live grant's ceiling; the real game sends 50/s. */
 export const INPUT_GAP_MS = 100;
@@ -10,10 +10,10 @@ export const STEP_TIMEOUT_MS = 20_000;
 /** ESTIMATE: how long to keep draining after the last batch before calling a missing batch lost (late vs lost). */
 export const DRAIN_MAX_MS = 5000;
 
-/** CONTRACT (owner of the number: the relay stage grant): frames per second the stage allows. Our pacing must stay at or below it. */
-export const GRANT_FRAMES_PER_SEC = 10;
-/** ESTIMATE: the grant is read as per client (sct-27 has not confirmed per client or per match); the scenarios also fit a per-match reading. */
-export const GRANT_IS_PER_CLIENT = true;
+/** CONTRACT (owner of the number: the project owner, 2026-11-21, "yes, 150/s"; raised from 10): client-sent frames per second, ALL our live clients combined. One real-pace match sends about 103/s (computed; harness measured 103-105/s), so this allows one match at a time at batchEvery 1. */
+export const GRANT_FRAMES_PER_SEC = 150;
+/** The 150/s grant is a total across all our live clients (owner, 2026-11-21), not per client. One live runner at a time. */
+export const GRANT_IS_PER_CLIENT = false;
 /** ESTIMATE: hard cap on frames one scenario sends per side (counted by `sendCounted`; the run throws when it is exceeded). */
 export const SCENARIO_FRAMES_PER_SIDE = 25;
 /** CONTRACT (docs/ONLINE-PROTOCOL.md, MATCH_GRACE_MS; relay grace 10 s per sct-27): how long a silent peer is kept before it is gone. */
