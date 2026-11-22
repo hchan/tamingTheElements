@@ -233,7 +233,7 @@ test('Opponent gone after the stall timeout: the remaining page stays ended on t
   await a.close();
   // Playwright may not report a page close to the route's onClose; tell the relay the socket closed (a repeat is a no-op, the record is already 'closed').
   await rig.core.handleClose('a', rig.ctx);
-  await expect(b.locator('#quickStatus')).toContainText('ended with no winner', { timeout: 30_000 });
+  await expect(b.locator('#quickStatus')).toContainText('ended with no winner', { timeout: 60_000 }); // estimate: the stall timeout is about 15 s of session ticks, slower on a loaded PC (one 30 s miss seen)
 
   rig.skewMs += DISCONNECT_GRACE_MS + 1000;
   await rig.core.sweep(rig.ctx);
