@@ -227,7 +227,7 @@ describe('rollback netcode (opt-in)', () => {
     expect(p.hashes[0]).toBe(referenceHash(SETUP, SCRIPT, LIMIT, 2));
   });
 
-  it('a timeout while predicted ahead forfeits to the waiting side and stops stepping', () => {
+  it('a timeout while predicted ahead forfeits with no winner and stops stepping', () => {
     const p = play({
       conditions: { ...PERFECT_NET, latency: 2 },
       session: { ...RB, timeoutTicks: 40 },
@@ -239,7 +239,7 @@ describe('rollback netcode (opt-in)', () => {
     const s = p.ss[0];
     expect(s.status).toBe('forfeit');
     expect(s.forfeitReason).toBe('timeout');
-    expect(s.winner).toBe(0);
+    expect(s.winner).toBeNull();
     expect(s.desync).toBeUndefined();
     expect(s.stats.predictedSteps).toBeGreaterThan(0);
     // Prediction never ran past the window beyond what the peer last confirmed, and nothing steps after the forfeit.

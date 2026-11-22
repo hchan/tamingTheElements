@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
-import { DEFAULT_PAUSE_TIMEOUT_TICKS, DEFAULT_TIMEOUT_TICKS, LockstepSession } from '../../core/net/session';
+import {
+  DEFAULT_PAUSE_TIMEOUT_TICKS,
+  DEFAULT_PEER_AWAY_TIMEOUT_TICKS,
+  DEFAULT_TIMEOUT_TICKS,
+  LockstepSession,
+} from '../../core/net/session';
 import {
   DISCONNECT_GRACE_MS,
   decodeText,
@@ -21,6 +26,7 @@ import { hash } from '../../core/sim/hash';
 import { createMatch, type MatchSetup } from '../../core/sim/match';
 import type { SimWorld } from '../../core/sim/world';
 import { SIM_VERSION } from '../../core/version';
+import { RESULT_WINNER_NONE } from '../../game/net/ws/match-report';
 import { WebSocketTransport } from '../../game/net/ws/transport';
 import { FakeSocket } from './fake-relay';
 import { botScripts, type Script } from './net-match';
@@ -223,10 +229,17 @@ describe('online scenarios on a virtual clock (measurement, in-process relay)', 
     // The first silent update still receives B's last packet, so the count restarts there: forfeit on the update after TIMEOUT_TICKS more.
     expect(silent).toBe(1 + TIMEOUT_TICKS + 1);
     expect(g.sessions[0].forfeitReason).toBe('timeout');
-    expect(g.sessions[0].winner).toBe(0);
-    r.sides[0].transport.sendResult(g.matchId, 0, ResultReason.timeout, g.sessions[0].simTick, hash(g.worlds[0].state));
+    expect(g.sessions[0].winner).toBeNull(); // Who stalled is unknown: no winner.
+    r.sides[0].transport.sendResult(g.matchId, RESULT_WINNER_NONE, ResultReason.timeout, 0, 0);
     await r.flush();
     expect(r.acks('a')).toEqual([ResultStatus.waiting]); // B never reports.
+    r.sides[1].transport.sendResult(g.matchId, RESULT_WINNER_NONE, ResultReason.timeout, 0, 0);
+    await r.flush();
+    expect(r.acks('b')).toEqual([ResultStatus.agreed]); // Two NONE timeout results agree.
+  });
+
+  it('2b. the peer-away limit outlasts the relay disconnect grace (contract pin; 20 ms per tick)', () => {
+    expect(DEFAULT_PEER_AWAY_TIMEOUT_TICKS * 20).toBeGreaterThan(DISCONNECT_GRACE_MS);
   });
 
   it('3. a hidden peer survives 1500 ticks; a silent one that did not say it is hidden does not', async () => {

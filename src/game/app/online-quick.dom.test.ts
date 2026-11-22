@@ -316,6 +316,26 @@ describe('quick match screen', () => {
     r.unmounts.forEach((u) => { u(); });
   });
 
+  it('peer disconnected and back are passed to the session; one before the first status applies on it', async () => {
+    const r = rig();
+    await play(r);
+    const ws = r.h.svc.sockets[0] as TestWs;
+    const setPeerAway = vi.fn();
+    const sess = { ...sessionWith(1), setPeerAway } as never;
+    ws.serve(peerStatus(1, 0)); // away before the arena reported any status
+    await r.h.flush();
+    expect(setPeerAway).not.toHaveBeenCalled();
+    h$.created[0]?.launch.net?.onStatus?.('running', sess);
+    expect(setPeerAway.mock.calls).toEqual([[true]]);
+    ws.serve(peerStatus(1, 1));
+    await r.h.flush();
+    expect(setPeerAway.mock.calls).toEqual([[true], [false]]);
+    ws.serve(peerStatus(1, 0));
+    await r.h.flush();
+    expect(setPeerAway.mock.calls.at(-1)).toEqual([true]);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
   it('a gateway notice after the match ended leaves the end line', async () => {
     const r = rig();
     const [a] = await play(r);

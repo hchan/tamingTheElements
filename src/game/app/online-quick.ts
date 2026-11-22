@@ -97,6 +97,8 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   let side: 0 | 1 = 0;
   let arena: OnlineArena | undefined;
   let session: Session | undefined;
+  /** The relay said the peer is disconnected; applied to the session (now, or on its first status if the arena is not up yet). */
+  let peerAway = false;
   let reporter: MatchReporter | undefined;
   /** How the last match ended; survives dropMatch (which clears the live reporter). */
   let lastEnd: MatchEndRecord | undefined;
@@ -121,6 +123,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     if (arena) destroyGame(arena.game, arena.holder);
     arena = undefined;
     session = undefined;
+    peerAway = false;
     view?.root.classList.remove('onlineLive');
     view?.reportButton(false);
   };
@@ -223,7 +226,9 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       },
       onStatus: (st, sess) => {
         if (g !== gen || current !== m) return;
+        const first = session === undefined;
         session = sess;
+        if (first && peerAway) sess.setPeerAway(true);
         rep.update(sess);
         if (st === 'forfeit') rep.finishForfeit(sess);
         if (st === 'forfeit' || st === 'desync') stoppedMatch = m.matchId;
@@ -285,9 +290,15 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       case 'peer':
         if (current === undefined || e.matchId !== current.matchId) break;
         if (state === 'ended' || e.matchId === stoppedMatch) break; // the match is over and its end line stands (a late gone or away must not replace it)
-        if (e.status === 'disconnected') view?.say(OPPONENT_AWAY_TEXT);
-        else if (e.status === 'back') view?.say(base);
-        else {
+        if (e.status === 'disconnected') {
+          peerAway = true;
+          session?.setPeerAway(true);
+          view?.say(OPPONENT_AWAY_TEXT);
+        } else if (e.status === 'back') {
+          peerAway = false;
+          session?.setPeerAway(false);
+          view?.say(base);
+        } else {
           reporter?.left(session?.simTick ?? 0);
           dropMatch();
           set('ended', OPPONENT_LEFT_TEXT);
