@@ -466,7 +466,8 @@ describe('online result reporting (RelayCore)', () => {
     expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 1]);
     expect(r.events.find((e) => e.kind === 'desync')).toMatchObject({ tick: 50, by: 0 });
     await run(r, 2000);
-    expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 1]);
+    // The peer sent nothing, so the ACK says "waiting" (1): the 500 ms resend stops, and the slow re-poll (RESULT_REPOLL_MS) sends RESULT once more.
+    expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 2]);
     r.unmounts.forEach((u) => { u(); });
   });
 });
