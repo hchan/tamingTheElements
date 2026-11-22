@@ -8,7 +8,8 @@ import { createServer } from 'node:net';
 import { pathToFileURL } from 'node:url';
 import { chromium, type Page } from '@playwright/test';
 import { parseOnlineUrl } from '../src/game/net/ws/config';
-import { LIVE_BROWSER_MATCH_TICKS, LIVE_BROWSER_STEP_MS, LIVE_BROWSER_END_MS, LIVE_BROWSER_PAGE_ORIGIN } from './live-browser-match-constants';
+import { parseArgs, rateLines, summarizeRuns, summaryLine } from './live-browser-match-lib';
+import { LIVE_BROWSER_RUN_GAP_MS, LIVE_BROWSER_MATCH_TICKS, LIVE_BROWSER_STEP_MS, LIVE_BROWSER_END_MS, LIVE_BROWSER_PAGE_ORIGIN } from './live-browser-match-constants';
 
 const OUT_DIR = '.scratch/live-browser-build';
 const redact = (s: string): string => s.replace(/(https?|wss?):\/\/\S+/g, '<url>');
@@ -39,10 +40,12 @@ export function mirrored(x: string, y: string): boolean {
   return x.includes('You won') ? y.includes('opponent won') : y.includes('You won');
 }
 
-export async function main(env: Readonly<Record<string, string | undefined>>, out: (l: string) => void): Promise<number> {
+/** One match. Frame counts come from Playwright websocket events, so they do not depend on the sockets closing first. */
+export async function runOnce(env: Readonly<Record<string, string | undefined>>, out: (l: string) => void): Promise<number> {
   const raw = env['TTE_RELAY_URL'];
   if (!parseOnlineUrl(raw).configured) { out('TTE_RELAY_URL is not an https base URL'); return 2; }
   const t0 = performance.now();
+  const sentA = new RateCounter(); const sentB = new RateCounter(); const sentAll = new RateCounter();
   const step = (s: string): void => { out(`${String(Math.round(performance.now() - t0)).padStart(6)} ms  ${s}`); };
   const build = spawnSync('corepack', ['pnpm', 'exec', 'vite', 'build', '--mode', 'test', '--outDir', OUT_DIR, '--emptyOutDir'], { env: { ...process.env, VITE_ONLINE_URL: raw ?? '' }, stdio: 'ignore' });
   if (build.status !== 0) { out('vite build failed'); return 1; }
@@ -66,7 +69,7 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
       page.on('websocket', (ws) => {
         let sent = 0; let got = 0;
         const outRate = new RateCounter(); const inRate = new RateCounter();
-        ws.on('framesent', () => { sent++; outRate.record(Date.now()); });
+        ws.on('framesent', () => { sent++; const now = Date.now(); outRate.record(now); (name === 'A' ? sentA : sentB).record(now); sentAll.record(now); });
         ws.on('framereceived', (f) => {
           got++; inRate.record(Date.now());
           const t = typeof f.payload === 'string' ? f.payload : '';
@@ -102,6 +105,7 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
     const failed = (await Promise.all(pages.map((p) => p.locator('#quickFailure').isVisible()))).some(Boolean);
     if (failed) { out('a failure banner is showing'); return 1; }
     if (!mirrored(ta, tb)) { out('end lines do not mirror'); return 1; }
+    for (const l of rateLines(sentA.summary(), sentB.summary(), sentAll.summary())) out(l);
     step('ok');
     return 0;
   } finally {
@@ -110,6 +114,27 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
   }
 }
 
+/** N sequential matches (`--runs`), stopping at the first failure; wall time per run and a summary are measurements. */
+export async function main(env: Readonly<Record<string, string | undefined>>, out: (l: string) => void, argv: readonly string[] = []): Promise<number> {
+  const args = parseArgs(argv);
+  if (typeof args === 'string') { out(args); return 2; }
+  const seconds: number[] = [];
+  let failures = 0; let rc = 0;
+  for (let i = 1; i <= args.runs; i++) {
+    out(`== run ${String(i)}`);
+    const t = performance.now();
+    rc = await runOnce(env, out);
+    const s = Math.round((performance.now() - t) / 100) / 10;
+    out(`== run ${String(i)} exit ${String(rc)} ${String(s)}s`);
+    if (rc === 2) return 2;
+    seconds.push(s);
+    if (rc !== 0) { failures++; out('STOP on failure'); break; }
+    if (i < args.runs) await new Promise((r) => setTimeout(r, LIVE_BROWSER_RUN_GAP_MS));
+  }
+  out(summaryLine(summarizeRuns(seconds, failures)));
+  return rc;
+}
+
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.exitCode = await main(process.env, (l) => { process.stdout.write(`${l}\n`); });
+  process.exitCode = await main(process.env, (l) => { process.stdout.write(`${redact(l)}\n`); }, process.argv.slice(2));
 }
