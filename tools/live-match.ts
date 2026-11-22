@@ -156,7 +156,7 @@ export async function main(env: Readonly<Record<string, string | undefined>>, ou
     const match = (s: Side) => waitFor(`${s.name} match`, () => s.events.find((e) => e.t === 'match'));
     const [ma, mb] = await Promise.all([match(a), match(b)]);
     if (ma.t !== 'match' || mb.t !== 'match') throw new Error('unreachable');
-    step(`matched id=${String(ma.matchId)} slots=${String(ma.slot)}/${String(mb.slot)} seed-equal=${String(ma.seed === mb.seed)}`);
+    step(`matched id=${String(ma.matchId)} slots=${String(ma.slot)}/${String(mb.slot)} seed-equal=${String(ma.seed === mb.seed)} inputDelay=${String(ma.inputDelay)} batchEvery=${String(ma.batchEvery)}`);
     if (ma.matchId !== mb.matchId || ma.slot === mb.slot || ma.seed !== mb.seed) throw new Error('match descriptors disagree');
     if (scenario !== undefined) {
       const ok = await runPaired(scenario as Exclude<Scenario, 'bad-version'>, rig, a, b, ma);

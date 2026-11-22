@@ -236,7 +236,8 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         if (st === 'forfeit') rep.finishForfeit(sess);
         if (st === 'forfeit' || st === 'desync') stoppedMatch = m.matchId;
         const t = netStatusText(st, sess.forfeitReason);
-        if (t !== undefined) view?.say(t);
+        if (t !== undefined && (st === 'forfeit' || st === 'desync')) set('ended', t); // a stopped match is over: Play again and Back, like a finished one
+        else if (t !== undefined) view?.say(t);
         if (st === 'desync') view?.reportButton(true);
       },
     });

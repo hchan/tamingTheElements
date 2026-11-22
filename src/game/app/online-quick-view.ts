@@ -94,6 +94,19 @@ export function createQuickView(h: QuickHandlers): QuickView {
   back.setAttribute('href', '#main');
   back.id = 'quickBack';
 
+  // In a match the controls fold into this icon (like the chat dock): the arena fills the screen as in Play; the icon opens or closes the panel.
+  const menu = el('button', 'onlineMenuToggle', '\u2261');
+  menu.type = 'button';
+  menu.id = 'quickMenu';
+  menu.setAttribute('aria-label', 'Match menu');
+  menu.setAttribute('aria-expanded', 'false');
+  menu.hidden = true;
+  const setPanel = (open: boolean): void => {
+    root.classList.toggle('panelOpen', open);
+    menu.setAttribute('aria-expanded', String(open));
+  };
+  menu.addEventListener('click', () => { setPanel(!root.classList.contains('panelOpen')); });
+
   const subs = [
     withSub(buttons.quickFind, 'quickFind', 'Find an opponent', 'A random player, no account'),
     withSub(buttons.quickReady, 'quickReady', 'Ready', 'When your three heroes are set'),
@@ -108,7 +121,7 @@ export function createQuickView(h: QuickHandlers): QuickView {
   };
   const all: ControlId[] = ['quickFind', 'quickCancel', 'quickPick', 'quickReady', 'quickRetry', 'quickReload', 'quickAgain', 'quickLeave', 'quickBack', 'quickLink'];
 
-  root.append(heading, status, failBox, link, picker, report, buttons.quickFind, buttons.quickCancel, buttons.quickReady, buttons.quickRetry, buttons.quickReload, buttons.quickAgain, buttons.quickLeave, back, ...subs);
+  root.append(menu, heading, status, failBox, link, picker, report, buttons.quickFind, buttons.quickCancel, buttons.quickReady, buttons.quickRetry, buttons.quickReload, buttons.quickAgain, buttons.quickLeave, back, ...subs);
   for (const id of all) byControl(id).hidden = true;
   let first = true;
 
@@ -117,7 +130,10 @@ export function createQuickView(h: QuickHandlers): QuickView {
     show(state) {
       const on = controlsFor(state);
       for (const id of all) byControl(id).hidden = !on.includes(id);
-      root.classList.toggle('onlineLive', state === 'playing');
+      const live = state === 'playing';
+      if (live !== root.classList.contains('onlineLive')) setPanel(false);
+      root.classList.toggle('onlineLive', live);
+      menu.hidden = !live;
       if (state === 'matched') for (const s of sels) s.disabled = false;
       buttons.quickReady.disabled = false;
       const lead = on[0];
@@ -131,6 +147,7 @@ export function createQuickView(h: QuickHandlers): QuickView {
     },
     say(text) {
       status.textContent = text;
+      if (text !== '' && root.classList.contains('onlineLive')) setPanel(true); // a message in a match (opponent gone, link lost) must not hide in the folded panel
     },
     fail(text) {
       failBox.textContent = text;
