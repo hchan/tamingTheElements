@@ -124,7 +124,7 @@ export function createQuickView(h: QuickHandlers): QuickView {
       if (first) {
         first = false;
         focusHeading(root);
-      } else if (lead !== undefined) {
+      } else if (lead !== undefined && !root.querySelector('[data-keep-focus]:focus-within')) {
         const target = state === 'matched' ? sels[0] : byControl(lead);
         target?.focus();
       }
