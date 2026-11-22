@@ -12,6 +12,9 @@ import {
   stateFromExit,
   unrecordedFailures,
   validateStatus,
+  summaryLine,
+  formatDuration,
+  prevTotalFromHistory,
   HISTORY_MAX,
 } from '../../tools/ci/nightly-status';
 
@@ -27,7 +30,7 @@ describe('parseResults', () => {
     expect(r.flaky).toEqual([{ file: 'c.spec.ts', title: 'wobbly' }]);
   });
   it('tolerates garbage', () => {
-    expect(parseResults(null)).toEqual({ passed: 0, failed: [], flaky: [] });
+    expect(parseResults(null)).toEqual({ passed: 0, failed: [], flaky: [], skipped: 0 });
     expect(parseResults({ suites: 3 }).passed).toBe(0);
   });
 });
@@ -100,5 +103,38 @@ describe('misc', () => {
     for (let i = 0; i < HISTORY_MAX + 5; i++) h = appendHistory(h, pendingStatus(SHA, `raw-${String(i)}`, 's'));
     expect(h).toHaveLength(HISTORY_MAX);
     expect(h[h.length - 1]).toContain(`raw-${String(HISTORY_MAX + 4)}`);
+  });
+});
+
+describe('duration and counts', () => {
+  const prev = pendingStatus(SHA, 'raw-1', '2026-11-19T22:00:00Z');
+  const res = { passed: 1465, failed: [{ file: 'a', title: 'x' }, { file: 'b', title: 'y' }, { file: 'c', title: 'z' }], flaky: Array.from({ length: 9 }, (_, i) => ({ file: 'f', title: String(i) })), skipped: 3 };
+  const known = [{ file: 'a', titleIncludes: 'x' }, { file: 'b', titleIncludes: 'y' }];
+  it('reads stats.skipped from the Playwright JSON', () => {
+    expect(parseResults({ stats: { skipped: 4 }, suites: [] }).skipped).toBe(4);
+  });
+  it('records duration, counts and the one-line summary', () => {
+    const s = finishStatus(prev, 1, res, known, '2026-11-20T01:12:00Z', 'PC', 1480);
+    expect(s.durationMs).toBe(3 * 3600_000 + 12 * 60_000);
+    expect(s.counts).toEqual({ total: 1480, passed: 1465, failed: 3, flaky: 9, skipped: 3, knownRed: 2 });
+    expect(summaryLine({ ...s, durationMs: 72 * 60_000 })).toBe('full e2e: 1h12m, 1480 tests: 1465 passed, 3 failed (2 known-red), 9 flaky, 3 skipped (prev 1480)');
+    expect(describeStatus(s, Date.parse('2026-11-20T02:00:00Z')).join('\n')).toContain('1480 tests');
+  });
+  it('warns when fewer specs ran than the previous run', () => {
+    const s = finishStatus(prev, 0, { passed: 10, failed: [], flaky: [], skipped: 0 }, [], '2026-11-19T23:00:00Z', 'PC', 20);
+    expect(describeStatus(s, Date.parse('2026-11-19T23:30:00Z')).join('\n')).toContain('fewer than the previous run (20)');
+  });
+  it('formats durations and reads the previous total from history', () => {
+    expect(formatDuration(72 * 60_000)).toBe('1h12m');
+    expect(formatDuration(200_000)).toBe('3m20s');
+    const withCounts = finishStatus(prev, 0, { passed: 7, failed: [], flaky: [], skipped: 0 }, [], '2026-11-19T23:00:00Z', 'PC');
+    expect(prevTotalFromHistory(['garbage', JSON.stringify(withCounts), JSON.stringify(prev)])).toBe(7);
+    expect(prevTotalFromHistory([])).toBeUndefined();
+  });
+  it('stays backward compatible: schema 1 without the new fields validates; bad types do not', () => {
+    expect(validateStatus(prev)).toBeDefined();
+    expect(validateStatus({ ...prev, durationMs: 'x' })).toBeUndefined();
+    expect(validateStatus({ ...prev, counts: { total: 1 } })).toBeUndefined();
+    expect(summaryLine(prev)).toBeUndefined();
   });
 });

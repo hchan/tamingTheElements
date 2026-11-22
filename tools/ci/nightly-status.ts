@@ -10,6 +10,15 @@ export interface TestRef {
   readonly file: string;
   readonly title: string;
 }
+export interface Counts {
+  readonly total: number;
+  readonly passed: number;
+  readonly failed: number;
+  readonly flaky: number;
+  readonly skipped: number;
+  /** Failed entries matching tools/ci/known-red.json. */
+  readonly knownRed: number;
+}
 export interface NightlyStatus {
   readonly schema: 1;
   readonly state: NightlyState;
@@ -23,6 +32,11 @@ export interface NightlyStatus {
   readonly flaky: readonly TestRef[];
   readonly unrecorded: readonly TestRef[];
   readonly reason: string;
+  /** Optional (schema 1 files written before these fields existed lack them). */
+  readonly durationMs?: number;
+  readonly counts?: Counts;
+  /** Total specs of the previous run in nightly-history.jsonl, when known. */
+  readonly prevTotal?: number;
 }
 export interface KnownRed {
   readonly file: string;
@@ -32,6 +46,8 @@ export interface Results {
   readonly passed: number;
   readonly failed: readonly TestRef[];
   readonly flaky: readonly TestRef[];
+  /** Playwright `stats.skipped`; optional so older callers need not set it. */
+  readonly skipped?: number;
 }
 
 interface PwTest {
@@ -65,9 +81,10 @@ export function parseResults(json: unknown): Results {
     }
     for (const c of Array.isArray(s.suites) ? s.suites : []) walk(c, f);
   };
-  const root = (json ?? {}) as PwSuite;
+  const root = (json ?? {}) as PwSuite & { stats?: { skipped?: unknown } };
   for (const s of Array.isArray(root.suites) ? root.suites : []) walk(s, s.file ?? '');
-  return { passed, failed, flaky };
+  const sk = root.stats?.skipped;
+  return { passed, failed, flaky, skipped: typeof sk === 'number' && Number.isFinite(sk) && sk >= 0 ? sk : 0 };
 }
 
 /** Failed tests not covered by a known-red entry (same file, title contains the entry's substring). */
@@ -122,6 +139,9 @@ export function validateStatus(v: unknown): NightlyStatus | undefined {
   if (typeof o['sha'] !== 'string' || typeof o['rawId'] !== 'string' || typeof o['startedAt'] !== 'string' || typeof o['finishedAt'] !== 'string') return undefined;
   if (typeof o['ranOn'] !== 'string' || typeof o['reason'] !== 'string') return undefined;
   if (o['exit'] !== null && typeof o['exit'] !== 'number') return undefined;
+  for (const k of ['durationMs', 'prevTotal']) if (o[k] !== undefined && typeof o[k] !== 'number') return undefined;
+  const c = o['counts'];
+  if (c !== undefined && (typeof c !== 'object' || c === null || !['total', 'passed', 'failed', 'flaky', 'skipped', 'knownRed'].every((k) => typeof (c as Record<string, unknown>)[k] === 'number'))) return undefined;
   return o as unknown as NightlyStatus;
 }
 
@@ -134,13 +154,54 @@ export function notRunStatus(sha: string, startedAt: string, finishedAt: string,
 }
 
 /** Status after collecting a finished job. */
-export function finishStatus(prev: NightlyStatus, exit: number, results: Results | undefined, known: readonly KnownRed[], finishedAt: string, ranOn: string): NightlyStatus {
-  const base = { ...prev, finishedAt, exit, ranOn };
+export function finishStatus(prev: NightlyStatus, exit: number, results: Results | undefined, known: readonly KnownRed[], finishedAt: string, ranOn: string, prevTotal?: number): NightlyStatus {
+  const ms = Date.parse(finishedAt) - Date.parse(prev.startedAt);
+  const base = { ...prev, finishedAt, exit, ranOn, ...(Number.isFinite(ms) && ms >= 0 ? { durationMs: ms } : {}) };
   if (!results) return { ...base, state: 'not-run', failed: [], flaky: [], unrecorded: [], reason: exitReason(exit) };
   const unrecorded = unrecordedFailures(results.failed, known);
+  const skipped = results.skipped ?? 0;
+  const counts: Counts = {
+    total: results.passed + results.failed.length + results.flaky.length + skipped,
+    passed: results.passed,
+    failed: results.failed.length,
+    flaky: results.flaky.length,
+    skipped,
+    knownRed: results.failed.length - unrecorded.length,
+  };
   const state = stateFromExit(exit, true);
   const reason = state === 'pass' ? '' : state === 'red' ? `${String(results.failed.length)} failed` : exitReason(exit);
-  return { ...base, state, failed: results.failed, flaky: results.flaky, unrecorded, reason };
+  return { ...base, state, failed: results.failed, flaky: results.flaky, unrecorded, reason, counts, ...(prevTotal !== undefined ? { prevTotal } : {}) };
+}
+
+/** `1h12m`, `45m`, `3m20s` style duration. */
+export function formatDuration(ms: number): string {
+  const sec = Math.round(ms / 1000);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return `${String(h)}h${String(m).padStart(2, '0')}m`;
+  return m > 0 ? `${String(m)}m${String(sec % 60).padStart(2, '0')}s` : `${String(sec)}s`;
+}
+
+/** One summary line, e.g. `full e2e: 1h12m, 1480 tests: 1465 passed, 3 failed (2 known-red), 9 flaky, 3 skipped (prev 1480)`; undefined without counts. */
+export function summaryLine(s: NightlyStatus): string | undefined {
+  const c = s.counts;
+  if (!c) return undefined;
+  const dur = s.durationMs !== undefined ? `${formatDuration(s.durationMs)}, ` : '';
+  const prev = s.prevTotal !== undefined ? ` (prev ${String(s.prevTotal)})` : '';
+  return `full e2e: ${dur}${String(c.total)} tests: ${String(c.passed)} passed, ${String(c.failed)} failed (${String(c.knownRed)} known-red), ${String(c.flaky)} flaky, ${String(c.skipped)} skipped${prev}`;
+}
+
+/** Total specs of the newest history line that has counts (history is newest-last JSONL). */
+export function prevTotalFromHistory(lines: readonly string[]): number | undefined {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const t = (JSON.parse(lines[i] ?? '') as { counts?: { total?: unknown } }).counts?.total;
+      if (typeof t === 'number') return t;
+    } catch {
+      /* skip corrupt line */
+    }
+  }
+  return undefined;
 }
 
 /** Human lines for status output and later banners. Stale or not-run only warn (owner decision). */
@@ -154,6 +215,9 @@ export function describeStatus(s: NightlyStatus | undefined, nowMs: number): str
     out.push(`nightly e2e: RED at ${short}: ${String(s.failed.length)} failed, ${String(s.unrecorded.length)} not recorded as known-red`);
     for (const t of s.failed) out.push(`  ${t.file}: ${t.title}`);
   } else out.push(`nightly e2e: not-run (${s.reason}) for ${short}`);
+  const sum = summaryLine(s);
+  if (sum) out.push(`  ${sum}`);
+  if (s.counts && s.prevTotal !== undefined && s.counts.total < s.prevTotal) out.push(`  WARNING: ${String(s.counts.total)} specs ran, fewer than the previous run (${String(s.prevTotal)}); specs may be missing`);
   if (s.flaky.length) out.push(`  ${String(s.flaky.length)} flaky`);
   if (s.state !== 'pending' && isStale(s, nowMs)) out.push(`nightly e2e: STALE, older than ${String(STALE_HOURS)} h; treat as not-run (warning only)`);
   return out;

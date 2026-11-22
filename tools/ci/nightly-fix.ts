@@ -81,7 +81,7 @@ function writeFixStatus(d: FixDeps, sha: string, results: FailureResult[], pushe
   const s: FixStatus = { schema: 1, state: force ?? finalState(results, pushed), sha, finishedAt: d.now().toISOString(), pushed, results, blockers };
   mkdirSync(d.statusDir, { recursive: true });
   writeFileSync(fixStatusPath(d.statusDir), `${JSON.stringify(s, null, 2)}\n`);
-  writeFileSync(join(d.statusDir, 'nightly-fix-report.md'), `${describeFix(s).join('\n')}\n`);
+  writeFileSync(join(d.statusDir, 'nightly-fix-report.md'), `${[...describeStatus(readStatus(d.statusDir), d.now().getTime()), ...describeFix(s)].join('\n')}\n`);
   for (const l of describeFix(s)) d.out(`${l}\n`);
   return s;
 }
