@@ -1,6 +1,6 @@
 /** Online end-of-match linger: keeps an ended lockstep session receiving and re-sending (see `lingerSession`). */
 
-/** Linger cadence floor in ms: 10 BATCH/s (choice, estimate; the live relay tool keeps to 10 frames/s or less). */
+/** Linger cadence floor in ms: 10 BATCH/s (choice, estimate; the live grant is 150 client-sent frames/s total, GRANT_FRAMES_PER_SEC in tools/live-match-constants.ts). */
 export const LINGER_MIN_MS = 100;
 /** Wall-clock ms per sim tick at 50 Hz. */
 export const LINGER_TICK_MS = 20;

@@ -159,6 +159,6 @@ export const HELP = [
   '  --disagree     differing HASH, DESYNC and RESULT hashes: reports the relay\'s reaction (observation, fails only if the link dies)',
   '  --bad-version  one client announces an unknown sim version: reports how the relay reacts',
   '  --malformed    non-frame text, unknown type, truncated BATCH, wrong matchId: the link must survive and carry later batches',
-  `Each scenario sends at most ${String(SCENARIO_FRAMES_PER_SIDE)} frames per side, paced at one per ${String(BATCH_GAP_MS)} ms (limit 10 frames/s). Constants: tools/live-match-constants.ts.`,
+  `Each scenario sends at most ${String(SCENARIO_FRAMES_PER_SIDE)} frames per side, paced at one per ${String(BATCH_GAP_MS)} ms (live grant: 150 client-sent frames/s total, GRANT_FRAMES_PER_SEC). Constants: tools/live-match-constants.ts.`,
   'Exit: 0 ok, 1 step or scenario failed, 2 bad config or flags.',
 ].join('\n');
