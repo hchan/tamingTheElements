@@ -1,2 +1,3 @@
-Ability icons: AI-generated (SDXL, own work, no third-party art), resized to 128 px by tools/assets/icon-gen/install-ai-ability-icons.py.
-Approved by the art-director agent, see tools/assets/icon-gen/provenance/ai-approval.json. No attribution required.
+Ability icons: own work (AI-generated SDXL or procedural), except where credited below; resized to 128 px by tools/assets/icon-gen/install-ai-ability-icons.py.
+Approved by the art-director agent, see tools/assets/icon-gen/provenance/ai-approval.json. No attribution required, except:
+  Talon Rake: glyph "Triple scratches" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), rasterised, tinted and embossed on a procedural medallion.
