@@ -152,7 +152,7 @@ function stackRows(c: Ctx, s: SideIx): StackRow[] {
       hero: {
         id: hero,
         name: shortName(hero),
-        stats: `HP ${String(heroLife(hero, size))} · Speed ${String(getCharacter(hero).speed)}`,
+        stats: `HP ${String(heroLife(hero, size))} · Spd ${String(getCharacter(hero).speed)}`,
         abilities: abilityChips(hero).map((a) => ({ mark: a.mark, title: `${a.name} (${a.kind})` })),
         abilitiesTitle: abilitiesSpeech(hero),
       },
@@ -184,6 +184,7 @@ function renderTiles(c: Ctx): void {
     const id = c.order[i] as string;
     const flags = t.querySelector<HTMLElement>('.vsFlags');
     let any = false;
+    const flagged = [false, false];
     if (flags) {
       flags.textContent = '';
       for (const s of SIDES) {
@@ -195,6 +196,7 @@ function renderTiles(c: Ctx): void {
           vis.setAttribute('aria-hidden', 'true');
           chip.append(vis, el('span', 'srOnly', `${sideName(c, s)}, hero ${String(k + 1)}`));
           flags.append(chip);
+          flagged[s] = true;
           any = true;
         });
       }
@@ -207,8 +209,9 @@ function renderTiles(c: Ctx): void {
     const cur = t.querySelector<HTMLElement>('.vsCursors');
     if (cur) {
       cur.textContent = '';
-      if (c.cursor[0] === i) cur.append(el('span', 'vsChip vsP1', local ? 'P1' : 'You'));
-      if (local && c.cursor[1] === i) cur.append(el('span', 'vsChip vsP2', 'P2'));
+      // A side already shown by its pick chip ("You 1") gets no second "You" chip from its cursor: the tile border marks the cursor.
+      if (c.cursor[0] === i && !flagged[0]) cur.append(el('span', 'vsChip vsP1', local ? 'P1' : 'You'));
+      if (local && c.cursor[1] === i && !flagged[1]) cur.append(el('span', 'vsChip vsP2', 'P2'));
     }
   });
 }
