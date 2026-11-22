@@ -1,10 +1,11 @@
-import { cleanRoomCode, ROOM_CODE_RE } from '../relay';
+import { cleanRoomCode } from '../relay';
 import { linkQuality, medianRtt, type LinkQuality } from '../link-quality';
-import type { OnlineConfig } from './config';
 import { closeFailure } from './close-failure';
 import { ResultPoll } from './result-poll';
 import { WebSocketTransport, type SocketLike } from './transport';
-import { BINARY_TYPE, gatewayEvent, inboundBytes, type GatewayNoticeEvent } from './inbound';
+import { DEFAULT_RESTING_SEC, type FetchResponseLike, type OnlineDeps, type OnlineEvent, type OnlineFailure, type OnlineResult, type WsLike } from './online-types';
+import { decodeLobby, type Lobby } from './lobby-codec';
+import { BINARY_TYPE, gatewayEvent, inboundBytes } from './inbound';
 import { encodeText } from './text-codec';
 import { decodeFrame } from './wire';
 
@@ -18,137 +19,21 @@ export const HELLO_TIMEOUT_MS = 10_000;
 /** [choice, spec section 7] Reconnect window in a match (the server's grace) and while only queued or idle. */
 export const MATCH_GRACE_MS = 10_000;
 export const IDLE_GRACE_MS = 60_000;
-/** Spec section 5: `resting` with no retry time means one hour. */
-export const DEFAULT_RESTING_SEC = 3600;
 export const BACKOFF_MS = [0, 1000, 2000, 4000] as const;
 export const BACKOFF_MAX_MS = 30_000;
 
-export type OnlineFailure =
-  | { readonly kind: 'not-configured' }
-  | { readonly kind: 'network' }
-  | { readonly kind: 'update-needed' }
-  | { readonly kind: 'bad-response' }
-  /** Kill switch: HTTP 503 from /session or /ticket, or (while connected) an ERROR 0x000B frame. `retryAfterSec` 0 means unknown (use `DEFAULT_RESTING_SEC`). */
-  | { readonly kind: 'resting'; readonly retryAfterSec: number }
-  /** Any other server error code of spec section 5 (HTTP status 0 for a frame). */
-  | { readonly kind: 'server'; readonly code: number; readonly retryAfterSec: number; readonly status: number };
-export type OnlineResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: OnlineFailure };
-
-export type OnlineEvent =
-  | { readonly t: 'queue'; readonly waitingSec: number }
-  | { readonly t: 'room-created'; readonly code: string; readonly ttlSec: number }
-  | { readonly t: 'room-peer'; readonly joined: boolean }
-  | { readonly t: 'match'; readonly matchId: number; readonly slot: number; readonly seed: number; readonly inputDelay: number; readonly simVersion: number; readonly batchEvery: number; readonly resumed: boolean }
-  | { readonly t: 'peer'; readonly matchId: number; readonly status: 'disconnected' | 'back' | 'gone'; readonly graceMs: number }
-  | { readonly t: 'result-ack'; readonly matchId: number; readonly status: number }
-  | { readonly t: 'reconnecting'; readonly attempt: number }
-  | { readonly t: 'reconnected'; readonly resumed: boolean }
-  /** The service switched off while connected; the socket closes later. Hide the online entries until the time passes. */
-  | { readonly t: 'resting'; readonly failure: OnlineFailure }
-  /** A refused request (busy, no-room, full, ...); the connection stays. */
-  | { readonly t: 'error'; readonly failure: OnlineFailure }
-  | GatewayNoticeEvent
-  /** Final: no more events. `failure` is undefined for a normal close. */
-  | { readonly t: 'closed'; readonly failure: OnlineFailure | undefined };
-
-export interface FetchResponseLike {
-  readonly status: number;
-  readonly headers: { get(name: string): string | null };
-  json(): Promise<unknown>;
-}
-export type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body?: string }) => Promise<FetchResponseLike>;
-/** The slice of the browser WebSocket used here; the transport needs a `SocketLike`. */
-export interface WsLike extends SocketLike {
-  close(code?: number): void;
-  addEventListener(type: 'message', listener: (ev: { data: unknown }) => void): void;
-  addEventListener(type: 'open' | 'error', listener: () => void): void;
-  addEventListener(type: 'close', listener: (ev: { code?: number }) => void): void;
-}
-export type WsCtor = new (url: string) => WsLike;
-
-export interface OnlineDeps {
-  readonly config: OnlineConfig;
-  readonly fetch: FetchLike;
-  readonly WebSocket: WsCtor;
-  readonly simVersion: number;
-  /** Monotonic milliseconds. */
-  readonly now: () => number;
-  /** One-shot timer; returns its canceller. */
-  readonly after: (ms: number, fn: () => void) => () => void;
-  /** 0 <= x < 1, for backoff jitter. */
-  readonly random: () => number;
-}
-
-/** Words for a person; never mentions a server address. Resting names the wait (default 1 h). */
-export function friendlyMessage(f: OnlineFailure): string {
-  switch (f.kind) {
-    case 'not-configured': return 'Online play is not available in this build.';
-    case 'network': return 'Could not reach the online service. Check your connection and try again.';
-    case 'update-needed': return 'Update needed, reload the page.';
-    case 'bad-response': return 'The online service sent something unexpected. Try again in a minute.';
-    case 'resting': {
-      const sec = restingSec(f);
-      return `The game is resting. Please look again in about ${sec >= 3600 ? `${String(Math.round(sec / 3600))} h` : `${String(Math.max(1, Math.round(sec / 60)))} min`}.`;
-    }
-    case 'server':
-      return SERVER_WORDS[f.code] ?? 'The online service had a problem. Try again in a moment.';
-  }
-}
-
-const SERVER_WORDS: Readonly<Record<number, string>> = {
-  4: 'The sign-in expired. Try again.',
-  5: 'You are already waiting or in a room.',
-  6: 'That room code was not found. Check it, or ask your friend for a new one.',
-  7: 'That room already has two players.',
-  8: 'The online service is full right now. Try again in a minute.',
-  9: 'Too many tries. Wait a moment.',
-  10: 'You and your friend run different versions. Reload the page.',
-};
-
-/** Seconds until the service may be asked again (the default hour when the server did not say). */
-export function restingSec(f: { readonly retryAfterSec: number }): number {
-  return f.retryAfterSec > 0 ? f.retryAfterSec : DEFAULT_RESTING_SEC;
-}
+// Public types and the person-facing texts live in sibling modules; re-exported so imports of this file stay valid.
+export { DEFAULT_RESTING_SEC };
+export type { FetchLike, FetchResponseLike, OnlineDeps, OnlineEvent, OnlineFailure, OnlineResult, WsCtor, WsLike } from './online-types';
+import { restingSec } from './failure-text';
+export { friendlyMessage, restingSec } from './failure-text';
+export { decodeLobby };
 
 const NET: OnlineFailure = { kind: 'network' };
 const fail = (failure: OnlineFailure): { ok: false; failure: OnlineFailure } => ({ ok: false, failure });
 const ok = <T>(value: T): { ok: true; value: T } => ({ ok: true, value });
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const rec = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {});
-
-/** Lobby-side frames (spec section 4) that `wire.ts` does not carry. */
-type Lobby =
-  | { t: 'welcome'; ver: number; sessionId: number; resumed: boolean }
-  | { t: 'queue'; waitingSec: number }
-  | { t: 'room-created'; code: string; ttlSec: number }
-  | { t: 'room-peer'; joined: boolean }
-  | { t: 'match'; matchId: number; slot: number; seed: number; inputDelay: number; simVersion: number; batchEvery: number }
-  | { t: 'peer'; matchId: number; status: 'disconnected' | 'back' | 'gone'; graceMs: number }
-  | { t: 'result-ack'; matchId: number; status: number };
-const LOBBY_SIZE: Readonly<Record<number, number>> = { 0x02: 9, 0x12: 3, 0x21: 9, 0x23: 2, 0x30: 11, 0x44: 5, 0x51: 3 };
-const PEER = ['disconnected', 'back', 'gone'] as const;
-
-/** `undefined` for a non-lobby type or a malformed one (wrong length, bad room code or event). */
-export function decodeLobby(b: Uint8Array): Lobby | undefined {
-  const type = b[0] ?? 0;
-  if (LOBBY_SIZE[type] !== b.length) return undefined;
-  const d = new DataView(b.buffer, b.byteOffset, b.byteLength);
-  switch (type) {
-    case 0x02: return { t: 'welcome', ver: d.getUint8(1), sessionId: d.getUint32(2), resumed: d.getUint8(6) === 1 };
-    case 0x12: return { t: 'queue', waitingSec: d.getUint16(1) };
-    case 0x21: {
-      const code = String.fromCharCode(...b.subarray(1, 7));
-      return ROOM_CODE_RE.test(code) ? { t: 'room-created', code, ttlSec: d.getUint16(7) } : undefined;
-    }
-    case 0x23: return d.getUint8(1) <= 1 ? { t: 'room-peer', joined: d.getUint8(1) === 0 } : undefined;
-    case 0x30: return { t: 'match', matchId: d.getUint8(1), slot: d.getUint8(2), seed: d.getUint32(3), inputDelay: d.getUint8(7), simVersion: d.getUint16(8), batchEvery: d.getUint8(10) };
-    case 0x44: {
-      const status = PEER[d.getUint8(2)];
-      return status === undefined ? undefined : { t: 'peer', matchId: d.getUint8(1), status, graceMs: d.getUint16(3) };
-    }
-    default: return { t: 'result-ack', matchId: d.getUint8(1), status: d.getUint8(2) };
-  }
-}
 
 function hello(simVersion: number, resume: number): string {
   const b = Uint8Array.of(0x01, PROTOCOL_VERSION, 0, 0, 0, 0, 0, 0);
