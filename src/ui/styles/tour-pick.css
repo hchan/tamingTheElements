@@ -25,19 +25,19 @@
   }
 }
 
-/* qa-r46 / names-14px: tile names were 10 px at 720p. Now 14 px (0.875em of the 16 px stage) or 16 px on wide windows; tiles use less
+/* qa-r46 / names-14px: tile names were 10 px at 720p. Now 16 px (1em of the 16 px stage; a11y review #3); tiles use less
    padding, a tighter face, and names wrap only at spaces with the full name kept in the tile title (tour.ts). */
 #menu #tourPick .heroGrid[data-cols='6'] button.menuButton.heroTile {
   padding: 3px 1px;
 }
 #menu #tourPick .heroTileName {
-  font-size: 0.875em;
+  font-size: 1em;
   line-height: 1.1;
   max-width: 100%;
   overflow-wrap: normal;
 }
 #menu #tourPick .heroGrid[data-cols='6'] .heroTileName {
-  font-size: 0.875em;
+  font-size: 1em;
 }
 /* Below 1200 px the tile is about 110-140 px wide: stack the face above the name so a 14 px name (Cyclonius, Sindarosa) never clips. */
 @media (max-width: 1199px) {
