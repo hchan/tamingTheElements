@@ -33,24 +33,24 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   cyclonius: [5600, 1100],
   // Hurricane halves each hit and Fade only defends: one of the weakest kits (24% before). Snag replaced Fade; re-fit in SIM_VERSION 27 (was [6360, 1840]). Re-fit in SIM_VERSION 31 (was [5300, 1530]).
   echo: [6750, 1600],
-  // Fireball starts at 0.25x and Fire Heal is a 40 s heal. Damage 1750 -> 1450 in SIM_VERSION 27 (the Snag heroes' lines fed her wins). Re-fit in SIM_VERSION 31 (was [5140, 1450]). Ranged since SIM_VERSION 69 (roster WP 0.4: no Charge, weather charge by casting): 50.0%, numbers kept.
-  fiara: [4210, 1373],
+  // Fireball starts at 0.25x and Fire Heal is a 40 s heal. Damage 1750 -> 1450 in SIM_VERSION 27 (the Snag heroes' lines fed her wins). Re-fit in SIM_VERSION 31 (was [5140, 1450]). Ranged since SIM_VERSION 69 (roster WP 0.4: no Charge, weather charge by casting): 50.0%, numbers kept. Re-fit in SIM_VERSION 99 (was [4210, 1373]; stun-immunity retune after v98).
+  fiara: [4508, 1470],
   // Slime Blast 10 per 1.5 s, the lowest sustained damage in data.json. Life 6180 -> 6400 in SIM_VERSION 27. Re-fit in SIM_VERSION 69 (was [5000, 1420]: 38.6% once four heroes changed style in roster WP 0.4).
   ishimi: [5400, 1535], // a 1.5x mid-size (data/size.ts) adds x1.225 life and x1.06 damage on top: 6400 / 1550 before size (5400 / 1480 was 62.5% in the Arcade tournament)
   // Crimson Fire is fast and wide: strong. Life 3320 -> 3500 in SIM_VERSION 27, 3500 -> 3900 in 36, 3900 -> 4000 in 37.
   lavax: [4000, 870],
   // Icicles every 15 ticks plus the Ice Blast slow: strong. Re-fit in SIM_VERSION 31 (was [3370, 930]). Ranged since SIM_VERSION 69 (roster WP 0.4): 50.0%, numbers kept.
   morblass: [4080, 1120],
-  // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27.
-  pax: [4600, 1442],
-  // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37. Ranged since SIM_VERSION 69 (roster WP 0.4): 51.7%, numbers kept.
-  rokcore: [1850, 640], // a 2x giant (data/size.ts) adds x1.45 life and x1.12 damage on top: 2600 / 690 before giants
-  // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong. Arcade falloff since SIM_VERSION 71 (FUN-DESIGN 2.27): full damage to about 257 px, 45% past about 600 px.
-  sindarosa: [2860, 724],
-  // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]). Life 6050 -> 6215 in SIM_VERSION 86 (2v2 factor 714 -> 695 keeps its 2v2 and 3v3 life bit-identical).
-  treenoc: [6215, 1180],
-  // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27. Re-fit in SIM_VERSION 31 (was [7900, 1400]). Melee since SIM_VERSION 69 (roster WP 0.4: Charge, weather charge by walking): re-fit (was [7950, 1355], 57.4%). Life 7575 -> 7365 in SIM_VERSION 86 (2v2 factor 632 -> 650 keeps its 2v2 and 3v3 life bit-identical).
-  wispera: [7365, 1291],
+  // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27. Re-fit in SIM_VERSION 99 (was [4600, 1442]; stun-immunity retune after v98).
+  pax: [4351, 1364],
+  // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37. Ranged since SIM_VERSION 69 (roster WP 0.4): 51.7%, numbers kept. Re-fit in SIM_VERSION 99 (was [1850, 640]; stun-immunity retune after v98).
+  rokcore: [1949, 674], // a 2x giant (data/size.ts) adds x1.45 life and x1.12 damage on top: 2600 / 690 before giants
+  // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong. Arcade falloff since SIM_VERSION 71 (FUN-DESIGN 2.27): full damage to about 257 px, 45% past about 600 px. Re-fit in SIM_VERSION 99 (was [2860, 724]; stun-immunity retune after v98).
+  sindarosa: [3001, 760],
+  // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]). Life 6050 -> 6215 in SIM_VERSION 86 (2v2 factor 714 -> 695 keeps its 2v2 and 3v3 life bit-identical). Re-fit in SIM_VERSION 99 (was [6215, 1180]; stun-immunity retune after v98).
+  treenoc: [5998, 1139],
+  // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27. Re-fit in SIM_VERSION 31 (was [7900, 1400]). Melee since SIM_VERSION 69 (roster WP 0.4: Charge, weather charge by walking): re-fit (was [7950, 1355], 57.4%). Life 7575 -> 7365 in SIM_VERSION 86 (2v2 factor 632 -> 650 keeps its 2v2 and 3v3 life bit-identical). Re-fit in SIM_VERSION 99 (was [7365, 1291]; stun-immunity retune after v98).
+  wispera: [6833, 1198],
   // Roster-24 batch 1 (SIM_VERSION 72), fitted with tools/sim/low-races/mat.sh.
   kindrel: [6120, 1537],
   nykra: [5435, 1215],

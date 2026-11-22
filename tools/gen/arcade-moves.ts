@@ -72,7 +72,7 @@ function home(p1: Track, p2: Track, at: number, walk: number, rows = 31, gap = 2
  * WP-arcade-numbers timings: cones in each beat-down, when round 2 and round 3 start their segments (each after the
  * round before ended), and the round 2 guard (held while GUARD_BLASTS come; about 15 blocked blasts break it).
  */
-const BEAT_ROUND_1 = 12;
+const BEAT_ROUND_1 = 15;
 const BEAT_ROUND_3 = 11;
 /**
  * Weather power (WP-arcade-weather-charge): the weather needs a full charge, and a Fire Blast adds WEATHER_CHARGE_CAST,
@@ -128,12 +128,9 @@ function movesScript(): ArcadeScript {
   // SIM_VERSION 71 (Fire Blast falloff): the blast now lands the tick after the dash ends and stuns p1, so let the stun end before the next home().
   p1.until(h + 130);
   // Beat-down (WP-arcade-numbers: Arcade lives are about 4x the hits now): single cones a stun apart, so p2 is low
-  // enough for the parry's reflection to KO it.
+  // enough that the last cones KO it (the parry moved to round 3 in SIM_VERSION 99).
   h = beatDown(p1, p2, 1700 + CHARGE_SHIFT, BEAT_ROUND_1);
-  // Segment E: parry (p1 taps guard as the blast arrives: it is reflected, and the reflection KOs p2, who is low by now).
-  h = home(p1, p2, h + 60, 100, -1, 90);
-  p2.until(h + 10).tap('fire blast', primary);
-  p1.until(h + 55).tap('parry', guard);
+  // SIM_VERSION 99: sindarosa has about 5% more life, so the beat-down itself finishes p2 and the parry (segment E) moved to the start of round 3.
   // Round 2: p1 holds guard while p2 shoots: chip damage, then the guard breaks. p2 then wins on time over.
   h = home(p1, p2, ROUND_2, 100);
   p1.until(h).step('hold guard', guard, GUARD_HOLD);
@@ -145,7 +142,11 @@ function movesScript(): ArcadeScript {
   p1.until(h).step('aim down-right', right | down, 1).tap('diagonal cone', secondary);
   // Round 3: p1 carries its meter over, wears p2 down, scores a combo and a cone, then spends a bar on the super that
   // finishes p2.
-  h = beatDown(p1, p2, ROUND_3, BEAT_ROUND_3);
+  // Segment E: parry (p1 taps guard as the blast arrives and it is reflected; round 3 start, p2 at full life).
+  h = home(p1, p2, ROUND_3, 100, -1, 90);
+  p2.until(h + 10).tap('fire blast', primary);
+  p1.until(h + 55).tap('parry', guard);
+  h = beatDown(p1, p2, h + 60, BEAT_ROUND_3);
   h = home(p1, p2, h + 60, 100);
   p1.until(h).tap('tornado', primary, 1, 6);
   for (let i = 0; i < 3; i++) p1.tap('cone', secondary, 1, 19);
