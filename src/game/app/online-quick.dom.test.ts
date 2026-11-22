@@ -1,3 +1,4 @@
+import { startInputDelay } from '../net/online-tuning';
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SIM_VERSION } from '@core/index';
@@ -157,7 +158,7 @@ describe('quick match screen', () => {
     expect(x?.launch.setup).toEqual(y?.launch.setup);
     expect([x?.launch.net?.side, y?.launch.net?.side]).toEqual([0, 1]);
     expect(x?.launch.net?.match).toBe(1);
-    expect(x?.launch.net?.inputDelay).toBe(3);
+    expect(x?.launch.net?.inputDelay).toBe(startInputDelay(3));
     expect(y?.launch.net?.batchEvery).toBe(2);
     expect(x?.launch.net?.input).toBe(r.clients[0]?.transport);
     expect(y?.launch.net?.input).toBe(r.clients[1]?.transport);
@@ -192,6 +193,21 @@ describe('quick match screen', () => {
     expect(shown(n, 'quickFind')).toBe(false);
     expect(shown(n, 'quickBack')).toBe(true);
     expect(shown(n, 'quickCancel')).toBe(false);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('in a match the controls fold into the menu icon, which opens and closes the panel', async () => {
+    const r = rig();
+    const [a] = await play(r);
+    const page = a.matches('.onlineQuick') ? a : (a.querySelector('.onlineQuick') as HTMLElement);
+    const icon = q(a, 'quickMenu') as HTMLButtonElement;
+    expect(icon.hidden).toBe(false);
+    expect(page.classList.contains('panelOpen')).toBe(false);
+    icon.click();
+    expect(page.classList.contains('panelOpen')).toBe(true);
+    expect(icon.getAttribute('aria-expanded')).toBe('true');
+    icon.click();
+    expect(page.classList.contains('panelOpen')).toBe(false);
     r.unmounts.forEach((u) => { u(); });
   });
 
