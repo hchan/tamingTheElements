@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md (lesson rows done 2026-11-21; audit and design doc rows not touched)
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -35,3 +35,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
   Three tuning rounds on Nykra's own abilities only (1v1 / 2v2): Hoof Crash 20 -> 17: 42.1 / 52.7 (1v1 out); Hoof Crash 18: 48.4 / 55.5 (2v2 out by 0.5); Hoof Crash 18 + Kelp Lash 13: 44.3 / 54.0 (1v1 out by 0.7). The damage lever is steep (about 3.4 pp per damage point in 1v1, about 2.3 in 2v2) and the 1v1 and 2v2 bands do not overlap with damage alone. All reverted; kit pinned in src/core/data/abilities-c.test.ts. Best tried: Hoof Crash 18 / Kelp Lash 14 (48.4 / 55.5) and 18 / 13 (44.3 / 54.0).
   Untried ideas for the next S (needs a lever that hits 2v2 harder than 1v1): Hoof Crash maxActive 2 -> 1, a longer Kelp Lash cooldown, hit strength or stun rows, or an AI rule (Nykra has none; ability usage not measured). Other out-of-band heroes in the 2v2 run (not touched): cyclonius 66.9, echo 57.0, vortigal 42.3, rokcore 39.5, treenoc 42.5.
   Not done: AI rule, hit strength rows.
+- 2026-11-21 P3 (words only, no src/core change): lesson rows for Hoof Crash and Kelp Lash in ability-lessons.ts with a pin test in ability-lessons.test.ts.

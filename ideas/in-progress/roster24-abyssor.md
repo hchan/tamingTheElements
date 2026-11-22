@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md (lesson rows done 2026-11-21; audit and design doc rows not touched)
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -34,3 +34,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - 2026-11-20 step S (no SIM_VERSION bump, no sim change): re-measured at SIM_VERSION 92 (full roster, arcade, ai-level 3, default seeds): Abyssor 1v1 47.8, 2v2 52.2, both in band 0.45-0.55, so no tuning. The kit already has no duplicate footprint (Tentacle Lash 160x30 is the only 160 box, Kelp Lash is 130x30; Abyssal Pull is the only body pull), tick values are exact multiples of 20 ms (Lash cd 60 ticks, delay 15; Pull cd 300). Kit pinned in src/core/data/abilities-c.test.ts.
   Not done: AI rule, hit strength rows.
 - 2026-11-20: valid re-measure at SIM_VERSION 92 (`--roster full`, arcade, AI 3): 1v1 (16 seeds, 4416 matches) 56.7 (slightly above the 0.45-0.55 band, within 16-seed noise of about 2.5 points); 2v2 (26 seeds, 7176 matches) 47.5 (in band). No kit change shipped; pin test added. Revisit the 1v1 number with 32 seeds before the release flip (Ink Cloud / lash reach are the untried levers).
+- 2026-11-21 P3 (words only, no src/core change): lesson rows for Tentacle Lash and Abyssal Pull in ability-lessons.ts with a pin test in ability-lessons.test.ts.

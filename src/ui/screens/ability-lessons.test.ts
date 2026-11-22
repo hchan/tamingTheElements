@@ -37,6 +37,16 @@ describe('ability lessons', () => {
     expect(ABILITY_LESSONS.get('boulder-roll')?.line).toContain('knocks the foe back');
   });
 
+  it('pins the Nykra lessons', () => {
+    expect(lessonsFor(characterId('nykra')).map((l) => l?.abilityId)).toEqual(['hoof-crash', 'kelp-lash']);
+    expect(ABILITY_LESSONS.get('hoof-crash')?.line).toContain('knocks the foe back');
+  });
+
+  it('pins the Abyssor lessons', () => {
+    expect(lessonsFor(characterId('abyssor')).map((l) => l?.abilityId)).toEqual(['tentacle-lash', 'abyssal-pull']);
+    expect(ABILITY_LESSONS.get('abyssal-pull')?.line).toContain('drags the foe in');
+  });
+
   it('pins the Vortigal lessons', () => {
     expect(lessonsFor(characterId('vortigal')).map((l) => l?.abilityId)).toEqual(['stoop', 'talon-rake']);
     expect(ABILITY_LESSONS.get('talon-rake')?.line).toContain('wound');
