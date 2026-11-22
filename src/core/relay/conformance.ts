@@ -4,7 +4,8 @@
  * relay through its own WebSocket glue (a `ConformanceAdapter`). No timers, clocks or test-framework imports: waiting goes
  * through `hooks.sleep`, which a remote adapter should supply (default: yield only, enough for an in-process relay).
  */
-import { conformanceCases } from './conformance-cases';
+import { conformanceCases as coreCases } from './conformance-cases';
+import { chatCases } from './conformance-chat';
 import {
   ConformanceSkip,
   type CaseResult,
@@ -15,7 +16,8 @@ import {
 } from './conformance-kit';
 
 export * from './conformance-kit';
-export { conformanceCases };
+/** Every case, in run order: the core wire cases, then the chat cases (they skip unless WELCOME caps bit0 is set). */
+export const conformanceCases: readonly ConformanceCase[] = [...coreCases, ...chatCases];
 
 export interface RunOptions {
   /** Run only cases whose id starts with one of these prefixes. */

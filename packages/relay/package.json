@@ -1,6 +1,6 @@
 {
   "name": "@tamingtheelements/relay",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Transport-agnostic relay core for the Taming the Elements online protocol (wire codec, RelayCore, store and sender seams) and a framework-agnostic wire-spec conformance suite.",
   "type": "module",
   "sideEffects": false,

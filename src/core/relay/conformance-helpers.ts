@@ -87,6 +87,14 @@ export class Peer {
     const left = this.inbox.filter((x) => t === undefined || x.frame.t === t).map((x) => x.frame.t);
     check(left.length === 0, `unexpected frames: [${left.join(', ')}]`);
   }
+  /** Waits one settle period, then removes and counts every queued frame of type `t`. */
+  async drain(t: Frame['t']): Promise<number> {
+    await this.env.sleep(this.env.settleMs);
+    this.fault();
+    const n = this.inbox.filter((x) => x.frame.t === t).length;
+    this.inbox = this.inbox.filter((x) => x.frame.t !== t);
+    return n;
+  }
   async closed(): Promise<number> {
     for (let waited = 0; ; waited += 10) {
       if (this.closeCode !== undefined) return this.closeCode;

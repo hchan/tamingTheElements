@@ -11,17 +11,35 @@ describe('relay wire-spec conformance (RelayCore + InMemoryStore + LoopbackSende
   });
   for (const c of conformanceCases) {
     it(`${c.id} (spec ${c.spec}): ${c.title}`, async () => {
-      const t = createLoopbackConformance();
+      const t = createLoopbackConformance({ chat: true });
       const r = await runAll(t.adapter, t.hooks, { cases: [c] });
       expect(r.results[0]?.message ?? '', c.id).toBe('');
       expect(r.results[0]?.status).toBe('pass');
     });
   }
-  it('passes as one run against a single shared relay, with no skips', async () => {
-    const t = createLoopbackConformance();
+  it('passes as one run against a single shared relay with chat on, with no skips', async () => {
+    const t = createLoopbackConformance({ chat: true });
     const r = await runAll(t.adapter, t.hooks);
     expect(r.results.filter((x) => x.status !== 'pass')).toEqual([]);
     expect(r.ok && r.skipped === 0).toBe(true);
+  });
+  it('has the chat cases, none order-sensitive', () => {
+    const chat = conformanceCases.filter((c) => c.id.startsWith('chat.'));
+    expect(chat.map((c) => c.id)).toEqual(
+      expect.arrayContaining(['chat.forward', 'chat.bad-text', 'chat.rate', 'chat.oversize', 'chat.stale-match', 'chat.limit', 'chat.undelivered', 'chat.after-result']),
+    );
+    expect(chat.some((c) => c.orderSensitive === true)).toBe(false);
+  });
+  it('skips every chat case (and nothing else) when the relay has chat off', async () => {
+    const t = createLoopbackConformance();
+    const n = conformanceCases.filter((c) => c.id.startsWith('chat.')).length;
+    const all = await runAll(t.adapter, t.hooks);
+    expect(all.failed).toBe(0);
+    expect(all.skipped).toBe(n);
+    expect(n).toBeGreaterThanOrEqual(8);
+    const only = await runAll(t.adapter, t.hooks, { only: ['chat'] });
+    expect(only.results).toHaveLength(n);
+    expect(only.results.every((r) => r.status === 'skip' && /chat/.test(r.message ?? ''))).toBe(true);
   });
   it('skips (not fails) the hook-dependent cases without hooks', async () => {
     const t = createLoopbackConformance();
