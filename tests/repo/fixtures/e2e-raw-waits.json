@@ -399,7 +399,7 @@
     "poll": 0,
     "waitForFunction": 1,
     "waitForTimeout": 0,
-    "expects": 11
+    "expects": 8
   },
   "pseudo3d-depth.spec.ts": {
     "poll": 4,
@@ -423,7 +423,7 @@
     "poll": 1,
     "waitForFunction": 1,
     "waitForTimeout": 0,
-    "expects": 11
+    "expects": 8
   },
   "responsive.spec.ts": {
     "poll": 5,

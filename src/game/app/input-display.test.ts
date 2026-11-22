@@ -70,6 +70,28 @@ describe('createInputDisplay', () => {
     expect(d.root.querySelector('#inputList1 li')?.classList.contains('inputNow')).toBe(true);
   });
 
+  it('changes its key as the tick advances, so stepping redraws the lists', () => {
+    const d = createInputDisplay();
+    d.setInputs([[0, 2, 24, 40], [8, 50]]);
+    d.update(1);
+    const key = (): string | undefined => d.root.querySelector<HTMLElement>('#inputList1')?.dataset['key'];
+    const before = key();
+    expect(before).toBeDefined();
+    d.update(1);
+    expect(key()).toBe(before);
+    d.update(31);
+    expect(key()).not.toBe(before);
+  });
+
+  it('shows the display by default and never uses the retired words', () => {
+    const d = createInputDisplay();
+    d.setInputs([[0, 2, 0x7fff0, 3], [8, 5]]);
+    d.update(5);
+    expect(d.root.hidden).toBe(false);
+    expect(d.root.querySelectorAll('#inputList1 li').length).toBeGreaterThan(0);
+    expect(d.root.innerHTML).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
+
   it('can be hidden, catches up when shown and clears without streams', () => {
     const d = createInputDisplay();
     d.setInputs([[0, 2], [8, 5]]);

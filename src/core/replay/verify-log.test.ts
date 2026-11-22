@@ -39,6 +39,16 @@ describe('verifyReplayLog', () => {
     expect(r.actual).not.toBe(r.expected);
   });
 
+  it('names the first divergent checkpoint tick of a tampered hash', () => {
+    const t = clone();
+    t.hashes[2] = (t.hashes[2] as number) ^ 1;
+    const r = verifyReplayLog(t);
+    expect(r.ok).toBe(false);
+    if (r.ok || r.kind !== 'mismatch') throw new Error('expected mismatch');
+    expect(r.firstDivergentTick).toBe(2 * HASH_INTERVAL);
+    expect(r.message).toMatch(/^DIVERGED at tick 100 /);
+  });
+
   it('flags a tampered final hash and a bare tampered log gives a different hash', () => {
     const t = clone();
     t.finalHash = (golden.finalHash + 1) | 0;

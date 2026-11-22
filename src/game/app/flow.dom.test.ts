@@ -287,6 +287,7 @@ describe('battle screen', () => {
     launch.onEnd?.(WIN);
     await flush();
     expect(r.navigate).toHaveBeenCalledWith('victory');
+    expect(r.replays.add).not.toHaveBeenCalled(); // nothing is stored without the flag or setting
     s.unmount();
     expect(g.destroy).toHaveBeenCalled();
   });
