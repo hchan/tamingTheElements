@@ -94,7 +94,8 @@ export const toHex = (b: Uint8Array): string => [...b].map((x) => x.toString(16)
 
 export const goldenFrames: readonly GoldenFrame[] = [
   { id: 'hello', hex: '01 01 0007 0a0b0c0d', text: 'AQEABwoLDA0=', frame: { t: 'hello', ver: 1, simVersion: 7, resumeSession: 0x0a0b0c0d } },
-  { id: 'welcome', hex: '02 01 00000042 00 0040', text: 'AgEAAABCAABA', frame: { t: 'welcome', ver: 1, sessionId: 0x42, resumed: 0, serverHint: 64 } },
+  { id: 'welcome', hex: '02 01 00000042 00 00 40', text: 'AgEAAABCAABA', frame: { t: 'welcome', ver: 1, sessionId: 0x42, resumed: 0, caps: 0, serverHint: 64 } },
+  { id: 'welcomeChat', hex: '02 01 00000042 00 01 40', text: 'AgEAAABCAAFA', frame: { t: 'welcome', ver: 1, sessionId: 0x42, resumed: 0, caps: 1, serverHint: 64 } },
   { id: 'queueJoin', hex: '10 00', text: 'EAA=', frame: { t: 'queueJoin', mode: 0 } },
   { id: 'queueLeave', hex: '11', text: 'EQ==', frame: { t: 'queueLeave' } },
   { id: 'queueState', hex: '12 0005', text: 'EgAF', frame: { t: 'queueState', waitingSec: 5 } },
@@ -113,5 +114,6 @@ export const goldenFrames: readonly GoldenFrame[] = [
   { id: 'resultAck', hex: '51 02 00', text: 'UQIA', frame: { t: 'resultAck', matchId: 2, status: 0 } },
   { id: 'ping', hex: '60 01020304', text: 'YAECAwQ=', frame: { t: 'ping', nonce: 0x01020304 } },
   { id: 'pong', hex: '61 01020304', text: 'YQECAwQ=', frame: { t: 'pong', nonce: 0x01020304 } },
+  { id: 'chat', hex: '70 07 00 02 68 69', text: 'cAcAAmhp', frame: { t: 'chat', match: 7, seq: 0, bytes: Uint8Array.of(0x68, 0x69) } },
   { id: 'error', hex: '7f 000b 0078 0000', text: 'fwALAHgAAA==', frame: { t: 'error', code: 0x0b, retryAfterSec: 120, detail: 0 } },
 ];
