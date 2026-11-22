@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -32,3 +32,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
 - 2026-11-20: S step (no sim change, SIM_VERSION stays 92). Kit de-dupe checked: no other ability shares kind, box and damage with Static Mote (range 16x16, 8 dmg, speed 10; Abyssal Pull shares only the 8 damage) or Skitter (buff, 140 px backward lunge, no damage). Pinned in `src/core/data/abilities-c.test.ts`. Win rate at SIM_VERSION 92, Arcade, AI level 3, full roster: 1v1 (16 seeds) 0.512; 2v2 (26 seeds, 598 games) 0.527; both in 0.45-0.55, no tuning, no golden re-record. AI rule: hop rule already exists.
+- 2026-11-21 (P3 text, done): static-mote and skitter lesson rows in src/ui/screens/ability-lessons.ts (words only, no banned terms); pin test in ability-lessons.test.ts. docs/ABILITY-AUDIT.md and GAME-DESIGN.md Zephra rows already match abilities-c.ts. No src/core change, no art, RELEASED_ROSTER24 still empty.
