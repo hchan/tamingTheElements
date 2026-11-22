@@ -4,7 +4,7 @@
  * never another branch). Preconditions, all checked in `cleanPushBlockers` (pure): the checkout is on main with a clean tree,
  * origin/main (fetched) is an ancestor of main, main is still the commit the full run tested, there is something to push,
  * `gate:commit` passes on main (credentials stripped, pushes disabled), no Mac-lane env override, before the hard stop.
- * A new (unrecorded) red never pushes here: that night goes to the fix loop. Report: tte-gate/nightly-push-status.json.
+ * A new (unrecorded) red never pushes here: that night goes to the fix loop. After a push, the Pages build is dispatched (best effort; the daily cron is the fallback). Report: tte-gate/nightly-push-status.json.
  * Tests: tests/repo/nightly-push.test.ts.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -22,6 +22,9 @@ export interface PushDeps {
   run: (cmd: string, args: readonly string[], cwd: string, env: Env, timeoutMs?: number) => { code: number; stdout: string; stderr: string };
   out: (s: string) => void;
 }
+
+/** Start the Pages build (ci.yml `workflow_dispatch`) after a successful push; only a push that moved origin/main gets here. */
+export const DISPATCH_PAGES_ARGS: readonly string[] = ['workflow', 'run', 'ci.yml', '--ref', 'main'];
 
 export type NightVerdict = 'green' | 'known-red' | 'new-red' | 'not-run';
 
@@ -123,5 +126,10 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
   const after = cleanPushBlockers({ ...cheap, gateCommitOk: gate.code === 0, treeClean: clean(), testedIsHead: head() === st.sha });
   if (after.length) return finish(false, after);
   if (d.run('git', PUSH_ARGS, d.repo, d.env).code !== 0) return finish(false, ['git push failed (not forced)']);
+  // Pages is built only by the cron or a dispatch (not on push): start the build for what was just pushed. Best effort; the
+  // 14:00 UTC cron is the fallback. GITHUB_TOKEN is stripped because a stale one breaks gh.
+  const { GITHUB_TOKEN: _stale, ...ghEnv } = d.env;
+  const dispatched = d.run('gh', DISPATCH_PAGES_ARGS, d.repo, ghEnv).code === 0;
+  d.out(dispatched ? 'Pages build dispatched\n' : 'Pages dispatch failed (the daily cron will deploy)\n');
   return finish(true, []);
 }

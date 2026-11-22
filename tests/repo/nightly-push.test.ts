@@ -130,6 +130,11 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     expect(calls.join('\n')).not.toMatch(/--force|-f\b|\+HEAD/);
     expect(pushStatus()).toMatchObject({ verdict: 'green', pushed: true, blockers: [] });
     expect(out).toContain('pushed main to origin/main');
+    expect(calls.filter((c) => c.startsWith('gh '))).toEqual(['gh workflow run ci.yml --ref main']);
+  });
+  it('a blocked night dispatches no Pages build', () => {
+    expect(main(['collect-and-fix'], deps({ ahead: '0' }))).toBe(0);
+    expect(calls.filter((c) => c.startsWith('gh '))).toEqual([]);
   });
   it('known-red only night also pushes', () => {
     expect(main(['collect-and-fix'], deps({ reds: ['opens'], known: ['opens'] }))).toBe(0);
