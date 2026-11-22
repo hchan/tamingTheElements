@@ -12,7 +12,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileS
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { describeFix, type FixStatus } from './nightly-fix-logic';
-import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, validateStatus, type NightlyStatus } from './nightly-status';
+import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, prevTotalFromHistory, validateStatus, type NightlyStatus } from './nightly-status';
 
 type Env = Readonly<Record<string, string | undefined>>;
 export interface RunResult {
@@ -111,7 +111,9 @@ export function collect(d: Deps): number {
       results = undefined;
     }
   }
-  const next = finishStatus(prev, r.code, results, loadKnownRed(d.repo), d.now().toISOString(), ranOnLine(`${r.stdout}\n${r.stderr}`));
+  const hp = historyPath(d.statusDir);
+  const hist = existsSync(hp) ? readFileSync(hp, 'utf8').split('\n').filter(Boolean) : [];
+  const next = finishStatus(prev, r.code, results, loadKnownRed(d.repo), d.now().toISOString(), ranOnLine(`${r.stdout}\n${r.stderr}`), prevTotalFromHistory(hist));
   writeStatus(d.statusDir, next);
   for (const l of describeStatus(next, d.now().getTime())) d.out(`${l}\n`);
   return 0;
