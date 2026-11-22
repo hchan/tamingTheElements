@@ -66,3 +66,9 @@ and a placeholder `idle` action with empty curves: add curves, other directions 
 3. Add curves, then `pnpm assets:bake` and look at the frames; a part sliding off its parent means the pivot is wrong.
 4. Copy `license.template.txt` to `<out>/license.txt` and fill it in truthfully. The bake and the sheet packer require provenance.
 5. Warnings on stderr (`opaque px belong to no part`, `does not touch its parent`) mean a missing click or a wrong `parent`.
+
+## Treenoc (whole-body repaint)
+
+Treenoc is the owner's original treant, repainted (img2img, GPU job r430, seed 58500, denoise 0.25) and rigged as one body plus one arm piece. The 1024 px crisp source and its sha256 are in `tools/rig-assist/provenance/` (approval in `treenoc-approval.json`). Rebuild:
+
+`$PY -I tools/rig-assist/treenoc-whole.py tools/rig-assist/provenance/treenoc-crisp-r430-seed58500-d0.25.png imgWorkArea/rigs/treenoc && pnpm assets:bake && pnpm assets:sheets`
