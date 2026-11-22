@@ -38,13 +38,19 @@ for (const race of HEROES) {
   });
 }
 
-// Cast FX shots 1, 5 and 10 ticks after the cast: Kindrel Ember Bite (primary) and Cinder Spray (secondary), src/game/fx/kindrel-fx.ts;
-// Brazgor Forge Gore (primary) and Molten Hide (secondary), src/game/fx/brazgor-fx.ts.
+// Cast shots 1, 5 and 10 ticks after the cast: primary = cmd 16, secondary = cmd 32 (FX: src/game/fx/kindrel-fx.ts, brazgor-fx.ts).
+// Gap = pixels between the two characters (melee reach for melee/grab casts, far for projectiles, short for the Skitter hop).
 const CASTS = [
   { hero: 'kindrel', name: 'ember-bite', cmd: 16, gap: 120 },
   { hero: 'kindrel', name: 'cinder-spray', cmd: 32, gap: 300 },
   { hero: 'brazgor', name: 'forge-gore', cmd: 16, gap: 100 },
   { hero: 'brazgor', name: 'molten-hide', cmd: 32, gap: 100 },
+  { hero: 'ouroth', name: 'wyrm-coil', cmd: 16, gap: 70 },
+  { hero: 'ouroth', name: 'scorch-breath', cmd: 32, gap: 90 },
+  { hero: 'quarrak', name: 'hurl-rock', cmd: 16, gap: 300 },
+  { hero: 'quarrak', name: 'boulder-roll', cmd: 32, gap: 300 },
+  { hero: 'zephra', name: 'static-mote', cmd: 16, gap: 300 },
+  { hero: 'zephra', name: 'skitter', cmd: 32, gap: 100 },
 ] as const;
 
 for (const c of CASTS) {
