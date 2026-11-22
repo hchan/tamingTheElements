@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path';
 export interface Job {
   readonly label: string;
   readonly script: string;
-  readonly subcommand: 'submit' | 'collect' | 'collect-and-fix' | 'report';
+  readonly subcommand: 'submit' | 'collect' | 'collect-and-fix' | 'report' | 'run';
   readonly hour: number;
   readonly minute: number;
 }
@@ -20,6 +20,9 @@ export const JOBS: readonly Job[] = [
   { label: 'dev.tte.nightly-e2e-collect', script: 'tools/ci/nightly-fix.ts', subcommand: 'collect-and-fix', hour: 2, minute: 0 },
   { label: 'dev.tte.nightly-e2e-report', script: 'tools/ci/nightly-fix.ts', subcommand: 'report', hour: 9, minute: 0 },
 ];
+
+/** Opt-in 00:30 flake slice (`--with-flake`); not in JOBS so a plain install never schedules it. It skips itself unless `.claude/flake-nightly.on` exists. */
+export const FLAKE_JOB: Job = { label: 'dev.tte.nightly-flake', script: 'tools/ci/nightly-flake.ts', subcommand: 'run', hour: 0, minute: 30 };
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -64,7 +67,7 @@ export function main(argv: readonly string[]): number {
     process.stderr.write('corepack not found on PATH\n');
     return 2;
   }
-  for (const job of JOBS) {
+  for (const job of argv.includes('--with-flake') ? [...JOBS, FLAKE_JOB] : JOBS) {
     const file = join(agents, `${job.label}.plist`);
     const target = `gui/${uid}/${job.label}`;
     if (uninstall) {
