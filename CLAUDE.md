@@ -16,7 +16,7 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
 
 ## Rules
 
-- **Trunk-based** ([docs/BRANCHING.md](docs/BRANCHING.md)): `main` is always green by the local gate; Pages is rebuilt and deployed by GitHub Actions once a day (cron) or on manual `workflow_dispatch`, not on push (owner, 2026-11-17, to save minutes). Small branches or small commits, one
+- **Trunk-based** ([docs/BRANCHING.md](docs/BRANCHING.md)): `main` is always green by the local gate; Pages is rebuilt and deployed by GitHub Actions once a day (cron), on manual `workflow_dispatch`, or by the 02:00 nightly push job dispatching it after a successful push, never on push itself (owner, 2026-11-17; dispatch added 2026-11-22, the repo is public so minutes are free). Small branches or small commits, one
   work package each, `git merge --no-ff` with subject `Merge <what> (<WP id>)`. Re-run the gate after every merge (conflict
   markers and silent collateral deletions have slipped through merges before; `git grep -nE '^(<<<<<<<|>>>>>>>) '`).
 - **Commits/pushes:** the user has explicitly authorised small commits and regular pushes to `origin/main` for this project;
