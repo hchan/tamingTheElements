@@ -1,4 +1,5 @@
 import { SIM_VERSION, type MatchSetup } from '@core/index';
+import { guestTokenStore } from '../platform/guest-token-store';
 import { navigateHash } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { buildDesyncReport } from '../net/desync-report';
@@ -58,6 +59,7 @@ function browserDeps(): QuickDeps {
         return () => { clearTimeout(id); };
       },
       random: () => Math.random(),
+      guestStore: guestTokenStore(safeStorage(), () => Date.now()),
     }),
     simVersion: SIM_VERSION,
     now: () => performance.now(),

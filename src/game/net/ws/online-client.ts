@@ -183,11 +183,20 @@ export class OnlineClient {
 
   private async session(body: unknown, force: boolean): Promise<OnlineResult<string>> {
     if (!force && this.token && this.token.until > this.d.now()) return ok(this.token.value);
+    if (!force) {
+      const kept = this.d.guestStore?.load();
+      if (kept !== undefined) {
+        this.token = { value: kept, until: Number.POSITIVE_INFINITY };
+        return ok(kept);
+      }
+    }
     const r = await this.post('/session', body);
     if (!r.ok) return r;
     const value = r.value['session'];
     if (typeof value !== 'string' || value === '') return fail({ kind: 'bad-response' });
-    this.token = { value, until: this.d.now() + (num(r.value['expiresIn']) || 60) * 1000 };
+    const ttlMs = (num(r.value['expiresIn']) || 60) * 1000;
+    this.token = { value, until: this.d.now() + ttlMs };
+    this.d.guestStore?.save(value, ttlMs);
     return ok(value);
   }
 
@@ -199,7 +208,8 @@ export class OnlineClient {
     if (!r.ok) {
       const f = r.failure;
       if (f.kind !== 'server' || f.status !== 401 || again) return r;
-      this.token = undefined; // The session ran out early: one fresh guest session.
+      this.token = undefined;
+      this.d.guestStore?.clear(); // The session ran out early: one fresh guest session.
       return this.ticket(true);
     }
     const t = r.value['ticket'];
