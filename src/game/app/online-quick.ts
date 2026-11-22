@@ -16,6 +16,7 @@ import {
   OPPONENT_LEFT_TEXT, GENERIC_TEXT, reconnectText, RESULT_DISAGREE_TEXT, rejectText, restStore, waitText, WAITING_PICK_TEXT, type QuickState,
 } from './online-quick-model';
 import { QuickSetup } from './online-quick-setup';
+import { mountOnlineChat, type OnlineChat } from './online-chat';
 import { createQuickView, type QuickView } from './online-quick-view';
 
 /**
@@ -105,6 +106,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   /** A resting notice that arrived during a match: shown when it ends. */
   let restAfter = false;
   let onPageHide: (() => void) | undefined;
+  let chat: OnlineChat | undefined;
   const store = restStore(deps.storage);
 
   const set = (s: QuickState, text?: string): void => {
@@ -112,6 +114,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     if (text !== undefined) base = text;
     view?.say(base);
     view?.show(s);
+    chat?.show(s);
   };
   const stopTicker = (): void => {
     ticker?.();
@@ -265,6 +268,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     }
     if (client === undefined) return;
     current = e;
+    chat?.newMatch();
     side = ok.slot;
     qs = new QuickSetup(client.transport.control, ok.slot, e.seed);
     queueConfirmed = false;
@@ -290,6 +294,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       case 'peer':
         if (current === undefined || e.matchId !== current.matchId) break;
         if (state === 'ended' || e.matchId === stoppedMatch) break; // the match is over and its end line stands (a late gone or away must not replace it)
+        chat?.peerAway(e.status !== 'back');
         if (e.status === 'disconnected') {
           peerAway = true;
           session?.setPeerAway(true);
@@ -318,9 +323,11 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         view?.say(GATEWAY_NOTICE_TEXT);
         break;
       case 'reconnecting':
+        chat?.reconnecting();
         view?.say(reconnectText(e.attempt));
         break;
       case 'reconnected':
+        chat?.reconnected();
         if (e.resumed) {
           view?.say(base);
         } else if (state === 'queued' || state === 'connecting') {
@@ -366,6 +373,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     const c = deps.client();
     client = c;
     c.onEvent = (e) => { onEvent(e, c, g); };
+    chat?.attach(c);
     void c.connect().then((r) => {
       if (g !== gen || c !== client) return;
       if (!r.ok) {
@@ -429,6 +437,8 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     restTimer = undefined;
     dropMatch();
     closeClient();
+    chat?.destroy();
+    chat = undefined;
     view?.root.remove();
     view = undefined;
   };
@@ -440,6 +450,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       restAfter = false;
       view = createQuickView({ find, cancel, ready, retry, reload: () => { window.location.reload(); }, again, leave, report: saveReport });
       container.append(view.root);
+      chat = mountOnlineChat(view.root, deps.now);
       set('idle', IDLE_TEXT);
       if (store.remainingMs(deps.wallNow()) > 0) showRest();
       onPageHide = () => {
