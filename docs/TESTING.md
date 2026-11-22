@@ -44,6 +44,18 @@ workers (`VITEST_MAX_WORKERS`, a quarter of the cores, minimum 2) whenever load1
 `tools/ci/gate.ts`; an explicit `VITEST_MAX_WORKERS` wins); this changes only how many files run at once, never the results.
 The slow property cases carry an explicit 900 s timeout, a hang guard that asserts nothing.
 
+### Builder checklist
+
+1. Verify the item still reproduces on current `main` (it may already be fixed by a merge).
+2. Rebase the worktree on `main` before the final gate.
+3. Run `pnpm gate:fast` (batch several merges per run; the full gate is nightly).
+4. Check the caps in `tests/repo/file-size.test.ts`: split a file, never grow one past its cap.
+5. Copy the router's `e2e ran on:` line into the report; never force the Mac.
+
+Efficiency: a daily efficiency cron (owner-run, outside the repo) reviews gate and test speed; record its findings in `ideas/`.
+
+`isolate: false` for the vitest `core` and `repo` projects was tried and not kept (2026-11-21, measurements, load 14-25): `pnpm test` took 139.6 s and 136.3 s with isolation and 125.5 s and 121.1 s without (about 14.7 s saved on the mean, under the 15 s bar). Both configurations passed apart from one flaky `tests/repo/gate.test.ts` treeKey failure in each baseline run; re-try only if the suite grows much slower.
+
 ### Property tests
 
 `src/core/sim/sim.property.test.ts` uses fast-check. Environment variables:
