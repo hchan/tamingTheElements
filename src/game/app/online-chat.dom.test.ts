@@ -153,13 +153,17 @@ describe('online chat glue', () => {
     expect(lines()).toEqual(['Opponent: again']);
   });
 
-  it('disables the input when chat is unsupported and re-reads after a reconnect', () => {
+  it('hides the whole dock when chat is unsupported and re-reads after a reconnect', () => {
     c.supported = false;
     chat.show('playing');
-    expect(qi('chatInput').disabled).toBe(true);
-    expect(q('chatNote').textContent).toBe('Chat is not available right now');
+    expect(q('chatDock').hidden).toBe(true);
+    chat.show('ended');
+    expect(q('chatDock').hidden).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyT', key: 't' }));
+    expect(q('chatPanel').hidden).toBe(true); // the T key stays inert too
     c.supported = true;
     chat.reconnected();
+    expect(q('chatDock').hidden).toBe(false);
     expect(qi('chatInput').disabled).toBe(false);
   });
 

@@ -97,6 +97,11 @@ export function mountOnlineChat(parent: HTMLElement, now: () => number, view: Ch
               : undefined;
     view.setInputEnabled(off === undefined, off);
   };
+  // Friends-first: a relay without chat (WELCOME caps bit0 = 0, e.g. 1.0.0) gets no dock at all, so the Online screens look unchanged.
+  const refreshDock = (): void => {
+    if ((state === 'playing' || state === 'ended') && client?.chatSupported() === true) view.show();
+    else view.hide();
+  };
   const log = createLogRenderer(view, channel);
   const open = (): void => {
     view.setOpen(true);
@@ -153,10 +158,8 @@ export function mountOnlineChat(parent: HTMLElement, now: () => number, view: Ch
     },
     show(s) {
       state = s;
-      if (s === 'playing' || s === 'ended') {
-        updateInput();
-        view.show();
-      } else view.hide();
+      updateInput();
+      refreshDock();
     },
     newMatch() {
       away = false;
@@ -175,6 +178,7 @@ export function mountOnlineChat(parent: HTMLElement, now: () => number, view: Ch
     reconnected() {
       reconnect = false;
       updateInput();
+      refreshDock();
     },
     destroy() {
       document.removeEventListener('keydown', onDocKey);
