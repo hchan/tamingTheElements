@@ -85,16 +85,16 @@ export const ARCADE_2V2_LIFE_SCALE_PM = 1300;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   curomo: 740,
   cyclonius: 810, // 770 before SIM_VERSION 86
-  echo: 650,
+  echo: 680, // 650 before SIM_VERSION 100
   fiara: 730, // 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
   ishimi: 670, // 720 before SIM_VERSION 86
   lavax: 804,
   morblass: 865, // 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
-  pax: 660,
+  pax: 675, // 660 before SIM_VERSION 100
   rokcore: 740, // 670 before SIM_VERSION 69 (roster WP 0.4)
   sindarosa: 800,
   treenoc: 695, // 714 before SIM_VERSION 86
-  wispera: 650, // 632 before SIM_VERSION 86
+  wispera: 690, // 650 before SIM_VERSION 100; 632 before SIM_VERSION 86
   hyalia: 650,
   quarrak: 725,
   kindrel: 725, // 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)

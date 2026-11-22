@@ -356,3 +356,32 @@ Open: fiara is still the weakest (about 44.6 percent over both blocks, inside no
 The scripted `arcade-moves` golden needed two edits for sindarosa's extra life (`tools/gen/arcade-moves.ts`): round 1 beat-down 12 -> 15 cones (the cones now finish p2), and the parry segment moved to the start of round 3. `trap.test.ts` uses fiara's new damage 1470.
 
 Verification (v99, measurements, 2026-11-22; no further data change): `control-streaks.mts 4 180 6` streaks >= 180 ticks: v98 47 of 7897 (0.595%), v99 48 of 8072 (0.595%), so no worse. Arcade 2v2 (balance:compare, 8 fixed-partner seeds): style melee vs ranged 48.9% (gap .011), melee mean .493, ranged .505; report-only finding air trio gap -0.108; treenoc 71.6, pax 36.4 (2v2 life table untouched, a follow-up for `ARCADE_2V2_LIFE_PM`). `fun:gates` (seeds 8): all gates pass; 1v1 round median 31.08 s, worst/best race 0.443/0.568; 2v2 round median 59.02 s, worst/best 0.364/0.716. Not retuned: fiara 44.6 (two-block mean, within noise of .45) and ishimi 55.7; option B moves fiara the wrong way and Rank 2 applies only when lavax, morblass or cyclonius fall below .45 (none did: 55.1, 51.7, 50.0 in block 2), so no second re-record.
+
+## Arcade 2v2 life retune (SIM_VERSION 100)
+
+After SIM_VERSION 99 the 2v2 fixture (8 seeds, partner = race index + 6) had pax .364 and treenoc .716. Data-only change to three `ARCADE_2V2_LIFE_PM` rows (1v1 bit-identical): pax 660 -> 675, wispera 650 -> 690, echo 650 -> 680 (660, 650, 650 before SIM_VERSION 100). Cyclonius stays 810 and Rank 2 (treenoc, ishimi) is not applied (plan `.scratch/plans/2v2-life-retune.md`).
+
+All numbers are measurements (not estimates). Random-partner = `snag-trap-teams.mts partners 2 32` (2112 matches, on-roster win %, SE about 1.9 pp); fixture = `balance:compare --ruleset arcade --team-size 2` (88 games/race, SE about 5.3 pp). R0 is v99 with no mods.
+
+| Race | Random R0 | Random v100 | Fixture R0 | Fixture v100 |
+|---|---|---|---|---|
+| curomo | 58.1 | 56.1 | 44.3 | 46.6 |
+| ishimi | 57.1 | 56.9 | 46.6 | 48.9 |
+| fiara | 53.9 | 51.7 | 56.8 | 58.0 |
+| morblass | 53.9 | 54.3 | 50.0 | 46.6 |
+| rokcore | 53.4 | 51.8 | 47.7 | 48.9 |
+| cyclonius | 51.0 | 47.9 | 58.0 | 59.1 |
+| pax | 49.9 | 53.2 | 36.4 | 39.8 |
+| lavax | 49.0 | 48.9 | 53.4 | 53.4 |
+| wispera | 44.7 | 48.3 | 44.3 | 46.6 |
+| sindarosa | 44.5 | 45.4 | 40.9 | 40.9 |
+| echo | 44.3 | 47.7 | 50.0 | 48.9 |
+| treenoc | 40.2 | 38.0 | 71.6 | 62.5 |
+
+Why not plan option A (pax 740, cyclonius 750, wispera 690): the random-partner run showed pax 60.3 (+10.4 pp) and cyclonius 43.2 (-7.8 pp), so cyclonius stays and pax was refit to 675 (695 gave 57.1). Fixture and random partners disagree for treenoc: .716 in the fixture is a lead-order effect (treenoc+ishimi .716 led by treenoc, .466 led by ishimi); on random partners treenoc is the weakest (38.0), so Rank 2 (which would cut treenoc further) was not applied.
+
+Style (fixture): melee mean .489, ranged .508, melee vs ranged 48.2%; air trio gap -0.113 (limit .10, report only; -0.159 with option A).
+
+Fun gates (seeds 8, measurement): all pass; 2v2 round median 60.06 s (59.02 before), worst/best race 0.398/0.625; 1v1 round median and worst/best 0.443/0.568 unchanged.
+
+Open, not met: on random partners curomo 56.1, ishimi 56.9 and treenoc 38.0 are still outside .45-.55 (morblass 54.3 is inside). In the fixture pax 39.8 is just under .40 (noise-level, SE 5.3) and treenoc 62.5 is a lead-order exception. Fixing treenoc, ishimi and curomo is Rank 2 or a separate retune; making the fixture play both lead orders is Rank 3 (not built).
