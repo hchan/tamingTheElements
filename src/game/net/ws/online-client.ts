@@ -1,6 +1,8 @@
 import { cleanRoomCode, ROOM_CODE_RE } from '../relay';
 import { linkQuality, medianRtt, type LinkQuality } from '../link-quality';
 import type { OnlineConfig } from './config';
+import { closeFailure } from './close-failure';
+import { ResultPoll } from './result-poll';
 import { WebSocketTransport, type SocketLike } from './transport';
 import { BINARY_TYPE, gatewayEvent, inboundBytes, type GatewayNoticeEvent } from './inbound';
 import { encodeText } from './text-codec';
@@ -194,9 +196,11 @@ export class OnlineClient {
   /** Read through a method so a flag flipped by `close()` during an await is not narrowed away. */
   private over(): boolean { return this.stopped; }
   private cancelPing: (() => void) | undefined;
+  private readonly result: ResultPoll; // RESULT timers owned by the client, not the arena
 
   constructor(private readonly d: OnlineDeps) {
     this.transport = new WebSocketTransport(this.hub, d.now);
+    this.result = new ResultPoll(this.transport, d); this.transport.onResultSent = () => { this.result.begin(); };
   }
 
   /** Runs once. Never throws; every failure is a typed result. */
@@ -357,9 +361,9 @@ export class OnlineClient {
 
   /** Asking for a queue or a room means the last match is over: the idle reconnect budget applies again. */
   private lobbyAction(bytes: number[]): boolean {
-    this.transport.endMatch(); // Before the send: a MATCH_START answering it must start the next match.
-    const sent = this.sendLobby(bytes); if (sent) this.leaveMatch();
-    return sent;
+    if (this.hub.readyState !== 1) return false;
+    this.result.defer(() => { this.transport.endMatch(); /* Before the send: a MATCH_START answering it must start the next match. */ if (this.sendLobby(bytes)) { this.result.stop(); this.leaveMatch(); } });
+    return true;
   }
 
   private leaveMatch(): void {
@@ -400,6 +404,7 @@ export class OnlineClient {
       case 'match': {
         // Same match again only after a resumed WELCOME and with the running matchId (a duplicate MATCH_START is tolerated); anything else is a new match.
         const resumed = this.resumePending && this.inMatch && w.matchId === this.transport.matchId;
+        if (!resumed) this.result.reset();
         this.transport.startMatch(w.matchId, resumed);
         this.inMatch = true;
         this.onEvent({ ...w, resumed });
@@ -408,7 +413,7 @@ export class OnlineClient {
       case 'result-ack':
         if (this.transport.matchId !== undefined && w.matchId !== this.transport.matchId) break; // Answer for an earlier match.
         this.transport.stopRetry();
-        // 1 = waiting for the peer's RESULT: keep the match open so the linger's BATCH frames still reach a peer that lost the last one.
+        this.result.onAck(w.status); // 1 = waiting for the peer's RESULT: keep the match open (linger BATCH still flows) and re-poll.
         if (w.status !== 1) { this.transport.endMatch(); this.leaveMatch(); }
         this.onEvent(w);
         break;
@@ -484,16 +489,10 @@ export class OnlineClient {
     if (this.stopped) return;
     this.stopped = true;
     this.cancelPing?.();
+    this.result.reset();
     const ws = this.hub.cur;
     try { ws?.close(1000); } catch { /* already closed */ }
     for (const l of this.hub.onClose) l();
     this.onEvent({ t: 'closed', failure });
   }
-}
-
-/** Hint from a close code when no ERROR frame arrived (advisory in wire v3): 4003 update, 4011 resting; anything else is a network drop. */
-function closeFailure(code: number | undefined): OnlineFailure {
-  if (code === 4003) return { kind: 'update-needed' };
-  if (code === 4011) return { kind: 'resting', retryAfterSec: 0 };
-  return NET;
 }

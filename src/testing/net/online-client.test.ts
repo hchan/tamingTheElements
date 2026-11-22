@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FakeRelay } from './fake-relay';
 import { onlineConfig, parseOnlineUrl } from '../../game/net/ws/config';
 import { DEFAULT_RESTING_SEC, friendlyMessage, OnlineClient, PROTOCOL_VERSION, type FetchLike } from '../../game/net/ws/online-client';
-import { WebSocketTransport } from '../../game/net/ws/transport';
+import { PLAY_AGAIN_ACK_WAIT_MS, RESULT_REPOLL_CAP_MS, RESULT_REPOLL_MS, RETRY_MS, WebSocketTransport } from '../../game/net/ws/transport';
 import { decodeFrame, encodeFrame } from '../../game/net/ws/wire';
 import { ascii, BASE, BATCH, ctor, errorFrame, Harness, matchStart, peerStatus, pkt, reply, resultAck, SESSION_ID, TestWs } from './fake-online-service';
 
@@ -329,6 +329,75 @@ describe('OnlineClient', () => {
     expect(a.events.filter((e) => e.t === 'result-ack')).toHaveLength(1);
     wa.serve(resultAck(2));
     expect(a.events.filter((e) => e.t === 'result-ack')).toHaveLength(2);
+  });
+
+  describe('RESULT re-poll (client-owned timer)', () => {
+    const results = (w: TestWs): number => w.sent.filter((m) => m[0] === 0x50).length;
+    const queues = (w: TestWs): number => w.sent.filter((m) => m[0] === 0x10).length;
+
+    it('after ACK 1 (waiting) RESULT is re-sent every RESULT_REPOLL_MS until ACK 0/2, without any session.update or tick()', async () => {
+      const { h, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      wa.serve(resultAck(1, 1));
+      const n = results(wa);
+      expect(n).toBe(1);
+      await h.step(RESULT_REPOLL_MS - 1);
+      expect(results(wa)).toBe(n);
+      await h.step(1);
+      expect(results(wa)).toBe(n + 1);
+      await h.step(RESULT_REPOLL_MS);
+      expect(results(wa)).toBe(n + 2);
+      wa.serve(resultAck(1, 2)); // The relay's completion answer finally arrives (a dropped copy was re-polled).
+      await h.step(RESULT_REPOLL_MS * 3);
+      expect(results(wa)).toBe(n + 2);
+    });
+
+    it('the re-poll gives up after RESULT_REPOLL_CAP_MS', async () => {
+      const { h, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      wa.serve(resultAck(1, 1));
+      await h.step(RESULT_REPOLL_CAP_MS + RESULT_REPOLL_MS);
+      const n = results(wa);
+      expect(n).toBeGreaterThan(5);
+      await h.step(RESULT_REPOLL_MS * 5);
+      expect(results(wa)).toBe(n);
+    });
+
+    it('RESULT without any ACK keeps being resent by the client timer (arena gone, nobody calls tick())', async () => {
+      const { h, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      await h.step(RETRY_MS * 3);
+      expect(results(wa)).toBe(4);
+    });
+
+    it('Play again before the ACK waits for it: the queue frame follows the ACK, RESULT keeps going meanwhile', async () => {
+      const { h, a, ta, wa } = await pair();
+      const q0 = queues(wa);
+      ta.sendResult(1, 0, 0, 100, 5);
+      expect(a.c.joinQueue()).toBe(true);
+      expect(queues(wa)).toBe(q0);
+      await h.step(RETRY_MS);
+      expect(results(wa)).toBe(2);
+      expect(queues(wa)).toBe(q0);
+      wa.serve(resultAck(1, 0));
+      expect(queues(wa)).toBe(q0 + 1);
+      await h.step(PLAY_AGAIN_ACK_WAIT_MS * 2);
+      expect(queues(wa)).toBe(q0 + 1);
+    });
+
+    it('Play again without any ACK joins the queue after PLAY_AGAIN_ACK_WAIT_MS, then never sends RESULT again', async () => {
+      const { h, a, ta, wa } = await pair();
+      const q0 = queues(wa);
+      ta.sendResult(1, 0, 0, 100, 5);
+      a.c.joinQueue();
+      await h.step(PLAY_AGAIN_ACK_WAIT_MS - 1);
+      expect(queues(wa)).toBe(q0);
+      await h.step(1);
+      expect(queues(wa)).toBe(q0 + 1);
+      const n = results(wa);
+      await h.step(RESULT_REPOLL_CAP_MS);
+      expect(results(wa)).toBe(n);
+    });
   });
 
   it('PEER_STATUS of another match is ignored', async () => {

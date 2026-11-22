@@ -235,6 +235,18 @@ describe('WebSocketTransport unit behaviour', () => {
     expect(relay.seen.length).toBe(before + 2);
   });
 
+  it('resendResult re-sends the last RESULT after stopRetry, and only for the current match', () => {
+    const { relay, a } = mk();
+    expect(a.resendResult()).toBe(false);
+    a.sendResult(0, 1, 0, 100, 5);
+    a.stopRetry();
+    const before = relay.seen.length;
+    expect(a.resendResult()).toBe(true);
+    expect(relay.seen.length).toBe(before + 1);
+    a.startMatch(1, false);
+    expect(a.resendResult()).toBe(false);
+  });
+
   it('carries the setup handshake over the control link despite jitter and duplicates', () => {
     const clock = { ms: 0 };
     const relay = new FakeRelay(clock, 5, { latencyMs: 60, jitterMs: 40, duplicate: 0.3 });
