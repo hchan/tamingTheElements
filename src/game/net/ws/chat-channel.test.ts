@@ -46,7 +46,7 @@ describe('ChatChannel send', () => {
 
   it('client burst: the third quick line says Wait and a token comes back after a second', () => {
     const { ch, client, advance } = make();
-    for (let i = 0; i < CHAT_CLIENT_BURST; i++) expect(ch.send('a' + i).kind).toBe('sent');
+    for (let i = 0; i < CHAT_CLIENT_BURST; i++) expect(ch.send(`a${String(i)}`).kind).toBe('sent');
     expect(ch.send('late')).toEqual({ kind: 'wait', seconds: 1 });
     expect(client.sent).toHaveLength(CHAT_CLIENT_BURST);
     expect(ch.lines()).toHaveLength(CHAT_CLIENT_BURST);
@@ -68,7 +68,7 @@ describe('ChatChannel send', () => {
     const { ch, advance } = make();
     for (let i = 0; i < CHAT_MAX_PER_SENDER; i++) {
       advance(1000);
-      expect(ch.send('m' + i).kind).toBe('sent');
+      expect(ch.send(`m${String(i)}`).kind).toBe('sent');
     }
     advance(5000);
     expect(ch.send('one more')).toEqual({ kind: 'limit' });
@@ -78,7 +78,7 @@ describe('ChatChannel send', () => {
 
   it('drops the oldest line when the log passes 100', () => {
     const { ch } = make();
-    for (let i = 0; i < 100; i++) ch.receive({ seq: i, text: 'p' + i });
+    for (let i = 0; i < 100; i++) ch.receive({ seq: i, text: `p${String(i)}` });
     ch.send('mine');
     const l = ch.lines();
     expect(l).toHaveLength(100);
@@ -153,7 +153,7 @@ describe('ChatChannel receive', () => {
   it('scans back at most 8 lines', () => {
     const { ch } = make();
     ch.receive({ seq: 5, text: 'p5' });
-    for (let i = 0; i < 9; i++) ch.receive({ seq: 10 + i, text: 'q' + i });
+    for (let i = 0; i < 9; i++) ch.receive({ seq: 10 + i, text: `q${String(i)}` });
     ch.receive({ seq: 1, text: 'late' });
     const t = ch.lines().map((x) => x.text);
     expect(t).toHaveLength(11);
