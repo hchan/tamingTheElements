@@ -19,7 +19,7 @@ import { applyWound,displaceVictim, riderDef } from './wound';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
 import { elementalDamagePm } from './elemental-buff';
-import { applyStun, chargeTick, isGuarding } from './stun';
+import { applyStun, chargeTick, isGuarding, stunImmune } from './stun';
 import { capDamage, terrainDamagePm } from './terrain';
 import { weatherDamage } from './weather';
 
@@ -169,7 +169,7 @@ export function applyArcadeHit(
   const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS
     : defIdx === TRAP_SPIKE_DEF ? TRAP_SPIKE_STUN_TICKS : (HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);
   if (guard) blockHit(world, sink, source, victim, dealt);
-  else if (!armoured && rid?.replaceStun !== true) applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
+  else if (!armoured && rid?.replaceStun !== true && (sup || !stunImmune(s, victim))) applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
   meterOnHit(s, sink, source, team, victim, dealt);
   return dealt;
 }

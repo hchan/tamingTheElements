@@ -70,6 +70,8 @@ export const JUGGLE_LIMIT = 5;
 export const COMBO_STUN_CAP_TICKS = 150;
 /** Invulnerability after either cap ends a combo (`recovered` reason 1 or 2), so a capped combo cannot restart at once. */
 export const RECOVERY_INVULN_TICKS = 20;
+/** Game ticks after any stun ends in which a plain hit still lands (damage, knockback) but starts no new stun (SIM_VERSION 98). */
+export const STUN_IMMUNE_TICKS = 20;
 /** Tornado stuns (heavy, obeying the caps) instead of the Classic 150-tick freeze. */
 export const FREEZE_STUN_TICKS = 60;
 /** WP-snag-tune: hit-stun of the Snag hit in game ticks (the Vines' 60 stun would chain into the root; FUN-DESIGN 2.20). */

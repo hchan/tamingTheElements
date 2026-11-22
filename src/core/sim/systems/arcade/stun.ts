@@ -1,6 +1,6 @@
 import {
   CHARGE_TICKS, ChargeEnd, COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
-  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, TRAP_CAST_TICKS, TRAP_COOLDOWN_TICKS, TRAP_PUDDLE_SLOW_PM,
+  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, STUN_IMMUNE_TICKS, TRAP_CAST_TICKS, TRAP_COOLDOWN_TICKS, TRAP_PUDDLE_SLOW_PM,
   WEATHER_COOLDOWN_TICKS, WEATHER_RECOVERY_TICKS,
 } from '../../../data/arcade';
 import { inFight, isArcade, now } from '../../clock';
@@ -16,6 +16,17 @@ import { endCharge } from './charge-move';
 /** True while an Arcade hit-stun holds `id` (`stunUntil` is in game ticks). Never true in Classic. */
 export function isStunned(s: SimState, id: number): boolean {
   return isArcade(s) && (s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) > now(s);
+}
+
+/**
+ * True in the STUN_IMMUNE_TICKS after `id`'s last stun ended (natural end or a cap recovery), read from `stunUntil`: a plain
+ * hit then deals damage and knockback but starts no stun (SIM_VERSION 98). Parry, guard break and supers ignore it. Never true in Classic.
+ */
+export function stunImmune(s: SimState, id: number): boolean {
+  if (!isArcade(s)) return false;
+  const u = s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0;
+  const g = now(s);
+  return u > 0 && u <= g && g - u < STUN_IMMUNE_TICKS;
 }
 
 /** The 1-based tick of `id`'s dash this game tick (FUN-DESIGN 2.7), 0 when it is not dashing. Always 0 in Classic. */

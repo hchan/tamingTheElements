@@ -109,6 +109,10 @@ so no `SimState.rng` word moves. Lava and rockfall damage is an integer per mill
 never KOs and skips invulnerable fighters; tide and gust move a fighter by whole px clamped to the playfield. Classic has
 no block (`SimState.arcade` is empty), so its hashes are unchanged (header only); the Arcade goldens and both Arcade
 balance baselines were re-recorded.
+
+SIM_VERSION 98 (stun immunity, `stunImmune` in `arcade/stun.ts`, gated in `arcade/hit.ts`) adds no state: for `STUN_IMMUNE_TICKS` (20) game ticks
+after a stun ends (natural end or cap recovery, read from the stored `stunUntil`) a plain hit keeps its damage and knockback but starts no stun;
+parry, guard break and supers keep theirs. Classic is untouched; the Arcade goldens and both Arcade balance baselines were re-recorded.
 SIM_VERSION 55 (AI only) lets the scripted AI see the hazard (`ArcadeView.hazard`) and step out of its box during the
 warning, after its level's reaction time; integer box maths only, no RNG. Classic hashes are unchanged; the Arcade goldens
 and baselines were re-recorded because the AI commands change.
