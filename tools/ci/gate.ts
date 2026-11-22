@@ -6,7 +6,7 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { cpus, loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { lintPlan } from './lint-targets';
@@ -205,7 +205,13 @@ export function treeKey(cwd: string, mode: 'worktree' | 'head'): string {
   try {
     if (mode === 'worktree') {
       const real = resolve(top, git(top, ['rev-parse', '--git-path', 'index']).trim());
-      if (existsSync(real)) copyFileSync(real, tmp);
+      if (existsSync(real)) {
+        copyFileSync(real, tmp);
+        // Keep the real index mtime: git's racy-clean check compares entry mtimes with the index file's mtime, and a
+        // fresh mtime on the copy makes a same-size edit made in the same timestamp tick look unchanged.
+        const st = statSync(real);
+        utimesSync(tmp, st.atime, st.mtime);
+      }
       git(top, ['add', '-A'], env);
     } else git(top, ['read-tree', 'HEAD'], env);
     git(top, ['rm', '--cached', '-r', '-q', '--ignore-unmatch', '--', ...NEUTRAL], env);

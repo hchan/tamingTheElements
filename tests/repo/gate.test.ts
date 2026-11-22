@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -164,6 +164,23 @@ describe('treeKey', () => {
     expect(edited).not.toBe(head);
     writeFileSync(join(root, 'src/new.ts'), 'n\n');
     expect(treeKey(root, 'worktree')).not.toBe(edited);
+  });
+  it('detects same-size edits made in the index timestamp tick (racy-clean)', () => {
+    const file = join(root, 'src/a.ts');
+    const tick = new Date(Math.floor(Date.now() / 1000) * 1000 - 5000);
+    const index = join(root, '.git/index');
+    const seen = new Set<string>();
+    const body = (i: number): string => `v${String(i).padStart(3, '0')}\n`;
+    for (let i = 0; i < 20; i++) {
+      writeFileSync(file, body(999));
+      utimesSync(file, tick, tick);
+      git('add', '-A');
+      utimesSync(index, tick, tick);
+      writeFileSync(file, body(i));
+      utimesSync(file, tick, tick);
+      seen.add(treeKey(root, 'worktree'));
+    }
+    expect(seen.size).toBe(20);
   });
   it('leaves the real index and no temp index behind', () => {
     const before = git('status', '--porcelain=v1');
