@@ -4,7 +4,7 @@
 // Use E2E_PORT (main config) to run beside other worktrees. See docs/TESTING.md ("Finding flakes").
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 interface PwResult {
   status: string;
@@ -95,6 +95,24 @@ export function summarize(report: PwReport): TestSummary[] {
   });
 }
 
+/**
+ * The Playwright JSON report: the file named by PLAYWRIGHT_JSON_OUTPUT_NAME, else the JSON the reporter wrote to stdout
+ * (it does that when the file name is not honoured, e.g. a relative name resolved against another config dir).
+ */
+export function loadReport(read: (f: string) => string, file: string, stdout: string): PwReport {
+  const attempts: string[] = [];
+  for (const get of [() => read(file), () => stdout]) {
+    try {
+      const rep = JSON.parse(get()) as PwReport;
+      if (Array.isArray(rep.suites)) return rep;
+      attempts.push('no suites');
+    } catch (e) {
+      attempts.push((e as Error).message);
+    }
+  }
+  throw new Error(`no JSON report produced (${attempts.join('; ')})`);
+}
+
 export function formatTable(rows: readonly Tally[]): string {
   const lines = rows.map((r) => {
     const n = r.pass + r.fail;
@@ -119,7 +137,7 @@ function main(): void {
   if (summaryJson === undefined && argv.includes('--summary-json')) throw new Error('--summary-json needs a file');
   const dir = process.env['TTE_RESULTS'] ?? '.scratch/e2e-flake';
   mkdirSync(dir, { recursive: true });
-  const out = join(dir, `e2e-flake-${String(Date.now())}.json`);
+  const out = resolve(dir, `e2e-flake-${String(Date.now())}.json`);
   const r = spawnSync(
     'corepack',
     ['pnpm', 'exec', 'playwright', 'test', `--repeat-each=${String(repeat)}`, '--retries=0', '--reporter=json', ...pass],
@@ -127,10 +145,10 @@ function main(): void {
   );
   let report: PwReport;
   try {
-    report = JSON.parse(readFileSync(out, 'utf8')) as PwReport;
-  } catch {
-    process.stdout.write(r.stdout);
-    throw new Error('no JSON report produced (build or config error above)');
+    report = loadReport((f) => readFileSync(f, 'utf8'), out, r.stdout?.toString() ?? '');
+  } catch (e) {
+    process.stdout.write(r.stdout ?? '');
+    throw new Error(`${(e as Error).message}; spawn error: ${r.error?.message ?? 'none'}, status ${String(r.status)}, signal ${String(r.signal)}`);
   }
   const rows = tally(report);
   if (summaryJson) {
