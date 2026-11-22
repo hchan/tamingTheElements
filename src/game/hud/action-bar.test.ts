@@ -238,13 +238,13 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(d.every((s) => s.progress >= 0 && s.progress <= 1)).toBe(true);
   });
   it('reads a team off the render view read-outs, idle for no active hero', () => {
-    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3, swapBlock: (team: number) => (team === 0 ? SwapBlock.stun : 0) };
-    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN' });
+    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3, stunLeft: () => 30, swapBlock: (team: number) => (team === 0 ? SwapBlock.stun : 0) };
+    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN 0.6s' });
     expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.noActive } as never, 1, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, false).swapBlock).toBeUndefined();
     // A melee cast's recovery (frozen) and busy show no word; stun wins when both are set.
     for (const bits of [SwapBlock.frozen, SwapBlock.busy]) expect(arcadeBarOf({ ...ar, swapBlock: () => bits } as never, 0, false).swapBlock).toBeUndefined();
-    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.frozen | SwapBlock.stun } as never, 0, false).swapBlock).toBe('STUN');
+    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.frozen | SwapBlock.stun } as never, 0, false).swapBlock).toBe('STUN 0.6s');
     expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.stun } as never, 0, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, true)).toMatchObject({ meter: 20, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: true });
   });
