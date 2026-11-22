@@ -169,6 +169,11 @@ describe('crowd-control chips (CA1)', () => {
     expect(c?.remaining).toBeCloseTo(1 / 3);
   });
 
+  it('the STUN chip text carries the seconds left in tenths', () => {
+    expect(chips({ arcade: { stunned: true, stunLeft: 30 } })[0]).toMatchObject({ label: 'STUN', text: '▼ STUN 0.6s' });
+    expect(chips({ arcade: { stunned: true, stunLeft: 0 } })[0]?.text).toBe('▼ STUN');
+  });
+
   it('STUN drains against the latched total and stays full without one', () => {
     const arcade = { stunned: true, stunLeft: 5 };
     expect(collectStatusChips(viewWith({ arcade }), 0, 1, 'fire', 0, false, undefined, 20)[0]?.remaining).toBe(0.25);

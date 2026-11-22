@@ -2,6 +2,7 @@ import type { Element, RenderView } from '@core/index';
 import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, StatusId, TRAP_PUDDLE_LINGER_TICKS, WEATHER_ELEMENTS, WEATHER_TICKS } from '@core/index';
 import { buffColor, elapsedFraction } from './buffs';
 import { mainBar } from './bars';
+import { stunWord } from './stun-secs';
 
 /**
  * Arcade status chips (ideas/brainstorm/health-bar-status-icons): every buff and debuff on a hero as one small chip under its
@@ -146,6 +147,8 @@ interface Raw {
   readonly hostile: boolean;
   readonly ticksLeft: number | null;
   readonly remaining: number;
+  /** Replaces the label in the chip text (the STUN chip's `STUN 0.6s`); the label stays the key word. */
+  readonly shown?: string;
 }
 
 /**
@@ -171,7 +174,7 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
       const left = ar.rootImmuneLeft(id);
       raw.push({ key: 'nosnag', label: 'NO SNAG', hostile: false, ticksLeft: left, remaining: unit(left, SNAG_IMMUNE_TICKS) });
     }
-    if (ar.stunned(id)) raw.push({ key: 'stun', label: 'STUN', hostile: true, ticksLeft: null, remaining: stunTotal > 0 ? unit(ar.stunLeft(id), stunTotal) : 1 });
+    if (ar.stunned(id)) raw.push({ key: 'stun', label: 'STUN', shown: stunWord('STUN', ar.stunLeft(id)), hostile: true, ticksLeft: null, remaining: stunTotal > 0 ? unit(ar.stunLeft(id), stunTotal) : 1 });
     if (ar.mireLeft(id) > 0) raw.push({ key: 'mire', label: 'MIRED', hostile: true, ticksLeft: ar.mireLeft(id), remaining: unit(ar.mireLeft(id), TRAP_PUDDLE_LINGER_TICKS) });
     if (ar.guarding(id)) raw.push({ key: 'guard', label: 'GUARD', hostile: false, ticksLeft: null, remaining: 1 });
     if (ar.invulnerable(id) && !ar.stunned(id)) raw.push({ key: 'safe', label: 'SAFE', hostile: false, ticksLeft: null, remaining: 1 });
@@ -211,7 +214,7 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
       w,
       h,
       color: buffColor(r.hostile, highContrast),
-      text: chipText(r.label, r.hostile, secs),
+      text: chipText(r.shown ?? r.label, r.hostile, secs),
     };
   });
   if (raw.length > cap) {
