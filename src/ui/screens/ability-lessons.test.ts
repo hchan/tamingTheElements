@@ -32,6 +32,16 @@ describe('ability lessons', () => {
     expect(lessonsFor(characterId('fiara')).includes(SNAG_LESSON)).toBe(false);
   });
 
+  it('pins the Quarrak lessons', () => {
+    expect(lessonsFor(characterId('quarrak')).map((l) => l?.abilityId)).toEqual(['hurl-rock', 'boulder-roll']);
+    expect(ABILITY_LESSONS.get('boulder-roll')?.line).toContain('knocks the foe back');
+  });
+
+  it('pins the Vortigal lessons', () => {
+    expect(lessonsFor(characterId('vortigal')).map((l) => l?.abilityId)).toEqual(['stoop', 'talon-rake']);
+    expect(ABILITY_LESSONS.get('talon-rake')?.line).toContain('wound');
+  });
+
   it('has Umbrel lessons ready while the hero is still hidden', () => {
     const lessons = lessonsFor(characterId('umbrel'));
     expect(lessons).toHaveLength(2);
