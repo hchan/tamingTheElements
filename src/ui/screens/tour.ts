@@ -4,6 +4,7 @@ import { select } from './arcade-versus';
 import { faceUrl } from './hero-panel';
 import { raceLabel, rosterView } from './roster-view';
 import '../styles/tour-pick.css';
+import '../styles/picker-min-text.css';
 
 /**
  * DOM of the World Tour screens (FUN-DESIGN 2.18, WP-tour-shell): the team picker and plain cards (resume, stage, defeat, game

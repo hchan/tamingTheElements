@@ -4,6 +4,7 @@ import { el, markMoreBelow } from '../dom';
 import { faceUrl } from './hero-panel';
 import { heroLife, raceLabel, rosterView } from './roster-view';
 import '../styles/picker-compact.css';
+import '../styles/picker-min-text.css';
 import '../styles/match-end.css';
 
 // Moved to roster-view.ts (shared with the tour); callers keep importing them from here.
