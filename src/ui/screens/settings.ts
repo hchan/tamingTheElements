@@ -11,6 +11,7 @@ import {
   seedSfc32,
   type SaveV1,
 } from '@core/menu-index';
+import { onlineGuestControls } from './settings-online';
 import { ARCADE_PREVIEW } from '../../game/platform/arcade-setting';
 import { getRecordSetting, setRecordSetting } from '../../game/platform/record-setting';
 import {
@@ -381,6 +382,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
       ),
       el('h2', 'heading settingsSubheading', 'Other'),
       recordControls(),
+      onlineGuestControls(),
       testerControls(store),
       cheatsButton(),
       transferControls(
