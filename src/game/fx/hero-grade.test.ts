@@ -72,6 +72,11 @@ describe('gradedHeroTexture', () => {
     const have = { textures: { exists: () => true } } as unknown as Phaser.Scene;
     for (const k of ['map:pax', 'sheet:sindarosa', 'map:curomo', 'map:rokcore', 'sheet:echo']) expect(gradedHeroTexture(have, k)).toBe(k);
   });
+
+  it('never grades Treenoc (its sheet carries its own baked grade; no mint rim or grey lift)', () => {
+    const have = { textures: { exists: () => true } } as unknown as Phaser.Scene;
+    for (const k of ['map:treenoc', 'sheet:treenoc']) expect(gradedHeroTexture(have, k)).toBe(k);
+  });
 });
 
 describe('rimLightRgba', () => {

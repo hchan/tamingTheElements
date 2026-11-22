@@ -6,6 +6,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 OUT = sys.argv[1]
+_rj = os.path.join(OUT, 'rig.json')
+if os.path.exists(_rj) and json.load(open(_rj)).get('res') == 2:
+    sys.exit('refusing: %s is the res-2 repainted Treenoc (tools/rig-assist/treenoc-whole.py); this procedural generator would overwrite it' % _rj)
 os.makedirs(os.path.join(OUT, "parts"), exist_ok=True)
 SS = 4  # supersample
 
