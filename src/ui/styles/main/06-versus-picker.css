@@ -133,6 +133,10 @@
   margin-top: 2px;
   font-size: 0.75em;
 }
+/* The stack row's chip (team-stack.css, 0.75em) sat inside .vsAbilities (0.75em): 0.56em, 9-10 px. Size the group at 1em. */
+#arcadePick .teamStack .vsAbilities {
+  font-size: 1em;
+}
 #arcadePick .vsAbility {
   /* Wraps inside the card (a long name like "Translucent Flame (Buff)" must not cross the border). */
   min-width: 0;
