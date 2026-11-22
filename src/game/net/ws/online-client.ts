@@ -247,8 +247,19 @@ export class OnlineClient {
   /** Asking for a queue or a room means the last match is over: the idle reconnect budget applies again. */
   private lobbyAction(bytes: number[]): boolean {
     if (this.hub.readyState !== 1) return false;
-    this.result.defer(() => { this.transport.endMatch(); /* Before the send: a MATCH_START answering it must start the next match. */ if (this.sendLobby(bytes)) { this.result.stop(); this.leaveMatch(); } });
-    return true;
+    let sync = true; // An immediate failure is the return value; only a held action reports through the event.
+    const accepted = this.result.defer(
+      () => {
+        this.transport.endMatch(); // Before the send: a MATCH_START answering it must start the next match.
+        if (!this.sendLobby(bytes)) return false;
+        this.result.stop();
+        this.leaveMatch();
+        return true;
+      },
+      (ok) => { if (!ok && !sync) this.onEvent({ t: 'error', failure: NET }); },
+    );
+    sync = false;
+    return accepted;
   }
 
   private leaveMatch(): void {

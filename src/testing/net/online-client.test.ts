@@ -385,6 +385,16 @@ describe('OnlineClient', () => {
       expect(queues(wa)).toBe(q0 + 1);
     });
 
+    it('a held Play again whose send fails (socket gone) is reported as an error, not silently lost', async () => {
+      const { h, a, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      expect(a.c.joinQueue()).toBe(true);
+      const before = a.events.length;
+      wa.readyState = 3; // Dropped without a close event: the held send finds a dead socket.
+      await h.step(PLAY_AGAIN_ACK_WAIT_MS);
+      expect(a.events.slice(before)).toContainEqual({ t: 'error', failure: { kind: 'network' } });
+    });
+
     it('Play again without any ACK joins the queue after PLAY_AGAIN_ACK_WAIT_MS, then never sends RESULT again', async () => {
       const { h, a, ta, wa } = await pair();
       const q0 = queues(wa);
