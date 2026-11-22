@@ -395,7 +395,10 @@ describe('OnlineClient', () => {
       await h.step(1);
       expect(queues(wa)).toBe(q0 + 1);
       const n = results(wa);
-      await h.step(RESULT_REPOLL_CAP_MS);
+      for (let t = 0; t < RESULT_REPOLL_CAP_MS; t += RETRY_MS) {
+        ta.tick(); // The transport itself must have nothing left to resend, whatever ResultPoll does.
+        await h.step(RETRY_MS);
+      }
       expect(results(wa)).toBe(n);
     });
   });

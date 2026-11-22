@@ -96,4 +96,46 @@ describe('ReorderBuffer', () => {
     expect(r.push(9, 0, 0, true)).toEqual([]);
     expect(r.push(10, 0, 0, true)).toEqual([0]);
   });
+
+  it('after a drain that leaves frames held, the skip timer restarts from that drain', () => {
+    const r = new ReorderBuffer<number>();
+    r.push(2, 2, 0);
+    r.push(4, 4, 0);
+    expect(r.push(0, 0, 100)).toEqual([0]); // seq 1 still missing: 2 and 4 stay held, waiting again from t = 100
+    expect(r.poll(100 + REORDER_SKIP_MS - 1)).toEqual([]);
+    expect(r.poll(100 + REORDER_SKIP_MS)).toEqual([2, 4]);
+  });
+
+  it('immediate: a repeat after the gap was skipped is dropped, with or without acceptLate', () => {
+    const r = new ReorderBuffer<number>();
+    expect(r.push(3, 30, 0, false, true)).toEqual([30]);
+    expect(r.poll(REORDER_SKIP_MS)).toEqual([]); // already delivered: the skip returns nothing
+    expect(r.nextSeq).toBe(4);
+    expect(r.push(3, 30, 50, false, true)).toEqual([]);
+    expect(r.push(3, 30, 50, true, true)).toEqual([]);
+    expect(r.late).toBe(0);
+    expect(r.dropped).toBe(2);
+    expect(r.push(1, 10, 60, true, true)).toEqual([10]); // a really skipped-over seq is still wanted once
+    expect(r.push(1, 10, 60, true, true)).toEqual([]);
+  });
+
+  it('immediate: the overflow skip does not deliver a frame twice', () => {
+    const r = new ReorderBuffer<number>();
+    expect(r.push(5, 5, 0)).toEqual([]); // ordinary: waits for the gap
+    const out = [1, 2, 3, 4, 6, 7, 8, 9].flatMap((q) => r.push(q, q, 0, false, true));
+    // Eight immediate seqs plus the held 5 make nine held (> REORDER_MAX_HELD): the skip delivers only the not yet delivered one.
+    expect(out.slice().sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(REORDER_MAX_HELD).toBe(8);
+    expect(new Set(out).size).toBe(out.length);
+    expect(r.pending).toBe(0);
+  });
+
+  it('drain skips entries that were already delivered immediately', () => {
+    const r = new ReorderBuffer<number>();
+    expect(r.push(1, 1, 0, false, true)).toEqual([1]);
+    expect(r.push(2, 2, 0)).toEqual([]);
+    expect(r.push(0, 0, 1)).toEqual([0, 2]); // 1 is not repeated
+    expect(r.nextSeq).toBe(3);
+    expect(r.pending).toBe(0);
+  });
 });

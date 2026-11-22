@@ -94,6 +94,7 @@ export class WebSocketTransport implements Transport {
   /** The match is over: stop sending match frames until the next `startMatch`. */
   endMatch(): void {
     this.ended = true;
+    this.stopRetry();
   }
 
   send(packet: Uint8Array): void {
@@ -118,8 +119,8 @@ export class WebSocketTransport implements Transport {
   sendResult(matchId: number, winner: number, reason: number, ticks: number, finalHash: number): void {
     const frame = { t: 'result', seq: 0, matchId, winner, reason, ticks, finalHash } as const;
     this.lastResult = frame;
+    this.onResultSent?.(); // Before the send: an answer arriving synchronously must find the poll already open.
     this.retry(frame);
-    this.onResultSent?.();
   }
 
   /** Sends the last RESULT once more (the client's slow re-poll); false when there is none for the current match. */
