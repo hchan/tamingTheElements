@@ -221,6 +221,25 @@ test('a dropped socket mid-match resumes the same match, with no second game', a
   for (const p of [a, b]) await expect(p.locator('#quickFailure')).toBeHidden();
 });
 
+// Long gate (two pages, about 20 s). Page b is reported hidden for 3 s (headless has no real tab switch, so document.hidden is overridden and visibilitychange fired, as
+// tests/e2e/pause-reasons.spec.ts does). Arena then calls session.setHidden, so the hidden side keeps the peer informed; the match must still end agreed with no failure banner.
+test('a tab hidden for a few seconds mid-match still ends agreed on both pages', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const { rig, a, b } = await startMatch(browser);
+  const setHidden = (hidden: boolean): Promise<unknown> =>
+    b.evaluate(`Object.defineProperty(document, 'hidden', { configurable: true, get: () => ${String(hidden)} }); document.dispatchEvent(new Event('visibilitychange'))`);
+  await new Promise((r) => setTimeout(r, 1000));
+  await setHidden(true);
+  await new Promise((r) => setTimeout(r, 3000)); // estimate: well under the stall timeout
+  await setHidden(false);
+  for (const p of [a, b]) await expect(p.locator('#quickAgain')).toBeVisible({ timeout: 90_000 });
+  await expect.poll(() => results(rig).length, { timeout: 15_000, message: 'relay result events' }).toBeGreaterThan(0);
+  expect(results(rig).every((r) => r.agreed)).toBe(true);
+  expect(rig.events.some((e) => e.kind === 'desync')).toBe(false);
+  expect(rig.events.filter((e) => e.kind === 'match-start')).toHaveLength(1);
+  for (const p of [a, b]) await expect(p.locator('#quickFailure')).toBeHidden();
+});
+
 // Long gate (two pages, about 15 s). The opponent closes the page and never comes back. The lockstep stall timeout (DEFAULT_TIMEOUT_TICKS, about 5 s)
 // fires first and ends the match on the remaining page ("Connection lost. The match ended with no winner."); the relay's grace is longer (10 s), so PEER_STATUS gone
 // only arrives afterwards. The page must stay ended on the win line (no hang, no failure banner, no second game) when gone arrives. The clock is
