@@ -1,7 +1,7 @@
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { type BrowserContext, expect, type Page, test, type WebSocketRoute } from '@playwright/test';
-import { RelayCore, type RelayCtx, type RelayEvent, type Sender } from '../../src/core/relay';
+import { RelayCore, type RelayCtx, type RelayEvent, type RelayOptions, type Sender } from '../../src/core/relay';
 import { DISCONNECT_GRACE_MS } from '../../src/core/relay/constants';
 import { InMemoryStore } from '../../src/core/relay/testing';
 
@@ -115,13 +115,13 @@ async function serve(page: Page, name: string, rig: Rig): Promise<void> {
 }
 
 /** Two pages, matched, picks done, arenas running (short match, bots on both sides). */
-async function startMatch(browser: import('@playwright/test').Browser, opts: { binary?: boolean } = {}): Promise<{ rig: Rig; a: Page; b: Page }> {
+async function startMatch(browser: import('@playwright/test').Browser, opts: { binary?: boolean; relay?: Partial<RelayOptions>; ticks?: number } = {}): Promise<{ rig: Rig; a: Page; b: Page }> {
   const events: RelayEvent[] = [];
   const sender = new RouteSender();
   sender.binary = opts.binary === true;
   const clock = { skew: 0 };
   const ctx: RelayCtx = { now: () => Date.now() + clock.skew, randomInt: (n) => Math.floor(Math.random() * n) };
-  const core = new RelayCore(new InMemoryStore(() => ctx.now()), sender, { onEvent: (e) => { events.push(e); } });
+  const core = new RelayCore(new InMemoryStore(() => ctx.now()), sender, { ...opts.relay, onEvent: (e) => { events.push(e); } });
   const rig: Rig = { core, sender, ctx, events, get skewMs() { return clock.skew; }, set skewMs(v: number) { clock.skew = v; } };
   const pages: Page[] = [];
   for (const name of ['a', 'b']) {
@@ -129,7 +129,7 @@ async function startMatch(browser: import('@playwright/test').Browser, opts: { b
     opened.push(context);
     const page = await context.newPage();
     await serve(page, name, rig);
-    await page.goto(`${origin}/?matchticks=${String(MATCH_TICKS)}&ff=netbot#online`);
+    await page.goto(`${origin}/?matchticks=${String(opts.ticks ?? MATCH_TICKS)}&ff=netbot#online`);
     pages.push(page);
   }
   const [a, b] = pages as [Page, Page];
@@ -276,4 +276,79 @@ test('Opponent gone after the stall timeout: the remaining page stays ended on t
   await expect(b.locator('#quickFailure')).toBeHidden();
   expect(rig.events.filter((e) => e.kind === 'match-start')).toHaveLength(1);
   await expect(b.locator('#quickBack')).toBeVisible();
+});
+
+/** Types `text` into the dock and sends it (the dock must be open). */
+async function say(p: Page, text: string): Promise<void> {
+  await p.locator('#chatInput').fill(text);
+  await p.locator('#chatSend').click();
+}
+const openDock = async (p: Page): Promise<void> => {
+  if ((await p.locator('#chatToggle').getAttribute('aria-expanded')) !== 'true') await p.locator('#chatToggle').click();
+  await expect(p.locator('#chatPanel')).toBeVisible();
+};
+const hasLine = (p: Page, cls: string, text: string) => p.locator(`.chat-line.${cls}`, { hasText: text });
+
+// Long gate (two pages, about 60 s, estimate; not @smoke: two browsers and over 20 s). Relay chat on: a line goes both ways, an unread badge shows while the
+// dock is collapsed, a quick burst shows the client rate note, the relay's chat events carry counts only, and chat still works on the result screen.
+test('chat: lines both ways, unread badge, rate note, counts-only events, and chat on the result screen', async ({ browser }, testInfo) => {
+  test.setTimeout(300_000);
+  const { rig, a, b } = await startMatch(browser, { relay: { chat: true }, ticks: 1500 });
+  for (const p of [a, b]) await expect(p.locator('#chatDock')).toBeVisible();
+  await openDock(a);
+  await openDock(b);
+
+  await say(a, 'hello from a');
+  await expect(hasLine(b, 'chat-opponent', 'hello from a')).toBeVisible({ timeout: 15_000 });
+  await expect(hasLine(a, 'chat-you', 'hello from a')).toBeVisible();
+  await say(b, 'hi from b');
+  await expect(hasLine(a, 'chat-opponent', 'hi from b')).toBeVisible({ timeout: 15_000 });
+
+  // b collapses; a's next line shows as unread on b, and opening clears it.
+  await b.locator('#chatToggle').click();
+  await expect(b.locator('#chatPanel')).toBeHidden();
+  await say(a, 'unread one');
+  await expect(b.locator('#chatUnread')).toHaveText('1', { timeout: 15_000 });
+  await expect(b.locator('#chatToggle')).toHaveAttribute('aria-label', 'Chat, 1 unread');
+  await openDock(b);
+  await expect(b.locator('#chatUnread')).toHaveText('');
+  await expect(hasLine(b, 'chat-opponent', 'unread one')).toBeVisible();
+  await testInfo.attach('match-a', { body: await a.screenshot(), contentType: 'image/png' });
+  await testInfo.attach('match-b', { body: await b.screenshot(), contentType: 'image/png' });
+
+  // Three lines so far from a, spaced out by the round trips, so the relay never rate-limited them.
+  expect(rig.events.filter((e) => e.kind === 'chat' && e.outcome === 'rate')).toHaveLength(0);
+  // A quick burst of four more: the client bucket (3 per burst, 1/s refill) refuses one with a "Wait" note.
+  for (const t of ['q1', 'q2', 'q3', 'q4']) await say(a, t);
+  await expect.poll(() => a.locator('#chatNote').textContent(), { timeout: 10_000, message: 'rate note on a' }).toMatch(/Wait|too fast/);
+
+  // Counts only: the relay's events never hold a line's text.
+  const dump = JSON.stringify(rig.events);
+  for (const t of ['hello from a', 'hi from b', 'unread one', 'q1']) expect(dump).not.toContain(t);
+  expect(rig.events.some((e) => e.kind === 'chat')).toBe(true);
+
+  // The result screen still chats both ways (the dock stays in 'ended'); say() retries while the client bucket refills.
+  for (const p of [a, b]) await expect(p.locator('#quickAgain')).toBeVisible({ timeout: 120_000 });
+  await expect.poll(() => results(rig).length, { timeout: 15_000, message: 'relay result events' }).toBe(1);
+  expect(rig.events.some((e) => e.kind === 'desync')).toBe(false);
+  for (const p of [a, b]) await expect(p.locator('#chatDock')).toBeVisible();
+  await openDock(a);
+  await openDock(b);
+  await expect.poll(async () => { await say(a, 'gg from a'); return hasLine(b, 'chat-opponent', 'gg from a').count(); }, { timeout: 20_000, message: 'a line after the result' }).toBeGreaterThan(0);
+  await expect.poll(async () => { await say(b, 'gg from b'); return hasLine(a, 'chat-opponent', 'gg from b').count(); }, { timeout: 20_000, message: 'b line after the result' }).toBeGreaterThan(0);
+  expect(JSON.stringify(rig.events)).not.toContain('gg from');
+  await testInfo.attach('result-a', { body: await a.screenshot(), contentType: 'image/png' });
+  await testInfo.attach('result-b', { body: await b.screenshot(), contentType: 'image/png' });
+});
+
+// Long gate (two pages, about 30 s, estimate; two browsers). With relay chat off (default) the dock still shows in the match, but its input is disabled with the note.
+test('chat: with relay chat off the dock input is disabled and says so', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const { a, b } = await startMatch(browser);
+  for (const p of [a, b]) {
+    await expect(p.locator('#chatDock')).toBeVisible();
+    await openDock(p);
+    await expect(p.locator('#chatInput')).toBeDisabled();
+    await expect(p.locator('#chatNote')).toHaveText('Chat is not available right now');
+  }
 });
