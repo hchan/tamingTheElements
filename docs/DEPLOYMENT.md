@@ -32,6 +32,7 @@ Workflow: `.github/workflows/ci.yml`.
 - `deploy` uses concurrency group `pages` with `cancel-in-progress: false`, so a deploy is never cut off.
 - Action versions are pinned to commit SHAs (verified with `env -u GITHUB_TOKEN gh api repos/<owner>/<repo>/git/ref/tags/<tag>`).
 - No service worker or PWA scope yet.
+- Online relay URL: only the `Build for Pages` step receives `VITE_ONLINE_URL` from the repo Actions variable of the same name (pinned by `tests/repo/ci-pages-online-url.test.ts`). It is plain text, a public https base URL with no path, baked into the bundle; never a secret or a LAN host. The owner sets it under repo Settings > Secrets and variables > Actions > Variables, and the next Pages build picks it up. Unset, it expands to empty and the online mode stays not configured (`parseOnlineUrl`, `src/game/net/ws/config.ts`).
 
 One-time setup (the repo owner does this, not the workflow): Settings > Pages > Source = "GitHub Actions". Until then the
 `deploy` job fails harmlessly.
