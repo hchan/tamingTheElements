@@ -362,5 +362,7 @@
  *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 98 stun immunity).
  * 99: Arcade only (Classic hashes unchanged). Data-only retune of six ARCADE_RACE_NUMBERS rows (fiara, pax, wispera, treenoc, rokcore, sindarosa) after the v98 stun immunity moved wins from ranged to melee.
  *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 99 life/damage retune).
+ * 100: Arcade only (Classic hashes unchanged). Data-only retune of three ARCADE_2V2_LIFE_PM rows (pax 660 -> 675, wispera 650 -> 690, echo 650 -> 680); 1v1 untouched.
+ *    Re-record reason: Arcade goldens and the 2v2 balance baseline change (SIM_VERSION 100 2v2 life retune).
  */
-export const SIM_VERSION = 99;
+export const SIM_VERSION = 100;
