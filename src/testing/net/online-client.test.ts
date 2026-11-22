@@ -371,6 +371,23 @@ describe('OnlineClient', () => {
     expect(wa.sent.length).toBe(before);
   });
 
+  it('RESULT_ACK 1 (waiting) keeps the match: BATCH still flows and the peer receives a frame whose predecessor was dropped', async () => {
+    const { h, a, ta, tb, wa } = await pair();
+    ta.send(pkt(1, 0)); // The last pre-ACK frame: the relay drops it (never advanced to B).
+    h.svc.relay?.advance();
+    wa.sent.length = 0;
+    wa.serve(Uint8Array.of(0x51, 1, 1)); // Waiting for the peer's RESULT.
+    expect(a.events.at(-1)).toEqual({ t: 'result-ack', matchId: 1, status: 1 });
+    ta.send(pkt(1, 5)); // The linger keeps sending after the waiting reply.
+    expect(wa.sent.filter((m) => m[0] === 0x40).length).toBe(1);
+    h.svc.relay?.advance();
+    expect(drain(tb).length).toBeGreaterThan(0);
+    wa.serve(Uint8Array.of(0x51, 1, 0)); // The final answer ends it.
+    const n = wa.sent.length;
+    ta.send(pkt(1, 6));
+    expect(wa.sent.length).toBe(n);
+  });
+
   it('wraps the matchId 255 to 1: the next match plays', async () => {
     const h = new Harness();
     const { c, events } = h.client();

@@ -407,8 +407,9 @@ export class OnlineClient {
       }
       case 'result-ack':
         if (this.transport.matchId !== undefined && w.matchId !== this.transport.matchId) break; // Answer for an earlier match.
-        this.transport.stopRetry(); this.transport.endMatch();
-        this.leaveMatch();
+        this.transport.stopRetry();
+        // 1 = waiting for the peer's RESULT: keep the match open so the linger's BATCH frames still reach a peer that lost the last one.
+        if (w.status !== 1) { this.transport.endMatch(); this.leaveMatch(); }
         this.onEvent(w);
         break;
       case 'peer':
