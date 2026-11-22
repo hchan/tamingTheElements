@@ -110,6 +110,7 @@
     "tester-mode.spec.ts": "P1",
     "fight-hud-shots.spec.ts": "P2",
     "tour-fight-match.spec.ts": "P0",
+    "tour-tile-name-size.spec.ts": "P2",
     "tour-win.spec.ts": "P1",
     "tutorial.spec.ts": "P1",
     "tour.spec.ts": "P0",
