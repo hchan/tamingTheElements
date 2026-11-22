@@ -132,6 +132,8 @@ The jump came with merge bd4d5060 of eabe3e4d ("30 s lost grace"), at 11-20 04:4
 
 ### 4. Keep the PC full lane free from 22:30 to 07:00
 
+**Progress 2026-11-22:** doc line added to docs/TESTING.md (Pushing/while-a-full-run bullets); router guard still open (report-only).
+
 **Flags:**
 - Doc line: auto-buildable (1 file; give it to the same agent as idea 7). Size S, low risk.
 - Router guard: report-only.
@@ -167,6 +169,8 @@ The jump came with merge bd4d5060 of eabe3e4d ("30 s lost grace"), at 11-20 04:4
 **Saving:** a few minutes of triage each morning, and no false needs-human (e).
 
 ### 7. One router call for all touched specs
+
+**Progress 2026-11-22:** done, documented in docs/TESTING.md ("Spec or app changes that alter behavior" bullet).
 
 **Flag:** auto-buildable (docs/TESTING.md near :287, "Spec or app changes"; same agent as idea 4). Size S, low risk.
 
