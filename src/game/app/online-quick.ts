@@ -307,7 +307,8 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       case 'result-ack':
         // The relay compared both RESULTs (or the hashes): 0 agreed, 2 the games disagree; 1 (waiting) changes nothing.
         if (current === undefined || e.matchId !== current.matchId || dropPending) break; // A stale answer (the match was dropped or left) must not touch this screen.
-        if (e.status === ACK_STATUS.disagreed) {
+        // After a timeout or forfeit the peer never sent a RESULT (a gone peer is answered "disagreed"): nothing differed, so the end line stays.
+        if (e.status === ACK_STATUS.disagreed && session?.status !== 'forfeit') {
           view?.say(RESULT_DISAGREE_TEXT);
           view?.reportButton(true);
         }
