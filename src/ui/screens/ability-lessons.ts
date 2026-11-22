@@ -28,7 +28,7 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('icicles', 'A fast stream of small icicles.', 'Tap it again and again from range.'),
   L('lure-orb', 'A glowing orb that drifts out, then hovers in place as a hazard.', 'Park it between you and the foe, then keep your distance.'),
   L('abyss-flash', 'A close burst of light that hurts and stuns the foe.', 'Use it when the foe is right next to you, then follow up.'),
-  L('hoof-crash', 'A heavy stomp right in front of you that hits hard and knocks the foe back.', 'Use it up close and repeat it as soon as it is ready.'),
+  L('hoof-crash', 'A heavy stomp right in front of you that hits hard.', 'Use it up close and repeat it as soon as it is ready.'),
   L('kelp-lash', 'A long whip of kelp that reaches a good way out.', 'Lash from just outside the foe\'s reach, then step back.'),
   L('tentacle-lash', 'A long, wide lash of tentacle that hits hard at a distance.', 'Keep the foe at the tip of its reach and lash again as soon as it is ready.'),
   L('abyssal-pull', 'A tendril that flies out and drags the foe in toward you.', 'Fire it at a foe who is holding back, then lash them as they arrive.'),
