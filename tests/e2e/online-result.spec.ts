@@ -222,23 +222,23 @@ test('a dropped socket mid-match resumes the same match, with no second game', a
 });
 
 // Long gate (two pages, about 15 s). The opponent closes the page and never comes back. The lockstep stall timeout (DEFAULT_TIMEOUT_TICKS, about 5 s)
-// fires first and ends the match on the remaining page ("stopped responding, so you win"); the relay's grace is longer (10 s), so PEER_STATUS gone
+// fires first and ends the match on the remaining page ("Connection lost. The match ended with no winner."); the relay's grace is longer (10 s), so PEER_STATUS gone
 // only arrives afterwards. The page must stay ended on the win line (no hang, no failure banner, no second game) when gone arrives. The clock is
 // skewed past DISCONNECT_GRACE_MS so the test does not wait the real grace; the real sweep delay (about 10 to 70 s after a drop) is the relay's own.
 // The "Your opponent left" line is only reachable when gone arrives during a live match (a paused match), which this rig does not produce.
-test('Opponent gone after the stall win: the remaining page stays ended on the win line', async ({ browser }) => {
+test('Opponent gone after the stall timeout: the remaining page stays ended on the no-winner line', async ({ browser }) => {
   test.setTimeout(240_000);
   const { rig, a, b } = await startMatch(browser);
   await new Promise((r) => setTimeout(r, 1500)); // let the match run before the drop
   await a.close();
   // Playwright may not report a page close to the route's onClose; tell the relay the socket closed (a repeat is a no-op, the record is already 'closed').
   await rig.core.handleClose('a', rig.ctx);
-  await expect(b.locator('#quickStatus')).toContainText('stopped responding', { timeout: 30_000 });
+  await expect(b.locator('#quickStatus')).toContainText('ended with no winner', { timeout: 30_000 });
 
   rig.skewMs += DISCONNECT_GRACE_MS + 1000;
   await rig.core.sweep(rig.ctx);
   await expect.poll(() => rig.events.filter((e) => e.kind === 'peer-gone').length, { timeout: 15_000, message: 'relay peer-gone' }).toBe(1);
-  await expect(b.locator('#quickStatus')).toContainText('stopped responding');
+  await expect(b.locator('#quickStatus')).toContainText('ended with no winner');
   await expect(b.locator('#quickFailure')).toBeHidden();
   expect(rig.events.filter((e) => e.kind === 'match-start')).toHaveLength(1);
   await expect(b.locator('#quickBack')).toBeVisible();

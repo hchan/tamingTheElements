@@ -7,7 +7,7 @@ import { errorFrame, Harness, matchStart, peerStatus, resultAck, type TestWs } f
 import { FakeRelay } from '../../testing/net/fake-relay';
 import { attachRelayCore } from '../../testing/net/relay-core-service';
 import { ACK_STATUS, HASH_REPORT_MS, type ReportSession } from '../net/ws/match-report';
-import { RESULT_DISAGREE_TEXT } from './online-quick-model';
+import { CONNECTION_LOST_TEXT, RESULT_DISAGREE_TEXT } from './online-quick-model';
 
 const h$ = vi.hoisted(() => ({
   created: [] as Array<{ host: HTMLElement; launch: ArenaLaunch; destroyed: boolean }>,
@@ -510,6 +510,21 @@ describe('online Play again with RESULT unanswered', () => {
     (r.h.svc.sockets[0] as TestWs).serve(resultAck(1, ACK_STATUS.disagreed));
     await r.h.flush();
     expect(say(a)).not.toBe(RESULT_DISAGREE_TEXT);
+    expect(shown(a, 'quickReport')).toBe(false);
+    r.unmounts.forEach((u) => { u(); });
+  });
+});
+
+describe('online end line after a timeout', () => {
+  it('a "disagreed" ACK from a gone peer leaves the no-winner line and offers no report', async () => {
+    const r = relayRig();
+    const [a] = await play(r);
+    statusOf(0, sessionWith(111));
+    h$.created[0]?.launch.net?.onStatus?.('forfeit', { ...sessionWith(111, { forfeitReason: 'timeout' }), status: 'forfeit', setPeerAway: () => undefined } as never);
+    expect(say(a)).toBe(CONNECTION_LOST_TEXT);
+    (r.h.svc.sockets[0] as TestWs).serve(resultAck(1, ACK_STATUS.disagreed));
+    await r.h.flush();
+    expect(say(a)).toBe(CONNECTION_LOST_TEXT);
     expect(shown(a, 'quickReport')).toBe(false);
     r.unmounts.forEach((u) => { u(); });
   });
