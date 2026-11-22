@@ -149,8 +149,19 @@ async function pickAndReady(pages: Page[]): Promise<void> {
   await pages[0]?.locator('#quickReady').click();
   await pages[1]?.locator('#quickReady').click();
   for (const p of pages) {
-    await expect(p.locator('#quickLink')).toBeVisible({ timeout: 30_000 });
+    await expect(p.locator('#quickMenu')).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('canvas').first()).toBeVisible({ timeout: 30_000 });
+    // Layout (user report: too much black margin): in a match the arena fills the viewport as in Play; the controls are folded into the round menu icon.
+    const top = await p.evaluate<number>(`document.querySelector('#game')?.getBoundingClientRect().top ?? -1`);
+    expect(top, 'arena starts at the top of the screen').toBeGreaterThanOrEqual(0);
+    expect(top, 'arena starts at the top of the screen').toBeLessThanOrEqual(2);
+    await expect(p.locator('#quickLeave')).toBeHidden();
+    await p.locator('#quickMenu').click();
+    await expect(p.locator('#quickLeave')).toBeVisible();
+    await expect(p.locator('#quickLink')).toBeVisible();
+    await p.locator('#quickMenu').click();
+    await expect(p.locator('#quickLeave')).toBeHidden();
+    await expect(p.locator('#quickBack')).toBeHidden();
   }
 }
 

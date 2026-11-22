@@ -70,6 +70,69 @@
   }
 }
 
+/* Quick match in a match: the arena fills the viewport exactly as in Play (no strip, no black margin). The controls (#quickLink, #quickStatus, #quickLeave)
+   fold into the round #quickMenu icon at the top left; it opens a small panel over the arena and closes it again. */
+#menu .menuPage.onlineQuick.onlineLive {
+  position: relative;
+}
+#menu .menuPage.onlineQuick.onlineLive #game {
+  --view-h: calc(100dvh - var(--safe-y));
+}
+#menu .menuPage.onlineQuick.onlineLive > #quickMenu {
+  position: absolute;
+  z-index: 30;
+  top: max(0.5em, env(safe-area-inset-top));
+  left: max(0.5em, env(safe-area-inset-left));
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(10, 10, 24, 0.65);
+  color: #fff;
+  font-size: 1.3em;
+  line-height: 1;
+  cursor: pointer;
+}
+#menu .menuPage.onlineQuick.onlineLive > #quickMenu[hidden] {
+  display: none;
+}
+#menu .menuPage.onlineQuick.onlineLive > #quickLink.onlineChip,
+#menu .menuPage.onlineQuick.onlineLive > #quickStatus,
+#menu .menuPage.onlineQuick.onlineLive > #quickLeave {
+  position: absolute;
+  z-index: 30;
+  left: max(0.5em, env(safe-area-inset-left));
+  margin: 0;
+  display: none;
+}
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLink.onlineChip,
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickStatus,
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLeave {
+  display: block;
+  background: rgba(10, 10, 24, 0.85);
+  padding: 0.3em 0.7em;
+  border-radius: 0.5em;
+  font-size: 0.8em;
+  max-width: min(18em, 70vw);
+}
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLink.onlineChip {
+  top: calc(max(0.5em, env(safe-area-inset-top)) + 46px);
+}
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickStatus {
+  top: calc(max(0.5em, env(safe-area-inset-top)) + 46px + 2em);
+}
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLeave {
+  top: calc(max(0.5em, env(safe-area-inset-top)) + 46px + 4.2em);
+  min-height: 44px;
+  width: auto;
+}
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickStatus[hidden],
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLink[hidden],
+#menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLeave[hidden] {
+  display: none;
+}
+
 /* QA r110: the touch Run tile shows a gold outline while a run is on (the status word 'on' is in the accessible name), like the canvas highlight. */
 button.touchBtn#arcadeRun[aria-label$=', on'] {
   outline: 3px solid #b39653;

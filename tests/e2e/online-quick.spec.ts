@@ -150,7 +150,9 @@ test('two pages find each other, pick heroes and start the arena', async ({ brow
 
   // Setup handshake, then both arenas run: the link line shows and a canvas is up.
   for (const p of pages) {
-    await expect(p.locator('#quickLeave')).toBeVisible({ timeout: 30_000 });
+    await expect(p.locator('#quickMenu')).toBeVisible({ timeout: 30_000 });
+    await p.locator('#quickMenu').click();
+    await expect(p.locator('#quickLeave')).toBeVisible();
     await expect(p.locator('#quickLink')).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('canvas').first()).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('#quickFailure')).toBeHidden();
