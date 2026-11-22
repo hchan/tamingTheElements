@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assertCleanTree, assertPagesBranch, assertPushed, commitMessage, parseCliArgs as parseDeploy, pushArgs } from '../../tools/ci/deploy-pages';
-import { summarize } from '../../tools/ci/e2e-flake';
+import { loadReport, summarize } from '../../tools/ci/e2e-flake';
 import { exitCodeFor, formatSummary, parseCliArgs as parseCi, planSteps } from '../../tools/ci/local-ci';
 
 describe('ci:local', () => {
@@ -85,5 +85,21 @@ describe('e2e:flake --summary-json', () => {
       ['b.spec.ts: other', true],
       ['b.spec.ts: plain', false],
     ]);
+  });
+});
+
+describe('e2e:flake report loading', () => {
+  const rep = JSON.stringify({ suites: [] });
+  const missing = (): string => {
+    throw new Error('ENOENT');
+  };
+  it('reads the report file when present', () => {
+    expect(loadReport(() => rep, 'r.json', '')).toEqual({ suites: [] });
+  });
+  it('falls back to the JSON the reporter wrote to stdout when the file is missing', () => {
+    expect(loadReport(missing, 'r.json', rep)).toEqual({ suites: [] });
+  });
+  it('throws with both causes when neither has a report', () => {
+    expect(() => loadReport(missing, 'r.json', 'build error')).toThrow(/no JSON report produced \(ENOENT; .*JSON/);
   });
 });

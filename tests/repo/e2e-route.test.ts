@@ -196,6 +196,7 @@ describe('runPc against the fake ssh', () => {
   });
 
   it('a vanished job is exit 93', async () => {
+    process.env['TTE_LOST_POLLS'] = '3'; // dead-pid polls before "lost" (default 100, about 30 s per job); restored by afterEach
     expect(await runPc(P('run', '--pc'), {}, root, deps('exit 0'))).toBe(93);
   });
 
@@ -353,6 +354,7 @@ describe('runPc against the fake ssh', () => {
     });
 
     it('a lost job (93) is retried once on the PC, then goes to the Mac', async () => {
+      process.env['TTE_LOST_POLLS'] = '3';
       const io = fakeIo([UP], [0]);
       expect(await runRouted(P('run'), {}, root, deps('exit 0'), io)).toBe(0);
       expect(io.noted).toEqual([93, 93]);
