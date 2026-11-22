@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stingFanAngles } from './sting-fx';
+import { stingCastDir, stingFanAngles } from './sting-fx';
 
 describe('stingFanAngles', () => {
   it('gives count rays, symmetric about the aim, spread wide in total', () => {
@@ -15,5 +15,15 @@ describe('stingFanAngles', () => {
   });
   it('a single ray points straight along the aim', () => {
     expect(stingFanAngles(6, 1, 40)).toEqual([-270]);
+  });
+});
+
+describe('stingCastDir', () => {
+  it('uses the 8-way aim (a diagonal) rather than the 4-way facing when Arcade gives one', () => {
+    expect(stingCastDir({ aim: () => 1 }, { id: 3, dir: 0 })).toBe(1);
+    expect(stingFanAngles(stingCastDir({ aim: () => 1 }, { id: 3, dir: 0 }), 1, 0)[0]).toBeCloseTo(-45);
+  });
+  it('falls back to the facing without an aim', () => {
+    expect(stingCastDir(undefined, { id: 3, dir: 4 })).toBe(4);
   });
 });
