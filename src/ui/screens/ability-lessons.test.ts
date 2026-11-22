@@ -44,6 +44,12 @@ describe('ability lessons', () => {
     expect(lessons.map((l) => l?.abilityId)).toEqual(['lure-orb', 'abyss-flash']);
   });
 
+  it('has Durrok lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('durrok'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['tusk-gore', 'bristle-stomp']);
+  });
+
   it('never uses the retired words', () => {
     for (const l of [...ABILITY_LESSONS.values(), SNAG_LESSON]) expect(`${l.line} ${l.tip}`).not.toMatch(BANNED);
   });
