@@ -22,6 +22,7 @@ proposes). Estimates must be verified before anything depends on them.
 ## 2. Versioning
 
 - `PROTOCOL_VERSION` is one byte, first field of HELLO and echoed in WELCOME. Start at 1 [choice]; 2 since the 17-bit command (Run, RUN-W); **3 since the text-frame wire round (RELAY-V3: base64 text frames, `/ticket` returns `{ticket, url}`, advisory close codes, no handshake answer for ticket-invalid or resting)**. The package `@tamingtheelements/relay` went to 1.0.0 with it (MAJOR, see [RELAY-PACKAGE.md](RELAY-PACKAGE.md)).
+- **Capabilities (chat).** WELCOME carries `caps u8` (bit0 = chat) in the byte that used to be the high byte of `serverHint`. `PROTOCOL_VERSION` stays 3: the frame stays 9 bytes and with `caps` 0 it is byte-identical to the old one. Chat is **off by default** on a relay (`RelayOptions.chat`, see [RELAY-PACKAGE.md](RELAY-PACKAGE.md)); a client shows chat only when the last WELCOME had bit0 set and reads it again after a reconnect. A relay with chat off treats a `0x70` frame like an unknown type: ERROR `0x0001 bad-frame` and close (advisory 4001). Turning chat on is the operator's step. There is no peer capability: a peer on an old client receives the `0x70` frame and counts it as malformed; the sender's line is lost without notice [choice].
 - **Mismatch rule (exact match).** The server compares the HELLO version with its own. If they differ it sends ERROR `0x0003 version-mismatch`
   (carrying the server's version in `detail`) and closes (advisory code 4003, section 5). The client shows "Update needed, reload the page" and does not retry. No
   negotiation and no down-conversion: a breaking wire change bumps the byte; the static web app and the relay deploy together, a stale cached client
@@ -77,12 +78,12 @@ does not know which identity was used. A guest session may be upgraded to a Stea
 
 All frames: `type u8`, then fields. Lengths are in bytes. "Dir": C to S client to server, S to C server to client, both = the server relays the frame
 to the other player unchanged except that it validates size and the sender's slot. **Max** is the encoded size cap; a longer frame is ERROR `0x0002 too-big`
-and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right after the type; only BATCH and PAUSE use it (section 6), HASH, DESYNC and RESULT send `seq 0`.
+and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right after the type; only BATCH and PAUSE use it (section 6), HASH, DESYNC and RESULT send `seq 0`. CHAT (`0x70`) is outside the seq rules: it has its own 1-byte `chatSeq` (section 4a).
 
 | Type | Name | Dir | Fields after `type` | Bytes (max) |
 | --- | --- | --- | --- | --- |
 | `0x01` | HELLO | C to S | `ver u8`, `simVersion u16`, `resumeSession u32` (0 = new; see 7) | 8 |
-| `0x02` | WELCOME | S to C | `ver u8`, `sessionId u32`, `resumed u8` (0/1), `serverHint u16` (max inputs per batch the server accepts, 64 [fact: `MAX_INPUTS_PER_PACKET`]) | 9 |
+| `0x02` | WELCOME | S to C | `ver u8`, `sessionId u32`, `resumed u8` (0/1), `caps u8` (bit0 = chat, 0 when chat is off), `serverHint u8` (max inputs per batch the server accepts, 64 [fact: `MAX_INPUTS_PER_PACKET`]; fits a u8) | 9 |
 | `0x10` | QUEUE_JOIN | C to S | `mode u8` (0 = quick match) | 2 |
 | `0x11` | QUEUE_LEAVE | C to S | none | 1 |
 | `0x12` | QUEUE_STATE | S to C | `waitingSec u16` (time in queue, 0xFFFF = unknown) | 3 |
@@ -101,6 +102,7 @@ and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right a
 | `0x51` | RESULT_ACK | S to C | `matchId u8`, `status u8` (0 agreed, 1 waiting for peer, 2 disagreed) | 3 |
 | `0x60` | PING | C to S | `nonce u32` | 5 |
 | `0x61` | PONG | S to C | `nonce u32` (echoed) | 5 |
+| `0x70` | CHAT | both | `matchId u8`, `chatSeq u8`, `n u8` (1-120), `n` bytes UTF-8 text (section 4a) | 4 + 120 = 124 |
 | `0x7F` | ERROR | S to C | `code u16`, `retryAfterSec u16` (0 = none), `detail u16` | 7 |
 
 Details:
@@ -124,24 +126,50 @@ Details:
 - **Heartbeat.** PING every 2 s [choice]; the client keeps the last 5 round trips and grades the link with `link-quality.ts` (median, `>=100 ms` fair,
   `>=200 ms` poor, stall share `>=1%` fair, `>=5%` poor [fact]). PONG also keeps the connection alive through idle timeouts of the platform.
 
+### 4a. CHAT (`0x70`)
+
+Layout (both directions): `0x70 | matchId u8 | chatSeq u8 | n u8 | n bytes`, `n` 1-120, so the largest frame is 124 bytes (168 base64 characters) [fact: computed]. The relay forwards the client's bytes unchanged to the peer and never echoes to the sender. Example: match 7, seq 0, "hi" is `70 07 00 02 68 69`, text `cAcAAmhp`.
+
+- **chatSeq** is counted per sender per match: it starts at 0, goes up by 1 per sent line and is kept across a resume of the same match. A new match (including a rematch) resets it. A client sends at most 100 lines per match [choice], so the u8 never wraps. It is not part of the BATCH/PAUSE seq and not reordered by the relay. Uses: a chat ERROR names the line it refuses; the receiver drops repeats; the receiver may repair a late, lower seq locally (the relay does not order).
+- **Check order on the relay**, first match wins:
+
+| Condition | Answer | Socket | Event outcome |
+| --- | --- | --- | --- |
+| Chat off on this relay | `0x0001 bad-frame`, as an unknown type | close 4001 | none |
+| Structural error (length under 4, length not `4 + n`) | `0x0001 bad-frame` | close 4001 | none |
+| Length over 124 or `n` over 120 | `0x0002 too-big` | close 4002 | none |
+| Sender not in a match, or `matchId` differs | silent drop | open | `stale` |
+| Over the rate | tagged `0x0009`, `retryAfterSec` at least 1 | open | `rate` |
+| Bad text (invalid UTF-8, control characters, empty or all-blank; `n` = 0 is bad text, not structural) | tagged `0x0001` | open | `bad` |
+| 101st line from this sender in this match | tagged `0x000D chat-limit` | open | `cap` |
+| Peer away (grace, gone, left or rematched) | tagged `0x000E chat-undelivered` | open | `away` |
+| Otherwise | forward the unchanged frame to the peer | open | `sent` |
+
+- **Tagged chat ERROR.** An ERROR about one chat line has `detail = 0x7000 | chatSeq` and **never closes the socket** (an exception to the "ERROR then close" notes in section 5). A client tests `(detail >> 8) === 0x70`; the only other nonzero detail is version-mismatch's 3, so there is no clash. The client marks that line "Not sent".
+- **Rate (token bucket).** Per sender per match, kept in integer milli-tokens: cap 3000, cost 1000 per line, refill 1000 per second, starts full. That is a burst of 3 and 1 line/s [estimate]. The rate check comes first and a refused line costs nothing; a line past it is charged even if it then fails as bad, cap or away. `retryAfterSec = max(1, ceil((1000 - tokens) / 1000))`, so it is 1. A burst of 5 lines 50 ms apart sends 3 and refuses 2 [fact: computed].
+- **Fallbacks** if a host cannot add the new codes: `0x000D` becomes `0x0009` with `retryAfterSec` 3600 (a client shows the limit text when `retryAfterSec` is 600 or more); `0x000E` becomes a silent drop.
+- **Logging is counts only.** A relay or host records outcome counts (`sent`, `rate`, `bad`, `cap`, `away`, `stale`) per match and slot, never the text or its length.
+
 ## 5. Error codes (`0x7F` and the HTTP body)
 
 | Code | Name | Meaning / client action |
 | --- | --- | --- |
-| `0x0001` | bad-frame | Unknown type, wrong length, undecodable base64 or a binary message. Close. |
-| `0x0002` | too-big | Over the frame's max. Close. |
+| `0x0001` | bad-frame | Unknown type (including `0x70` when chat is off), wrong length, undecodable base64 or a binary message. Close. Tagged (`detail` `0x70xx`): a refused chat line (bad text), no close. |
+| `0x0002` | too-big | Over the frame's max (CHAT: over 124 bytes or `n` over 120). Close. |
 | `0x0003` | version-mismatch | Protocol version differs; `detail` = server version. "Reload to update", no retry. |
 | `0x0004` | ticket-invalid | Ticket unknown, used or older than 60 s. **HTTP only** (for example a 401 from `/ticket` or `/session`); never sent in answer to a handshake (a denied connect shows the browser only 1006). The client's rule is the retry-once above. |
 | `0x0005` | busy | Already queued or in a room (as `rooms.ts` `busy` [fact]), or the queue is full (cap 2000 [choice]). The client emits an `error` event and the link stays up. |
 | `0x0006` | no-room | Code unknown or expired. |
 | `0x0007` | full | Room already has two players. |
 | `0x0008` | full-house | Server at its room cap (`full-house` in `rooms.ts` [fact]). Retry later. |
-| `0x0009` | rate-limited | Too many connects or frames; `retryAfterSec` set. |
+| `0x0009` | rate-limited | Too many connects or frames; `retryAfterSec` set. Tagged (`detail` `0x70xx`): too many chat lines, no close. |
 | `0x000A` | sim-mismatch | The two clients run different `SIM_VERSION`. |
 | `0x000B` | resting | **Kill switch.** The game's online service is switched off ("the game is resting"). `retryAfterSec` is when to look again (0 = unknown, use 1 hour). The client shows a friendly message, hides Quick match and Rooms until then, and never retries sooner. At connect time it is announced **only** as HTTP 503 from `/session` and `/ticket` (so no socket is opened), never as a handshake answer. As a frame it appears only if the switch flips while connected (the server then closes after the current match ends or after 60 s [choice]; the host may override the 60 s with an immediate cut, which is not a wire change). On that frame the client stops and does not reconnect. |
 | `0x000C` | internal | Server fault. Retry with backoff (1 s, 2 s, 4 s, max 30 s [choice]). |
+| `0x000D` | chat-limit | Tagged chat ERROR only (`detail` `0x70xx`): the sender's 100-line cap for this match is used up. No close. [choice] |
+| `0x000E` | chat-undelivered | Tagged chat ERROR only: the peer is away (grace, gone, left or rematched), the line was not delivered. No close. [choice] |
 
-**The ERROR frame is the authority; the close code after it is advisory.** The relay sends close code 4000 + the low byte of the error code (for example 4003, 4011) when it can, but API Gateway's DeleteConnection takes no close code, so a host cannot always send it. A client acts on the ERROR frame it received and must not depend on a particular close code (or any code) following it. The close code is only a fallback hint when the socket ended with no ERROR frame. Normal end: 1000.
+**The ERROR frame is the authority; the close code after it is advisory.** The relay sends close code 4000 + the low byte of the error code (for example 4003, 4011) when it can, but API Gateway's DeleteConnection takes no close code, so a host cannot always send it. A client acts on the ERROR frame it received and must not depend on a particular close code (or any code) following it. The close code is only a fallback hint when the socket ended with no ERROR frame. Normal end: 1000. **Exception:** an ERROR whose `detail` high byte is `0x70` (a chat line refused, section 4a) never closes the socket.
 
 ## 6. Sequence numbers, reorder and duplicates
 
