@@ -74,6 +74,8 @@
    fold into the round #quickMenu icon at the top left; it opens a small panel over the arena and closes it again. */
 #menu .menuPage.onlineQuick.onlineLive {
   position: relative;
+  /* The panel sits under the top HUD (about 11.5% of the viewport height, an estimate read off 1280x720 and 1920x1080 shots), not over the names. */
+  --panel-drop: max(46px, 12vh);
 }
 #menu .menuPage.onlineQuick.onlineLive #game {
   --view-h: calc(100dvh - var(--safe-y));
@@ -117,13 +119,13 @@
   max-width: min(18em, 70vw);
 }
 #menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLink.onlineChip {
-  top: calc(max(0.5em, env(safe-area-inset-top)) + 46px);
+  top: calc(max(0.5em, env(safe-area-inset-top)) + var(--panel-drop));
 }
 #menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickStatus {
-  top: calc(max(0.5em, env(safe-area-inset-top)) + 46px + 2em);
+  top: calc(max(0.5em, env(safe-area-inset-top)) + var(--panel-drop) + 2em);
 }
 #menu .menuPage.onlineQuick.onlineLive.panelOpen > #quickLeave {
-  top: calc(max(0.5em, env(safe-area-inset-top)) + 46px + 4.2em);
+  top: calc(max(0.5em, env(safe-area-inset-top)) + var(--panel-drop) + 4.2em);
   min-height: 44px;
   width: auto;
 }
