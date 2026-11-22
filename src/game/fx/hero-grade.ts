@@ -43,6 +43,8 @@ export const PAINTED_HEROES: ReadonlySet<string> = new Set([
   'echo',
   'wispera',
   'cyclonius',
+  // Treenoc is the owner's original treant, repainted and rigged by tools/rig-assist/treenoc-whole.py; its sheet carries its own baked grade.
+  'treenoc',
 ]);
 const painted = (key: string): boolean => PAINTED_HEROES.has(key.replace(/^[a-z]+:/, ''));
 
@@ -73,10 +75,9 @@ export function gradeHeroRgba(px: Uint8ClampedArray | number[], g: HeroGrade = H
 /** Rim colour (0..255 RGB) per hero; heroes not listed get the cool default. Lavax is warm ember so it parts from the painted Pax. */
 const RIM_DEFAULT: readonly [number, number, number] = [206, 228, 255];
 const RIM_BY_HERO: Readonly<Record<string, readonly [number, number, number]>> = {
-  // Lavax, Ishimi and Treenoc sat on their own element's floor (QA r26): a pale rim that is the floor's opposite, not its kin.
+  // Lavax and Ishimi sat on their own element's floor (QA r26): a pale rim that is the floor's opposite, not its kin.
   lavax: [255, 242, 214],
   ishimi: [214, 255, 176],
-  treenoc: [200, 255, 236],
   echo: [226, 240, 255],
   // Rokcore's slate body vanished into the olive earth floor (QA r24): a warm sunlit gold edge, like the stage's own light.
   rokcore: [255, 214, 140],
@@ -84,7 +85,7 @@ const RIM_BY_HERO: Readonly<Record<string, readonly [number, number, number]>> =
   wispera: [18, 28, 66],
 };
 /** Extra body lift (share toward white) for heroes whose body matches their own-element floor, on top of the dark-hero lift. */
-const LIFT_BY_HERO: Readonly<Record<string, number>> = { lavax: 0.05, ishimi: 0.05, treenoc: 0.04 };
+const LIFT_BY_HERO: Readonly<Record<string, number>> = { lavax: 0.05, ishimi: 0.05 };
 /** Heroes drawn as a faint ghost: their semi-transparent body regains opacity and the ink edge is two pixels deep. */
 const GHOSTS: ReadonlySet<string> = new Set(['wispera']);
 /** Share of the missing opacity a ghost's body regains (more than a dark sprite's lift). */
