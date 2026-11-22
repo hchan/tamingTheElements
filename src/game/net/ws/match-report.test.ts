@@ -96,6 +96,12 @@ describe('MatchReporter forfeit end (mp-result-timeout)', () => {
     expect(results).toEqual([[1, 0, RESULT_REASON.forfeit, 0, 0]]);
   });
 
+  it('a session timeout (winner null) reports winner byte 2 and reason timeout (2)', () => {
+    const { r, s, results } = rig({ forfeitReason: 'timeout' });
+    r.finishForfeit({ ...s, winner: null });
+    expect(results).toEqual([[1, 2, 2, 0, 0]]);
+  });
+
   it('no winner on the session reports nobody; no forfeit reason sends nothing', () => {
     const a = rig({ forfeitReason: 'timeout' });
     a.r.finishForfeit({ ...a.s, winner: null });

@@ -47,6 +47,8 @@ export const RECONNECTING_PREFIX = 'Connection lost. Reconnecting';
 export const OPPONENT_AWAY_TEXT = "Your opponent's connection dropped. Waiting for them...";
 export const RESULT_DISAGREE_TEXT = 'The two games ended differently. You can save a report.';
 export const OPPONENT_LEFT_TEXT = 'Your opponent left.';
+/** A timeout stalled the match and nobody can say who left: no winner (never starts with RECONNECTING_PREFIX). */
+export const CONNECTION_LOST_TEXT = 'Connection lost. The match ended with no winner.';
 /** Shown when the service's gateway sent a failure notice; the raw notice text is for logs, not for players. */
 export const GATEWAY_NOTICE_TEXT = 'The online service is having trouble. Hang on...';
 
@@ -70,7 +72,7 @@ export function endText(winner: number, side: 0 | 1, rounds: readonly [number, n
 /** Words for a stopped match (the lockstep status); undefined for a status that needs none. */
 export function netStatusText(status: SessionStatus, reason: string | undefined): string | undefined {
   if (status === 'desync') return 'The two games disagree about the match, so it was stopped. Please play again.';
-  if (status === 'forfeit') return reason === 'timeout' ? 'Your opponent stopped responding, so you win.' : 'The match ended: a player left.';
+  if (status === 'forfeit') return reason === 'timeout' ? CONNECTION_LOST_TEXT : 'The match ended: a player left.';
   if (status === 'remote-paused') return 'Your opponent switched tabs; waiting for them.';
   return undefined;
 }

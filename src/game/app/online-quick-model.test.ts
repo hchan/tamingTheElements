@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_RESTING_SEC, type OnlineFailure } from '../net/ws/online-client';
 import {
   BUSY_TEXT, CHECKING_TEXT, CONNECTING_TEXT, controlsFor, checkMatch, endText, failureView, GENERIC_TEXT, IDLE_TEXT, MATCHED_TEXT,
-  netStatusText, OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, reconnectText, REST_KEY, resetRestMemory, restStore, rejectText, UPDATE_TEXT,
+  CONNECTION_LOST_TEXT, netStatusText, RECONNECTING_PREFIX, OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, reconnectText, REST_KEY, resetRestMemory, restStore, rejectText, UPDATE_TEXT,
   WAITING_PICK_TEXT, waitText, GATEWAY_NOTICE_TEXT, type QuickState,
 } from './online-quick-model';
 
@@ -52,7 +52,7 @@ describe('online quick match model', () => {
     const words = [IDLE_TEXT, CONNECTING_TEXT, MATCHED_TEXT, WAITING_PICK_TEXT, CHECKING_TEXT, UPDATE_TEXT, BUSY_TEXT, GENERIC_TEXT,
       OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, GATEWAY_NOTICE_TEXT, waitText(7), reconnectText(2), rejectText('simVersion'), rejectText('roster'), rejectText(undefined),
       endText(-1, 0, undefined), endText(0, 0, [2, 1]), endText(1, 0, [0, 2]), netStatusText('desync', undefined) ?? '',
-      netStatusText('forfeit', 'timeout') ?? '', netStatusText('forfeit', undefined) ?? '', netStatusText('remote-paused', undefined) ?? ''];
+      netStatusText('forfeit', 'timeout') ?? '', netStatusText('forfeit', undefined) ?? '', netStatusText('remote-paused', undefined) ?? '', CONNECTION_LOST_TEXT];
     for (const w of words) expect(w).not.toMatch(FORBIDDEN);
   });
 
@@ -60,6 +60,13 @@ describe('online quick match model', () => {
     expect(endText(0, 0, [2, 1])).toBe('You won the match! Rounds 2-1.');
     expect(endText(0, 1, [2, 1])).toBe('Your opponent won the match. Rounds 1-2.');
     expect(endText(-1, 0, undefined)).toBe('The match was a draw.');
+  });
+
+  it('a timeout says the connection was lost and never claims a win', () => {
+    const t = netStatusText('forfeit', 'timeout');
+    expect(t).toBe(CONNECTION_LOST_TEXT);
+    expect(t).not.toMatch(/\b(win|won)\b/i); // "no winner" is fine, a claimed win is not
+    expect(t?.startsWith(RECONNECTING_PREFIX)).toBe(false);
   });
 
   it('checks MATCH_START', () => {
