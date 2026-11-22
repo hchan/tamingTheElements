@@ -364,5 +364,7 @@
  *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 99 life/damage retune).
  * 100: Arcade only (Classic hashes unchanged). Data-only retune of three ARCADE_2V2_LIFE_PM rows (pax 660 -> 675, wispera 650 -> 690, echo 650 -> 680); 1v1 untouched.
  *    Re-record reason: Arcade goldens and the 2v2 balance baseline change (SIM_VERSION 100 2v2 life retune).
+ * 101: Arcade only (Classic hashes unchanged). Data-only second 2v2 life retune: six ARCADE_2V2_LIFE_PM rows (treenoc 695->785, ishimi 670->630, curomo 740->700, echo 680->710, wispera 690->710, sindarosa 800->830).
+ *    Re-record reason: Arcade goldens and the 2v2 balance baseline change (SIM_VERSION 101 2v2 life retune 2).
  */
-export const SIM_VERSION = 100;
+export const SIM_VERSION = 101;

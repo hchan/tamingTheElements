@@ -385,3 +385,30 @@ Style (fixture): melee mean .489, ranged .508, melee vs ranged 48.2%; air trio g
 Fun gates (seeds 8, measurement): all pass; 2v2 round median 60.06 s (59.02 before), worst/best race 0.398/0.625; 1v1 round median and worst/best 0.443/0.568 unchanged.
 
 Open, not met: on random partners curomo 56.1, ishimi 56.9 and treenoc 38.0 are still outside .45-.55 (morblass 54.3 is inside). In the fixture pax 39.8 is just under .40 (noise-level, SE 5.3) and treenoc 62.5 is a lead-order exception. Fixing treenoc, ishimi and curomo is Rank 2 or a separate retune; making the fixture play both lead orders is Rank 3 (not built).
+
+## Arcade 2v2 life retune (SIM_VERSION 101)
+
+After SIM_VERSION 100 random partners had treenoc 38.0 and curomo/ishimi/morblass 54-57. Data-only change to six `ARCADE_2V2_LIFE_PM` rows (1v1 bit-identical, size < 2 returns hpPm): treenoc 695 -> 785, ishimi 670 -> 630, curomo 740 -> 700, echo 680 -> 710, wispera 690 -> 710, sindarosa 800 -> 830. One round (set E) was enough; no half-step or 1.5x-step correction (plan `.scratch/plans/2v2-life-retune-2.md`). R0 (v100) is the previous section's measured table.
+
+Measured (not estimates): random partners = `snag-trap-teams.mts partners 2 32` (2112 matches, on-roster win %, SE about 1.9 pp, 0 stalemates, p50 151 s); fixture = `balance:compare --ruleset arcade --team-size 2` (88 games/race, SE about 5.3 pp). Estimates (e) are from the plan.
+
+| Race | Random v100 | Random v101 | est (e) | Fixture v100 | Fixture v101 |
+|---|---|---|---|---|---|
+| pax | 53.2 | 53.0 | 52.2 | 39.8 | 44.3 |
+| rokcore | 51.8 | 52.0 | 50.8 | 48.9 | 51.1 |
+| morblass | 54.3 | 51.8 | 53.3 | 46.6 | 43.2 |
+| wispera | 48.3 | 51.8 | 50.2 | 46.6 | 42.0 |
+| treenoc | 38.0 | 51.0 | 49.8 | 62.5 | 64.8 |
+| fiara | 51.7 | 50.1 | 50.7 | 58.0 | 50.0 |
+| ishimi | 56.9 | 50.1 | 50.1 | 48.9 | 46.6 |
+| cyclonius | 47.9 | 49.4 | 46.9 | 59.1 | 54.5 |
+| curomo | 56.1 | 49.2 | 49.8 | 46.6 | 43.2 |
+| echo | 47.7 | 48.7 | 50.1 | 48.9 | 56.8 |
+| lavax | 48.9 | 47.4 | 47.9 | 53.4 | 55.7 |
+| sindarosa | 45.4 | 45.4 | 48.1 | 40.9 | 47.7 |
+
+Zero-sum check (-d/11): the six unchanged races (pax, rokcore, morblass, fiara, lavax, cyclonius) moved -0.4 pp on average against -0.95 predicted, inside the 1.4 pp run noise. Random-partner spread 45.4..53.0 (was 38.0..56.9); every race is in .45-.55 (acceptance met), sindarosa is at the edge (45.4, did not move despite +3.75% life; the 1.5x step 845 was not tried). Random-partner element trio means: fire 47.6, water 50.4, air 50.0, earth 52.0, so the largest gap is 4.4 pp (limit 10). Fixture: air trio gap -5.1 pp (mean(echo, wispera) 49.4 minus cyclonius 54.5; limit 10); fixture treenoc 64.8 is the documented lead-order exception (treenoc-led treenoc+ishimi), every other fixture race is .42-.57. Style (fixture): melee mean .502, ranged .498, melee vs ranged 50.4%.
+
+Fun gates (seeds 8, team size 2, measurement): all pass; round median 61.76 s, worst/best race 0.42/0.648. `fun:gates --team-sizes 3` has no bands (the run aborts), so 3v3 stays report only; boss-probe output was recorded at `.scratch/boss-E.txt` (not committed, no v100 reference rerun).
+
+Re-record: arcade and classic goldens (Classic changes only the simVersion header) and `arcade-2v2-baseline.json`.
