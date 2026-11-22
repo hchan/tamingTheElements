@@ -3,6 +3,7 @@ import { coreDisplayWidth, viewHeight } from '../boot/viewport';
 import type { ComboProbe } from '../platform/test-hook';
 import { CHIP_RECTS_KEY, COMBO_RECTS_KEY, comboAlpha, comboLabel, comboScale, projectToHud, type ArcadeHudModel, type HudRect } from './arcade-hud';
 import { HUD_WIDTH } from './bars';
+import { comboCutFadeOf } from './combo-cut';
 import { styleCombatText } from './combat-text';
 import { COMBO_GAP, COMBO_STUCK_ALPHA, comboMode, newPlaceOut, newPlaceState, numberLane, placeCombo, resetPlaceState, type NumberLane, type PlaceInput } from './combo-anchor';
 import type { PlaceOut, PlaceState } from './combo-anchor';
@@ -96,6 +97,7 @@ export class HudCombo {
       this.wasAnchored[team] = false;
       t.setPosition(team === 0 ? COMBO_MARGIN : comboRightX(HUD_WIDTH, COMBO_MARGIN, this.pauseLeft()), COMBO_Y);
       t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
+      t.setAlpha(t.alpha * comboCutFadeOf(this.scene.registry, t.y, t.originY, t.displayHeight));
       return;
     }
     const s = frame.w / from.w;
@@ -152,6 +154,7 @@ export class HudCombo {
       .setScale(Math.min(comboScale(c, reduced), out.popMax))
       .setAlpha(out.stuck ? Math.min(alpha, COMBO_STUCK_ALPHA) : alpha)
       .setVisible(true);
+    t.setAlpha(t.alpha * comboCutFadeOf(this.scene.registry, t.y, t.originY, t.displayHeight));
   }
 
   /** The HUD furniture an anchored counter stays under, in `ceilRects`: status chips, name/life labels, SUPER labels, bench chips and the tag pill. */
