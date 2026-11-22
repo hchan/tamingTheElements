@@ -57,6 +57,10 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('hurricane', 'A hurricane that follows you and hurts anyone inside it.', 'Press it, then stay close to the foe.'),
   L('sonar-blast', 'A pulse of sound that flies out and hits the foe.', 'Aim along the line to the foe and fire.'),
   L('steal-health', 'A strike that heals you for the harm it does.', 'Land it when you are hurt, then keep landing it.'),
+  L('static-mote', 'A quick little spark thrown at the foe. Up to three can be in flight at once.', 'Tap it in a steady rhythm from range.'),
+  L('skitter', 'A quick hop backward, out of the foe\'s reach.', 'Press it when the foe closes in, then fire from the new distance.'),
+  L('stinging-filament', 'A thin, fast filament that hits and stuns the foe for a moment.', 'Fire it down the line to the foe, then follow up while they are stunned.'),
+  L('bell-pulse', 'A slow ring of sound that pushes close foes away. It takes a while to be ready again.', 'Press it when the foe is right on top of you to win back some room.'),
   // Story-only heroes (the dummy target and the Eternal Void), still in the released range
   L('stick', 'A stick thrown at the foe.', 'Fire it from range.'),
   L('chaos-bolt', 'A fast bolt of chaos.', 'Fire it down the line to the foe.'),

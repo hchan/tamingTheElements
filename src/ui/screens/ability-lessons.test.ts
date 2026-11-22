@@ -50,6 +50,18 @@ describe('ability lessons', () => {
     expect(lessons.map((l) => l?.abilityId)).toEqual(['tusk-gore', 'bristle-stomp']);
   });
 
+  it('has Zephra lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('zephra'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['static-mote', 'skitter']);
+  });
+
+  it('has Hyalia lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('hyalia'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['stinging-filament', 'bell-pulse']);
+  });
+
   it('never uses the retired words', () => {
     for (const l of [...ABILITY_LESSONS.values(), SNAG_LESSON]) expect(`${l.line} ${l.tip}`).not.toMatch(BANNED);
   });
