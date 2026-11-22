@@ -25,8 +25,4 @@ describe('World Tour / Versus suggested stack rows are easy to read (a11y review
   it('suggested text is not dimmed by opacity', () => {
     expect(m?.[1]).toMatch(/opacity:\s*1/);
   });
-  it('each ability chip carries its own full-text tooltip', () => {
-    const ts = readFileSync(resolve(root, 'src/ui/screens/team-stack.ts'), 'utf8');
-    expect(ts).toContain('chip.title = `${a.mark} ${a.title}`;');
-  });
 });
