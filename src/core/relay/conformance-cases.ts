@@ -222,6 +222,7 @@ const hello: ConformanceCase[] = [
   testCase('hello.welcome', '3,4', 'HELLO is answered by WELCOME (version, nonzero session id, serverHint 64, resumed 0)', async (c) => {
     const [, w] = await join(c);
     eq([w.frame.ver, w.frame.resumed, w.frame.serverHint], [PROTOCOL_VERSION, 0, 64], 'welcome');
+    check(w.frame.caps === 0 || w.frame.caps === 1, 'welcome caps (byte 7) must be 0 or 1');
     check(w.frame.sessionId > 0, 'session id must be nonzero (0 means "new" in HELLO.resumeSession)');
   }),
   testCase('hello.session-ids-differ', '4', 'two connections get different session ids', async (c) => {

@@ -15,9 +15,11 @@ const c2s: Frame[] = [
   { t: 'pause', seq: 11, matchId: 3, flags: 1 },
   { t: 'result', seq: 12, matchId: 3, winner: 1, reason: 0, ticks: 4000, finalHash: 77 },
   { t: 'ping', nonce: 123456 },
+  { t: 'chat', match: 7, seq: 2, bytes: Uint8Array.of(0x68, 0x69) },
 ];
 const s2c: Frame[] = [
-  { t: 'welcome', ver: 1, sessionId: 42, resumed: 1, serverHint: 64 },
+  { t: 'welcome', ver: 1, sessionId: 42, resumed: 1, caps: 1, serverHint: 64 },
+  { t: 'chat', match: 7, seq: 2, bytes: Uint8Array.of(0x68, 0x69) },
   { t: 'queueState', waitingSec: 12 },
   { t: 'roomCreated', code: 'XYZ789', ttlSec: 600 },
   { t: 'roomPeer', event: 0 },
@@ -51,10 +53,13 @@ describe('codec', () => {
   });
   it('rejects the wrong direction', () => {
     for (const f of c2s) {
-      if (f.t === 'setup' || f.t === 'pause') continue; // relayed both ways
+      if (f.t === 'setup' || f.t === 'pause' || f.t === 'chat') continue; // relayed both ways
       expect(decodeFrame(encodeFrame(f), 's2c').ok).toBe(false);
     }
-    for (const f of s2c) expect(decodeFrame(encodeFrame(f), 'c2s').ok).toBe(false);
+    for (const f of s2c) {
+      if (f.t === 'chat') continue; // relayed both ways
+      expect(decodeFrame(encodeFrame(f), 'c2s').ok).toBe(false);
+    }
   });
   it('carries a BATCH packet byte for byte (parity with net/packet)', () => {
     const p = {
@@ -124,5 +129,47 @@ describe('codec', () => {
     bad[2] = 0x07;
     expect(decodeFrame(bad).ok).toBe(false);
     expect(() => encodeFrame({ t: 'roomJoin', code: 'AB' })).toThrow(RangeError);
+  });
+});
+
+describe('codec chat and welcome caps', () => {
+  const hex = (b: Uint8Array): string => [...b].map((x) => x.toString(16).padStart(2, '0')).join(' ');
+  const hi = Uint8Array.of(0x68, 0x69);
+  it('encodes the golden chat frame', () => {
+    expect(hex(encodeFrame({ t: 'chat', match: 7, seq: 0, bytes: hi }))).toBe('70 07 00 02 68 69');
+  });
+  it('welcome has caps at byte 7 and serverHint u8 at byte 8', () => {
+    const b = encodeFrame({ t: 'welcome', ver: 1, sessionId: 0x42, resumed: 0, caps: 0, serverHint: 64 });
+    expect(hex(b)).toBe('02 01 00 00 00 42 00 00 40');
+    const c = encodeFrame({ t: 'welcome', ver: 1, sessionId: 0x42, resumed: 0, caps: 1, serverHint: 64 });
+    expect(hex(c)).toBe('02 01 00 00 00 42 00 01 40');
+    const d = decodeFrame(c, 's2c');
+    expect(d.ok && d.frame).toEqual({ t: 'welcome', ver: 1, sessionId: 0x42, resumed: 0, caps: 1, serverHint: 64 });
+  });
+  it('chat structural errors are badFrame, size errors tooBig', () => {
+    const code = (n: number[]): unknown => {
+      const d = decodeFrame(Uint8Array.from(n), 'c2s');
+      return d.ok ? 'ok' : d.code;
+    };
+    expect(code([0x70, 1, 0])).toBe(ErrorCode.badFrame);
+    expect(code([0x70, 1, 0, 2, 0x68])).toBe(ErrorCode.badFrame);
+    expect(code([0x70, 1, 0, 1, 0x68, 0x69])).toBe(ErrorCode.badFrame);
+    const sized = (n: number, len: number): unknown => {
+      const b = new Uint8Array(len);
+      b[0] = 0x70;
+      b[3] = n;
+      const d = decodeFrame(b, 'c2s');
+      return d.ok ? 'ok' : d.code;
+    };
+    expect(sized(121, 125)).toBe(ErrorCode.tooBig);
+    expect(sized(121, 124)).toBe(ErrorCode.tooBig);
+    expect(sized(5, 125)).toBe(ErrorCode.tooBig);
+    expect(sized(120, 124)).toBe('ok');
+  });
+  it('n = 0 decodes; encode throws RangeError on 0 and 121 bytes', () => {
+    const d = decodeFrame(Uint8Array.from([0x70, 1, 0, 0]), 'c2s');
+    expect(d.ok && d.frame).toEqual({ t: 'chat', match: 1, seq: 0, bytes: new Uint8Array(0) });
+    expect(() => encodeFrame({ t: 'chat', match: 1, seq: 0, bytes: new Uint8Array(0) })).toThrow(RangeError);
+    expect(() => encodeFrame({ t: 'chat', match: 1, seq: 0, bytes: new Uint8Array(121) })).toThrow(RangeError);
   });
 });

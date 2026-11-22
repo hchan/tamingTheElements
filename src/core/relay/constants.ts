@@ -24,6 +24,7 @@ export const FrameType = {
   resultAck: 0x51,
   ping: 0x60,
   pong: 0x61,
+  chat: 0x70,
   error: 0x7f,
 } as const;
 

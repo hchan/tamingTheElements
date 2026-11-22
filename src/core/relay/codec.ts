@@ -1,3 +1,4 @@
+import { CHAT_FRAME_MAX, CHAT_MAX_BYTES } from './chat-rules';
 import {
   ErrorCode,
   FrameType,
@@ -12,7 +13,8 @@ import { CODE_LENGTH } from './rooms-rules';
 /** Decoded fields per frame (docs/ONLINE-PROTOCOL.md section 4). Integers are big-endian on the wire. */
 export interface FrameFields {
   hello: { ver: number; simVersion: number; resumeSession: number };
-  welcome: { ver: number; sessionId: number; resumed: number; serverHint: number };
+  /** `caps` (byte 7): bit0 = chat. Optional on the type so a relay that does not set it sends 0; decode always fills it. */
+  welcome: { ver: number; sessionId: number; resumed: number; caps?: number; serverHint: number };
   queueJoin: { mode: number };
   queueLeave: object;
   queueState: { waitingSec: number };
@@ -48,6 +50,8 @@ export interface FrameFields {
   ping: { nonce: number };
   pong: { nonce: number };
   error: { code: number; retryAfterSec: number; detail: number };
+  /** `bytes` = the UTF-8 text (1-120 bytes to encode; decode also yields n = 0 so the relay can answer it as bad text). */
+  chat: { match: number; seq: number; bytes: Uint8Array };
 }
 
 export type FrameName = keyof FrameFields;
@@ -76,7 +80,8 @@ const FIXED: Partial<Record<FrameName, readonly Field[]>> = {
     ['ver', 'u8'],
     ['sessionId', 'u32'],
     ['resumed', 'u8', 1],
-    ['serverHint', 'u16'],
+    ['caps', 'u8'],
+    ['serverHint', 'u8'],
   ],
   queueJoin: [['mode', 'u8', 0]],
   queueLeave: [],
@@ -155,6 +160,7 @@ const C2S = new Set<FrameName>([
   'pause',
   'result',
   'ping',
+  'chat',
 ]);
 const S2C = new Set<FrameName>([
   'welcome',
@@ -169,6 +175,7 @@ const S2C = new Set<FrameName>([
   'resultAck',
   'pong',
   'error',
+  'chat',
 ]);
 
 const fail = (
@@ -180,6 +187,7 @@ const ok = (frame: Frame): DecodeResult => ({ ok: true, frame });
 function maxFrameSize(name: FrameName): number {
   if (name === 'batch') return MAX_BATCH_FRAME;
   if (name === 'setup') return MAX_SETUP_FRAME;
+  if (name === 'chat') return CHAT_FRAME_MAX;
   if (name === 'roomJoin') return 1 + CODE_LENGTH;
   if (name === 'roomCreated') return 1 + CODE_LENGTH + 2;
   return fixedSize(FIXED[name] ?? []);
@@ -254,6 +262,13 @@ export function decodeFrame(buf: Uint8Array, dir?: 'c2s' | 's2c'): DecodeResult 
       blob: buf.slice(9),
     });
   }
+  if (name === 'chat') {
+    if (buf.length < 4) return fail(ErrorCode.badFrame, 'short chat');
+    const n = buf[3] as number;
+    if (n > CHAT_MAX_BYTES) return fail(ErrorCode.tooBig, 'chat text too big');
+    if (buf.length !== 4 + n) return fail(ErrorCode.badFrame, 'wrong length');
+    return ok({ t: 'chat', match: buf[1] as number, seq: buf[2] as number, bytes: buf.slice(4) });
+  }
   // batch
   if (buf.length < 5 + 12) return fail(ErrorCode.badFrame, 'short batch');
   const packet = buf.slice(5);
@@ -272,7 +287,7 @@ export function encodeFrame(frame: Frame): Uint8Array {
     buf[0] = type;
     let o = 1;
     for (const [field, kind] of fixed) {
-      const v = f[field] as number;
+      const v = (f[field] ?? (field === 'caps' ? 0 : undefined)) as number;
       if (kind === 'u8') dv.setUint8(o, v);
       else if (kind === 'u16') dv.setUint16(o, v);
       else dv.setUint32(o, v);
@@ -301,6 +316,17 @@ export function encodeFrame(frame: Frame): Uint8Array {
     dv.setUint8(6, f['ackCtl'] as number);
     dv.setUint16(7, blob.length);
     buf.set(blob, 9);
+    return buf;
+  }
+  if (f.t === 'chat') {
+    const bytes = f['bytes'] as Uint8Array;
+    if (bytes.length < 1 || bytes.length > CHAT_MAX_BYTES) throw new RangeError('chat text length');
+    const buf = new Uint8Array(4 + bytes.length);
+    buf[0] = type;
+    buf[1] = f['match'] as number;
+    buf[2] = f['seq'] as number;
+    buf[3] = bytes.length;
+    buf.set(bytes, 4);
     return buf;
   }
   const packet = f['packet'] as Uint8Array;

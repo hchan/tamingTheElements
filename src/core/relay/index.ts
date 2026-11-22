@@ -1,5 +1,6 @@
 export { RelayCore } from './core';
 export type { RelayEvent, RelayOptions } from './core';
+export * from './chat-rules';
 export * from './codec';
 export * from './constants';
 export * from './rooms-rules';
