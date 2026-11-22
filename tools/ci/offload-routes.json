@@ -5,6 +5,7 @@
     { "job": "e2e:short", "placement": "pc-first", "fallback": "mac", "note": "<= 150 tests; Mac fallback via browser slot and load guard" },
     { "job": "e2e:full", "placement": "pc", "note": "PC only; optionally via the gpu-queue cpu-full lane with TTE_E2E_VIA_QUEUE=1 (see docs/TESTING.md)" },
     { "job": "e2e:flake", "placement": "pc", "note": "PC only" },
+    { "job": "flake:hunt", "placement": "pc", "note": "PC only; slice from tools/ci/flake-ledger.json, runs through e2e:flake; refuses CI and the Mac" },
     { "job": "gate:commit", "placement": "mac", "note": "T1: lint, typecheck, depcruise, test, test:dom, test:legacy, build, size:check; under 5 min; no e2e" },
     { "job": "gate:push", "placement": "pc-first", "fallback": "mac", "note": "T2: T1 on the Mac, then @smoke + touched specs through the router (short lane; Mac fallback only <= 150 tests)" },
     { "job": "gate:long", "placement": "pc", "note": "PC only" },

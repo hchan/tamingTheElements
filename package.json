@@ -52,6 +52,7 @@
     "ai:wallpin": "tsx tools/sim/wall-pin-probe.ts",
     "size:check": "tsx tools/ci/size-check.ts",
     "e2e:flake": "tsx tools/ci/e2e-route.ts flake",
+    "flake:hunt": "tsx tools/ci/flake-hunt.ts",
     "ci:local": "tsx tools/ci/local-ci.ts",
     "e2e:durations": "tsx tools/ci/e2e-durations.ts",
     "gate:commit": "tsx tools/ci/gate.ts commit",

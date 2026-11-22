@@ -217,6 +217,10 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
 - **Finding flakes**: `E2E_PORT=4841 pnpm e2e:flake --repeat 5 tests/e2e/tour.spec.ts tests/e2e/arcade-` (`tools/ci/e2e-flake.ts`) runs the
   specs with `--repeat-each`, retries off, and prints pass counts per test (exit 1 if any test failed once). Extra args pass through
   to Playwright, e.g. `--config playwright.pages.config.ts`. Check a suspect on a slow machine with CDP CPU throttling (see above).
+  `pnpm flake:hunt [--budget-min N] [--repeat N] [--dry-run]` (`tools/ci/flake-hunt.ts`) picks a slice from `tools/ci/flake-ledger.json`
+  (specs never run first, then lowest pass rate, then slowest p90) and runs it through `e2e:flake` (PC only; refuses `CI=1`, the Mac and
+  a missing remote), then merges the summary into the ledger (`tools/ci/flake-ledger.ts merge <summary.json>`). `--dry-run` prints the
+  chosen specs and command and runs nothing.
 
 ## Writing a new ability or character test
 
