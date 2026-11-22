@@ -1,0 +1,38 @@
+/* Picker QA: at 1280x720 and 1920x1080 several Versus / World Tour picker texts computed under 14 px (hero panel key hints, ability
+   descriptions, element group headers, stack chips). Same pattern as team-stack.css: keep the old em ratio, never go below 14 px.
+   Loaded last by both pickers; the #menu :is(#arcadePick, #tourPick) prefix outranks the per-screen rules. Pinned by
+   tests/repo/picker-min-text-css.test.ts. */
+#menu :is(#arcadePick, #tourPick) .heroKey,
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroAbilityDesc,
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroAbilitiesTitle,
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroStyleWord,
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroBlurb,
+#menu :is(#arcadePick, #tourPick) .heroGroup,
+#menu :is(#arcadePick, #tourPick) .heroGrid .vsChip,
+#menu :is(#arcadePick, #tourPick) .teamStack .tsNext,
+#menu :is(#arcadePick, #tourPick) .teamStack .vsAbility {
+  font-size: max(14px, var(--pmt-em, 0.85em));
+}
+#menu :is(#arcadePick, #tourPick) .heroKey { --pmt-em: 0.85em; }
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroAbilityDesc { --pmt-em: 0.75em; }
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroStyleWord { --pmt-em: 0.9em; }
+#menu :is(#arcadePick, #tourPick) .heroPanel .heroBlurb { --pmt-em: 0.8em; }
+#menu :is(#arcadePick, #tourPick) .heroGrid .vsChip { --pmt-em: 0.8em; }
+#menu :is(#arcadePick, #tourPick) .teamStack .tsNext,
+#menu :is(#arcadePick, #tourPick) .teamStack .vsAbility { --pmt-em: 0.75em; }
+/* Versus tile names were 0.85em (13.6 px) below the wide-window rule (qa-r46 keeps 16-18 px there, so that case is left alone). */
+@media not ((min-width: 1600px) and (min-height: 900px) and (pointer: fine)) {
+  #menu #arcadePick .heroGrid[data-cols] .heroTileName.heroTileName {
+    font-size: max(14px, 0.85em);
+  }
+}
+/* A 14 px chip wrapped to three lines in the narrow stack column and pushed slot 3 under the Fight bar at 720p: keep one line, clip with an ellipsis
+   (the hero panel lists the full ability names). */
+#menu :is(#arcadePick, #tourPick) .teamStack .vsAbility {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  line-height: 1.2;
+}
