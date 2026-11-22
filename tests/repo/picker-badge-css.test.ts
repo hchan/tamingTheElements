@@ -14,9 +14,9 @@ describe('picker tile badges and stack stats (QA: "Fiara You 3 You", "Speed / 7"
   it('World Tour tiles get the chip look too (rules not scoped to #arcadePick only)', () => {
     expect(css).toMatch(/\.heroTile \.vsChip/);
   });
-  it('.tsStats stays on one line without a bigger font', () => {
+  it('.tsStats stays on one line with a 14 px floor', () => {
     const rule = /\.teamStack \.tsStats\s*\{([^}]*)\}/.exec(stack)?.[1] ?? '';
     expect(rule).toMatch(/white-space:\s*nowrap/);
-    expect(rule).toMatch(/font-size:\s*0\.8em/);
+    expect(rule).toMatch(/font-size:\s*max\(14px,\s*0\.8em\)/);
   });
 });
