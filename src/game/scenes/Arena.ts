@@ -66,7 +66,7 @@ import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import type { MotionSmoother } from '../fx/ability-motion-view';
 import { ReplayCursor } from '../replay/cursor';
-import { buildMatchEnd, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
+import { buildMatchEnd, demoMatch, effectsHeld, playbackFrame, syncArcadeBg } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import { createArenaProbe } from './arena-probe';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
@@ -139,7 +139,7 @@ export class Arena extends Phaser.Scene {
   private actionBar: ActionBarView | undefined;
   /** Local two-player: Player 2's small mirrored readout (view only). */
   private actionBar2: ActionBarView | undefined;
-  private backdrop: Backdrop | undefined;
+  private backdrop: Backdrop | undefined; private arcadeBg: Phaser.GameObjects.Image | undefined;
   /** Per-stage ambient particles behind the fighters (view only; none under reduced motion). */
   private ambient: StageAmbient | undefined;
   private clicks: number[] = [];
@@ -276,7 +276,7 @@ export class Arena extends Phaser.Scene {
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
-    else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1);
+    else if (bg) this.arcadeBg = this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1).setVisible(!arcade); // QA r126: hidden until the sim stage is known (syncArcadeBg)
     if (element && arcade) mountTallFills(this, this.view, element, bg ? `bg:${bg}` : undefined, this.cleanups);
     if (element) this.ambient = createStageAmbient(this, element, arcade ? arcadePlayfield().w : width);
 
@@ -666,7 +666,7 @@ export class Arena extends Phaser.Scene {
     this.swapNotice?.checkBusySwap(view.arcade()?.gameTick);
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
-    this.ambient?.update(getPrefs().reduceMotion);
+    this.ambient?.update(getPrefs().reduceMotion); if (this.arcadeBg && arcade) syncArcadeBg(this.arcadeBg, arcade.stage, view.heroElement(), this.textures);
     this.reportPlayback();
     this.frameTick = tick;
     this.frameAlpha = alpha;

@@ -106,3 +106,34 @@ export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean
 export function effectsHeld(paused: boolean, ageing: boolean): boolean {
   return paused && !ageing;
 }
+
+/**
+ * The element whose backdrop the Arcade floor shows from its first frame: the sim's stage (1 fire .. 4 air), else the hero's element.
+ * The terrain view (a lazy chunk) paints the stage backdrop over it a frame or two later; until then this one is all that shows, so
+ * it must already be the stage's (qa r126: a Tour fight on an Air stage flashed the hero's dark Fire floor for one frame).
+ * The Void boss keeps its own arena, so it keeps the hero's element too.
+ */
+export function firstBackdropElement(stage: number, heroElement: string | undefined): string | undefined {
+  if (heroElement === 'void') return heroElement;
+  return ['fire', 'water', 'earth', 'air'][stage - 1] ?? heroElement;
+}
+
+/** The Arcade floor image the Arena adds under the terrain view: duck-typed so the pure logic needs no Phaser. */
+export interface ArcadeBgImage {
+  visible: boolean;
+  readonly texture: { key: string };
+  setTexture(key: string): unknown;
+  setVisible(on: boolean): unknown;
+}
+
+/** Per frame: hidden while the sim stage is 0 (before tick 1), then the stage element's backdrop (no stale hero-element floor). */
+export function syncArcadeBg(img: ArcadeBgImage, stage: number, heroElement: string | undefined, textures: { exists(key: string): boolean }): void {
+  const el = stage > 0 ? firstBackdropElement(stage, heroElement) : undefined;
+  const key = el === undefined ? undefined : `bg:${el}`;
+  if (key === undefined || !textures.exists(key)) {
+    if (img.visible) img.setVisible(false);
+    return;
+  }
+  if (img.texture.key !== key) img.setTexture(key);
+  if (!img.visible) img.setVisible(true);
+}
