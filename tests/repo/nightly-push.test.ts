@@ -9,7 +9,7 @@ const SHA = 'c'.repeat(40);
 const OTHER = 'e'.repeat(40);
 
 describe('clean-night push decision (pure)', () => {
-  const ok: CleanPushInput = { verdict: 'green', noEnvOverride: true, onMain: true, treeClean: true, originIsAncestor: true, testedIsHead: true, hasCommits: true, gateCommitOk: true };
+  const ok: CleanPushInput = { verdict: 'green', noEnvOverride: true, onMain: true, treeClean: true, originIsAncestor: true, testedIsAncestor: true, hasCommits: true, gateCommitOk: true };
   const red = (unrecorded: number) =>
     finishStatus(pendingStatus(SHA, 'raw-1', 's'), 1, { passed: 1, failed: [{ file: 'a.spec.ts', title: 'x' }], flaky: [] }, unrecorded ? [] : [{ file: 'tests/e2e/a.spec.ts', titleIncludes: 'x' }], 'f', 'PC');
 
@@ -37,8 +37,8 @@ describe('clean-night push decision (pure)', () => {
   it('a dirty tree blocks', () => {
     expect(cleanPushBlockers({ ...ok, treeClean: false }).join(' ')).toMatch(/not clean/);
   });
-  it('gate:commit fail, not on main, untested commits, nothing to push and a Mac-lane env override each block', () => {
-    for (const k of ['gateCommitOk', 'onMain', 'testedIsHead', 'hasCommits', 'noEnvOverride'] as const) expect(cleanPushBlockers({ ...ok, [k]: false })).toHaveLength(1);
+  it('gate:commit fail, not on main, a tested sha that is not an ancestor, nothing to push and a Mac-lane env override each block', () => {
+    for (const k of ['gateCommitOk', 'onMain', 'testedIsAncestor', 'hasCommits', 'noEnvOverride'] as const) expect(cleanPushBlockers({ ...ok, [k]: false })).toHaveLength(1);
   });
   it('describes the result', () => {
     const s: PushStatus = { schema: 1, verdict: 'green', sha: SHA, pushed: false, blockers: ['b'], finishedAt: 't' };
@@ -57,6 +57,8 @@ interface Night {
   dirty?: boolean;
   gate?: number;
   head?: string;
+  /** HEAD is 3 commits past the tested sha (tested is an ancestor of HEAD). */
+  moved?: boolean;
   branch?: string;
   ahead?: string;
   env?: Record<string, string>;
@@ -108,8 +110,11 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
         if (line === 'git rev-parse HEAD') return ok(`${n.head ?? SHA}\n`);
         if (line === 'git symbolic-ref --short HEAD') return ok(`${n.branch ?? 'main'}\n`);
         if (line === 'git status --porcelain') return ok(n.dirty ? ' M src/a.ts\n' : '');
-        if (line === 'git merge-base --is-ancestor origin/main HEAD') return ok('', n.diverged ? 1 : 0);
-        if (line === 'git rev-list --count origin/main..HEAD') return ok(`${n.ahead ?? '2'}\n`);
+        if (line === `git merge-base --is-ancestor origin/main ${SHA}`) return ok('', n.diverged ? 1 : 0);
+        if (line === `git merge-base --is-ancestor ${SHA} HEAD`) return ok('', n.head === undefined || n.moved ? 0 : 1);
+        if (line === `git rev-list --count origin/main..${SHA}`) return ok(`${n.ahead ?? '2'}\n`);
+        if (line === `git rev-list --count ${SHA}..HEAD`) return ok(n.moved ? '3\n' : '0\n');
+        if (line.startsWith('git worktree')) return ok();
         if (line === 'corepack pnpm gate:commit') {
           expect(env['GIT_CONFIG_VALUE_0']).toBe('disabled:');
           return ok('', n.gate ?? 0);
@@ -119,22 +124,36 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
       },
     };
   };
-  const pushes = (): string[] => calls.filter((c) => /^git .*push/.test(c));
+  const pushes = (): string[] => calls.filter((c) => /^git push /.test(c));
   const gates = (): string[] => calls.filter((c) => c.includes('gate:commit'));
   const pushStatus = (): PushStatus => JSON.parse(readFileSync(join(dir, 'gate', 'nightly-push-status.json'), 'utf8')) as PushStatus;
 
   it('green night: gate:commit on main, then exactly one plain push of HEAD to main', () => {
     expect(main(['collect-and-fix'], deps({}))).toBe(0);
     expect(gates()).toHaveLength(1);
-    expect(pushes()).toEqual(['git push origin HEAD:main']);
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
     expect(calls.join('\n')).not.toMatch(/--force|-f\b|\+HEAD/);
     expect(pushStatus()).toMatchObject({ verdict: 'green', pushed: true, blockers: [] });
     expect(out).toContain('pushed main to origin/main');
   });
   it('known-red only night also pushes', () => {
     expect(main(['collect-and-fix'], deps({ reds: ['opens'], known: ['opens'] }))).toBe(0);
-    expect(pushes()).toEqual(['git push origin HEAD:main']);
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
     expect(pushStatus()).toMatchObject({ verdict: 'known-red', pushed: true });
+  });
+  it('main moved after the tested sha (ancestor): gate in a temp worktree, push the tested sha, report the untested count', () => {
+    expect(main(['collect-and-fix'], deps({ head: OTHER, moved: true }))).toBe(0);
+    expect(calls.filter((c) => c.startsWith('git worktree add --detach'))).toHaveLength(1);
+    expect(calls.filter((c) => c.startsWith('git worktree remove'))).toHaveLength(1);
+    expect(gates()).toHaveLength(1);
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
+    expect(pushes().join(' ')).not.toMatch(/--force| -f\b|\+|HEAD:main/);
+    expect(pushStatus()).toMatchObject({ pushed: true, untestedLocal: 3 });
+  });
+  it('main moved and the gate fails: temp worktree removed, no push', () => {
+    expect(main(['collect-and-fix'], deps({ head: OTHER, moved: true, gate: 1 }))).toBe(0);
+    expect(calls.filter((c) => c.startsWith('git worktree remove'))).toHaveLength(1);
+    expect(pushes()).toEqual([]);
   });
   it('a new red goes to the fix loop, no plain push and no gate:commit', () => {
     expect(main(['collect-and-fix'], deps({ reds: ['a', 'b', 'c', 'd'] }))).toBe(0);

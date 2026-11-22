@@ -2,8 +2,12 @@
  * Clean-night push (the 02:00 `nightly-fix.ts collect-and-fix` job): when the collected 23:00 full e2e is green, or red only with
  * known-red tests (tools/ci/known-red.json), push local main to origin/main with the shared plain push (`PUSH_ARGS`, never forced,
  * never another branch). Preconditions, all checked in `cleanPushBlockers` (pure): the checkout is on main with a clean tree,
- * origin/main (fetched) is an ancestor of main, main is still the commit the full run tested, there is something to push,
- * `gate:commit` passes on main (credentials stripped, pushes disabled), no Mac-lane env override, before the hard stop.
+ * origin/main (fetched) is an ancestor of the commit the full run tested (`st.sha`), that commit is an ancestor of main (main
+ * may have moved on since 23:00), there is something to push, `gate:commit` passes on the tested commit's tree (credentials
+ * stripped, pushes disabled; on main itself when HEAD is the tested commit, else in a temporary detached worktree under
+ * `.scratch/`, removed afterwards), no Mac-lane env override, before the hard stop. What is pushed is exactly the tested commit,
+ * `git push origin <tested-sha>:main` (plain fast-forward, never forced); commits merged after it (untested) stay local and are
+ * counted in the status file (`untestedLocal`). A tested sha that is not an ancestor of main (history rewritten) still blocks.
  * A new (unrecorded) red never pushes here: that night goes to the fix loop. Report: tte-gate/nightly-push-status.json.
  * Tests: tests/repo/nightly-push.test.ts.
  */
@@ -37,10 +41,10 @@ export interface CleanPushInput {
   readonly noEnvOverride: boolean;
   readonly onMain: boolean;
   readonly treeClean: boolean;
-  /** `git merge-base --is-ancestor origin/main HEAD` after a fetch. */
+  /** `git merge-base --is-ancestor origin/main <tested-sha>` after a fetch. */
   readonly originIsAncestor: boolean;
-  /** HEAD is the commit the full run tested (no untested commits merged since 23:00). */
-  readonly testedIsHead: boolean;
+  /** The commit the full run tested is HEAD or an ancestor of it (main may have moved on; the tested commit is what is pushed). */
+  readonly testedIsAncestor: boolean;
   readonly hasCommits: boolean;
   readonly gateCommitOk: boolean;
 }
@@ -53,10 +57,10 @@ export function cleanPushBlockers(i: CleanPushInput): string[] {
   if (!i.noEnvOverride) out.push(`one of ${BLOCKING_ENV.join(', ')} is set; no push`);
   if (!i.onMain) out.push('the checkout is not on main');
   if (!i.treeClean) out.push('the working tree on main is not clean');
-  if (!i.originIsAncestor) out.push('origin/main is not an ancestor of main (diverged); no push, never forced');
-  if (!i.testedIsHead) out.push('main moved since the full run (untested commits); not pushed');
-  if (!i.hasCommits) out.push('main has nothing to push');
-  if (!i.gateCommitOk) out.push('gate:commit failed on main');
+  if (!i.originIsAncestor) out.push('origin/main is not an ancestor of the tested commit (diverged); no push, never forced');
+  if (!i.testedIsAncestor) out.push('the tested commit is not an ancestor of main (history changed since the full run); not pushed');
+  if (!i.hasCommits) out.push('the tested commit has nothing to push');
+  if (!i.gateCommitOk) out.push('gate:commit failed on the tested commit');
   return out;
 }
 
@@ -66,6 +70,8 @@ export interface PushStatus {
   readonly sha: string;
   readonly pushed: boolean;
   readonly blockers: readonly string[];
+  /** Commits on main after the tested sha that stayed local (untested); 0 when main is the tested sha. */
+  readonly untestedLocal?: number;
   readonly finishedAt: string;
 }
 
@@ -74,7 +80,8 @@ export const pushStatusPath = (dir: string): string => join(dir, 'nightly-push-s
 export function describePush(s: PushStatus | undefined): string[] {
   if (!s) return [];
   const head = `nightly clean push (${s.finishedAt}): ${s.verdict} run at ${s.sha.slice(0, 7)}`;
-  return s.pushed ? [`${head}: pushed main to origin/main`] : [`${head}: not pushed`, ...s.blockers.map((b) => `  - ${b}`)];
+  const kept = s.untestedLocal ? [`  - ${s.untestedLocal} untested commit(s) on main stayed local`] : [];
+  return s.pushed ? [`${head}: pushed main to origin/main (tested commit)`, ...kept] : [`${head}: not pushed`, ...s.blockers.map((b) => `  - ${b}`), ...kept];
 }
 
 export function readPushStatus(dir: string): PushStatus | undefined {
@@ -86,12 +93,16 @@ export function readPushStatus(dir: string): PushStatus | undefined {
   }
 }
 
-/** Check the preconditions on the main checkout (`d.repo`) and push main when none blocks. Writes the push status; returns 0. */
+/** Plain fast-forward push of one commit to main (same shape as `PUSH_ARGS`, with the tested sha instead of HEAD). */
+export const pushArgsFor = (sha: string): readonly string[] => ['push', 'origin', `${sha}:main`];
+
+/** Check the preconditions on the main checkout (`d.repo`) and push the tested commit when none blocks. Writes the push status; returns 0. */
 export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number): number {
   const git = (...a: string[]): { code: number; stdout: string } => d.run('git', a, d.repo, d.env);
   const verdict = nightVerdict(st);
+  let untested = 0;
   const finish = (pushed: boolean, blockers: string[]): number => {
-    const s: PushStatus = { schema: 1, verdict, sha: st.sha, pushed, blockers, finishedAt: d.now().toISOString() };
+    const s: PushStatus = { schema: 1, verdict, sha: st.sha, pushed, blockers, untestedLocal: untested, finishedAt: d.now().toISOString() };
     mkdirSync(d.statusDir, { recursive: true });
     writeFileSync(pushStatusPath(d.statusDir), `${JSON.stringify(s, null, 2)}\n`);
     for (const l of describePush(s)) d.out(`${l}\n`);
@@ -103,25 +114,45 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
     const s = git('status', '--porcelain');
     return s.code === 0 && s.stdout.trim() === '';
   };
-  const sha = head();
-  const count = Number.parseInt(git('rev-list', '--count', 'origin/main..HEAD').stdout.trim(), 10);
+  const tested = st.sha;
+  const testedOk = (): boolean => tested !== '' && git('merge-base', '--is-ancestor', tested, 'HEAD').code === 0;
+  const num = (r: { stdout: string }): number => Number.parseInt(r.stdout.trim(), 10);
+  const count = num(git('rev-list', '--count', `origin/main..${tested}`));
+  const moved = num(git('rev-list', '--count', `${tested}..HEAD`));
+  untested = Number.isFinite(moved) && moved > 0 ? moved : 0;
   const cheap: CleanPushInput = {
     verdict,
     noEnvOverride: !BLOCKING_ENV.some((k) => d.env[k]),
     onMain: git('symbolic-ref', '--short', 'HEAD').stdout.trim() === 'main',
     treeClean: clean(),
-    originIsAncestor: git('merge-base', '--is-ancestor', 'origin/main', 'HEAD').code === 0,
-    testedIsHead: sha !== '' && sha === st.sha,
+    originIsAncestor: git('merge-base', '--is-ancestor', 'origin/main', tested).code === 0,
+    testedIsAncestor: testedOk(),
     hasCommits: Number.isFinite(count) && count > 0,
     gateCommitOk: true,
   };
   const first = cleanPushBlockers(cheap);
   if (first.length) return finish(false, first);
   if (deadlineReached(startMs, d.now())) return finish(false, ['hard stop reached before gate:commit; nothing pushed']);
-  const gate = d.run('corepack', ['pnpm', 'gate:commit'], d.repo, noPushEnv(d.env), capTimeout(GATE_TIMEOUT_MS, startMs, d.now()));
-  // The gate ran on the live checkout: re-read HEAD and the tree so nothing that changed meanwhile is pushed.
-  const after = cleanPushBlockers({ ...cheap, gateCommitOk: gate.code === 0, treeClean: clean(), testedIsHead: head() === st.sha });
+  const gateEnv = noPushEnv(d.env);
+  let gateOk: boolean;
+  if (head() === tested) {
+    gateOk = d.run('corepack', ['pnpm', 'gate:commit'], d.repo, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0;
+  } else {
+    // Main moved on: gate the tested tree in a throwaway detached worktree, so the live checkout is never touched.
+    const wt = join(d.repo, '.scratch', `nightly-push-gate-${tested.slice(0, 12)}`);
+    mkdirSync(join(d.repo, '.scratch'), { recursive: true });
+    try {
+      gateOk =
+        d.run('git', ['worktree', 'add', '--detach', wt, tested], d.repo, d.env).code === 0 &&
+        d.run('corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0 &&
+        d.run('corepack', ['pnpm', 'gate:commit'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0;
+    } finally {
+      d.run('git', ['worktree', 'remove', '--force', wt], d.repo, d.env);
+    }
+  }
+  // Re-read the live checkout so nothing that changed meanwhile is pushed.
+  const after = cleanPushBlockers({ ...cheap, gateCommitOk: gateOk, treeClean: clean(), testedIsAncestor: testedOk() });
   if (after.length) return finish(false, after);
-  if (d.run('git', PUSH_ARGS, d.repo, d.env).code !== 0) return finish(false, ['git push failed (not forced)']);
+  if (d.run('git', pushArgsFor(tested), d.repo, d.env).code !== 0) return finish(false, ['git push failed (not forced)']);
   return finish(true, []);
 }
