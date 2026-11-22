@@ -111,8 +111,6 @@ function fillDetail(d: HTMLElement, row: StackRow): void {
     if (hero.abilitiesTitle) abil.title = hero.abilitiesTitle;
     for (const a of hero.abilities) {
       const chip = el('span', 'vsAbility', `${a.mark} ${a.title}`);
-      // The chip is clipped with an ellipsis in the narrow stack; its own tooltip carries the full name (not the row summary).
-      chip.title = `${a.mark} ${a.title}`;
       abil.append(chip);
     }
     d.append(abil);
