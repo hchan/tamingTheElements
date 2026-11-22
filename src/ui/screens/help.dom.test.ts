@@ -89,6 +89,16 @@ describe('helpScreen (DOM)', () => {
     }
   });
 
+  it('names the Keyboard Player 1, Player 2 and Gamepad tables, and has no Touch table (moved from help-controls e2e)', () => {
+    const root = document.createElement('div');
+    helpScreen().mount(root);
+    const names = [...root.querySelectorAll('table caption')].map((c) => c.textContent);
+    expect(names).toContain('Keyboard, Player 1');
+    expect(names.some((n) => /Player 2/.test(n))).toBe(true);
+    expect(names).toContain('Gamepad');
+    expect(names.some((n) => /touch/i.test(n))).toBe(false);
+  });
+
   it('shows the player bindings in effect at mount time', () => {
     setBindings({ ...DEFAULT_BINDINGS, dash: ['KeyV'] });
     const root = document.createElement('div');
