@@ -57,6 +57,8 @@
     "gate:commit": "tsx tools/ci/gate.ts commit",
     "gate:push": "tsx tools/ci/gate.ts push",
     "gate:fast": "tsx tools/ci/gate-fast.ts",
+    "merge:queue": "tsx tools/ci/merge-queue.ts",
+    "load:check": "tsx tools/ci/load-check.ts",
     "nightly:submit": "tsx tools/ci/nightly-e2e.ts submit",
     "nightly:collect": "tsx tools/ci/nightly-e2e.ts collect",
     "nightly:status": "tsx tools/ci/nightly-e2e.ts status",
