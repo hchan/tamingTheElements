@@ -42,6 +42,9 @@
   align-items: center;
   min-height: 44px;
 }
+#menu .onlineScreen a.menuLink[hidden] {
+  display: none;
+}
 
 /* Quick match: the hero picker is a dark card, three selects side by side. */
 #menu .onlineQuick #quickPick {

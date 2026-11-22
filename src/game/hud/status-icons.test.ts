@@ -4,7 +4,7 @@ import { FRIENDLY_COLOR, HC_FRIENDLY_COLOR, HC_HOSTILE_COLOR, HOSTILE_COLOR } fr
 import { mainBar, sideOffset } from './bars';
 import { hudFrame } from './arcade-hud';
 import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, TRAP_PUDDLE_LINGER_TICKS } from '@core/index';
-import { CC_ICONS, CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, PORTRAIT_CHIP_MAX, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
+import { CC_ICONS, CHIP_FILL_ALPHA, CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, PORTRAIT_CHIP_MAX, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
 
 interface Opts {
   tick?: number;
@@ -268,5 +268,11 @@ describe('chip rows on wide views', () => {
   it('chip x does not depend on the view width (nothing moves at 16:9 or wider)', () => {
     const a = collectStatusChips(viewWith({ statuses: six }), 1, 1, 'fire', sideOffset(1));
     expect(a[0]?.x).toBe(mainBar(sideOffset(1)).minX);
+  });
+});
+
+describe('chip fill (qa-r126)', () => {
+  it('is opaque enough to read over the crowd band', () => {
+    expect(CHIP_FILL_ALPHA).toBeGreaterThanOrEqual(0.85);
   });
 });

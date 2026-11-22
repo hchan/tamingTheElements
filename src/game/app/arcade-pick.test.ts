@@ -121,3 +121,25 @@ describe('flagFallbackWarnings (qa-r28)', () => {
     expect(flagFallbackWarnings(null, null)).toEqual([]);
   });
 });
+
+describe('a saved pick holding a hidden roster24 id (roster24 WP-0b)', () => {
+  const hidden = CHARACTERS.filter((c) => !isReleasedHero(c.id) && c.element !== 'void').map((c) => c.id);
+  it('there are hidden heroes while RELEASED_ROSTER24 is empty', () => {
+    expect(RELEASED_ROSTER24.size).toBe(0);
+    expect(hidden.length).toBeGreaterThan(0);
+  });
+  it.each(hidden)('parsePick falls back to released heroes for %s in every slot', (id) => {
+    const p = parsePick({ player: id, enemy: id, level: 'normal', size: '3', partner: id, partner2: id, mode: 'local', enemyPartner: id, enemyPartner2: id });
+    const all = [p.player, p.enemy, p.partner, p.partner2, ...(p.enemyBench ?? [])].filter((h): h is CharacterId => h !== undefined);
+    expect(all).toHaveLength(6);
+    for (const h of all) expect(isReleasedHero(h), `${id} -> ${h}`).toBe(true);
+    expect(p.player).toBe(DEFAULT_PICK.player);
+    expect(p.enemy).toBe(DEFAULT_PICK.enemy);
+  });
+  it('the picker never lists a hidden hero and the flag-fallback warns', () => {
+    for (const id of hidden) {
+      expect(ARCADE_RACES).not.toContain(id);
+      expect(flagFallbackWarnings(id, id)).toHaveLength(2);
+    }
+  });
+});

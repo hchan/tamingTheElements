@@ -1,7 +1,7 @@
 """Installs the art-director-approved AI-generated ability icons into public/assets/img/hud/ability-icons-ai/.
 Run: python3 -I tools/assets/icon-gen/install-ai-ability-icons.py <approval.json> [<approval.json> ...] [--check]
 Each approval.json maps slot (hyphens or underscores; slots not in SLOTS are skipped) -> {approved: <png path relative to that json>, reviewer, date, beats_shipped} (the SDXL batch fetch layout).
-Fails closed: reviewer must be art-director, beats_shipped true, source a 512x512 PNG. Resizes to 128x128 (Lanczos) with Pillow,
+Fails closed: reviewer must be art-director, beats_shipped true, source a 512x512 or 1024x1024 PNG (1024 is halved first). Resizes to 128x128 (Lanczos) with Pillow,
 writes <slot>.png, index.json (sha256 per file), CREDITS.txt, and merges the approvals into tools/assets/icon-gen/provenance/ai-approval.json.
 Slots not named in a run keep their installed icon (incremental). Slots in KEYS are keyed onto the dark backdrop first (radial mask / border-colour key).
 --check is a dry run (prints the plan). Own AI-generated work (SDXL on the project GPU box), no third-party licence.
@@ -15,7 +15,13 @@ APPROVAL_REL = "tools/assets/icon-gen/provenance/ai-approval.json"
 SLOTS = ["ember_bite", "gale_talon", "tide_surge", "hurl_rock", "lure_orb",
          "mycelium_mend", "stinging_filament", "stoop", "forge_gore", "tusk_gore", "boulder_roll",
          "kelp_lash", "molten_hide", "whirlpool", "bell_pulse", "heal_spring", "scorch_breath", "wyrm_coil", "spore_burst",
-         "cinder_spray", "static_mote", "quake", "mist_veil", "kelp_whip", "gust", "bristle_stomp"]
+         "cinder_spray", "static_mote", "quake", "mist_veil", "kelp_whip", "gust", "bristle_stomp",
+         "wind_wall", "talon_rake", "skitter"]
+# Slots whose art carries a third-party credit (written to CREDITS.txt and the icon's index entry).
+THIRD_PARTY = {
+    "talon_rake": "Talon Rake: glyph \"Triple scratches\" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), "
+                  "rasterised, tinted and embossed on a procedural medallion.",
+}
 SIDE = 128
 BACKDROP = (22, 20, 19)  # the dark ground the earlier icons sit on
 # Slots whose source has a light studio/paper background get keyed onto BACKDROP before resizing:
@@ -203,8 +209,10 @@ def load(paths):
                 raise SystemExit(f"{slot}: not approved by the art-director (reviewer/beats_shipped/date)")
             src = os.path.normpath(os.path.join(a.get("dir") or base, a["approved"]))  # optional "dir" (absolute) as in the batch fetch layout
             im = Image.open(src)
-            if im.format != "PNG" or im.size != (512, 512):
-                raise SystemExit(f"{slot}: {src} is not a 512x512 PNG")
+            if im.format != "PNG" or im.size not in ((512, 512), (1024, 1024)):
+                raise SystemExit(f"{slot}: {src} is not a 512x512 or 1024x1024 PNG")
+            if im.size != (512, 512):
+                im = im.convert("RGB").resize((512, 512), Image.LANCZOS)  # KEYS coordinates are in 512 px space
             buf = io.BytesIO()
             if slot in KEYS:
                 im = key_onto_backdrop(im, KEYS[slot])
@@ -229,7 +237,8 @@ def main():
         raise SystemExit(f"missing approvals for {missing}")
     approvals.update({s: old_prov[s] for s in kept})
     index = {slot: {"url": f"img/hud/ability-icons-ai/{slot}.png", "w": SIDE, "h": SIDE, "sha256": hashlib.sha256(data).hexdigest(),
-                    "source": approvals[slot]["approved"], "approval": {**approvals[slot], "file": APPROVAL_REL}} for slot, data in jobs}
+                    "source": approvals[slot]["approved"], "approval": {**approvals[slot], "file": APPROVAL_REL},
+                    **({"credit": THIRD_PARTY[slot]} if slot in THIRD_PARTY else {})} for slot, data in jobs}
     index.update({s: old_index[s] for s in kept})
     index = {s: index[s] for s in SLOTS}
     if "--check" in sys.argv:
@@ -242,10 +251,11 @@ def main():
     with open(prov_path, "w") as f:
         json.dump({s: approvals[s] for s in SLOTS}, f, indent=2)
         f.write("\n")
-    open(os.path.join(OUT, "index.json"), "w").write(json.dumps({"licence": "own work (AI-generated, SDXL on the project GPU box)", "icons": index}, indent=2) + "\n")
+    open(os.path.join(OUT, "index.json"), "w").write(json.dumps({"licence": "own work (AI-generated, SDXL on the project GPU box), except icons with a credit field", "icons": index}, indent=2) + "\n")
     open(os.path.join(OUT, "CREDITS.txt"), "w").write(
-        "Ability icons: AI-generated (SDXL, own work, no third-party art), resized to 128 px by tools/assets/icon-gen/install-ai-ability-icons.py.\n"
-        "Approved by the art-director agent, see tools/assets/icon-gen/provenance/ai-approval.json. No attribution required.\n")
+        "Ability icons: own work (AI-generated SDXL or procedural), except where credited below; resized to 128 px by tools/assets/icon-gen/install-ai-ability-icons.py.\n"
+        "Approved by the art-director agent, see tools/assets/icon-gen/provenance/ai-approval.json. No attribution required, except:\n"
+        + "".join(f"  {c}\n" for c in THIRD_PARTY.values()))
     print(f"installed {len(jobs)} icons to {os.path.normpath(OUT)}")
 
 

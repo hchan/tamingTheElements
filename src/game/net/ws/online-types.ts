@@ -60,4 +60,6 @@ export interface OnlineDeps {
   readonly after: (ms: number, fn: () => void) => () => void;
   /** 0 <= x < 1, for backoff jitter. */
   readonly random: () => number;
+  /** Optional persistence of the guest session token across reloads. */
+  readonly guestStore?: { load(): string | undefined; save(value: string, ttlMs: number): void; clear(): void };
 }

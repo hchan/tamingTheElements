@@ -1,3 +1,4 @@
+import { ONLINE_MAX_START_INPUT_DELAY } from '../net/online-tuning';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_RESTING_SEC, type OnlineFailure } from '../net/ws/online-client';
 import {
@@ -67,6 +68,12 @@ describe('online quick match model', () => {
     expect(t).toBe(CONNECTION_LOST_TEXT);
     expect(t).not.toMatch(/\b(win|won)\b/i); // "no winner" is fine, a claimed win is not
     expect(t?.startsWith(RECONNECTING_PREFIX)).toBe(false);
+  });
+
+  it('caps the relay input delay for a responsive start', () => {
+    const r = checkMatch(match({ inputDelay: 4, batchEvery: 3 }), 86);
+    expect(r).toEqual({ ok: true, slot: 0, inputDelay: ONLINE_MAX_START_INPUT_DELAY, batchEvery: 3 });
+    expect(checkMatch(match({ inputDelay: 1 }), 86)).toMatchObject({ inputDelay: 1 });
   });
 
   it('checks MATCH_START', () => {

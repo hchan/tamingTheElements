@@ -55,7 +55,8 @@ test.beforeAll(async () => {
   });
   if (build.status !== 0) throw new Error(`vite build failed (status ${String(build.status)})`);
   const port = await freePort();
-  preview = spawn('corepack', ['pnpm', 'exec', 'vite', 'preview', '--outDir', OUT_DIR, '--port', String(port), '--strictPort'], { stdio: 'inherit' });
+  // Spawn vite itself (not corepack/pnpm), so kill() in afterAll hits the server and no wrapper keeps the port.
+  preview = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--outDir', OUT_DIR, '--port', String(port), '--strictPort'], { stdio: 'inherit' });
   origin = `http://localhost:${String(port)}`;
   await waitUp(origin);
 });
@@ -150,7 +151,9 @@ test('two pages find each other, pick heroes and start the arena', async ({ brow
 
   // Setup handshake, then both arenas run: the link line shows and a canvas is up.
   for (const p of pages) {
-    await expect(p.locator('#quickLeave')).toBeVisible({ timeout: 30_000 });
+    await expect(p.locator('#quickMenu')).toBeVisible({ timeout: 30_000 });
+    await p.locator('#quickMenu').click();
+    await expect(p.locator('#quickLeave')).toBeVisible();
     await expect(p.locator('#quickLink')).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('canvas').first()).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('#quickFailure')).toBeHidden();

@@ -4,7 +4,7 @@ import type Phaser from 'phaser';
  * The approved AI-generated ability icons (`tools/assets/icon-gen/install-ai-ability-icons.py`, `public/assets/img/hud/ability-icons-ai/`).
  * An ability slot wears its icon in place of the ability's projectile sprite. Display only; the sim is untouched.
  * `tide_surge`, `whirlpool` and `heal_spring` are installed but have no ability yet (no sensible slot), so no sprite maps to them.
- * `quake`, `mist_veil`, `kelp_whip` and `gust` (procedural, `gen-procedural-icons.py`) are likewise installed without an ability. `skitter` failed review and is not installed.
+ * `quake`, `mist_veil`, `kelp_whip` and `gust` (procedural, `gen-procedural-icons.py`) are likewise installed without an ability. `wind_wall` is installed without an ability yet, and `gale_talon` stays installed while Talon Rake wears `talon_rake`.
  */
 
 /** Icon slots in the folder, each a 128 px PNG named `<slot>.png`. */
@@ -14,13 +14,15 @@ export const AI_ICON_SLOTS = [
   'kelp_lash', 'molten_hide', 'whirlpool',
   'bell_pulse', 'heal_spring', 'scorch_breath', 'wyrm_coil', 'spore_burst',
   'cinder_spray', 'static_mote', 'quake', 'mist_veil', 'kelp_whip', 'gust', 'bristle_stomp',
+  'wind_wall', 'talon_rake', 'skitter',
 ] as const;
 export type AiIconSlot = (typeof AI_ICON_SLOTS)[number];
 
-/** Bar sprite key (`AbilityDef.sprite`) to the icon it wears. gale_talon is the air Talon Rake (Vortigal). */
+/** Bar sprite key (`AbilityDef.sprite`) to the icon it wears. talon_rake is the air Talon Rake (Vortigal). */
 const BY_SPRITE: Readonly<Record<string, AiIconSlot>> = {
   emberBite: 'ember_bite',
-  talonRake: 'gale_talon',
+  talonRake: 'talon_rake',
+  skitter: 'skitter',
   hurlRock: 'hurl_rock',
   lureOrb: 'lure_orb',
   myceliumMend: 'mycelium_mend',

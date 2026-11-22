@@ -63,3 +63,15 @@ The Arcade `RANGED` flag (`systems/arcade/meter.ts`) now follows `HERO_STYLE`: f
 - [Zephra (air, ranged, #10)](roster24-zephra.md)
 - [Hyalia (air, ranged, #11)](roster24-hyalia.md)
 - [Vortigal (air, melee, #12)](roster24-vortigal.md)
+
+## Progress note (2026-11-22): proposed roster24 audit gate (7 items)
+
+A hero in `RELEASED_ROSTER24` (src/core/data/release.ts) ships only when all seven hold; release is one hero at a time:
+
+1. Art: approval.json from the art-director for portrait, sprite sheet and map portrait (full body, no human face or hands on elementals), keyed into `public/assets/` by an in-repo `tools/` script, with licence and credit lines.
+2. Abilities: every ability has an icon, an effect sprite or procedural fx, a sound and an `ability-lessons` line; no dead ability (see ideas/done/dead-ability-cleanup.md).
+3. Sim: the hero characterization and ability unit tests pass; golden replays still match in Node, Chromium, Firefox and WebKit; any sim change carries a SIM_VERSION bump and a stated re-record reason.
+4. Balance: `pnpm sim:match --tournament --json` and `pnpm balance:compare` show win rate within the agreed band in 1v1 and 2v2 with the hero added; baseline re-recorded with a reason.
+5. UI: pickers, Help, tour and arena screens show the hero; `?ff=roster24` is no longer needed for it; saved picks fall back to a released hero while it is hidden (test in src/game/app/arcade-pick.test.ts).
+6. Build and assets: asset manifest and `UNRELEASED_ROSTER24_HEROES` updated, size budget and `release-guard` tests green, `gate:commit` green.
+7. Browser: `pnpm e2e:smoke` plus the hero pick-and-fight spec pass via the router (nightly full run clean or known-red only), with a real-game screenshot reviewed by the art-director.

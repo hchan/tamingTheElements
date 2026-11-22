@@ -149,8 +149,19 @@ async function pickAndReady(pages: Page[]): Promise<void> {
   await pages[0]?.locator('#quickReady').click();
   await pages[1]?.locator('#quickReady').click();
   for (const p of pages) {
-    await expect(p.locator('#quickLink')).toBeVisible({ timeout: 30_000 });
+    await expect(p.locator('#quickMenu')).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('canvas').first()).toBeVisible({ timeout: 30_000 });
+    // Layout (user report: too much black margin): in a match the arena fills the viewport as in Play; the controls are folded into the round menu icon.
+    const top = await p.evaluate<number>(`document.querySelector('#game')?.getBoundingClientRect().top ?? -1`);
+    expect(top, 'arena starts at the top of the screen').toBeGreaterThanOrEqual(0);
+    expect(top, 'arena starts at the top of the screen').toBeLessThanOrEqual(2);
+    await expect(p.locator('#quickLeave')).toBeHidden();
+    await p.locator('#quickMenu').click();
+    await expect(p.locator('#quickLeave')).toBeVisible();
+    await expect(p.locator('#quickLink')).toBeVisible();
+    await p.locator('#quickMenu').click();
+    await expect(p.locator('#quickLeave')).toBeHidden();
+    await expect(p.locator('#quickBack')).toBeHidden();
   }
 }
 
@@ -341,14 +352,13 @@ test('chat: lines both ways, unread badge, rate note, counts-only events, and ch
   await testInfo.attach('result-b', { body: await b.screenshot(), contentType: 'image/png' });
 });
 
-// Long gate (two pages, about 30 s, estimate; two browsers). With relay chat off (default) the dock still shows in the match, but its input is disabled with the note.
-test('chat: with relay chat off the dock input is disabled and says so', async ({ browser }) => {
+// Long gate (two pages, about 1 min, estimate; two browsers). With relay chat off (default, like relay 1.0.0) there is no dock at all, and the match still finishes
+// with agreed results. Long gate because it needs two browsers and a built bundle (the short gate stays @smoke only).
+test('chat: with relay chat off the dock is hidden and the match still finishes', async ({ browser }) => {
   test.setTimeout(240_000);
-  const { a, b } = await startMatch(browser);
-  for (const p of [a, b]) {
-    await expect(p.locator('#chatDock')).toBeVisible();
-    await openDock(p);
-    await expect(p.locator('#chatInput')).toBeDisabled();
-    await expect(p.locator('#chatNote')).toHaveText('Chat is not available right now');
-  }
+  const { a, b, rig } = await startMatch(browser);
+  for (const p of [a, b]) await expect(p.locator('#chatDock')).toBeHidden();
+  await expect.poll(() => results(rig).length, { timeout: 120_000, message: 'relay result events' }).toBeGreaterThan(0);
+  expect(results(rig).every((r) => r.agreed)).toBe(true);
+  for (const p of [a, b]) await expect(p.locator('#chatDock')).toBeHidden();
 });

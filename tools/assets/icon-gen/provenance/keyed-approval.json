@@ -61,10 +61,10 @@
   "spore_burst": {
     "approved": "spore_burst.png",
     "reviewer": "art-director",
-    "date": "2026-11-20",
+    "date": "2026-11-22",
     "beats_shipped": true,
     "score": 4,
-    "sha256": "ee27dd28a566329bee9c8f9cf6af8cd44ec1d3adf8a1b9860e601068529ec262"
+    "sha256": "685ae1c01db4510e584a9c6ddb44a0542e4211250c75e520b0c5f8f2588a86a8"
   },
   "cinder_spray": {
     "approved": "cinder_spray.png",

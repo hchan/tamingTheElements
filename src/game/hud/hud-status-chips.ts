@@ -5,7 +5,7 @@ import { ROOT_ICON, STATUS_LOOKS, StatusTracker, chipBlink, chipFlash, chipPop }
 import { crisp, phoneBoost } from '../boot/viewport';
 import { isPortraitPlay } from '../boot/portrait-play';
 import { BUFF_SLOT, collectBuffs } from './buffs';
-import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, PORTRAIT_CHIP_MAX, collectStatusChips } from './status-icons';
+import { CC_ICONS, CHIP_FILL_ALPHA, CHIP_FONT, CHIP_MAX, CHIP_Y, PORTRAIT_CHIP_MAX, collectStatusChips } from './status-icons';
 import { CHIP_RECTS_KEY, type HudRect } from './arcade-hud';
 import { dashSegments, type HudCharacter } from './bars';
 import { CHIP_BOTTOM, SLIM_H, getChipDrop } from './slim-hud';
@@ -118,7 +118,7 @@ export class HudStatusChips {
       const low = chip.secs !== null && chip.secs <= 1;
       const shown = !low || chipBlink(now % 49, reduced);
       t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true).setAlpha(shown ? 1 : 0.45);
-      gfx.fillStyle(0x0d0b09, 0.78).fillRect(x, y, w, h);
+      gfx.fillStyle(0x0d0b09, CHIP_FILL_ALPHA).fillRect(x, y, w, h);
       const flash = chipFlash(age, reduced);
       if (flash > 0) gfx.fillStyle(mute(chip.color, 0.5, 1.3), flash * 0.5).fillRect(x, y, w, h);
       // Time bar along the foot of the chip, draining to the left.

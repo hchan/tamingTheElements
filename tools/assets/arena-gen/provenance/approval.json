@@ -1,0 +1,32 @@
+{
+  "splash": {
+    "approved": "r951-splash_119752_1344x768.png",
+    "reviewer": "art-director",
+    "date": "2026-11-22",
+    "beats_shipped": true
+  },
+  "arena-earth": {
+    "approved": "r946-env-earth_119703_1344x768.png",
+    "reviewer": "art-director",
+    "date": "2026-11-22",
+    "beats_shipped": true
+  },
+  "arena-fire": {
+    "approved": "arena_bg_fire_r1_7801_1344x768.png",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "arena-water": {
+    "approved": "arena_bg_water_r1_7822_1344x768.png",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  },
+  "arena-air": {
+    "approved": "arena_bg_air_r1_7831_1344x768.png",
+    "reviewer": "art-director",
+    "date": "2026-11-19",
+    "beats_shipped": true
+  }
+}

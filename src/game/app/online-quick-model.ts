@@ -1,3 +1,4 @@
+import { startInputDelay } from '../net/online-tuning';
 import type { SessionStatus } from '@core/index';
 import { friendlyMessage, restingSec, type OnlineEvent, type OnlineFailure } from '../net/ws/online-client';
 
@@ -115,7 +116,7 @@ export function checkMatch(e: MatchEvent, simVersion: number): MatchCheck {
   if ((e.slot !== 0 && e.slot !== 1) || !isInt(e.inputDelay, 0, 8) || !isInt(e.batchEvery, 1, 8)) {
     return { ok: false, failure: { kind: 'bad-response' } };
   }
-  return { ok: true, slot: e.slot, inputDelay: e.inputDelay, batchEvery: e.batchEvery };
+  return { ok: true, slot: e.slot, inputDelay: startInputDelay(e.inputDelay), batchEvery: e.batchEvery };
 }
 
 /** The "resting" deadline survives a reload (localStorage) and a screen remount (module copy). */

@@ -1,0 +1,75 @@
+{
+  "licence": "own work (AI-generated, SDXL on the project GPU box)",
+  "images": {
+    "splash": {
+      "url": "img/arena-art/splash.webp",
+      "w": 1344,
+      "h": 768,
+      "sha256": "1ca06004c17e0c898b0f20250466f0cad914a2b7ccd9e5cdb055be850f72adc4",
+      "source": "r951-splash_119752_1344x768.png",
+      "approval": {
+        "approved": "r951-splash_119752_1344x768.png",
+        "reviewer": "art-director",
+        "date": "2026-11-22",
+        "beats_shipped": true,
+        "file": "tools/assets/arena-gen/provenance/approval.json"
+      }
+    },
+    "arena-earth": {
+      "url": "img/arena-art/arena-earth.webp",
+      "w": 1344,
+      "h": 741,
+      "sha256": "ff091ab93af8161f433057c3e18db0625b33e6d75ef6de36c6ddc94d200572a1",
+      "source": "r946-env-earth_119703_1344x768.png",
+      "approval": {
+        "approved": "r946-env-earth_119703_1344x768.png",
+        "reviewer": "art-director",
+        "date": "2026-11-22",
+        "beats_shipped": true,
+        "file": "tools/assets/arena-gen/provenance/approval.json"
+      }
+    },
+    "arena-fire": {
+      "url": "img/arena-art/arena-fire.webp",
+      "w": 1344,
+      "h": 741,
+      "sha256": "2c44c221500429df9a845a220ca6236dc583dd4cb73bb5daa52a478654ce402f",
+      "source": "arena_bg_fire_r1_7801_1344x768.png",
+      "approval": {
+        "approved": "arena_bg_fire_r1_7801_1344x768.png",
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/arena-gen/provenance/approval.json"
+      }
+    },
+    "arena-water": {
+      "url": "img/arena-art/arena-water.webp",
+      "w": 1344,
+      "h": 741,
+      "sha256": "a479d17d641f7f09ab7491e205703d8dc79b13273292e04c29c164c2f8480d54",
+      "source": "arena_bg_water_r1_7822_1344x768.png",
+      "approval": {
+        "approved": "arena_bg_water_r1_7822_1344x768.png",
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/arena-gen/provenance/approval.json"
+      }
+    },
+    "arena-air": {
+      "url": "img/arena-art/arena-air.webp",
+      "w": 1344,
+      "h": 741,
+      "sha256": "abc0b087c4da41c3a40c3ebb0b9954cb8ccb172b2184d6c84b4426a0ff7c256e",
+      "source": "arena_bg_air_r1_7831_1344x768.png",
+      "approval": {
+        "approved": "arena_bg_air_r1_7831_1344x768.png",
+        "reviewer": "art-director",
+        "date": "2026-11-19",
+        "beats_shipped": true,
+        "file": "tools/assets/arena-gen/provenance/approval.json"
+      }
+    }
+  }
+}
