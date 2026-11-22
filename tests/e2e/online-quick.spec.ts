@@ -55,7 +55,8 @@ test.beforeAll(async () => {
   });
   if (build.status !== 0) throw new Error(`vite build failed (status ${String(build.status)})`);
   const port = await freePort();
-  preview = spawn('corepack', ['pnpm', 'exec', 'vite', 'preview', '--outDir', OUT_DIR, '--port', String(port), '--strictPort'], { stdio: 'inherit' });
+  // Spawn vite itself (not corepack/pnpm), so kill() in afterAll hits the server and no wrapper keeps the port.
+  preview = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--outDir', OUT_DIR, '--port', String(port), '--strictPort'], { stdio: 'inherit' });
   origin = `http://localhost:${String(port)}`;
   await waitUp(origin);
 });
