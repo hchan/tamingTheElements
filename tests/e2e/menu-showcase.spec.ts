@@ -23,7 +23,7 @@ for (const vp of VIEWPORTS) {
     await expect(page.locator('#menuShowcase img')).toHaveCount(vp.count);
     await expect(page.locator('#menuShowcase')).toHaveAttribute('aria-hidden', 'true');
     expect(await page.evaluate<string>(`getComputedStyle(document.getElementById('menuShowcase')).pointerEvents`)).toBe('none');
-    await expect(page.locator('.mainMenuList li button')).toHaveText(['Play', 'Versus', 'Online', 'Settings', 'Help']);
+    await expect(page.locator('.mainMenuList li button')).toHaveText(['World Tour', 'Versus', 'Online', 'Settings', 'Help']);
     for (const b of await page.locator('.mainMenuList li button').all()) {
       const box = await b.boundingBox();
       if (!box) throw new Error('no box');

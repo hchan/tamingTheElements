@@ -55,11 +55,12 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
    line breaks; `src/game/net/ws/text-codec.ts`); a binary message whose bytes are base64 text is decoded the same way (the relay never sends one; `binaryType` is `arraybuffer` so order is kept), and anything else is dropped and counted in `malformed`.
    The ERROR frame is the authority for what a following close means; the close code is a hint only when no frame arrived (4003 update, 4011 resting). `connect()` resolves with the transport after WELCOME. The ping timer (every 2 s) starts.
 5. Lobby frames (QUEUE_STATE, ROOM_*, MATCH_START, PEER_STATUS, RESULT_ACK) are decoded by the client; everything else goes to the transport. Malformed frames
-   (wrong length, bad room code or event) are dropped; the transport counts them in `malformed`. RESULT_ACK stops the transport's RESULT retry.
+   (wrong length, bad room code or event) are dropped; the transport counts them in `malformed`. RESULT is sent on every match end, including timeout and forfeit ends (reason 2 and 1). RESULT_ACK status 1 (waiting) does not end the match: the BATCH linger keeps flowing (about 10 BATCH/s, `lingerIntervalMs` in `src/game/net/linger.ts`, an estimate) and only status 0 and 2 end it. ACK 1 stops the transport's 500 ms RESULT retry (`RETRY_MS`); the client then re-sends RESULT every `RESULT_REPOLL_MS` (2000 ms) until ACK 0/2 or `RESULT_REPOLL_CAP_MS` (30 000 ms) after the first ACK 1 (`src/game/net/ws/result-poll.ts`, constants in `transport.ts`, both [choice, estimate]). Play again waits for the first ACK or `PLAY_AGAIN_ACK_WAIT_MS` (1500 ms) before it joins the queue. BATCH frames are delivered at once even after a seq gap (idempotent, order independent); only PAUSE stays in order behind the gap (`src/game/net/ws/reorder.ts`).
 6. **Reconnect** when the socket drops without 4003/4011/1000: events `reconnecting` (attempt n) and `reconnected` (`resumed` from WELCOME; MATCH_START is
    re-sent by the server and arrives as a `match` event with `resumed: true`). Attempts at 0, 1, 2, 4 s then 4 s again, +0..25 % jitter, capped at 30 s, each with a
    new ticket. The window is 10 s in a match (the server's grace [choice]) and 60 s otherwise [choice]; then `closed` with `network`. A reconnect that is not
    `resumed` (for example while only queued) means the caller must join the queue again.
+   **Session timeout.** A timeout is 250 update calls without new remote input (`timeoutTicks`); a packet that carries no new input (a heartbeat, a hidden-tab or concede flag) does not reset it. The limit is 1500 while the peer says it is hidden and 750 while PEER_STATUS says disconnected (`peerAwayTimeoutTicks`, `LockstepSession.setPeerAway`; an estimate: the relay's 10 s grace is the contract, the limit is grace plus one normal timeout as a backstop); a resume (not paused, or back) restarts the normal timeout. A timeout has no winner (who stalled is unknown): it sends RESULT winner 2 (none), reason 2, and shows "Connection lost. The match ended with no winner."; two such RESULTs agree. Only PEER_STATUS gone ends a match as the opponent leaving.
 7. The transport is created once with a hub socket that survives reconnects. Within a match its `seq` counter, reorder buffer and ControlLink continue across a
    reconnect (`startMatch(matchId, true)`); frames sent while the socket is down are dropped, which the session's redundancy repairs.
 8. **Per match.** MATCH_START carries the relay-assigned `matchId` (from 1 per pair). The client calls `transport.startMatch(matchId, resumed)`: for a new match
@@ -69,7 +70,7 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
    `match` option must equal the MATCH_START matchId (it is the packet `match` byte). HASH, DESYNC and RESULT go out with seq 0 and do not use BATCH/PAUSE numbers.
 9. An unsolicited RESULT_ACK `2` (relay-detected hash divergence, or a RESULT whose peer is gone) is handled like any RESULT_ACK of the current match. ERROR `0x0005`
    (busy, including the queue cap) is an `error` event. A close with code 1000 of an old socket (takeover resume) is ignored because only the current socket's close counts.
-10. `inMatch` (which picks the 10 s versus 60 s reconnect budget) is cleared by RESULT_ACK for the current match and by joining a queue or room again.
+10. `inMatch` (which picks the 10 s versus 60 s reconnect budget) is cleared by RESULT_ACK 0 or 2 for the current match (status 1 keeps it) and by joining a queue or room again.
 
 ## Screen
 

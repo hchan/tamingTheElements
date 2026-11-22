@@ -15,7 +15,7 @@ export const REORDER_GAPS_MAX = 64;
  */
 export class ReorderBuffer<T> {
   private next: number;
-  private held: { readonly seq: number; readonly item: T }[] = [];
+  private held: { readonly seq: number; readonly item: T; readonly done: boolean }[] = [];
   private since = 0;
   dropped = 0;
   skipped = 0;
@@ -37,7 +37,11 @@ export class ReorderBuffer<T> {
     return this.held.length;
   }
 
-  push(seq: number, item: T, now: number, acceptLate = false): T[] {
+  /**
+   * `immediate` (BATCH: idempotent, order independent) delivers a frame at once even after a gap; its seq is remembered (so a repeat is dropped)
+   * and later in-order frames (PAUSE) still wait for the gap. `acceptLate` as above.
+   */
+  push(seq: number, item: T, now: number, acceptLate = false, immediate = false): T[] {
     const d = (seq - this.next) | 0;
     const g = d < 0 && acceptLate ? this.gaps.indexOf(seq >>> 0) : -1;
     if (g >= 0) {
@@ -55,12 +59,13 @@ export class ReorderBuffer<T> {
     }
     if (d > 0) {
       if (this.held.length === 0) this.since = now;
-      this.held.push({ seq, item });
+      this.held.push({ seq, item, done: immediate });
       this.held.sort((a, b) => ((a.seq - b.seq) | 0));
-      return this.held.length > REORDER_MAX_HELD ? this.skip() : [];
+      const rest = this.held.length > REORDER_MAX_HELD ? this.skip() : [];
+      return immediate ? [item, ...rest] : rest;
     }
     this.next = (this.next + 1) >>> 0;
-    return [item, ...this.drain()];
+    return [item, ...this.drain(now)];
   }
 
   /** Releases held frames whose gap has waited long enough. */
@@ -68,18 +73,19 @@ export class ReorderBuffer<T> {
     return this.held.length > 0 && now - this.since >= REORDER_SKIP_MS ? this.skip() : [];
   }
 
-  private drain(): T[] {
+  private drain(now: number): T[] {
     const out: T[] = [];
     for (let h = this.held[0]; h && h.seq === this.next; h = this.held[0]) {
-      out.push(h.item);
+      if (!h.done) out.push(h.item);
       this.held.shift();
       this.next = (this.next + 1) >>> 0;
     }
+    if (this.held.length > 0) this.since = now; // Wait for the next gap from here, not from the first arrival.
     return out;
   }
 
   private skip(): T[] {
-    const out = this.held.map((h) => h.item);
+    const out = this.held.filter((h) => !h.done).map((h) => h.item);
     const last = this.held[this.held.length - 1];
     if (last) {
       const have = new Set(this.held.map((h) => h.seq));

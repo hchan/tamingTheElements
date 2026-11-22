@@ -86,3 +86,7 @@ severity: medium
 Idea: put Back (and Save) first in the tab order on Key Bindings as on Settings, or raise the budget and add a skip link.
 
 > Caveat (coordinator): this round built origin/main 724b7ce1, which lacks the local results/Escape, Help text and Tour wording merges (2026-11-19). Findings on those three areas are stale; the keyboard.spec.ts:93 failure is real on that base. r122 must build local main.
+
+triaged: 2026-11-21 partly fixed: item 2 (Escape on slider) in src/ui/keyboard.ts; item 7 by 81ce03a2 (first-run hint scales). Items 1, 3, 4, 5, 6 not code-checked as small; keep open, re-QA live.
+
+triaged: 2026-11-21 code-check. Item 1 fixed: Rematch is focused at src/game/app/arcade-versus.ts:167, Escape goes to the menu at :103, results layout redone in src/ui/styles/match-end.css (e2e fit check in tests/e2e/match-end.spec.ts). Item 3 fixed: Help chips share an equal-column grid, src/ui/styles/help.css:26 (qa-r127). Item 4 fixed: the Tour Controls row is built from the lead hero's kit, Snag only when the team can throw it, src/game/app/tour-controls.ts:24-40. Item 5 fixed: the weather badge draws a glyph per weather kind, src/game/fx/weather-view.ts:381. Item 6 still open: it needs the Hud/super-view cut-in (hide the combo counter and SAFE chip during the cut-in); not a small item. Items 2 and 7 were already fixed; item 8 not in this pass. Stays in brainstorm until 6 and 8 are settled.

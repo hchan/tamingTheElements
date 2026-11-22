@@ -110,6 +110,18 @@ describe('WebSocketTransport unit behaviour', () => {
     expect(relay.a.sent.map((m) => (decodeFrame(m) as { seq: number }).seq)).toEqual([0, 1]);
   });
 
+  it('endMatch drops late BATCH and PAUSE until the next startMatch', () => {
+    const { relay, a } = mk();
+    a.startMatch(1, false);
+    a.endMatch();
+    a.send(pkt(0));
+    a.sendPause(1, 1);
+    expect(relay.a.sent).toEqual([]);
+    a.startMatch(2, false);
+    a.send(pkt(0));
+    expect(relay.a.sent).toHaveLength(1);
+  });
+
   it('drops oversize packets, closed-socket sends and non-binary or malformed messages without throwing', () => {
     const { relay, a, b } = mk();
     a.send(new Uint8Array(500));
@@ -179,20 +191,37 @@ describe('WebSocketTransport unit behaviour', () => {
     expect(b.peerPause).toBeUndefined();
   });
 
-  it('delivers a gap after 40 ms, accepts the late frame once and drops a duplicate', () => {
+  it('delivers a BATCH at once after a seq gap, drops repeats, and takes the missing one when it arrives', () => {
     const { clock, relay, b } = mk();
     const batch = (seq: number) => encodeFrame({ t: 'batch', seq, packet: pkt(seq) });
     const feed = (bytes: Uint8Array) => { relay.b.deliver(encodeText(bytes)); };
-    feed(batch(1));
-    expect(b.receive()).toBeUndefined();
-    feed(batch(1));
-    clock.ms = 40;
-    expect(b.receive()).toBeDefined();
-    expect(b.receive()).toBeUndefined();
-    feed(batch(0)); // Skipped over, now late: a BATCH is idempotent, so it is delivered once.
-    expect(b.receive()).toBeDefined();
     feed(batch(0));
+    expect(b.receive()).toBeDefined();
+    feed(batch(2)); // Seq 1 is lost: no 40 ms hold for a BATCH.
+    expect(b.receive()).toBeDefined();
+    feed(batch(2));
     expect(b.receive()).toBeUndefined();
+    clock.ms = 40;
+    expect(b.receive()).toBeUndefined();
+    feed(batch(1)); // Late: still delivered once.
+    expect(b.receive()).toBeDefined();
+    feed(batch(1));
+    expect(b.receive()).toBeUndefined();
+  });
+
+  it('keeps PAUSE in order: it waits behind a missing seq while BATCHes after the gap are delivered', () => {
+    const { clock, relay, b } = mk();
+    const feed = (f: Parameters<typeof encodeFrame>[0]) => { relay.b.deliver(encodeText(encodeFrame(f))); };
+    feed({ t: 'batch', seq: 0, packet: pkt(0) });
+    feed({ t: 'pause', seq: 2, matchId: 0, flags: 1 });
+    feed({ t: 'batch', seq: 3, packet: pkt(3) });
+    expect(b.receive()).toBeDefined();
+    expect(b.receive()).toBeDefined();
+    expect(b.receive()).toBeUndefined();
+    expect(b.peerPause).toBeUndefined();
+    clock.ms = 40;
+    b.receive();
+    expect(b.peerPause).toEqual({ matchId: 0, flags: 1 });
   });
 
   it('times PING round trips, tracks peer pause, errors, and retries DESYNC/RESULT until stopped', () => {
@@ -221,6 +250,18 @@ describe('WebSocketTransport unit behaviour', () => {
     clock.ms += 500;
     a.receive();
     expect(relay.seen.length).toBe(before + 2);
+  });
+
+  it('resendResult re-sends the last RESULT after stopRetry, and only for the current match', () => {
+    const { relay, a } = mk();
+    expect(a.resendResult()).toBe(false);
+    a.sendResult(0, 1, 0, 100, 5);
+    a.stopRetry();
+    const before = relay.seen.length;
+    expect(a.resendResult()).toBe(true);
+    expect(relay.seen.length).toBe(before + 1);
+    a.startMatch(1, false);
+    expect(a.resendResult()).toBe(false);
   });
 
   it('carries the setup handshake over the control link despite jitter and duplicates', () => {

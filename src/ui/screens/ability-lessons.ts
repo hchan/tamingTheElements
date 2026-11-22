@@ -26,6 +26,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('slime-blast', 'A slow glob of slime thrown at the foe.', 'Aim ahead of a moving foe and let it land.'),
   L('ice-blast', 'A bolt of ice that hurts and slows the foe for a few seconds.', 'Hit, then keep your distance while they crawl.'),
   L('icicles', 'A fast stream of small icicles.', 'Tap it again and again from range.'),
+  L('lure-orb', 'A glowing orb that drifts out, then hovers in place as a hazard.', 'Park it between you and the foe, then keep your distance.'),
+  L('abyss-flash', 'A close burst of light that hurts and stuns the foe.', 'Use it when the foe is right next to you, then follow up.'),
   // Fire
   L('fireball', 'A fireball that flies straight at the foe.', 'Line up your aim, then fire from mid range.'),
   L('fire-heal', 'Heals you a little. It takes a long time to be ready again.', 'Save it for a quiet moment, not the middle of a trade.'),
@@ -38,6 +40,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('forge-gore', 'A slow overhead anvil blow that hits very hard.', 'Wait for the foe to step in, then bring it down; it leaves you open after.'),
   L('molten-hide', 'Molten armour that cuts the harm you take and burns anyone who hits you up close.', 'Press it as the foe closes in for a melee trade.'),
   // Earth
+  L('tusk-gore', 'A lunging gore that hits hard and carries you forward. It takes a while to be ready again.', 'Wait for the foe to be a few steps away, then lunge in; you are open if it misses.'),
+  L('bristle-stomp', 'A short, quick stomp that hits close in front of you.', 'Stay close and stomp between the foe\'s attacks.'),
   L('adrenaline', 'A short rush: you move faster and take less harm.', 'Press it before you close in.'),
   L('ground-shock', 'A slam that hits every foe around you.', 'Use it up close; it needs a moment to be ready again.'),
   L('rock-armour', 'Stone skin that cuts the harm you take for a few seconds.', 'Press it when the foe is about to start a combo.'),
@@ -46,6 +50,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('strangling-branches', 'A short, fast lash of branches.', 'Stay close and keep lashing.'),
   L('hurl-rock', 'A heavy rock thrown straight at the foe, ready again almost at once.', 'Keep throwing it from range and step back as the foe closes.'),
   L('boulder-roll', 'A big slow boulder rolls along the ground and knocks the foe back.', 'Send it down the foe\'s lane early, since it takes time to arrive.'),
+  L('spore-burst', 'A slow spore cloud that hurts and leaves a festering wound that keeps hurting for a moment.', 'Fire it from range and back off while the wound ticks.'),
+  L('mycelium-mend', 'Mushroom threads knit your wounds and heal you a little.', 'Press it when you are hurt and the foe is far away; it takes a long while to be ready again.'),
   // Air
   L('tornado', 'Sends a spinning tornado out ahead of you.', 'Fire it in front of the foe so they run into it.'),
   L('wind-cone', 'A cone of wind that hits across a wide arc.', 'Fire it when the foe is a little off your aim.'),
@@ -55,6 +61,10 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('steal-health', 'A strike that heals you for the harm it does.', 'Land it when you are hurt, then keep landing it.'),
   L('stoop', 'A diving strike that carries you forward into the foe.', 'Use it from a gap to close in; it leaves you open after.'),
   L('talon-rake', 'A quick rake that leaves a wound that keeps hurting.', 'Rake twice in a row, then back off while the wound works.'),
+  L('static-mote', 'A quick little spark thrown at the foe. Up to three can be in flight at once.', 'Tap it in a steady rhythm from range.'),
+  L('skitter', 'A quick hop backward, out of the foe\'s reach.', 'Press it when the foe closes in, then fire from the new distance.'),
+  L('stinging-filament', 'A thin, fast filament that hits and stuns the foe for a moment.', 'Fire it down the line to the foe, then follow up while they are stunned.'),
+  L('bell-pulse', 'A slow ring of sound that pushes close foes away. It takes a while to be ready again.', 'Press it when the foe is right on top of you to win back some room.'),
   // Story-only heroes (the dummy target and the Eternal Void), still in the released range
   L('stick', 'A stick thrown at the foe.', 'Fire it from range.'),
   L('chaos-bolt', 'A fast bolt of chaos.', 'Fire it down the line to the foe.'),

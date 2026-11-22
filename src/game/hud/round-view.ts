@@ -12,6 +12,8 @@ import { mountWeatherView } from '../fx/weather-view';
 import {
   PIP_R, PIP_Y, RoundAnnouncer, pipPairCentre, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
+import { bannerDims, easeClear, fighterUnder, type Box } from './banner-clear';
+import { screenBox } from './screen-box';
 import { bannerDraws, cutUp, fightYields, introClockStart } from './banner-lanes';
 import { RESULT_TICKS } from './round-result';
 import { mountResultView, type ResultState } from './round-result-view';
@@ -120,6 +122,23 @@ export function mountRoundView(
   let fightDropped = -1;
   /** When the banner's clock starts: its own start, or for an intro banner the end of the result card. */
   const clockFrom = (): number => (isIntroBanner(banner.main) ? introClockStart(banner.from, cardEnd) : banner.from);
+
+  /** Eased alpha multiplier that keeps FIGHT! / ROUND off the fighters (banner-clear.ts, QA r117). */
+  let clear = 1;
+  const fighterBoxes: Box[] = [];
+  /** The live fighters' sprite boxes in logical screen px (read from the Arena's camera), reused each frame. */
+  function readFighterBoxes(): void {
+    fighterBoxes.length = 0;
+    if (!fighters || !(arena as { cameras?: unknown }).cameras) return;
+    const box = screenBox(arena);
+    view.forEachCharacter((c) => {
+      if ((c.flags & (EntityFlag.dead | EntityFlag.benched)) !== 0) return;
+      const img = fighters.peek(c.id)?.image;
+      if (!img?.visible) return;
+      const b = img.getBounds();
+      fighterBoxes.push({ x: (b.x - box.x) / box.scale, y: (b.y - box.y) / box.scale, w: b.width / box.scale, h: b.height / box.scale });
+    });
+  }
 
   let parts: {
     main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics; pipLabels: Phaser.GameObjects.Text[];
@@ -260,7 +279,12 @@ export function mountRoundView(
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
     const frame = bannerFrame(banner.main, tick - clockFrom(), banner.until - tick, banner.reduced, slow, FADE_IN_TICKS, FADE_OUT_TICKS);
-    const fade = frame.alpha;
+    if (on && bannerDims(banner.main, isIntroBanner(banner.main))) {
+      readFighterBoxes();
+      const m = parts.main;
+      clear = easeClear(clear, fighterUnder({ x: m.x - m.displayWidth / 2, y: m.y - m.displayHeight / 2, w: m.displayWidth, h: m.displayHeight }, fighterBoxes));
+    } else clear = 1;
+    const fade = frame.alpha * clear;
     scale = frame.scale;
     const size = bannerSizeFor(banner.main);
     if (on && size !== shownSize) {
@@ -274,7 +298,7 @@ export function mountRoundView(
     }
     parts.main.setVisible(on).setScale(scale).setAlpha(fade);
     parts.sub.setY(BANNER_Y + SUB_GAP + (size > 1 ? Math.round(MAIN_PX * (size - 1) * 0.55) : 0));
-    drawHalo(on ? haloFor(banner.main, tick - clockFrom(), banner.reduced) : 0);
+    drawHalo(on ? haloFor(banner.main, tick - clockFrom(), banner.reduced) * clear : 0);
     drawCards(on, tick);
     // the result card says who won the round, so its duplicate under the banner is hidden while the card is up
     parts.sub.setVisible(on && banner.sub !== '' && !results.result.state().visible).setAlpha(Math.max(0, fade));

@@ -1,6 +1,6 @@
 import { Cmd, DEFAULT_SIM_FLAGS, EntityFlag, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL, characterId, type MatchSetup, type RenderArcade } from '@core/index';
 import { describe, expect, it } from 'vitest';
-import { actionRefusal, activeHeroOf, buildMatchEnd, chargeBlockedBy, chargeLineFor, demoMatch, effectsHeld, playbackFrame, runLineFor } from './arena-logic';
+import { actionRefusal, activeHeroOf, buildMatchEnd, chargeBlockedBy, chargeLineFor, demoMatch, effectsHeld, firstBackdropElement, playbackFrame, runLineFor, syncArcadeBg } from './arena-logic';
 
 type Row = { id: number; team: number; flags: number };
 const viewOf = (rows: Row[]) => ({ forEachCharacter: (fn: (c: Row) => void) => { rows.forEach(fn); } }) as never;
@@ -195,5 +195,38 @@ describe('runLineFor and the Run press', () => {
     expect(actionRefusal(Cmd.run, ready, none, none, () => 'R')).toBe('R');
     expect(actionRefusal(Cmd.run, { ...ready, phase: RoundPhase.intro }, none, none, () => 'R')).toBeUndefined();
     expect(actionRefusal(Cmd.run | Cmd.elemental, ready, none, () => 'E', () => 'R')).toBe('E');
+  });
+});
+
+describe('firstBackdropElement (qa r126: no stale hero floor on the first frame)', () => {
+  it('shows the sim stage, not the hero element', () => {
+    expect(firstBackdropElement(4, 'fire')).toBe('air');
+    expect(firstBackdropElement(1, 'air')).toBe('fire');
+    expect(firstBackdropElement(2, 'earth')).toBe('water');
+  });
+  it('falls back to the hero element with no stage and keeps the Void arena', () => {
+    expect(firstBackdropElement(0, 'earth')).toBe('earth');
+    expect(firstBackdropElement(3, 'void')).toBe('void');
+    expect(firstBackdropElement(0, undefined)).toBeUndefined();
+  });
+});
+
+describe('syncArcadeBg', () => {
+  const mk = () => { const img = { visible: false, texture: { key: 'bg:fire' }, setTexture(k: string) { this.texture.key = k; }, setVisible(v: boolean) { this.visible = v; } }; return img; };
+  const tex = { exists: () => true };
+  it('stays hidden before the sim stage is set (tick 0), so no stale hero floor shows', () => {
+    const img = mk();
+    syncArcadeBg(img, 0, 'fire', tex);
+    expect(img.visible).toBe(false);
+  });
+  it('shows the stage backdrop once known', () => {
+    const img = mk();
+    syncArcadeBg(img, 4, 'fire', tex);
+    expect(img).toMatchObject({ visible: true, texture: { key: 'bg:air' } });
+  });
+  it('stays hidden when the stage texture is missing', () => {
+    const img = mk();
+    syncArcadeBg(img, 2, 'fire', { exists: () => false });
+    expect(img.visible).toBe(false);
   });
 });

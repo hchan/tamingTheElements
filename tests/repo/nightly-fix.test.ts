@@ -767,7 +767,7 @@ describe('nightly-fix command (fake runner)', () => {
     });
   });
 
-  describe('07:00 morning report', () => {
+  describe('09:00 morning report', () => {
     it('writes a read-only report from the nightly and fix status, and notes a live lock', () => {
       writeRed();
       writeFileSync(join(dir, 'gate', 'nightly-fix.lock'), 'x');

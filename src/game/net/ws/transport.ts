@@ -21,6 +21,12 @@ export interface SocketLike {
 export const MAX_QUEUED = 256;
 /** DESYNC and RESULT are resent this often until stopped [choice, spec section 6]. */
 export const RETRY_MS = 500;
+/** After RESULT_ACK 1 (waiting) the client re-sends RESULT this often until ACK 0/2 [estimate: slow enough not to load the relay, fast enough to repair a lost final ACK]. */
+export const RESULT_REPOLL_MS = 2000;
+/** The re-poll gives up this long after the first ACK 1 [choice, estimate: about the relay's peer-gone wait]. */
+export const RESULT_REPOLL_CAP_MS = 30_000;
+/** "Play again" waits this long for the RESULT_ACK before it joins the queue anyway [choice, estimate: about 3 RTTs of a slow link]. */
+export const PLAY_AGAIN_ACK_WAIT_MS = 1500;
 
 type Match = Extract<Frame, { seq: number }>;
 type Resendable = Extract<Frame, { t: 'desync' | 'result' }>;
@@ -50,8 +56,13 @@ export class WebSocketTransport implements Transport {
   private readonly queue: Uint8Array[] = [];
   private readonly pings = new Map<number, number>();
   private readonly retries = new Map<number, { frame: Resendable; at: number }>();
+  /** Called after each `sendResult` (the client starts its own RESULT timers from it). */
+  onResultSent: (() => void) | undefined;
+  private lastResult: Extract<Frame, { t: 'result' }> | undefined;
   private seq = 0;
   private nonce = 0;
+  /** The match is over (`endMatch`): late BATCH and PAUSE from a session that is still shutting down are dropped, not sent as a bad frame for the next lobby state. */
+  private ended = false;
 
   constructor(
     private readonly socket: SocketLike,
@@ -69,17 +80,25 @@ export class WebSocketTransport implements Transport {
    */
   startMatch(matchId: number, resumed: boolean): void {
     this.matchId = matchId;
+    this.ended = false;
     if (resumed) return;
     this.seq = 0;
     this.reorder = new ReorderBuffer<Frame>();
     this.link.reset();
     this.queue.length = 0;
     this.retries.clear();
+    this.lastResult = undefined;
     this.peerPause = undefined;
   }
 
+  /** The match is over: stop sending match frames until the next `startMatch`. */
+  endMatch(): void {
+    this.ended = true;
+    this.stopRetry();
+  }
+
   send(packet: Uint8Array): void {
-    if (packet.length + 5 > MAX_BATCH_BYTES) return;
+    if (this.ended || packet.length + 5 > MAX_BATCH_BYTES) return;
     this.raw({ t: 'batch', seq: this.nextSeq(), packet });
   }
 
@@ -89,6 +108,7 @@ export class WebSocketTransport implements Transport {
   }
 
   sendPause(matchId: number, flags: number): void {
+    if (this.ended) return;
     this.raw({ t: 'pause', seq: this.nextSeq(), matchId, flags });
   }
 
@@ -97,7 +117,18 @@ export class WebSocketTransport implements Transport {
   }
 
   sendResult(matchId: number, winner: number, reason: number, ticks: number, finalHash: number): void {
-    this.retry({ t: 'result', seq: 0, matchId, winner, reason, ticks, finalHash });
+    const frame = { t: 'result', seq: 0, matchId, winner, reason, ticks, finalHash } as const;
+    this.lastResult = frame;
+    this.onResultSent?.(); // Before the send: an answer arriving synchronously must find the poll already open.
+    this.retry(frame);
+  }
+
+  /** Sends the last RESULT once more (the client's slow re-poll); false when there is none for the current match. */
+  resendResult(): boolean {
+    const f = this.lastResult;
+    if (f === undefined || (this.matchId !== undefined && f.matchId !== this.matchId)) return false;
+    this.raw(f);
+    return true;
   }
 
   /** Stops resending DESYNC and RESULT (on RESULT_ACK or match end). */
@@ -167,7 +198,7 @@ export class WebSocketTransport implements Transport {
           this.staleMatch++;
           break;
         }
-        for (const d of this.reorder.push((f as Match).seq, f, this.now(), f.t === 'batch')) this.deliver(d);
+        for (const d of this.reorder.push((f as Match).seq, f, this.now(), f.t === 'batch', f.t === 'batch')) this.deliver(d);
         break;
       case 'setup':
         this.link.onFrame(f.ctlSeq, f.ackCtl, f.body);

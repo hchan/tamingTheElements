@@ -659,10 +659,10 @@ export function mountDefenceView(
       const y = rings[o + 1] ?? 0;
       const size = rings[o + 2] ?? 0;
       const color = rings[o + 5] ?? 0;
-      if (rings[o + 7] === 1) over.fillStyle(color, 0.8 * (1 - p)).fillCircle(x, y, size);
+      if (rings[o + 7] === 1) over.fillStyle(color, 0.8 * (1 - p) * clash.dim(clock)).fillCircle(x, y, size);
       else {
         const flat = rings[o + 6] === 1;
-        over.lineStyle(flat ? 4 : 5, color, flat ? 1 : 1 - p).strokeCircle(x, y, ringRadius(p, size, flat));
+        over.lineStyle(flat ? 4 : 5, color, (flat ? 1 : 1 - p) * clash.dim(clock)).strokeCircle(x, y, ringRadius(p, size, flat));
       }
     }
     placePops(clock, delta);

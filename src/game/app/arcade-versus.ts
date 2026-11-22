@@ -7,12 +7,12 @@ import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags, type UiFlags } from '../platform/flags';
 import { controlsHint, P2_BINDINGS } from '../input/local-two';
 import { getBindings } from '../platform/input/bindings';
-import { afterArenaCreate, anySnag, firstRunHint } from './first-run-hint';
+import { afterArenaCreate, firstRunHint, firstRunPickArgs } from './first-run-hint';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
 import { requestOpenTesterPanel } from '@ui/tester/install';
-import { ARCADE_SNAG_SLOT, getCharacter, type CharacterId } from '@core/index';
+import { getCharacter, type CharacterId } from '@core/index';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, arcadeRacesFor, VOID_BOSS, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
@@ -205,7 +205,8 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         battle.replaceChildren(host);
         game = createGame(host, launch);
         if (pick.local) host.append(keysHint());
-        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)), ARCADE_SNAG_SLOT[pick.player], pick.partner !== undefined);
+        const hint = firstRunPickArgs(pick.player, pick.partner, pick.partner2);
+        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), hint.snag, hint.snagSlot, hint.hasPartner, hint.names);
         if (firstRun) host.append(firstRun);
         host.append(...inVisualOrder(buttons));
       }))

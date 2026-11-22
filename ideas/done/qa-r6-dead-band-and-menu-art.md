@@ -1,0 +1,42 @@
+---
+status: done
+added: 2026-11-13
+triaged: 2026-11-21 (a) already fixed: seam, crest, key art, legends and Locked pill landed per the Progress sections (menu-motion.css drifts mist and embers); remaining ultrawide and parallax polish lives in the menus-tour-and-picker epic.
+---
+
+# QA r6: dead band and hard seam on every non-fight screen; menu has no key art
+
+Seen at both 1280x720 and 1920x1080 (menu-*.png, flow-*.png in ~/claudetmp/qa6/).
+
+## Problems
+
+- The page background ends in a hard seam, leaving a dead band (roughly 10-20% of the height) below the content on menu, Play, Help, Settings and Versus.
+- The logo ring is blurry and low-res at 1920x1080 (it is clearly upscaled).
+- The menu is flat: five buttons on a dark field with no hero art, no glow, no animation. It does not say "Street Fighter / Marvel vs Capcom" or "mystic and luminous".
+- Versus: the earth stage row is faded under the sticky footer; stage lock icons overlap their text. Settings legends straddle the fieldset borders, and Display Size defaults to "Largest".
+
+## Suggested fix
+
+- Make the background fill the viewport (cover, or a gradient that continues past the image) and check at 16:9, 16:10 and ultrawide.
+- Re-bake the logo at 2x or as SVG.
+- Add key art: a painted hero line-up (the rigged Pax/Sindarosa/Curomo with rim light and a soft glow) behind the menu, with slow parallax and light motes.
+- Fix footer padding, lock icon placement and fieldset legends in the CSS.
+
+## Progress (menu-deadband, 2026-11-14)
+
+Done: dead band and seam (all body gradient layers were tiled to the short body; now fixed, no-repeat, html/body fill the viewport); crest re-baked at 512 px
+(`public/assets/img/menu/crest.png`); key art behind every DOM screen (`keyart.webp`, generator `tools/assets/menu-gen/menu_art.py`).
+Open: slow parallax and light-mote animation on the key art; Versus footer overlap, lock icon placement, Settings fieldset legends and Display Size default;
+pillarboxed phone canvas (match canvas, not touched); ultrawide check.
+
+## Progress (menu-polish-2, 2026-11-14)
+
+Done: Settings legends now sit inside the box (floated legend); Versus picker cursor and detail pane start on the hero in the first slot (You card and highlight agree);
+Locked pill moved to the tile's top-right; portrait phone gate has a rotate icon and a prominent green "Play anyway" button.
+Not changed: Display Size default "Largest" is deliberate in src/core (new players start at Largest); footer overlap no longer reproduces (e2e hero-picker-layout green).
+Open: parallax on key art (mist and embers already drift via menu-motion.css); a truly usable portrait arena.
+
+## Progress (menu-art, 2026-11-14)
+
+Done: grim hi-res re-master of the menu pictures: `keyart-hires.webp` (4800x2000, CSS background), `keyart-hires-lo.webp` (2400x1000, Phaser loader), `crest-hires.png` (1024 px),
+generator `tools/assets/menu-gen/menu_art_hires.py` (no ML model was available offline; Lanczos plus procedural paint detail from the 400 px legacy portraits). Originals kept.

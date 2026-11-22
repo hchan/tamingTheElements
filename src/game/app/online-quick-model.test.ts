@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_RESTING_SEC, type OnlineFailure } from '../net/ws/online-client';
 import {
   BUSY_TEXT, CHECKING_TEXT, CONNECTING_TEXT, controlsFor, checkMatch, endText, failureView, GENERIC_TEXT, IDLE_TEXT, MATCHED_TEXT,
-  netStatusText, OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, reconnectText, REST_KEY, resetRestMemory, restStore, rejectText, UPDATE_TEXT,
+  CONNECTION_LOST_TEXT, netStatusText, RECONNECTING_PREFIX, OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, reconnectText, REST_KEY, resetRestMemory, restStore, rejectText, UPDATE_TEXT,
   WAITING_PICK_TEXT, waitText, GATEWAY_NOTICE_TEXT, type QuickState,
 } from './online-quick-model';
 
 const FORBIDDEN = /\b(classic|arcade|ruleset|capture|room|friend)\b/i;
-const STATES: readonly QuickState[] = ['idle', 'connecting', 'queued', 'matched', 'waiting-pick', 'checking', 'playing', 'ended', 'resting', 'update', 'busy', 'failed'];
+const STATES: readonly QuickState[] = ['idle', 'connecting', 'queued', 'matched', 'waiting-pick', 'checking', 'playing', 'ended', 'resting', 'update', 'busy', 'failed', 'unavailable'];
 
 const match = (o: Partial<{ slot: number; inputDelay: number; batchEvery: number; simVersion: number }> = {}) => ({
   t: 'match' as const, matchId: 1, slot: 0, seed: 5, inputDelay: 2, simVersion: 86, batchEvery: 1, resumed: false, ...o,
@@ -19,6 +19,7 @@ describe('online quick match model', () => {
     expect(controlsFor('playing')).not.toContain('quickBack');
     expect(controlsFor('resting')).toEqual(['quickBack']);
     expect(controlsFor('update')).not.toContain('quickRetry');
+    expect(controlsFor('unavailable')).toEqual(['quickBack']);
   });
 
   it('formats the wait as m:ss', () => {
@@ -38,7 +39,7 @@ describe('online quick match model', () => {
     expect(failureView({ kind: 'resting', retryAfterSec: 0 }).text).toContain('about 1 h');
     expect(failureView({ kind: 'network' }).state).toBe('failed');
     expect(failureView({ kind: 'bad-response' }).state).toBe('failed');
-    expect(failureView({ kind: 'not-configured' }).state).toBe('failed');
+    expect(failureView({ kind: 'not-configured' }).state).toBe('unavailable');
   });
 
   it('never shows forbidden words for any failure, server code or state text', () => {
@@ -51,7 +52,7 @@ describe('online quick match model', () => {
     const words = [IDLE_TEXT, CONNECTING_TEXT, MATCHED_TEXT, WAITING_PICK_TEXT, CHECKING_TEXT, UPDATE_TEXT, BUSY_TEXT, GENERIC_TEXT,
       OPPONENT_AWAY_TEXT, OPPONENT_LEFT_TEXT, GATEWAY_NOTICE_TEXT, waitText(7), reconnectText(2), rejectText('simVersion'), rejectText('roster'), rejectText(undefined),
       endText(-1, 0, undefined), endText(0, 0, [2, 1]), endText(1, 0, [0, 2]), netStatusText('desync', undefined) ?? '',
-      netStatusText('forfeit', 'timeout') ?? '', netStatusText('forfeit', undefined) ?? '', netStatusText('remote-paused', undefined) ?? ''];
+      netStatusText('forfeit', 'timeout') ?? '', netStatusText('forfeit', undefined) ?? '', netStatusText('remote-paused', undefined) ?? '', CONNECTION_LOST_TEXT];
     for (const w of words) expect(w).not.toMatch(FORBIDDEN);
   });
 
@@ -59,6 +60,13 @@ describe('online quick match model', () => {
     expect(endText(0, 0, [2, 1])).toBe('You won the match! Rounds 2-1.');
     expect(endText(0, 1, [2, 1])).toBe('Your opponent won the match. Rounds 1-2.');
     expect(endText(-1, 0, undefined)).toBe('The match was a draw.');
+  });
+
+  it('a timeout says the connection was lost and never claims a win', () => {
+    const t = netStatusText('forfeit', 'timeout');
+    expect(t).toBe(CONNECTION_LOST_TEXT);
+    expect(t).not.toMatch(/\b(win|won)\b/i); // "no winner" is fine, a claimed win is not
+    expect(t?.startsWith(RECONNECTING_PREFIX)).toBe(false);
   });
 
   it('checks MATCH_START', () => {

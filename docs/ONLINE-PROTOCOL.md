@@ -163,6 +163,7 @@ Details:
   resends the oldest unacknowledged one every 200 ms [choice], puts the highest `ctlSeq` it has delivered in `ackCtl`, delivers only in `ctlSeq` order and drops duplicates. The reorder and skip-ahead rules above do not apply to it.
 - SETUP details (implemented in `src/game/net/ws/`): the `seq u32` field in SETUP is reserved and sent as 0; `ackCtl = 0xFF` means "nothing delivered yet"; a SETUP with `n = 0` is a pure acknowledgement; a sender holds at most 32 unacknowledged control messages [choice].
 - The relay must never skip BATCH/PAUSE numbers of a sender; the far-ahead cap above is the client's guard if it does.
+- Ordering between PAUSE and BATCH is relaxed: a BATCH may be delivered immediately (it is idempotent), while PAUSE still waits its turn in the reorder buffer, so the two can reach the game in a different order than they were sent.
 - Relay rules: in a queue match slot 0 goes to the player who waited longer, in a room match to the host [choice]; a RESULT retry that arrives after the match record closed (for example by DESYNC) is answered with the current status; HELLO while the service is resting is closed without an answer frame (section 3) [choice].
 - Only match-phase frames are numbered. Control frames (`0x01`-`0x30`) are request/answer and carry no seq; the client tolerates a duplicate answer.
 
@@ -240,5 +241,9 @@ Each input is a 4-byte u32 (section 4), so `batchEvery = 3` still fits 64 inputs
 ## Relay decisions the client follows (WP-ONLINE-FIX-CLIENT)
 
 - After a match ends the same socket may QUEUE_JOIN or use rooms again; BATCH/PAUSE seq restart at 0 per match; HASH, DESYNC and RESULT carry seq 0 and the relay never checks it.
+- After a match ends the client stops sending BATCH and PAUSE (`WebSocketTransport.endMatch()`, until the next `startMatch`), so a late frame cannot reach a following match; the relay would answer a stray BATCH with ERROR bad-frame.
+- PEER_STATUS timing [fact, relay code]: event 0 (disconnected, `graceMs` 10000) is sent from the `$disconnect` handler, so an abrupt drop can report late. Event 1 (back) is sent only if the relay had already recorded the disconnect when the player resumed. Event 2 (gone) comes only from the once-a-minute sweep, so it arrives about 10 to 70 s after the drop (estimate; the live `--gone` run saw it at about 50 s).
+- The sim version is not checked at QUEUE_JOIN: pairing matches equal simVersion only, so a client with another sim version just stays queued.
+- Every bad-frame path sends ERROR bad-frame and then closes (4001); a client that keeps sending after the first bad frame gets a send error, not more ERRORs.
 - A takeover resume (a new socket for the same session) closes the **old** socket with close code 1000. The client only reacts to the close of its current socket, so that close is neither an error nor a reconnect trigger.
 - A resume with another identity (ticket subject) than the session's gets WELCOME `resumed = 0`; the relay host passes `ctx.identity`.

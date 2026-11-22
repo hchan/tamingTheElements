@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (P7 black strip under the arena at 1280x720 late blast unverified)
 added: 2026-11-16
 ---
 
@@ -59,3 +60,8 @@ Fix: re-test with a real key hold or the tag command bit; add an e2e assert if m
 ## Passed
 
 First-run card (full width, under the HUD, "Got it" reachable); Help falloff text; Fire Blast fade; super cut-in fits under the HUD; rotate to landscape and back keeps the game state.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Help falloff text and Fire Blast trail fade (confirmed in the round), P6 Water/Air similarity (verified r85), P8 tag swap (verified r85). Dropped (phone/portrait): P1, P2, P3, P4, P5. Art only, tracked: Sindarosa on Fire lava (`ideas/brainstorm/qa-r128-fire-stage-hero-blend.md`).
+Open (low): P7 thin black band under the ground in `blast-late.png`; no later round re-checked it, so it needs a 1280x720 screenshot after a late blast.

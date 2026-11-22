@@ -1,6 +1,7 @@
 ---
 status: idea
 added: 2026-11-18
+triaged: c (items 1,3,4,5,6,8 fixed or obsolete; open: #2 stun mash-out or shorter stun is a sim design change in src/core, #7 clash halo thinning is fx polish; plan: #2 needs an Opus plan with balance and golden impact, #7 is one small game/fx work package)
 ---
 
 # QA round 109 findings

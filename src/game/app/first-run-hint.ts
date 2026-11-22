@@ -3,6 +3,7 @@ import { PRELOAD_READY } from '../scenes/launch';
 import { el } from '@ui/dom';
 import { PORTRAIT_PLAY_QUERY } from '../boot/portrait-play';
 import { ARCADE_SNAG_SLOT } from '@core/index';
+import { leadAbilityNames } from './lead-names';
 import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction } from '../platform/input/bindings';
 
 /** First-run battle hint: a short, dismissible card shown in the first battle only (flag kept in localStorage, never the save). */
@@ -106,6 +107,11 @@ export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?
     `${strike}${rope}Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
     `Fill the Super meter, then press ${key(b, 'super')}. ${partner ? `Tag with ${key(b, 'slot3')} to send in a rested hero; p` : 'P'}ress ${key(b, 'cleanse')} to Cleanse a root or slow.`,
   ];
+}
+
+/** The pick-specific card arguments (snag, snag slot, partner, action-bar names of the controlled hero), so the card names Blast/Flame like the bar. */
+export function firstRunPickArgs(player: string, partner?: string, partner2?: string): { snag: boolean; snagSlot: number | undefined; hasPartner: boolean; names: readonly [string, string] | undefined } {
+  return { snag: anySnag([player, partner, partner2].filter((x) => x !== undefined)), snagSlot: ARCADE_SNAG_SLOT[player], hasPartner: partner !== undefined, names: leadAbilityNames(player) };
 }
 
 /** One short line for a short desktop window (QA r31): the keys that matter in the first seconds; Help, Controls has the rest. */
@@ -294,7 +300,6 @@ export function firstRunHint(
   else if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner, names)));
   else if (short && window.innerHeight <= 500 && isTouchFirst() && window.matchMedia('(orientation: landscape)').matches) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
   else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner, names)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
-  if (short && window.innerHeight > 500 && !portraitOne) card.style.fontSize = '11px';
   if (!short && !portraitOne) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');

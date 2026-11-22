@@ -11,3 +11,5 @@ Repro: start 1v1 with `?manual=1&seed=7&hero=X&foe=Y` for each pair and compare 
 Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a77c3dce6b1857aa7/.scratch/qa-r125/10-1v1-fire-1280-a.png and /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a77c3dce6b1857aa7/.scratch/qa-r125/10-1v1-earth-1280-a.png
 
 Suggested fix: run `balance:compare` and decide whether the spread is intended. If it is, show a role hint (glass cannon, tank) on the picker.
+
+triaged: 2026-11-21 real, large: balance decision (balance:compare plus design call). Plan: Opus planner with the balance baseline.

@@ -1,49 +1,9 @@
-/* Drag and drop (hero-dnd.ts): the previewed tile, the ghost under the pointer, the slot it would land in. */
-.heroTile,
-[data-hero-slot] {
-  touch-action: pan-y;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-.heroTile.heroArmed {
-  border-color: #d9c27a;
-  box-shadow: 0 0 0 2px #d9c27a, inset 0 0 0 2px #d9c27a;
-}
-.heroDragSource {
-  opacity: 0.45;
-}
-.heroDragging,
-.heroDragging * {
-  cursor: grabbing;
-}
-.heroGhost {
-  position: fixed;
-  z-index: 1000;
-  margin: 0;
-  pointer-events: none;
-  opacity: 0.92;
-  transform: translate(-50%, -50%) scale(1.06);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
-}
-.heroDropOn {
-  border-color: #fff;
-  background: #3a3520;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #000;
-  outline: 2px dashed #d9c27a;
-  outline-offset: 4px;
-}
+/* Picker layout (the pointer drag-and-drop styles are gone): Add button, 6-column grid, coarse pointer and phone-width rules. */
 .heroAdd {
   display: block;
   width: 100%;
   min-height: 44px;
   margin: 0.4em 0;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .heroDropOn,
-  .heroTile.heroArmed {
-    transition: box-shadow 0.12s ease-out, background-color 0.12s ease-out;
-  }
 }
 .heroGrid[data-cols='6'] button.menuButton.heroTile {
   display: flex;
@@ -99,25 +59,24 @@
 #arcadePick .vsCursor1 { border-color: var(--vs-p1); box-shadow: 0 0 0 2px var(--vs-p1); }
 #arcadePick .vsCursor2 { border-color: var(--vs-p2); box-shadow: 0 0 0 2px var(--vs-p2); }
 #arcadePick .vsCursor1.vsCursor2 { box-shadow: 0 0 0 2px var(--vs-p1), inset 0 0 0 2px var(--vs-p2); }
-#arcadePick .vsFlags,
-#arcadePick .vsCursors {
+/* Badges are out of flow, in the tile's top-right corner (left of the weapon icon; tiles clip their overflow), so they never share a line with the face or the hero name.
+   Scoped to .heroTile (not #arcadePick) so World Tour tiles get the same placement. */
+.heroTile .vsFlags,
+.heroTile .vsCursors {
+  position: absolute;
+  top: 2px;
+  right: 22px;
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: row;
   gap: 2px;
-  min-height: 1.3em;
+  pointer-events: none;
 }
-#arcadePick .vsFlags[hidden] {
+.heroTile .vsFlags[hidden] {
   display: none;
 }
-#arcadePick .vsCursors {
-  position: absolute;
-  top: 8px;
-  left: 3px;
-  min-height: 0;
-  flex-direction: column;
-}
-#arcadePick .vsChip {
+#arcadePick .vsChip,
+.heroTile .vsChip {
   display: inline-block;
   padding: 0 0.4em;
   border-radius: 999px;
@@ -127,8 +86,10 @@
   color: #000;
   white-space: nowrap;
 }
-#arcadePick .vsP1 { background: var(--vs-p1); }
-#arcadePick .vsP2 { background: var(--vs-p2); }
+#arcadePick .vsP1,
+.heroTile .vsP1 { background: var(--vs-p1, #4da3ff); }
+#arcadePick .vsP2,
+.heroTile .vsP2 { background: var(--vs-p2, #ff6fb0); }
 #arcadePick .vsKeys {
   display: grid;
   grid-template-columns: 1fr 1fr;

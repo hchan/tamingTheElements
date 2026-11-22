@@ -33,7 +33,7 @@ describe('menuState', () => {
 describe('menu order', () => {
   it('has exactly five always-enabled entries: Play, Versus, Online, Settings, Help', () => {
     expect(MENU_ITEMS.map((i) => [i.label, i.route])).toEqual([
-      ['Play', 'tour'],
+      ['World Tour', 'tour'],
       ['Versus', 'arcade'],
       ['Online', 'online'],
       ['Settings', 'settings'],

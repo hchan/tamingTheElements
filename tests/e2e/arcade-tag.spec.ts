@@ -21,7 +21,7 @@ interface Tag {
 /** Round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
 const INTRO = 91;
 const KO_TO_ROUND_END = 30 + 120 + 60;
-const MENU = ['Play', 'Versus', 'Online', 'Settings', 'Help'];
+const MENU = ['World Tour', 'Versus', 'Online', 'Settings', 'Help'];
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 const tag = async (page: Page): Promise<Tag | undefined> => {
@@ -59,7 +59,8 @@ test('picker: Team first, the partner only in 2v2 (disabled and out of the Tab o
     await page.keyboard.press('Tab');
   }
   // The Level, Arena and next pulldowns are segmented controls (one unnamed tab stop per group) over hidden selects.
-  expect(order).toEqual(['arcadeSize', '', '', '', 'roster-player', 'roster-enemy']);
+  // DOM order is screen order: slot 1, then the grid tiles (unnamed ids), then the computer's stack; the hidden partner row is skipped.
+  expect(order).toEqual(['arcadeSize', '', '', '', 'roster-player', '']);
   await expect(page.locator('#roster-partner')).toBeHidden();
   await page.getByLabel('Team').selectOption('2');
   await expect(partner).toBeEnabled();
@@ -67,7 +68,7 @@ test('picker: Team first, the partner only in 2v2 (disabled and out of the Tab o
   // One click fills the active slot (Your race) and moves on to the next one (Your partner) (01532fcb: no preview step).
   await page.getByRole('button', { name: /^Pax/ }).click();
   await expect(page.getByLabel('Your race')).toHaveValue('pax');
-  await expect(page.locator('#roster-partner')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#roster-partner')).toHaveAttribute('aria-current', 'step');
   // A partner equal to the lead is replaced (two distinct races a side).
   await page.getByLabel('Your race').selectOption('pax');
   await page.getByLabel('Your partner (2v2)').selectOption('pax');

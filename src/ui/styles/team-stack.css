@@ -1,0 +1,176 @@
+/* Numbered team stack (MvC-style picker). Text carries every state; colour is only a second cue. */
+.teamStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  min-width: 0;
+  padding: 0.4em;
+  color: #e8e0cc;
+  background: #14111c;
+  border: 2px solid #5a4e3a;
+  border-radius: 8px;
+}
+.teamStack.tsAimed {
+  border-color: #ffd678;
+  box-shadow: 0 0 0 2px #ffd678;
+}
+.teamStack .tsHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: max(14px, 0.85em);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.teamStack .tsSide {
+  font-weight: 700;
+}
+.teamStack .tsAim,
+.teamStack .tsReady {
+  padding: 0 0.5em;
+  border: 1px solid currentcolor;
+  border-radius: 4px;
+}
+.teamStack .tsAim {
+  color: #ffd678;
+}
+.teamStack .tsReady {
+  color: #9be28f;
+}
+.teamStack [hidden] {
+  display: none;
+}
+.teamStack .tsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.teamStack .tsRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.3em 0.5em;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: #2a2234;
+  border: 2px solid #6b5d48;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.teamStack .tsRow:hover:not(:disabled) {
+  border-color: #b9a47a;
+}
+.teamStack .tsRow:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.teamStack .tsRow[aria-current='step'] {
+  border-color: #ffd678;
+  background: #3a2f22;
+}
+.teamStack .tsRow:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.teamStack .tsNum {
+  min-width: 1em;
+  font-weight: 700;
+}
+.teamStack .tsRole {
+  min-width: 3.6em;
+  font-size: max(14px, 0.8em);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.teamStack .tsDetail {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.6em;
+  min-width: 0;
+}
+.teamStack .tsName {
+  font-weight: 700;
+}
+.teamStack .tsStats {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: max(14px, 0.8em);
+  opacity: 0.9;
+}
+.teamStack .tsEmpty {
+  font-style: italic;
+  opacity: 0.7;
+}
+.teamStack .tsTag {
+  padding: 0 0.4em;
+  font-size: max(14px, 0.75em);
+  text-transform: uppercase;
+  border: 1px dashed currentcolor;
+  border-radius: 4px;
+}
+.teamStack .tsSuggested {
+  background: #1c1826;
+  border-style: dashed;
+}
+.teamStack .tsSuggested .tsName,
+.teamStack .tsSuggested .tsStats {
+  opacity: 1;
+  color: #e0d8c4;
+}
+.teamStack .tsRemove {
+  margin-left: auto;
+  padding: 0 0.5em;
+  font-size: max(14px, 0.75em);
+  text-transform: uppercase;
+  border: 1px solid currentcolor;
+  border-radius: 4px;
+}
+.teamStack .vsAbilities {
+  display: inline-flex;
+  gap: 0.25em;
+}
+.teamStack .vsAbility {
+  padding: 0 0.3em;
+  font-size: 0.75em;
+  border: 1px solid #6b5d48;
+  border-radius: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .teamStack,
+  .teamStack .tsRow {
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+}
+@media (forced-colors: active) {
+  .teamStack.tsAimed,
+  .teamStack .tsRow[aria-current='step'] {
+    outline: 2px solid Highlight;
+  }
+}
+.teamStack .tsCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2em;
+}
+.teamStack .tsNext {
+  padding: 0 0.4em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffd678;
+  border: 1px solid #ffd678;
+  border-radius: 4px;
+}

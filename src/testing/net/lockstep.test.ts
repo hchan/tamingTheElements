@@ -189,7 +189,7 @@ describe('timeout, forfeit and hidden-tab policy', () => {
     for (const s of r.sessions) {
       expect(s.status).toBe('forfeit');
       expect(s.forfeitReason).toBe('timeout');
-      expect(s.winner).toBe(s.side);
+      expect(s.winner).toBeNull();
     }
   });
 
@@ -211,6 +211,54 @@ describe('timeout, forfeit and hidden-tab policy', () => {
     for (let i = 0; i < 2000 && (a.status !== 'ended' || b.status !== 'ended'); i++) tick(a, b);
     expect([a.status, b.status]).toEqual(['ended', 'ended']);
     expect(hash(worlds[0].state)).toBe(hash(worlds[1].state));
+  });
+
+  const pair = (opts: Record<string, number>) => {
+    const worlds = [createMatch(SETUP), createMatch(SETUP)] as const;
+    const net = new FakeNetwork(3, PERFECT_NET);
+    const o = { adaptive: false, tickLimit: 300, ...opts };
+    const a = new LockstepSession({ ...o, world: worlds[0], side: 0, transport: net.a });
+    const b = new LockstepSession({ ...o, world: worlds[1], side: 1, transport: net.b });
+    const tick = (...ss: LockstepSession[]): void => {
+      net.advance();
+      for (const s of ss) s.update(SCRIPT[s.side][s.nextStampTick] ?? 0);
+    };
+    return { worlds, a, b, tick };
+  };
+
+  it('heartbeats without new remote input do not keep the match alive; timeout has no winner', () => {
+    const { a, b, tick } = pair({ timeoutTicks: 100 });
+    for (let i = 0; i < 30; i++) tick(a, b);
+    for (let i = 0; i < 100 + 10 + 2 && a.status !== 'forfeit'; i++) {
+      b.setHidden(false); // sends a packet at once, no new inputs
+      tick(a);
+    }
+    expect(a.status).toBe('forfeit');
+    expect(a.forfeitReason).toBe('timeout');
+    expect(a.winner).toBeNull();
+  });
+
+  it('while the peer is away the longer limit applies, and back resumes the match', () => {
+    const { worlds, a, b, tick } = pair({ timeoutTicks: 100, peerAwayTimeoutTicks: 1000 });
+    for (let i = 0; i < 30; i++) tick(a, b);
+    a.setPeerAway(true);
+    for (let i = 0; i < 400; i++) tick(a);
+    expect(a.status).toBe('waiting');
+    a.setPeerAway(false);
+    for (let i = 0; i < 50; i++) tick(a);
+    expect(a.status).toBe('waiting'); // back gives a full normal timeout
+    for (let i = 0; i < 2000 && (a.status !== 'ended' || b.status !== 'ended'); i++) tick(a, b);
+    expect([a.status, b.status]).toEqual(['ended', 'ended']);
+    expect(hash(worlds[0].state)).toBe(hash(worlds[1].state));
+  });
+
+  it('away beyond the peerAway limit times out with no winner', () => {
+    const { a, b, tick } = pair({ timeoutTicks: 100, peerAwayTimeoutTicks: 300 });
+    for (let i = 0; i < 30; i++) tick(a, b);
+    a.setPeerAway(true);
+    for (let i = 0; i < 400 && a.status !== 'forfeit'; i++) tick(a);
+    expect(a.forfeitReason).toBe('timeout');
+    expect(a.winner).toBeNull();
   });
 
   it('a conceded match ends for both sides', () => {

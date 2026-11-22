@@ -1,5 +1,6 @@
 # QA r118 findings (desktop 1280x720, headless, main 43a2899d)
 status: idea
+triaged: c (most items fixed or dropped; one real left, see plan at end)
 added: 2026-11-19
 
 Method: test build, Playwright headless Chromium (SwiftShader) at 1280x720. Fights run with `stepLive` in 50-tick chunks, AI active, about 20 s of sim (1000 ticks) per 1v1 arena; hit-stop judged with the sim running. Screenshots in `.scratch/qa-r118/`. Mac load was 15-22 during the work (above the brief's 10; only screenshots, no timing claims).
@@ -32,3 +33,8 @@ Clean on Menu, Versus, Play/Tour picker and card, Online, Settings, and Help (al
 ## Screens not captured
 
 Hero select inside Tour/Versus picker covered (`02-versus.png`, `s-Play.png`). Online shows only the entry screen (no host/join flow). Settings scrolled only the first viewport (Audio, Controls).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: help chip wrap (5-col grid, `src/ui/styles/help.css`); picker life (`heroLife` scaled, `src/ui/screens/arcade-versus.ts:40`, used by `tour.ts:275`); "More below" pill now in the footer bar (`src/ui/styles/main/10-picker-layout.css:85`); stage 1 dead walk (`openingRush`, `src/game/app/tour-match.ts:104`); Tour card vocabulary (hero ability names, `src/game/app/tour-controls.ts`); phone help text dropped (`src/ui/screens/help-guide.test.ts:6`). Not reproduced or info only: the rest.
+Open (c): hit numbers over the super cut-in title/label. HUD numbers sit at depth 101-102 (`src/game/scenes/Hud.ts:783,838`), the band at 5-8 (`src/game/fx/super-view.ts:96`). Plan: while `superCut` is live, hide or lower the HUD numbers over the band (render-only; Hud.ts is 1218 lines, so put the logic in a small helper under `src/game/hud/`). Low extra: first-fight hint contrast (`src/game/app/first-run-hint.ts`).

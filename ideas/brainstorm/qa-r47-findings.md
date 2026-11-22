@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (2026-11-21; all fixed or obsolete except Tour card portraits on flat purple, art)
 added: 2026-11-15
 ---
 
@@ -22,3 +23,10 @@ Screenshots under `~/claudetmp/qa-r47/s/`. See qa-r47-scorecard.md for scores.
 13. Roster is still 12 heroes, so the 24-hero layout is untested. Re-check when it lands.
 
 Working well: tag swap presentation (`team2-tag-a.png`, `team3-tag-b.png`), super banners with element label and "2 HITS 110 DMG" (`sup-Fire-grid.png`), phone controls and Victory screen (`ph-start.png`, `ph-result.png`), 3v3 bench portraits and Tag buttons.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: per-element super burst (`BURST_SHAPE`/`BURST_COLOR`, `src/game/fx/super-burst.ts:10`); picker bar vs partner slot and detail pane (`tests/e2e/picker-bar.spec.ts:76,140`, More-below pill in the bar `10-picker-layout.css:85`); hit numbers on every hit and per-element marks (`hit-mark.ts`); FIGHT banner 0.6 s (`FIGHT_BANNER_TICKS = 30`, `src/game/hud/round-announcer.ts:20`); Echo on Air and Earth floor (verified r49); Fiara outline (clean by r49); Online page rebuilt (`online-quick.ts`); desktop first-run hint leaves on tag/super/round end (`first-run-hint.ts:12-18`).
+Intended: life asymmetry in 2v2 (picker text and hero panel show the team-size life, `arcade-versus.ts:766`). Not reproduced: Ishimi dark on Water (subjective, no later report). Phone parts obsolete (phone/portrait/touch work was dropped by the owner (2026-11-18)).
+Roster: 24 heroes now (see r46).
+Open (c): #10 Tour stage card portraits blurry on flat purple vs the painted splash (art; `ideas/done/qa-r4-tour-card-art-mismatch.md` only brightened the card; art-director gate).

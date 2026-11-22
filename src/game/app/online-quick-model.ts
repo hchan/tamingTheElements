@@ -8,7 +8,9 @@ import { friendlyMessage, restingSec, type OnlineEvent, type OnlineFailure } fro
  */
 export type QuickState =
   | 'idle' | 'connecting' | 'queued' | 'matched' | 'waiting-pick' | 'checking' | 'playing'
-  | 'ended' | 'resting' | 'update' | 'busy' | 'failed';
+  | 'ended' | 'resting' | 'update' | 'busy' | 'failed'
+  /** Online play is not built into this version: retrying cannot help, so no Try again. */
+  | 'unavailable';
 
 export type ControlId =
   | 'quickFind' | 'quickCancel' | 'quickPick' | 'quickReady' | 'quickRetry' | 'quickReload'
@@ -25,7 +27,8 @@ export function controlsFor(state: QuickState): readonly ControlId[] {
     case 'checking': return ['quickLeave'];
     case 'playing': return ['quickLeave', 'quickLink'];
     case 'ended': return ['quickAgain', 'quickBack'];
-    case 'resting': return ['quickBack'];
+    case 'resting':
+    case 'unavailable': return ['quickBack'];
     case 'update': return ['quickReload', 'quickBack'];
     case 'busy':
     case 'failed': return ['quickRetry', 'quickBack'];
@@ -42,7 +45,10 @@ export const BUSY_TEXT = 'The online service is busy right now. Try again in a m
 export const GENERIC_TEXT = 'Something went wrong online. Try again.';
 export const RECONNECTING_PREFIX = 'Connection lost. Reconnecting';
 export const OPPONENT_AWAY_TEXT = "Your opponent's connection dropped. Waiting for them...";
+export const RESULT_DISAGREE_TEXT = 'The two games ended differently. You can save a report.';
 export const OPPONENT_LEFT_TEXT = 'Your opponent left.';
+/** A timeout stalled the match and nobody can say who left: no winner (never starts with RECONNECTING_PREFIX). */
+export const CONNECTION_LOST_TEXT = 'Connection lost. The match ended with no winner.';
 /** Shown when the service's gateway sent a failure notice; the raw notice text is for logs, not for players. */
 export const GATEWAY_NOTICE_TEXT = 'The online service is having trouble. Hang on...';
 
@@ -66,7 +72,7 @@ export function endText(winner: number, side: 0 | 1, rounds: readonly [number, n
 /** Words for a stopped match (the lockstep status); undefined for a status that needs none. */
 export function netStatusText(status: SessionStatus, reason: string | undefined): string | undefined {
   if (status === 'desync') return 'The two games disagree about the match, so it was stopped. Please play again.';
-  if (status === 'forfeit') return reason === 'timeout' ? 'Your opponent stopped responding, so you win.' : 'The match ended: a player left.';
+  if (status === 'forfeit') return reason === 'timeout' ? CONNECTION_LOST_TEXT : 'The match ended: a player left.';
   if (status === 'remote-paused') return 'Your opponent switched tabs; waiting for them.';
   return undefined;
 }
@@ -79,7 +85,7 @@ export function rejectText(reason: string | undefined): string {
 }
 
 export interface FailureView {
-  readonly state: 'busy' | 'update' | 'failed' | 'resting';
+  readonly state: 'busy' | 'update' | 'failed' | 'resting' | 'unavailable';
   readonly text: string;
 }
 
@@ -92,6 +98,7 @@ export function failureView(f: OnlineFailure): FailureView {
     if (f.code === 10) return { state: 'update', text: UPDATE_TEXT };
     if (f.code === 6 || f.code === 7) return { state: 'failed', text: GENERIC_TEXT };
   }
+  if (f.kind === 'not-configured') return { state: 'unavailable', text: friendlyMessage(f) };
   return { state: 'failed', text: friendlyMessage(f) };
 }
 

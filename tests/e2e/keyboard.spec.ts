@@ -50,7 +50,7 @@ test.describe('keyboard-only menu navigation', () => {
       await page.keyboard.press('Tab');
       seen.push(await activeText(page));
     }
-    expect(seen).toEqual(['Play', 'Versus', 'Online', 'Settings', 'Help']);
+    expect(seen).toEqual(['World Tour', 'Versus', 'Online', 'Settings', 'Help']);
     const outline = await page.evaluate<{ style: string; width: number }>(ACTIVE_OUTLINE);
     expect(outline.style).not.toBe('none');
     expect(outline.width).toBeGreaterThanOrEqual(2);
@@ -59,7 +59,7 @@ test.describe('keyboard-only menu navigation', () => {
   test('the five menu entries are all enabled without a save', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('heading', { level: 1 }).waitFor();
-    expect(await activeText(page)).toBe('Play');
+    expect(await activeText(page)).toBe('World Tour');
     for (const next of ['Versus', 'Online', 'Settings', 'Help']) {
       await page.keyboard.press('Tab');
       expect(await activeText(page)).toBe(next);

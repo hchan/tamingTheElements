@@ -74,7 +74,7 @@ export const matchStart = (slot: number, matchId = 1, p: { inputDelay?: number; 
   b[0] = 0x30; b[1] = matchId; b[2] = slot; d.setUint32(3, 0xabcdef01); b[7] = p.inputDelay ?? 2; d.setUint16(8, p.simVersion ?? 86); b[10] = p.batchEvery ?? 1;
   return b;
 };
-export const resultAck = (matchId: number): Uint8Array => Uint8Array.of(0x51, matchId, 0);
+export const resultAck = (matchId: number, status = 0): Uint8Array => Uint8Array.of(0x51, matchId, status);
 export const peerStatus = (matchId: number, event: number): Uint8Array => Uint8Array.of(0x44, matchId, event, 0x27, 0x10);
 /** A BATCH payload whose `Packet.match` byte is `match` and whose `firstTick` is `tick`. */
 export const pkt = (match: number, tick = 0): Uint8Array => encodePacket({ match, flags: 0, ack: 0, firstTick: tick, inputs: [], hashes: [] });

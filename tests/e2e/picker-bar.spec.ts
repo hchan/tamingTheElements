@@ -59,6 +59,17 @@ for (const [name, width, height] of VIEWPORTS) {
       const slot = await rectOf(page, '#tourSlot3');
       const tile = await rectOf(page, '#tourPick .heroTile');
       expect(bar).not.toBeNull();
+      // Tile names stay readable (>= 14 px) and are not clipped by their tile (desktop viewports).
+      if (width >= 800) {
+        const names = await page.evaluate<Array<[number, boolean]>>(
+          `[...document.querySelectorAll('#tourPick .heroTileName')].map(n => [parseFloat(getComputedStyle(n).fontSize), n.scrollWidth > n.clientWidth + 1])`,
+        );
+        expect(names.length).toBeGreaterThan(0);
+        for (const [size, clipped] of names) {
+          expect(size).toBeGreaterThanOrEqual(14);
+          expect(clipped).toBe(false);
+        }
+      }
       // Hard targets from 1024x768 up; phones may scroll to the tiles inside the region.
       if (width >= 800 && height >= 600) {
         expect(need(slot).bottom).toBeLessThanOrEqual(need(bar).top + 1);
@@ -76,7 +87,7 @@ test.describe('Versus 2v2 at 1280x720', () => {
   test('the partner slot is visible above the bar at scroll 0', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByRole('radio', { name: /^✓?2v2 tag team$/ }).click();
-    const partner = await rectOf(page, '#arcadePick .vsSide1 .vsSlotItem:nth-child(2)');
+    const partner = await rectOf(page, '#arcadePick #roster-partner');
     const bar = await rectOf(page, BAR);
     expect(partner).not.toBeNull();
     expect(need(partner).bottom).toBeLessThanOrEqual(need(bar).top + 1);

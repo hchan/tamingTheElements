@@ -3,6 +3,8 @@ import { navigateHash } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { buildDesyncReport } from '../net/desync-report';
 import { linkLine } from '../net/link-quality';
+import { ACK_STATUS, MatchReporter } from '../net/ws/match-report';
+import { END_DETAIL, type MatchEndRecord } from '../net/match-end';
 import { onlineConfig } from '../net/ws/config';
 import { friendlyMessage, OnlineClient, restingSec, type OnlineEvent, type OnlineFailure } from '../net/ws/online-client';
 import type { ArenaLaunch } from '../scenes/launch';
@@ -11,7 +13,7 @@ import { destroyGame } from './game-handle';
 import { launchOnlineArena, type OnlineArena } from './online-arena';
 import {
   checkMatch, CHECKING_TEXT, GATEWAY_NOTICE_TEXT, CONNECTING_TEXT, endText, failureView, IDLE_TEXT, MATCHED_TEXT, netStatusText, OPPONENT_AWAY_TEXT,
-  OPPONENT_LEFT_TEXT, GENERIC_TEXT, reconnectText, rejectText, restStore, waitText, WAITING_PICK_TEXT, type QuickState,
+  OPPONENT_LEFT_TEXT, GENERIC_TEXT, reconnectText, RESULT_DISAGREE_TEXT, rejectText, restStore, waitText, WAITING_PICK_TEXT, type QuickState,
 } from './online-quick-model';
 import { QuickSetup } from './online-quick-setup';
 import { createQuickView, type QuickView } from './online-quick-view';
@@ -79,6 +81,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   let gen = 0;
   let view: QuickView | undefined;
   let state: QuickState = 'idle';
+  let stoppedMatch = -1; // the match id the lockstep session stopped (forfeit or desync): its end line is already on screen
   let client: OnlineClient | undefined;
   /** The socket is open (connect() succeeded and no final close yet). */
   let connected = false;
@@ -94,6 +97,11 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   let side: 0 | 1 = 0;
   let arena: OnlineArena | undefined;
   let session: Session | undefined;
+  /** The relay said the peer is disconnected; applied to the session (now, or on its first status if the arena is not up yet). */
+  let peerAway = false;
+  let reporter: MatchReporter | undefined;
+  /** How the last match ended; survives dropMatch (which clears the live reporter). */
+  let lastEnd: MatchEndRecord | undefined;
   /** A resting notice that arrived during a match: shown when it ends. */
   let restAfter = false;
   let onPageHide: (() => void) | undefined;
@@ -115,10 +123,16 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     if (arena) destroyGame(arena.game, arena.holder);
     arena = undefined;
     session = undefined;
+    peerAway = false;
     view?.root.classList.remove('onlineLive');
     view?.reportButton(false);
   };
+  /** Play again was asked: the arena lingers (hidden) until the queue frame is actually out, so RESULT can still be ACKed (see ResultPoll.defer). */
+  let dropPending = false;
   const dropMatch = (): void => {
+    dropPending = false;
+    lastEnd = reporter?.end ?? lastEnd;
+    reporter = undefined;
     stopTicker();
     stopArena();
     qs = undefined;
@@ -186,6 +200,9 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     if (s === undefined || c === undefined || m === undefined || ok === undefined || !ok.ok) return;
     setup = s;
     side = ok.slot;
+    const rep = new MatchReporter(c.transport, m.matchId, deps.now);
+    reporter = rep;
+    lastEnd = undefined;
     set('playing', '');
     view?.fail('');
     const a = await launchOnlineArena({
@@ -198,6 +215,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       batchEvery: ok.batchEvery,
       onEnd: (end) => {
         if (g !== gen || current !== m) return;
+        if (session !== undefined) rep.finish(session, end.winner);
         // The finished arena stays up (its session keeps answering the opponent) until the next match or the screen closes.
         if (restAfter) {
           restAfter = false;
@@ -208,7 +226,12 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
       },
       onStatus: (st, sess) => {
         if (g !== gen || current !== m) return;
+        const first = session === undefined;
         session = sess;
+        if (first && peerAway) sess.setPeerAway(true);
+        rep.update(sess);
+        if (st === 'forfeit') rep.finishForfeit(sess);
+        if (st === 'forfeit' || st === 'desync') stoppedMatch = m.matchId;
         const t = netStatusText(st, sess.forfeitReason);
         if (t !== undefined) view?.say(t);
         if (st === 'desync') view?.reportButton(true);
@@ -258,6 +281,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     switch (e.t) {
       case 'queue':
         queueConfirmed = true;
+        if (dropPending) dropMatch(); // The deferred queue frame went out: the old match is over.
         if (state === 'queued') set('queued', waitText(e.waitingSec));
         break;
       case 'match':
@@ -265,14 +289,32 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         break;
       case 'peer':
         if (current === undefined || e.matchId !== current.matchId) break;
-        if (e.status === 'disconnected') view?.say(OPPONENT_AWAY_TEXT);
-        else if (e.status === 'back') view?.say(base);
-        else {
+        if (state === 'ended' || e.matchId === stoppedMatch) break; // the match is over and its end line stands (a late gone or away must not replace it)
+        if (e.status === 'disconnected') {
+          peerAway = true;
+          session?.setPeerAway(true);
+          view?.say(OPPONENT_AWAY_TEXT);
+        } else if (e.status === 'back') {
+          peerAway = false;
+          session?.setPeerAway(false);
+          view?.say(base);
+        } else {
+          reporter?.left(session?.simTick ?? 0);
           dropMatch();
           set('ended', OPPONENT_LEFT_TEXT);
         }
         break;
+      case 'result-ack':
+        // The relay compared both RESULTs (or the hashes): 0 agreed, 2 the games disagree; 1 (waiting) changes nothing.
+        if (current === undefined || e.matchId !== current.matchId || dropPending) break; // A stale answer (the match was dropped or left) must not touch this screen.
+        // After a timeout or forfeit the peer never sent a RESULT (a gone peer is answered "disagreed"): nothing differed, so the end line stays.
+        if (e.status === ACK_STATUS.disagreed && session?.status !== 'forfeit') {
+          view?.say(RESULT_DISAGREE_TEXT);
+          view?.reportButton(true);
+        }
+        break;
       case 'gateway-notice':
+        if (state === 'ended') break; // a throttle notice after the end must not replace the end line
         view?.say(GATEWAY_NOTICE_TEXT);
         break;
       case 'reconnecting':
@@ -302,6 +344,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         break;
       case 'closed':
         connected = false;
+        if (state === 'playing') reporter?.noteLink(END_DETAIL.relayClosed);
         if (state === 'playing' || state === 'ended' || state === 'idle') break;
         failWith(e.failure ?? { kind: 'network' });
         break;
@@ -353,12 +396,15 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     set('idle', IDLE_TEXT);
   };
   const again = (): void => {
-    dropMatch();
     if (connected && client !== undefined) {
+      dropPending = current !== undefined; // Keep the arena alive (hidden by the queued state) until the deferred join is sent.
       queueConfirmed = false;
       set('queued', waitText(0));
       client.joinQueue();
-    } else find();
+    } else {
+      dropMatch();
+      find();
+    }
   };
   const leave = (): void => {
     teardown();
@@ -371,7 +417,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     set('waiting-pick', WAITING_PICK_TEXT);
   };
   const saveReport = (): void => {
-    if (setup !== undefined && session !== undefined) downloadReport(buildDesyncReport(setup, session));
+    if (setup !== undefined && session !== undefined) downloadReport(buildDesyncReport(setup, session, reporter?.end ?? lastEnd));
   };
 
   const teardown = (): void => {

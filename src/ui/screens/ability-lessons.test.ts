@@ -42,6 +42,36 @@ describe('ability lessons', () => {
     expect(ABILITY_LESSONS.get('talon-rake')?.line).toContain('wound');
   });
 
+  it('has Umbrel lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('umbrel'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['spore-burst', 'mycelium-mend']);
+  });
+
+  it('has Glimmaw lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('glimmaw'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['lure-orb', 'abyss-flash']);
+  });
+
+  it('has Durrok lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('durrok'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['tusk-gore', 'bristle-stomp']);
+  });
+
+  it('has Zephra lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('zephra'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['static-mote', 'skitter']);
+  });
+
+  it('has Hyalia lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('hyalia'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['stinging-filament', 'bell-pulse']);
+  });
+
   it('never uses the retired words', () => {
     for (const l of [...ABILITY_LESSONS.values(), SNAG_LESSON]) expect(`${l.line} ${l.tip}`).not.toMatch(BANNED);
   });

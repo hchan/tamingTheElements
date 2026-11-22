@@ -106,13 +106,16 @@ interface Harness {
 
 function harness(
   opts: {
-    arcade?: boolean; reduced?: boolean; vx?: number; vy?: number; sheets?: SheetsManifest; missing?: string[]; sprite?: string; foeX?: number;
+    arcade?: boolean; reduced?: boolean; vx?: number; vy?: number; sheets?: SheetsManifest; missing?: string[]; sprite?: string; foeX?: number; outX?: number; heroX?: number;
   } = {},
 ): Harness {
   const { scene, images, shake, missing, loads, done } = rig();
   for (const k of opts.missing ?? []) missing.add(k);
-  const c = char(opts.sprite === undefined ? {} : { sprite: opts.sprite });
+  const c = char({ ...(opts.sprite === undefined ? {} : { sprite: opts.sprite }), ...(opts.heroX === undefined ? {} : { x: opts.heroX, px: opts.heroX }) });
   const foe = opts.foeX === undefined ? undefined : char({ id: 2, team: 1, x: opts.foeX, px: opts.foeX });
+  // qa-r125: the outgoing hero (id 0, on the field) and the incoming hero (id 1) starting benched, as in a real tag-in.
+  const out = opts.outX === undefined ? undefined : char({ id: 0, x: opts.outX, px: opts.outX });
+  if (out) c.flags = EntityFlag.benched;
   const projs: RenderProjectile[] = [];
   const melees: RenderProjectile[] = [];
   const projView = new Map<number, { image: FakeImage; glow: FakeImage }>();
@@ -124,15 +127,17 @@ function harness(
       frozen: sim.frozen, aim: () => sim.aim, guarding: () => false, stunned: () => sim.stunned, rooted: () => false,
       active: (team: number) => (foe !== undefined && team === 1 ? 2 : -1),
     } : undefined),
-    forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(c); if (foe) visit(foe); },
+    forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(c); if (foe) visit(foe); if (out) visit(out); },
     forEachProjectile: (visit: (p: RenderProjectile) => void, melee?: boolean) => { (melee === true ? melees : projs).forEach(visit); },
   } as unknown as RenderView;
   const cv = new CharacterView(scene);
+  const foeView = foe ? new CharacterView(scene) : undefined;
+  const outView = out ? new CharacterView(scene) : undefined;
   const img = cv.image as unknown as FakeImage;
   const layer = new PoseLayer({
     scene,
     view,
-    characters: { peek: (id) => (id === c.id ? cv : undefined) },
+    characters: { peek: (id) => (id === c.id ? cv : foe && id === foe.id ? foeView : out && id === out.id ? outView : undefined) },
     projectiles: {
       peek: (id) => {
         let v = projView.get(id);
@@ -517,6 +522,40 @@ describe('Arcade poses from events', () => {
     o.step(16);
     expect(o.layer.state.ghosts).toBe(1);
     expect(o.images[1]?.visible).toBe(true);
+  });
+
+  it('tag-in enters from the side away from the foe, even when the hero stands past it (qa-r125)', () => {
+    const left = harness({ arcade: true, vx: 0, foeX: 1300, heroX: 900 });
+    for (let i = 0; i < 5; i++) left.step(16);
+    left.consume([ev(SimEventKind.tagIn, 0, { to: 1, team: 0 })]);
+    left.step(16);
+    expect(left.img.x).toBeLessThan(left.c.x - 60);
+    const past = harness({ arcade: true, vx: 0, foeX: -300, heroX: 900 });
+    for (let i = 0; i < 5; i++) past.step(16);
+    past.consume([ev(SimEventKind.tagIn, 0, { to: 1, team: 0 })]);
+    past.step(16);
+    expect(past.img.x).toBeGreaterThan(past.c.x + 60);
+  });
+
+  it('tag-in with the incoming hero still benched uses the outgoing hero position (qa-r125 real event)', () => {
+    for (const [foeX, sign] of [[1300, -1], [500, 1]] as const) {
+      const h = harness({ arcade: true, vx: 0, foeX, outX: 900, heroX: 900 });
+      for (let i = 0; i < 5; i++) h.step(16);
+      h.consume([ev(SimEventKind.tagIn, 0, { from: 0, to: 1, team: 0 })]);
+      h.c.flags = 0; // the sim swaps the flags in the same tick the event is emitted
+      h.step(16);
+      expect(sign * (h.img.x - h.c.x)).toBeGreaterThan(60);
+    }
+  });
+
+  it('tag-in at the arena wall drops in from above rather than sliding out of the arena (qa-r125 tag-sprite overlap)', () => {
+    const h = harness({ arcade: true, vx: 0, foeX: 120, outX: 20, heroX: 20 });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.consume([ev(SimEventKind.tagIn, 0, { from: 0, to: 1, team: 0 })]);
+    h.c.flags = 0;
+    h.step(16);
+    expect(Math.abs(h.img.x - h.c.x)).toBeLessThan(5);
+    expect(h.img.y).toBeLessThan(h.c.y - 20);
   });
 
   it('reduced motion: poses move nothing; the tag-in still fades in', () => {

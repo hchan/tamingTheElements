@@ -6,7 +6,7 @@ const read = (p: string): string => readFileSync(p, 'utf8');
 describe('HUD accessibility floors (a11y review 2026-11-12)', () => {
   it('tag-view lines and regen text are at least 16px', () => {
     expect(read('src/game/hud/tag-view.ts')).toMatch(/LINE_PX = 16;/);
-    expect(read('src/game/scenes/Hud.ts')).toMatch(/this\.text\(16\)\.setOrigin\(team === 0/);
+    expect(read('src/game/hud/hud-classic-row.ts')).toMatch(/hudText\(this\.scene, 16\)\.setOrigin\(team === 0/);
   });
   it('the mirrored action bar is at least 14px', () => {
     expect(read('src/game/hud/action-bar-view.ts')).toMatch(/this\.mirror \? 14 : 16/);

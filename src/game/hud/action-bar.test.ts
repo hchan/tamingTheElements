@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, SwapBlock, type RenderActionBar } from '@core/index';
-import { PORTRAIT_ROW_TILE_MAX_CSS, oneRowSide,oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
+import { PORTRAIT_ROW_TILE_MAX_CSS, oneRowSide,oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, readyEdge, ELEMENT_TINT, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -238,13 +238,13 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(d.every((s) => s.progress >= 0 && s.progress <= 1)).toBe(true);
   });
   it('reads a team off the render view read-outs, idle for no active hero', () => {
-    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3, swapBlock: (team: number) => (team === 0 ? SwapBlock.stun : 0) };
-    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN' });
+    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3, stunLeft: () => 30, swapBlock: (team: number) => (team === 0 ? SwapBlock.stun : 0) };
+    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN 0.6s' });
     expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.noActive } as never, 1, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, false).swapBlock).toBeUndefined();
     // A melee cast's recovery (frozen) and busy show no word; stun wins when both are set.
     for (const bits of [SwapBlock.frozen, SwapBlock.busy]) expect(arcadeBarOf({ ...ar, swapBlock: () => bits } as never, 0, false).swapBlock).toBeUndefined();
-    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.frozen | SwapBlock.stun } as never, 0, false).swapBlock).toBe('STUN');
+    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.frozen | SwapBlock.stun } as never, 0, false).swapBlock).toBe('STUN 0.6s');
     expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.stun } as never, 0, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, true)).toMatchObject({ meter: 20, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: true });
   });
@@ -507,5 +507,13 @@ describe('Run slot', () => {
     expect(slotTip({ kind: 'run', cmd: 0, runAway: true }).title).toBe('Run Away');
     expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).title).toBe('Run Towards');
     expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).text).toMatch(/sticks to it/);
+  });
+});
+
+describe('Void element tint', () => {
+  it('Void (element 0) has its own edge colour, not the neutral one', () => {
+    expect(ELEMENT_TINT[0]).not.toBe(0xffffff);
+    expect(readyEdge(0)).not.toBe(readyEdge(undefined));
+    expect(readyEdge(0)).not.toBe(readyEdge(1));
   });
 });

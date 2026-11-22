@@ -16,18 +16,18 @@
   "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.443,
-    "cyclonius": 0.528,
-    "echo": 0.455,
-    "fiara": 0.551,
-    "ishimi": 0.511,
-    "lavax": 0.523,
-    "morblass": 0.557,
-    "pax": 0.46,
-    "rokcore": 0.472,
-    "sindarosa": 0.506,
-    "treenoc": 0.494,
-    "wispera": 0.5
+    "curomo": 0.528,
+    "cyclonius": 0.517,
+    "echo": 0.483,
+    "fiara": 0.432,
+    "ishimi": 0.54,
+    "lavax": 0.528,
+    "morblass": 0.483,
+    "pax": 0.517,
+    "rokcore": 0.494,
+    "sindarosa": 0.472,
+    "treenoc": 0.5,
+    "wispera": 0.506
   },
   "styleSummary": {
     "styles": [
@@ -42,13 +42,13 @@
         },
         {
           "games": 560,
-          "winRate": 0.454
+          "winRate": 0.511
         }
       ],
       [
         {
           "games": 560,
-          "winRate": 0.546
+          "winRate": 0.489
         },
         {
           "games": 672,
@@ -58,12 +58,12 @@
     ],
     "crossMeleeVsRanged": {
       "games": 560,
-      "winRate": 0.454,
+      "winRate": 0.511,
       "stdErr": 0.021
     },
     "meanWinRate": {
-      "melee": 0.47,
-      "ranged": 0.521
+      "melee": 0.507,
+      "ranged": 0.495
     },
     "heroCount": {
       "melee": 5,
@@ -71,31 +71,31 @@
     },
     "byElement": {
       "air": {
-        "melee": 0.478,
-        "ranged": 0.528,
-        "gap": -0.05
+        "melee": 0.495,
+        "ranged": 0.517,
+        "gap": -0.022
       },
       "earth": {
-        "melee": 0.477,
-        "ranged": 0.472,
-        "gap": 0.005
+        "melee": 0.508,
+        "ranged": 0.494,
+        "gap": 0.014
       },
       "fire": {
-        "ranged": 0.527
+        "ranged": 0.477
       },
       "water": {
-        "melee": 0.443,
-        "ranged": 0.534,
-        "gap": -0.091
+        "melee": 0.528,
+        "ranged": 0.512,
+        "gap": 0.016
       }
     },
     "top6": {
-      "melee": 0,
-      "ranged": 6
+      "melee": 3,
+      "ranged": 3
     },
     "bottom6": {
-      "melee": 5,
-      "ranged": 1
+      "melee": 2,
+      "ranged": 4
     }
   }
 }

@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -32,3 +32,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
 - 2026-11-20: S step (`SIM_VERSION` 93). Kit de-dupe checked: no other ability shares kind, box and damage with Stinging Filament (range 110x10 scaled, 10 dmg, speed 12) or Bell Pulse (omni 24x24 scaled, 6 dmg, speed 5), so no kit change. Pinned in `src/core/data/abilities-c.test.ts`. Balance at SIM_VERSION 92 (Arcade, AI level 3, full roster; 1v1 16 seeds, 2v2 26 seeds): max health 95 gave 1v1 0.421 (out of band). Life retune, 3 rounds: 105 gave 1v1 0.554; 102 gave 1v1 0.541 but 2v2 0.574; 99 gave 1v1 0.492 and 2v2 0.531 (both in 0.45-0.55, shipped). Goldens re-recorded (Classic and Arcade): a recorded Arcade match with Hyalia changes, the rest only the simVersion header. AI rule: omni rule for Bell Pulse already exists.
+- 2026-11-21 (P3 text, done): stinging-filament and bell-pulse lesson rows in src/ui/screens/ability-lessons.ts (words only, no banned terms); pin test in ability-lessons.test.ts. docs/ABILITY-AUDIT.md and GAME-DESIGN.md Hyalia rows already match abilities-c.ts. No src/core change, no art, RELEASED_ROSTER24 still empty.

@@ -31,7 +31,21 @@ export interface ReplayFile {
   readonly hashes: readonly number[];
   /** State hash after the last tick. */
   readonly finalHash: number;
+  /** How the match ended, when a client recorded it (online reports only; never part of the sim or the hashes). */
+  readonly end?: ReplayEnd;
 }
+
+/** A client's note on why an online match ended. Same reason values as the relay RESULT (0 natural, 1 forfeit, 2 timeout, 3 desync). */
+export interface ReplayEnd {
+  readonly reason: 0 | 1 | 2 | 3;
+  readonly detail: string;
+  readonly tick: number;
+  readonly winner: number;
+  readonly resultSent: boolean;
+}
+
+/** Longest `ReplayEnd.detail` the validator accepts. */
+export const REPLAY_END_DETAIL_MAX = 32;
 
 /** True for a header recorded in tester mode (explicit `cheats` or a tester-only sim flag). */
 export function isCheatHeader(h: Pick<ReplayHeader, 'flags'> & { readonly cheats?: boolean }): boolean {

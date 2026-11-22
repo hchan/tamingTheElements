@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   COMBO_STUN_CAP_TICKS, FREEZE_STUN_TICKS, HIT_STUN_TICKS, HitStrength, JUGGLE_LIMIT, JUGGLE_STUN_STEP, KNOCKBACK_DECAY_Q4,
-  KNOCKBACK_Q4, MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason,
+  KNOCKBACK_Q4, MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, STUN_IMMUNE_TICKS,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
@@ -22,7 +22,7 @@ import type { SimWorld } from '../../world';
 import { ABILITY_DEFS } from '../projectile';
 import { HIT_STUN } from './hit';
 import { setKnockback } from './knockback';
-import { applyStun, canAct, isInvulnerable, isStunned } from './stun';
+import { applyStun, canAct, isInvulnerable, isStunned, stunImmune } from './stun';
 
 const GAME_TICK = ARCADE_WORLD_BASE + ArcadeW.gameTick;
 const E = (id: number, f: number): number => id * ARCADE_E + f;
@@ -72,6 +72,7 @@ describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
     expect(HIT_STUN_TICKS).toEqual([32, 38, 44, 48]);
     expect([JUGGLE_STUN_STEP, MIN_HIT_STUN_TICKS, JUGGLE_LIMIT]).toEqual([2, 6, 5]);
     expect([COMBO_STUN_CAP_TICKS, RECOVERY_INVULN_TICKS, FREEZE_STUN_TICKS]).toEqual([150, 20, 60]);
+    expect(STUN_IMMUNE_TICKS).toBe(20);
     expect(KNOCKBACK_Q4).toEqual([96, 144, 224, 256]);
     expect(KNOCKBACK_DECAY_Q4).toBe(16);
     expect([RecoveredReason.stunEnded, RecoveredReason.juggleCap, RecoveredReason.stunCap]).toEqual([0, 1, 2]);
@@ -282,6 +283,70 @@ describe('knockback', () => {
     s.y[0] = world.arena.y + 2;
     for (let t = 0; t < 5; t++) step(world, [Cmd.up | Cmd.left, 0]);
     expect([s.x[0], s.y[0], s.dir[0]]).toEqual([world.arena.x + 2, world.arena.y + 2, WEST]);
+  });
+});
+
+describe('stun immunity after a stun ends (SIM_VERSION 98)', () => {
+  const LATE = 500;
+  /** A fireball hit on a victim whose last stun ended `ago` ticks before the hit tick `at`; returns [stunned after the hit, hp lost, kb]. */
+  function hitAfter(ago: number, at: number): [boolean, number, number] {
+    const world = duel('fiara', 'pax');
+    const s = world.state;
+    s.arcade[GAME_TICK] = LATE;
+    s.arcade[E(1, ArcadeE.stunUntil)] = at - ago;
+    const hp = s.hp[1] ?? 0;
+    firstHit(world, Cmd.secondary);
+    return [isStunned(s, 1), hp - (s.hp[1] ?? 0), Math.abs(s.arcade[E(1, ArcadeE.kbVx)] ?? 0)];
+  }
+  const hitTick = (): number => {
+    const world = duel('fiara', 'pax');
+    world.state.arcade[GAME_TICK] = LATE;
+    return firstHit(world, Cmd.secondary)[0];
+  };
+
+  it('a hit inside the window lands (damage, knockback) without a stun; at exactly STUN_IMMUNE_TICKS it stuns', () => {
+    const at = hitTick();
+    const [inStun, inDmg, inKb] = hitAfter(STUN_IMMUNE_TICKS - 1, at);
+    expect([inStun, inDmg > 0, inKb > 0]).toEqual([false, true, true]);
+    expect(hitAfter(STUN_IMMUNE_TICKS, at)[0]).toBe(true);
+    expect(hitAfter(0, at)[0]).toBe(false);
+  });
+
+  it('a cap recovery opens the window too', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    s.arcade[GAME_TICK] = LATE;
+    for (let i = 0; i < 7; i++) applyStun(world, sink, 0, 1, 44); // juggle cap ends the chain at the 7th hit
+    expect(isStunned(s, 1)).toBe(false);
+    expect(stunImmune(s, 1)).toBe(true);
+    s.arcade[GAME_TICK] = LATE + STUN_IMMUNE_TICKS;
+    expect(stunImmune(s, 1)).toBe(false);
+  });
+
+  it('is never true in Classic, before a first stun, or while stunned', () => {
+    expect(stunImmune(duel('fiara', 'pax', false).state, 1)).toBe(false);
+    const world = duel('fiara', 'pax');
+    expect(stunImmune(world.state, 1)).toBe(false);
+    applyStun(world, new EventSink(0), 0, 1, 40);
+    expect(stunImmune(world.state, 1)).toBe(false);
+  });
+
+  it('parry and guard break keep their stun inside the window', () => {
+    // Both call applyStun directly (guard.ts), which has no immunity check; the hit path is the only gate.
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    s.arcade[GAME_TICK] = LATE;
+    s.arcade[E(1, ArcadeE.stunUntil)] = LATE - 3;
+    applyStun(world, new EventSink(0), 0, 1, 60);
+    expect(isStunned(s, 1)).toBe(true);
+  });
+
+  it('property: a plain hit stuns iff the last stun ended STUN_IMMUNE_TICKS or more ago', () => {
+    const at = hitTick();
+    fc.assert(fc.property(fc.integer({ min: 0, max: 60 }), (ago) => {
+      expect(hitAfter(ago, at)[0]).toBe(ago >= STUN_IMMUNE_TICKS);
+    }), { numRuns: 25, seed: 0x98 });
   });
 });
 

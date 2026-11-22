@@ -129,7 +129,7 @@ const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
   replay: 'Replay Viewer',
   arcade: 'Versus',
   online: 'Online',
-  tour: 'Play',
+  tour: 'World Tour',
   help: 'Help',
   guide: 'Guide',
   tutorial: 'Practice',
@@ -169,7 +169,7 @@ export function defaultScreens(): ScreenTable {
     // The app wires the lazy online screen (src/game/app/online-quick.ts).
     online: placeholderScreen('Online'),
     // The app wires the lazy World Tour screen (src/game/app/tour.ts); opt-in like Arcade.
-    tour: placeholderScreen('Play'),
+    tour: placeholderScreen('World Tour'),
     help: helpScreen,
     guide: guideScreen,
     // The app wires the lazy how-to-play screen (src/game/app/tutorial.ts).

@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (2026-11-21; fixed or obsolete except desktop picker tile scale at 1920 and the Wispera/menu matte halo, both art/CSS polish)
 added: 2026-11-14
 ---
 
@@ -21,3 +22,10 @@ Ranked:
 10. Menu: Settings and Online first view is plain form text with no framing next to the polished menu (click-Online.png, click-Settings.png); the Online page is a wall of unstyled labels, fine functionally. Help is good (click-Help.png). Menu itself (menu.png) is polished: gold title, rune emblem, big focus ring on Play, dragon backdrop; the Rokcore backdrop shows halo artefacts around the golem outline.
 
 Verified good: all five menu entries navigate (#play, #versus, #online, #settings, #help); melee/ranged badge has icon, word ("Ranged" in the detail card) and accessible text ("Curomo (water, Melee)"); Fight bar stays on screen at 390x844 (pick-v-390-a.png); no horizontal overflow seen; page errors 0 across all runs; phone touch HUD (stick, Strike 1/2, Pause) is clear and uncluttered (ph-super-sb.png).
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: roster 24 and 6-column grid (`heroGrid` sets `data-cols`, `src/ui/screens/hero-panel.ts:130`, CSS `07-hero-grid.css:53`); hit feedback per element and a number on every hit (`hit-mark.ts`, verified r49); Echo pale on Air floor (verified r49); Earth props flat (floor and shadows verified r49); reduced-motion hit has a still mark (`hit-mark.ts:39`); Online page rebuilt as quick match (`online-quick.ts`, `online-screen.css`); Settings sections (`16-settings-sections.css`); Fiara outline (clean by r49).
+Not reproduced: reduced motion hiding a hit (5 overlapping manual steps, unconfirmed by the reporter).
+Obsolete: phone name clipping and phone hint (phone/portrait/touch work was dropped by the owner (2026-11-18)). Fighter overlap blob is tracked in `ideas/brainstorm/melee-wall-hold-drawn-overlap.md`.
+Open (c): (a) FIXED 2026-11-21: desktop picker tiles at 1920x1080, `@media (min-width: 1600px) and (min-height: 900px) and (pointer: fine)` block at the end of `src/ui/styles/main/15-picker-720p.css` (page cap 108em, 18px stage, 64 px faces; test `tests/repo/picker-wide-css.test.ts`); a real-game 1920x1080 screenshot is still needed; (b) Wispera dithered halo and the menu Rokcore matte contour (art, also in r53 #7 and `qa-r127-tour-foe-scale-wispera.md`; art-director gate).

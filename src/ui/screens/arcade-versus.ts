@@ -1,12 +1,14 @@
-import { CHARACTER_TEXT, DEFAULT_SIM_FLAGS, SIM_VERSION, createMatch, getCharacter, type CharacterId } from '@core/index';
+import { type CharacterId } from '@core/index';
 import { CHARACTERS } from '@core/menu-index';
 import { el, markMoreBelow } from '../dom';
-import { ELEMENT_MARKS } from '../element-marks';
-import { abilitiesSpeech, abilityChips } from './hero-abilities';
-import { heroDnd } from './hero-dnd';
-import { faceUrl, heroGrid, heroPanel } from './hero-panel';
+import { faceUrl } from './hero-panel';
+import { heroLife, raceLabel, rosterView } from './roster-view';
 import '../styles/picker-compact.css';
+import '../styles/picker-min-text.css';
 import '../styles/match-end.css';
+
+// Moved to roster-view.ts (shared with the tour); callers keep importing them from here.
+export { heroLife, raceLabel };
 
 /**
  * Battle keys for the two-player option, as (action word, keys) pairs for the cheat sheet (Player 1's are the defaults and can be
@@ -21,41 +23,8 @@ const P2_KEYS: readonly (readonly [string, string])[] = [
   ['Charge', 'G'], ['Trap', 'M'], ['Element', ';'], ['Tag', '.'], ['Tag 2', ','],
 ];
 /** The picker's own keys (not the battle keys): move the cursor, pick, undo the last pick, swap it with the hero before. */
-const P1_PICK = 'On this screen: W A S D move the cursor, Space picks, Q undoes, E swaps the last pick up.';
-const P2_PICK = 'On this screen: I J K L move the cursor, U picks, O undoes, P swaps the last pick up.';
-
-/**
- * DOM of the Arcade Versus screens (FUN-DESIGN WP 11): the hero select and the results. Native controls (labelled selects,
- * buttons, links) in the menu classes; the 44 px touch rule applies to every button. Lazy-loaded with the Arcade flow
- * (`src/game/app/arcade-versus.ts`), never part of the menu entry chunk.
- */
-
-const lifeCache = new Map<string, number>();
-
-/**
- * The life `id` starts an Arcade match with on a team of `size` (1 to 3): the sim's own max HP, read from a tick-0 world built
- * like `arcadeSetup` (Arcade on, difficulty 1, 0 XP), so the picker can never drift from the HUD. It depends only on the hero and
- * the roster length, so the team is `size` copies of the hero; cached per (hero, size).
- */
-export function heroLife(id: CharacterId, size: number): number {
-  const n = Math.min(3, Math.max(1, size));
-  const key = `${id}:${String(n)}`;
-  const hit = lifeCache.get(key);
-  if (hit !== undefined) return hit;
-  const hero = { character: id, xp: 0 };
-  const w = createMatch({
-    simVersion: SIM_VERSION,
-    seed: 1,
-    flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
-    chapter: 1,
-    difficulty: 1,
-    p1: Array.from({ length: n }, () => hero),
-    p2: [hero],
-  });
-  const life = w.state.maxHp[0] ?? getCharacter(id).maxHealth;
-  lifeCache.set(key, life);
-  return life;
-}
+const P1_PICK = 'On this screen: W A S D move the cursor, Space picks, Q cancels, E picks a random hero.';
+const P2_PICK = 'On this screen: I J K L move the cursor, U picks, O cancels, P picks a random hero.';
 
 export interface PickValues {
   readonly player: string;
@@ -82,21 +51,6 @@ export interface PickViewOptions {
   readonly levels: readonly { readonly value: string; readonly label: string }[];
   readonly current: PickValues;
   readonly onStart: (v: PickValues) => void;
-}
-
-/** The element glyph plus its word, so the tile never relies on colour. */
-function rosterElement(element: string): HTMLElement {
-  const box = el('span', 'rosterElement');
-  // The glyph is decoration for sighted users; screen readers read only the element word.
-  const mark = el('span', 'rosterGlyph', ELEMENT_MARKS[element] ?? '');
-  mark.setAttribute('aria-hidden', 'true');
-  box.append(mark, el('span', undefined, element));
-  return box;
-}
-
-/** "Sindarosa (fire)": the element word, so the choice never depends on colour or art. */
-export function raceLabel(id: CharacterId): string {
-  return `${CHARACTER_TEXT.get(id)?.name ?? id} (${getCharacter(id).element})`;
 }
 
 /** A labelled select with id `arcade<Name>`; `name` is the `PickValues` key it fills. */
@@ -182,18 +136,6 @@ function segmented(row: HTMLElement, describedBy?: string): () => void {
   return refresh;
 }
 
-/** Visible name of a select's current race ("Sindarosa"), for the slot buttons. */
-const shortName = (id: string): string => CHARACTER_TEXT.get(id as CharacterId)?.name ?? id;
-
-/** CSS background for a hero's map sprite (4-frame sheet, 80 px a frame: the first shows). */
-const avatarOf = (id: string): string => `url("${import.meta.env.BASE_URL}assets/img/map/${encodeURIComponent(getCharacter(id as CharacterId).sprite)}.png")`;
-
-/** "HP 120, Speed 4": the small stat line under a picked hero; HP is the life the HUD starts with on a team of `size`. */
-const statsOf = (id: string, size: number): string => {
-  const c = getCharacter(id as CharacterId);
-  return `HP ${String(heroLife(c.id, size))} · Speed ${String(c.speed)}`;
-};
-
 const keyList = (title: string, side: 'vsP1' | 'vsP2', pick: string, keys: readonly (readonly [string, string])[]): HTMLElement => {
   const box = el('section', 'vsKeysPlayer');
   const h = el('h3', 'vsKeysTitle');
@@ -208,601 +150,146 @@ const keyList = (title: string, side: 'vsP1' | 'vsP2', pick: string, keys: reado
   return box;
 };
 
-type SideIx = 0 | 1;
+const HERO_NAMES = ['player', 'partner', 'partner2', 'enemy', 'enemyPartner', 'enemyPartner2'] as const;
+const SIDE_NAMES: readonly [readonly string[], readonly string[]] = [HERO_NAMES.slice(0, 3), HERO_NAMES.slice(3)];
+type Fields = Record<string, HTMLSelectElement>;
+const sel = (f: Fields, n: string): HTMLSelectElement => f[n] as HTMLSelectElement;
 
-/**
- * The hero select (Street Fighter / Marvel vs. Capcom style): Player 1's slots on the left, Player 2's (or the computer's) on the
- * right, a grid of every hero between them. Each player has a cursor (P1 blue, P2 pink, always with a P1/P2 flag so colour is never
- * the only cue) moved and picked with their own keys at the same time; the mouse or touch fills the active slot. The real selects
- * stay in the form, visually hidden and out of the Tab order, so the form data, labels and tests are unchanged.
- */
-function rosterView(
-  allRaces: readonly CharacterId[],
-  fields: () => Record<string, HTMLSelectElement>,
-  sides: readonly [readonly string[], readonly string[]],
-  changed: () => void,
-  focusFight: () => void,
-): { node: HTMLElement; refresh: () => void; confirm: (name: string) => void; onKey: (e: KeyboardEvent) => void; act: (s: SideIx, act: string) => void; empties: () => number } {
-  const names = [...sides[0], ...sides[1]];
-  const node = el('div', 'rosterPick vsStage');
-  const live = el('p', 'srOnly');
-  live.setAttribute('role', 'status');
-  const panel = heroPanel(() => {
-    dnd.disarm();
-    assignMouse(focus);
-  }, (id) => heroLife(id, Math.max(1, openOf(0).length)));
-  /** Index (in cursor order) of the hero the panel shows: the last one a cursor, the mouse or focus landed on. */
-  let focus = 0;
-  const heroes = heroGrid({
-    races: allRaces,
-    onTile: (t, _id, i) => {
-      const flags = el('span', 'vsFlags');
-      flags.hidden = true;
-      const cur = el('span', 'vsCursors');
-      cur.setAttribute('aria-hidden', 'true');
-      t.append(flags, cur);
-      const look = (): void => {
-        // A previewed hero stays in the panel while the pointer travels to "Add to team" or a slot.
-        if (focus === i || dnd.armed() >= 0) return;
-        focus = i;
-        refresh();
-      };
-      t.addEventListener('pointerenter', look);
-      t.addEventListener('focus', look);
-    },
-  });
-  const races = heroes.order;
-  const dnd = heroDnd({
-    clickAssigns: true,
-    root: node,
-    tiles: heroes.tiles,
-    previewTile: (i) => {
-      focus = i;
-      cursor[mouseSide] = i;
-      refresh();
-    },
-    assignTile: (i) => {
-      assignMouse(i);
-    },
-    dropTile: (i, slot) => {
-      dropHero(i, slot);
-    },
-    swapSlots: (a, b) => {
-      swapSlots(a, b);
-    },
-    slotDraggable: (n) => confirmed.has(n),
-    clearSlot: (n) => {
-      clearSlot(n);
-    },
-  });
-  const grid = heroes.grid;
-  const sideNodes = ([0, 1] as const).map((i) => {
-    const section = el('section', `vsSide vsSide${String(i + 1)}`);
-    const title = el('h2', 'vsSideTitle');
-    const ol = el('ol', 'teamSlots rosterSlots');
-    const status = el('p', 'vsStatus');
-    const ready = el('button', 'menuButton vsReady', 'Ready');
-    ready.type = 'button';
-    ready.id = `ready-p${String(i + 1)}`;
-    section.append(title, ol, status, ready);
-    return { section, title, ol, status, ready };
-  });
-  node.append(sideNodes[0]?.section as HTMLElement, sideNodes[1]?.section as HTMLElement, grid, panel.node, live);
-  const sideOf = (n: string): SideIx => (sides[0].includes(n) ? 0 : 1);
-  const sideActive: [string, string] = [sides[0][0] ?? 'player', sides[1][0] ?? 'enemy'];
-  let mouseSide: SideIx = 0;
-  /** Slots the player has actually chosen (the form starts with defaults, shown as "not picked"). */
-  const confirmed = new Set<string>();
-  const ready: [boolean, boolean] = [false, false];
-  const cursor: [number, number] = [0, Math.min(1, races.length - 1)];
-  let seeded = false;
-  const isLocal = (): boolean => fields()['mode']?.value === 'local';
-  const openOf = (s: SideIx): string[] => sides[s].filter((n) => fields()[n] && !fields()[n]?.disabled);
-  const openSlots = (): string[] => names.filter((n) => fields()[n] && !fields()[n]?.disabled);
-  const slotButtons = new Map<string, HTMLButtonElement>();
-  const slotItems = new Map<string, HTMLElement>();
-  const tiles = heroes.tiles;
-  const slotLabel = (n: string): string => fields()[n]?.labels[0]?.textContent ?? n;
-  const who = (s: SideIx): string => (isLocal() ? `Player ${String(s + 1)}` : s === 0 ? 'You' : 'The computer');
-  const announce = (msg: string): void => {
-    live.textContent = msg;
-  };
-  const picked = (s: SideIx): string[] => openOf(s).filter((n) => confirmed.has(n));
-
-  const refresh = (): void => {
-    const f = fields();
-    if (!seeded && f['player']) {
-      // Start each cursor (and the detail pane) on the hero already in that side's first slot, so the "You" card and the highlighted hero agree.
-      seeded = true;
-      const firstHero = (s: SideIx): number => Math.max(0, races.indexOf((f[sides[s][0] ?? '']?.value ?? '') as CharacterId));
-      cursor[0] = firstHero(0);
-      cursor[1] = firstHero(1);
-      focus = cursor[0];
-    }
-    const local = isLocal();
-    for (const s of [0, 1] as const) {
-      const open = openOf(s);
-      if (!open.includes(sideActive[s])) sideActive[s] = open[0] ?? sideActive[s];
-      if (!local && s === 1) ready[1] = false;
-    }
-    sideNodes.forEach((sn, i) => {
-      const s = i as SideIx;
-      const open = openOf(s);
-      const title = local ? `Player ${String(i + 1)}` : i === 0 ? 'You' : 'Computer';
-      sn.title.textContent = '';
-      sn.title.append(el('span', `vsChip ${i === 0 ? 'vsP1' : 'vsP2'}`, i === 0 ? 'P1' : local ? 'P2' : 'AI'), ` ${title}`);
-      sn.ol.setAttribute('aria-label', `${title} hero slots`);
-      sn.status.hidden = !local && i === 1;
-      sn.status.textContent = ready[i]
-        ? 'Ready'
-        : open.length === 1
-          ? picked(s).length === 1 ? 'Picked' : s === 0 || local ? 'Pick your fighter' : 'Pick a fighter'
-          : `${String(picked(s).length)} of ${String(open.length)} picked`;
-      sn.ready.hidden = !local;
-      sn.ready.setAttribute('aria-pressed', String(ready[i]));
-      sn.ready.textContent = ready[i] ? 'Ready (undo)' : 'Ready';
-      sn.section.classList.toggle('vsReadyOn', ready[i]);
-    });
-    for (const n of names) {
-      const sel = f[n];
-      const s = sideOf(n);
-      let b = slotButtons.get(n);
-      if (!b && sel) {
-        b = el('button', 'teamSlot rosterSlot');
-        b.type = 'button';
-        b.id = `roster-${n}`;
-        b.dataset['heroSlot'] = n;
-        b.addEventListener('click', () => {
-          sideActive[sideOf(n)] = n;
-          mouseSide = sideOf(n);
-          const armed = dnd.takeArmed();
-          // Tap a hero to preview it, then tap a slot: the touch alternative to dragging.
-          if (armed >= 0) dropHero(armed, n);
-          else refresh();
-        });
-        // Delete or Backspace on a focused slot empties it.
-        b.addEventListener('keydown', (e) => {
-          if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            e.preventDefault();
-            clearSlot(n);
-          }
-        });
-        slotButtons.set(n, b);
-        const item = el('li', 'vsSlotItem');
-        item.append(b);
-        slotItems.set(n, item);
-        sideNodes[s]?.ol.append(item);
-      }
-      const item = slotItems.get(n);
-      if (!b || !sel || !item) continue;
-      item.toggleAttribute('hidden', sel.disabled);
-      const open = openOf(s);
-      const empty = sel.value === '';
-      const done = confirmed.has(n) && !empty;
-      const element = empty ? '' : getCharacter(sel.value as CharacterId).element;
-      const isActive = n === sideActive[s] && (local || s === mouseSide);
-      b.textContent = '';
-      const face = el('span', 'heroFace vsBigFace');
-      if (!empty) face.style.backgroundImage = avatarOf(sel.value);
-      face.setAttribute('aria-hidden', 'true');
-      const text = el('span', 'vsSlotText');
-      text.append(el('span', 'vsSlotLabel', slotLabel(n)), el('b', 'vsSlotName', empty ? 'Empty' : shortName(sel.value)));
-      if (!empty) text.append(rosterElement(element));
-      text.append(el('span', 'vsStats', empty ? 'Pick a hero' : done ? statsOf(sel.value, Math.max(1, open.length)) : 'Default hero'));
-      if (done) {
-        const abil = el('span', 'vsAbilities');
-        // Inside a button, so its text is part of the button's name for screen readers; the title repeats it as a sentence.
-        abil.title = abilitiesSpeech(sel.value as CharacterId);
-        for (const c of abilityChips(sel.value as CharacterId)) {
-          const chip = el('span', 'vsAbility');
-          const mark = el('span', 'vsAbilityMark', c.mark);
-          mark.setAttribute('aria-hidden', 'true');
-          chip.append(mark, ` ${c.name} (${c.kind})`);
-          abil.append(chip);
-        }
-        text.append(abil);
-      }
-      b.append(face, text);
-      if (empty) delete b.dataset['element'];
-      else b.dataset['element'] = element;
-      b.classList.toggle('heroSlotEmpty', empty);
-      b.setAttribute('aria-pressed', String(isActive));
-      b.classList.toggle('rosterActive', isActive);
-      b.classList.toggle('vsUnpicked', !done);
-      b.classList.toggle('vsSlotP1', s === 0);
-      b.classList.toggle('vsSlotP2', s === 1);
-      // Swap up and Clear: small labelled buttons, only once a hero is picked (so the Tab order stays short before any pick).
-      item.querySelector('.vsSlotActions')?.remove();
-      if (done) {
-        const acts = el('span', 'vsSlotActions');
-        const idx = open.indexOf(n);
-        const title = local ? `Player ${String(s + 1)}` : s === 0 ? 'You' : 'Computer';
-        if (idx > 0) {
-          const up = el('button', 'menuButton vsSmall', 'Swap up');
-          up.type = 'button';
-          up.setAttribute('aria-label', `Swap ${title} pick ${String(idx + 1)} up to position ${String(idx)}`);
-          up.addEventListener('click', () => {
-            swap(n);
-          });
-          acts.append(up);
-        }
-        const clear = el('button', 'menuButton vsSmall', 'Clear');
-        clear.type = 'button';
-        clear.setAttribute('aria-label', `Clear ${title} pick ${String(idx + 1)}`);
-        clear.addEventListener('click', () => {
-          clearSlot(n);
-          b.focus();
-        });
-        acts.append(clear);
-        item.append(acts);
-      }
-    }
-    // Tiles: the cursors and the picks (a chip per slot a hero fills, "P1 1", "P2 2": text, never colour alone).
-    tiles.forEach((t, i) => {
-      const id = races[i] as string;
-      const flags = t.querySelector<HTMLElement>('.vsFlags');
-      let any = false;
-      if (flags) {
-        flags.textContent = '';
-        for (const n of openSlots().filter((k) => f[k]?.value === id && confirmed.has(k))) {
-          const s = sideOf(n);
-          const num = openOf(s).indexOf(n) + 1;
-          const chip = el('span', `vsChip ${s === 0 ? 'vsP1' : 'vsP2'}`);
-          const word = s === 0 ? (local ? 'P1' : 'You') : local ? 'P2' : 'AI';
-          const vis = el('span', undefined, `${word} ${String(num)}`);
-          vis.setAttribute('aria-hidden', 'true');
-          chip.append(vis, el('span', 'srOnly', `${who(s)}, hero ${String(num)}`));
-          flags.append(chip);
-          any = true;
-        }
-        flags.hidden = !any;
-      }
-      t.setAttribute('aria-pressed', String(any));
-      t.classList.toggle('selectedGarrisonRow', any);
-      t.classList.toggle('vsCursor1', cursor[0] === i);
-      t.classList.toggle('vsCursor2', local && cursor[1] === i);
-      const cur = t.querySelector<HTMLElement>('.vsCursors');
-      if (cur) {
-        cur.textContent = '';
-        if (cursor[0] === i) cur.append(el('span', 'vsChip vsP1', 'P1'));
-        if (local && cursor[1] === i) cur.append(el('span', 'vsChip vsP2', 'P2'));
-      }
-    });
-    node.classList.toggle('vsBothReady', local && ready[0] && ready[1]);
-    const shown = races[focus];
-    panel.setAction(shown && openOf(mouseSide).some((n) => confirmed.has(n) && f[n]?.value === shown) ? 'Remove from team' : 'Add to team');
-    // A Team-size change shows another life for the same hero, so it redraws too.
-    const teamSize = String(openOf(0).length);
-    if (shown && (panel.node.dataset['hero'] !== shown || panel.node.dataset['teamSize'] !== teamSize)) {
-      panel.node.dataset['hero'] = shown;
-      panel.node.dataset['teamSize'] = teamSize;
-      panel.show(shown);
-    }
-  };
-
-  /**
-   * Puts `id` in `slot`. A hero already picked in another slot of the SAME team moves here and leaves its old slot with this slot's old
-   * hero (or empty when this slot was not picked yet): a team never holds a hero twice. The other side may hold the same hero (a mirror).
-   */
-  function putHero(slot: string, id: string): void {
-    const sel = fields()[slot];
-    if (!sel) return;
-    const dup = openOf(sideOf(slot)).find((k) => k !== slot && confirmed.has(k) && fields()[k]?.value === id);
-    const dupSel = dup ? fields()[dup] : undefined;
-    if (dup && dupSel) {
-      if (confirmed.has(slot)) dupSel.value = sel.value;
-      else {
-        dupSel.value = '';
-        confirmed.delete(dup);
-      }
-    }
-    sel.value = id;
-    confirmed.add(slot);
-  }
-  /** Fills side `s`'s active slot with hero `i`, then moves that side on to its next empty slot. */
-  const place = (s: SideIx, i: number): void => {
-    const slot = sideActive[s];
-    const id = races[i];
-    if (!fields()[slot] || !id) return;
-    putHero(slot, id);
-    ready[s] = false;
-    changed();
-    const next = openOf(s).find((n) => !confirmed.has(n));
-    if (next) sideActive[s] = next;
-    announce(`${who(s)} picked ${shortName(id)} for ${slotLabel(slot)}.`);
-    refresh();
-  };
-  /** Mouse and touch fill the active slot, then carry on to the other side once this one is full (one player on the computer, or P1 then P2). */
-  function assignMouse(i: number): void {
-    // A second click or Enter on a hero this side already picked takes it off the team again.
-    const held = openOf(mouseSide).find((n) => confirmed.has(n) && fields()[n]?.value === races[i]);
-    if (held) {
-      focus = i;
-      cursor[mouseSide] = i;
-      clearSlot(held);
-      return;
-    }
-    focus = i;
-    cursor[mouseSide] = i;
-    place(mouseSide, i);
-    const other: SideIx = mouseSide === 0 ? 1 : 0;
-    if (openOf(mouseSide).every((n) => confirmed.has(n)) && openOf(other).some((n) => !confirmed.has(n))) {
-      mouseSide = other;
-      refresh();
-    }
-  }
-  /** A tile dropped on a slot: the hero goes there; a hero already in another slot swaps with this slot's old hero (no doubles). */
-  function dropHero(i: number, slot: string): void {
-    const sel = fields()[slot];
-    const id = races[i];
-    if (!sel || !id) return;
-    const s = sideOf(slot);
-    putHero(slot, id);
-    ready[s] = false;
-    changed();
-    mouseSide = s;
-    sideActive[s] = openOf(s).find((n) => !confirmed.has(n)) ?? slot;
-    focus = i;
-    cursor[s] = i;
-    announce(`${who(s)} put ${shortName(id)} in ${slotLabel(slot)}.`);
-    refresh();
-  }
-  function swapSlots(a: string, b: string): void {
-    const [x, y] = [fields()[a], fields()[b]];
-    if (!x || !y) return;
-    [x.value, y.value] = [y.value, x.value];
-    const [ca, cb] = [confirmed.has(a), confirmed.has(b)];
-    if (cb) confirmed.add(a); else confirmed.delete(a);
-    if (ca) confirmed.add(b); else confirmed.delete(b);
-    ready[sideOf(a)] = false;
-    ready[sideOf(b)] = false;
-    changed();
-    announce(`${slotLabel(a)} swapped with ${slotLabel(b)}.`);
-    refresh();
-  }
-  /** Empties a slot (its select gets the empty option, so the form cannot start until it is refilled) and makes it the active one. */
-  function clearSlot(n: string): void {
-    const s = sideOf(n);
-    const sel = fields()[n];
-    if (!sel) return;
-    const was = sel.value;
-    confirmed.delete(n);
-    sel.value = '';
-    sideActive[s] = openOf(s).find((k) => !confirmed.has(k)) ?? n;
-    mouseSide = s;
-    ready[s] = false;
-    changed();
-    announce(was === '' ? `${slotLabel(n)} is already empty.` : `${shortName(was)} removed from ${slotLabel(n)}. ${slotLabel(n)} is empty.`);
-    refresh();
-  }
-  function swap(n: string): void {
-    const s = sideOf(n);
-    const open = openOf(s);
-    const prev = open[open.indexOf(n) - 1];
-    const a = fields()[n];
-    const b = prev ? fields()[prev] : undefined;
-    if (!prev || !a || !b) return;
-    const t = a.value;
-    a.value = b.value;
-    b.value = t;
-    // Both picks move with their heroes.
-    const [ca, cb] = [confirmed.has(n), confirmed.has(prev)];
-    if (cb) confirmed.add(n); else confirmed.delete(n);
-    if (ca) confirmed.add(prev); else confirmed.delete(prev);
-    ready[s] = false;
-    sideActive[s] = prev;
-    changed();
-    announce(`${slotLabel(n)} swapped with ${slotLabel(prev)}.`);
-    refresh();
-  }
-  const toggleReady = (s: SideIx): void => {
-    const open = openOf(s);
-    if (!ready[s] && picked(s).length < open.length) {
-      announce(`${who(s)} still has heroes to pick.`);
-      return;
-    }
-    ready[s] = !ready[s];
-    announce(`${who(s)} is ${ready[s] ? 'ready' : 'not ready'}.`);
-    refresh();
-    if (isLocal() && ready[0] && ready[1]) {
-      announce('Both players are ready. Press Fight!');
-      focusFight();
-    }
-  };
-  for (const s of [0, 1] as const) {
-    sideNodes[s]?.ready.addEventListener('click', () => {
-      toggleReady(s);
-    });
-  }
-
-  const moveCursor = (s: SideIx, dx: number, dy: number): void => {
-    const n = races.length;
-    const cols = heroes.columns();
-    const cur = cursor[s];
-    let next = cur + dx + dy * cols;
-    if (dx !== 0) next = Math.max(0, Math.min(n - 1, next));
-    else if (next < 0 || next >= n) next = cur;
-    cursor[s] = next;
-    focus = next;
-    dnd.disarm();
-    refresh();
-  };
-  const undo = (s: SideIx): void => {
-    const last = picked(s).at(-1);
-    if (last) clearSlot(last);
-  };
-  const swapLast = (s: SideIx): void => {
-    const last = picked(s).at(-1);
-    if (last) swap(last);
-  };
-  /** One picker action for side `s` from a key or a gamepad: move the cursor, pick (or ready once full), undo, swap the last pick up. */
-  const doAct = (s: SideIx, act: string): void => {
-    if (s === 1 && !isLocal()) return;
-    if (act === 'up') moveCursor(s, 0, -1);
-    else if (act === 'down') moveCursor(s, 0, 1);
-    else if (act === 'left') moveCursor(s, -1, 0);
-    else if (act === 'right') moveCursor(s, 1, 0);
-    else if (act === 'pick') {
-      // With every slot filled, the pick key readies the player (and unreadies).
-      if (picked(s).length >= openOf(s).length && isLocal()) toggleReady(s);
-      else place(s, cursor[s]);
-    } else if (act === 'undo') undo(s);
-    else if (act === 'swap') swapLast(s);
-  };
-  const PICK: readonly [Record<string, string>, SideIx][] = [
-    [{ KeyW: 'up', KeyA: 'left', KeyS: 'down', KeyD: 'right', Space: 'pick', KeyQ: 'undo', KeyE: 'swap' }, 0],
-    [{ KeyI: 'up', KeyJ: 'left', KeyK: 'down', KeyL: 'right', KeyU: 'pick', KeyO: 'undo', KeyP: 'swap' }, 1],
-  ];
-  const onKey = (e: KeyboardEvent): void => {
-    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || !node.isConnected) return;
-    const t = e.target;
-    if (t instanceof HTMLSelectElement || t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) return;
-    for (const [map, s] of PICK) {
-      const act = map[e.code];
-      if (!act || (s === 1 && !isLocal())) continue;
-      // A focused button or link keeps Space (the native click fills the active slot).
-      if (act === 'pick' && (t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement)) return;
-      e.preventDefault();
-      if (e.repeat && !['up', 'down', 'left', 'right'].includes(act)) return;
-      doAct(s, act);
-      return;
-    }
-  };
-  const empties = (): number => openSlots().filter((n) => fields()[n]?.value === '').length;
-  return {
-    node, refresh, onKey, act: doAct, empties,
-    confirm: (n) => {
-      const s = sideOf(n);
-      if (fields()[n]?.value === '') confirmed.delete(n);
-      else {
-        confirmed.add(n);
-        // A pick through the (hidden) select moves the detail pane to that hero, so it never shows the previous one.
-        const k = races.indexOf(fields()[n]?.value as CharacterId);
-        if (k >= 0) {
-          cursor[s] = k;
-          if (s === mouseSide) focus = k;
-        }
-      }
-      ready[s] = false;
-    },
-  };
-}
-
-export function arcadePickView(o: PickViewOptions): HTMLElement {
-  const page = el('div', 'menuPage');
-  page.id = 'arcadePick';
-  page.append(el('h1', 'heading', 'Versus'));
-  const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
-  // Hero selects also offer the empty option: a slot the player cleared. Start waits until none is empty.
-  const heroOptions = [{ value: '', label: 'Empty' }, ...races];
-  const form = el('form', 'settingsForm vsForm');
-  const setText = (id: string, text: string): void => {
-    const l = form.querySelector(`label[for="${id}"]`);
-    if (l) l.textContent = text;
-  };
-  const heroNames = ['player', 'partner', 'partner2', 'enemy', 'enemyPartner', 'enemyPartner2'] as const;
-  // The key sheet is folded away: a collapsed <details> that only exists for two players on one screen.
+/** The key sheet is folded away: a collapsed <details> that only exists for two players on one screen. */
+function keysFold(): HTMLDetailsElement {
   const hint = el('details', 'vsKeysFold');
   hint.id = 'arcadeLocalHelp';
   const keys = el('div', 'vsKeys');
   keys.append(
     keyList('Player 1 keys', 'vsP1', P1_PICK, P1_KEYS),
     keyList('Player 2 keys', 'vsP2', P2_PICK, P2_KEYS),
-    el('p', 'vsPads', 'Gamepads work too: the first one connected is Player 1, the second Player 2.'),
+    el('p', 'vsPads', 'Gamepads work too: the first one connected is Player 1, the second Player 2. A picks, B cancels, Y picks a random hero, Start fights.'),
   );
   hint.append(el('summary', 'vsKeysSummary', 'Keys for two players'), keys);
-  const set = el('fieldset', 'settingsGroup vsFieldset');
-  const legend = el('legend', 'srOnly', 'Fighters');
-  const control = (row: HTMLElement): HTMLElement => {
+  return hint;
+}
+
+/** The options strip: who plays, team size, AI level and arena, each a radio group over its real select. */
+function optionsStrip(o: PickViewOptions, refreshers: (() => void)[]): HTMLElement[] {
+  const choice = (row: HTMLElement, describedBy?: string): HTMLElement => {
+    refreshers.push(segmented(row, describedBy));
     row.classList.add('vsControl');
     return row;
   };
-  const refreshers: (() => void)[] = [];
-  const choice = (row: HTMLElement, describedBy?: string): HTMLElement => {
-    refreshers.push(segmented(row, describedBy));
-    return control(row);
-  };
-  // "Who plays" is its own full-width choice; Team, AI level and Arena share ONE compact options row (picker-compact.css).
-  const options = el('div', 'vsOptions');
-  options.id = 'arcadeOptsRow';
-  options.setAttribute('role', 'group');
-  options.setAttribute('aria-label', 'Options');
-  options.append(
-    choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size), 'arcadeTeamHint'),
+  const sizes = [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }];
+  const arenas = ['fire', 'water', 'earth', 'air'].map((v) => ({ value: v, label: (v[0] ?? '').toUpperCase() + v.slice(1) }));
+  const strip = el('div', 'vsOptions');
+  strip.id = 'arcadeOptsRow';
+  strip.setAttribute('role', 'group');
+  strip.setAttribute('aria-label', 'Options');
+  strip.append(
+    choice(select('size', 'Team', sizes, o.current.size), 'arcadeTeamHint'),
     choice(select('level', 'AI level', o.levels, o.current.level)),
-    choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, { value: 'fire', label: 'Fire' }, { value: 'water', label: 'Water' }, { value: 'earth', label: 'Earth' }, { value: 'air', label: 'Air' }], o.current.stage ?? ''), 'arcadeStageHint'),
+    choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, ...arenas], o.current.stage ?? ''), 'arcadeStageHint'),
   );
-  set.append(
-    legend,
-    choice(select('mode', 'Who plays', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players, same screen' }], o.current.mode)),
-    options,
-    select('player', 'Your race', heroOptions, o.current.player, true),
-    select('partner', 'Your partner (2v2)', heroOptions, o.current.partner, true),
-    select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2, true),
-    select('enemy', 'AI race', heroOptions, o.current.enemy, true),
-    select('enemyPartner', 'Player 2 hero 2', heroOptions, o.current.enemyPartner, true),
-    select('enemyPartner2', 'Player 2 hero 3', heroOptions, o.current.enemyPartner2, true),
-  );
+  const mode = [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players, same screen' }];
+  return [choice(select('mode', 'Who plays', mode, o.current.mode)), strip];
+}
+
+/** The six hero selects: the FormData contract and the labels tests use; hidden from sight, Tab and assistive tech. */
+function heroSelects(o: PickViewOptions): HTMLElement[] {
+  const options = [{ value: '', label: 'Empty' }, ...o.races.map((r) => ({ value: r, label: raceLabel(r) }))];
+  const c = o.current;
+  const rows = [
+    select('player', 'Your race', options, c.player, true),
+    select('partner', 'Your partner (2v2)', options, c.partner, true),
+    select('partner2', 'Your third hero (3v3)', options, c.partner2, true),
+    select('enemy', 'AI race', options, c.enemy, true),
+    select('enemyPartner', 'Player 2 hero 2', options, c.enemyPartner, true),
+    select('enemyPartner2', 'Player 2 hero 3', options, c.enemyPartner2, true),
+  ];
+  for (const r of rows) {
+    r.classList.add('srOnly');
+    r.setAttribute('aria-hidden', 'true');
+    const s = r.querySelector('select');
+    if (s) s.tabIndex = -1;
+  }
+  return rows;
+}
+
+/** Enables each select for the team size and mode (the partner counts in 2v2 and 3v3, the third hero in 3v3) and relabels them. */
+function syncFields(form: HTMLElement, f: Fields): { local: boolean; size: string } {
+  const local = f['mode']?.value === 'local';
+  const size = f['size']?.value ?? '1';
+  sel(f, 'partner').disabled = size === '1';
+  sel(f, 'partner2').disabled = size !== '3';
+  // Player 2's bench is the same size as Player 1's; only in local two-player.
+  sel(f, 'enemyPartner').disabled = !local || size === '1';
+  sel(f, 'enemyPartner2').disabled = !local || size !== '3';
+  sel(f, 'level').disabled = local;
+  // The row's own display rule beats the hidden attribute, so hide by style (out of the layout and the accessibility tree).
+  const hide = (n: string, off: boolean): void => {
+    const row = sel(f, n).closest<HTMLElement>('.settingsOption');
+    if (row) row.style.display = off ? 'none' : '';
+  };
+  hide('level', local);
+  hide('enemyPartner', !local);
+  hide('enemyPartner2', !local);
+  const labels: [string, string][] = [
+    ['arcadeEnemy', local ? 'Player 2 hero 1' : 'AI race'], ['arcadePlayer', local ? 'Player 1 hero 1' : 'Your race'],
+    ['arcadePartner', local ? 'Player 1 hero 2' : 'Your partner (2v2)'], ['arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)'],
+  ];
+  for (const [id, text] of labels) {
+    const l = form.querySelector(`label[for="${id}"]`);
+    if (l) l.textContent = text;
+  }
+  return { local, size };
+}
+
+export function arcadePickView(o: PickViewOptions): HTMLElement {
+  const page = el('div', 'menuPage');
+  page.id = 'arcadePick';
+  page.append(el('h1', 'heading', 'Versus'));
+  const form = el('form', 'settingsForm vsForm');
+  const f = form.elements as unknown as Fields;
+  const hint = keysFold();
+  const refreshers: (() => void)[] = [];
+  const set = el('fieldset', 'settingsGroup vsFieldset');
   const start = el('button', 'menuButton vsFight', 'Fight!');
   start.type = 'submit';
   start.id = 'arcadeStart';
-  const back = el('a', 'menuButton', 'Back');
-  back.href = '#main';
-  const roster = rosterView(
-    o.races,
-    () => form.elements as unknown as Record<string, HTMLSelectElement>,
-    [heroNames.slice(0, 3), heroNames.slice(3)],
-    () => form.dispatchEvent(new Event('change')),
-    () => {
-      start.focus();
-    },
-  );
   const fightHint = el('p', 'heroHint');
   fightHint.id = 'arcadeFightHint';
   start.setAttribute('aria-describedby', 'arcadeFightHint');
-  const actions = el('div', 'vsActions');
+  const roster = rosterView({
+    races: o.races,
+    fields: () => f,
+    sides: SIDE_NAMES,
+    changed: () => form.dispatchEvent(new Event('change')),
+    fight: () => {
+      if (!start.disabled) form.requestSubmit();
+    },
+  });
   const stageHint = el('p', 'heroHint', 'The arena starts on the element you pick (Random draws one) and follows the Weather: call Weather in the fight to change it.');
   stageHint.id = 'arcadeStageHint';
   const teamHint = el('p', 'heroHint', 'Tag teams: you share the fight with a partner and the bench heals, so each hero has a different life than in 1v1. The hero panel shows the life for the team size you picked.');
   teamHint.id = 'arcadeTeamHint';
-  // The roster comes first and the long hints follow it; the region scrolls, and the bar (Fight, its short hint, Back) takes its own row under it.
   const hints = el('div', 'vsHints');
   hints.append(stageHint, teamHint);
-  set.append(roster.node, hints);
-  actions.append(start, fightHint, back);
+  const legend = el('legend', 'srOnly', 'Fighters');
+  set.append(legend, ...optionsStrip(o, refreshers), ...heroSelects(o), roster.node, hints);
+  const random = el('button', 'menuButton vsRandom', 'Random');
+  random.type = 'button';
+  random.id = 'arcadeRandom';
+  random.addEventListener('click', () => {
+    roster.randomAimed();
+  });
+  const back = el('a', 'menuButton', 'Back');
+  back.href = '#main';
+  const actions = el('div', 'vsActions');
+  actions.append(random, start, fightHint, back);
   const scroll = el('div', 'pickScroll');
-  // Phone portrait puts the option rows below the hero grid (see picker-compact.css); this strip stays at the top, says what is set and jumps to them.
-  const optsJump = el('button', 'vsOptsJump');
-  optsJump.type = 'button';
-  optsJump.id = 'arcadeOptsJump';
-  scroll.append(optsJump, set, hint);
+  scroll.append(set, hint);
   form.append(scroll, actions);
   const more = markMoreBelow(scroll);
-  // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
-  const f = form.elements as unknown as Record<string, HTMLSelectElement>;
-  let optsShown = false;
   const sync = (): void => {
-    const local = f['mode']?.value === 'local';
-    const size = f['size']?.value;
-    (f['partner'] as HTMLSelectElement).disabled = size === '1';
-    (f['partner2'] as HTMLSelectElement).disabled = size !== '3';
-    // Player 2's bench is the same size as Player 1's; only in local two-player.
-    (f['enemyPartner'] as HTMLSelectElement).disabled = !local || size === '1';
-    (f['enemyPartner2'] as HTMLSelectElement).disabled = !local || size !== '3';
-    // The row's own display rule beats the hidden attribute, so hide it by style (out of the layout and the accessibility tree).
-    for (const n of ['enemyPartner', 'enemyPartner2']) {
-      const row = (f[n] as HTMLSelectElement).closest<HTMLElement>('.settingsOption');
-      if (row) row.style.display = local ? '' : 'none';
-    }
-    (f['level'] as HTMLSelectElement).disabled = local;
-    // The AI level only matters against the computer.
-    const levelRow = (f['level'] as HTMLSelectElement).closest<HTMLElement>('.settingsOption');
-    if (levelRow) levelRow.style.display = local ? 'none' : '';
-    setText('arcadeEnemy', local ? 'Player 2 hero 1' : 'AI race');
-    setText('arcadePlayer', local ? 'Player 1 hero 1' : 'Your race');
-    setText('arcadePartner', local ? 'Player 1 hero 2' : 'Your partner (2v2)');
-    setText('arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)');
-    hint.hidden = !local;
+    const { size } = syncFields(form, f);
+    hint.hidden = f['mode']?.value !== 'local';
     teamHint.hidden = size === '1';
     for (const r of refreshers) r();
     roster.refresh();
@@ -810,54 +297,14 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     start.disabled = empty > 0;
     fightHint.hidden = empty === 0;
     fightHint.textContent = empty === 0 ? '' : `Pick ${String(empty)} more hero${empty === 1 ? '' : 'es'}`;
-    const word = (n: string): string => {
-      const t = f[n]?.selectedOptions[0]?.textContent ?? '';
-      return t.startsWith('Two players') ? 'Two players' : t.replace(/ tag team$/, '');
-    };
-    optsJump.textContent = `${optsShown ? '\u25B4' : '\u25BE'} Options: ${[word('stage'), word('size'), ...(local ? [word('mode')] : [word('level')])].join(', ')}`;
-    optsJump.title = optsJump.textContent;
     more();
   };
-  // A jump button that also reports state (QA r96): aria-expanded and the arrow say whether the option rows are on screen; the visible text stays the accessible name.
-  optsJump.setAttribute('aria-expanded', 'false');
-  const showOpts = (on: boolean): void => {
-    if (on === optsShown) return;
-    optsShown = on;
-    optsJump.setAttribute('aria-expanded', String(on));
-    optsJump.textContent = optsJump.textContent.replace(/^[\u25B4\u25BE]/, on ? '\u25B4' : '\u25BE');
-  };
-  const optsRow = options;
-  optsJump.setAttribute('aria-controls', 'arcadeOptsRow');
-  optsJump.addEventListener('click', () => {
-    const row = options;
-    row.scrollIntoView({ block: 'center' });
-    showOpts(true);
-    row.querySelector<HTMLElement>('.vsSegment[aria-checked="true"], .vsSegment')?.focus({ preventScroll: true });
-  });
-  if (typeof IntersectionObserver !== 'undefined') {
-    new IntersectionObserver((es) => {
-      const e = es[es.length - 1];
-      if (e) showOpts(e.isIntersecting);
-    }, { threshold: 0.6 }).observe(optsRow);
-  }
-  // Hide the pulldowns for heroes (they stay in the DOM for form data, labels and assistive tech lookups).
-  queueMicrotask(() => {
-    for (const n of heroNames) {
-      const sel = f[n];
-      if (!sel) continue;
-      sel.tabIndex = -1;
-      // The hero grid is the accessible control; the select is a hidden twin, so screen readers skip it (it is out of the Tab order too).
-      const opt = sel.closest<HTMLElement>('.settingsOption');
-      opt?.classList.add('srOnly');
-      opt?.setAttribute('aria-hidden', 'true');
-    }
-  });
   sync();
   form.addEventListener('change', (e) => {
     // Two players is a 3v3 duel by default (each brings three heroes); the Team select still offers 1v1 and 2v2.
-    if (e.target === f['mode'] && (f['mode']).value === 'local') (f['size'] as HTMLSelectElement).value = '3';
+    if (e.target === f['mode'] && sel(f, 'mode').value === 'local') sel(f, 'size').value = '3';
     // A hero chosen through its (hidden) pulldown counts as picked.
-    if (e.target instanceof HTMLSelectElement && (heroNames as readonly string[]).includes(e.target.name)) roster.confirm(e.target.name);
+    if (e.target instanceof HTMLSelectElement && (HERO_NAMES as readonly string[]).includes(e.target.name)) roster.confirm(e.target.name);
     sync();
   });
   form.addEventListener('submit', (e) => {
@@ -865,43 +312,6 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     if (roster.empties() > 0) return;
     o.onStart(Object.fromEntries(new FormData(form)) as unknown as PickValues);
   });
-  // Both players pick at once with their own keys; the listener goes away with the page.
-  let seen = false;
-  const onKey = (e: KeyboardEvent): void => {
-    if (page.isConnected) {
-      seen = true;
-      roster.onKey(e);
-    } else if (seen) {
-      document.removeEventListener('keydown', onKey);
-    }
-  };
-  document.addEventListener('keydown', onKey);
-  // Gamepads: pad 1 is Player 1, pad 2 Player 2 (D-pad or left stick moves, A picks, B undoes, X swaps); polled while the page is up.
-  const held = new Map<string, boolean>();
-  const poll = (): void => {
-    if (!page.isConnected) {
-      if (seen) return;
-    } else seen = true;
-    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
-    ([0, 1] as const).forEach((s) => {
-      const pad = pads[s];
-      if (!pad) return;
-      const ax = pad.axes[0] ?? 0;
-      const ay = pad.axes[1] ?? 0;
-      const down = (b: number): boolean => pad.buttons[b]?.pressed === true;
-      const states: [string, boolean][] = [
-        ['up', down(12) || ay < -0.6], ['down', down(13) || ay > 0.6], ['left', down(14) || ax < -0.6], ['right', down(15) || ax > 0.6],
-        ['pick', down(0)], ['undo', down(1)], ['swap', down(2)],
-      ];
-      for (const [name, on] of states) {
-        const k = `${String(s)}${name}`;
-        if (on && !held.get(k)) roster.act(s, name);
-        held.set(k, on);
-      }
-    });
-    requestAnimationFrame(poll);
-  };
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(poll);
   page.append(form);
   return page;
 }

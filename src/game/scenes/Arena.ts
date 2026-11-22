@@ -2,6 +2,7 @@ import { HoldLerp } from '../loop/hold-lerp';
 import { mountShakeScroll } from '../fx/camera-shake';
 import { LowLifeVignette } from '../fx/low-life-vignette';
 import { mountTallFills } from './tall-fills';
+import { lingerSession } from '../net/linger';
 import { PlayOnce } from '../net/play-once';
 import Phaser from 'phaser';
 import {
@@ -33,6 +34,7 @@ import {
   type RenderView,
   type SimEvent,
   type SimWorld,
+  ROLLBACK_WINDOW,
 } from '@core/index';
 import { playSfx } from '../audio/sfx';
 import { heroName } from '../hud/tag-fx';
@@ -50,8 +52,6 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
-/** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
-const ROLLBACK_WINDOW = 6;
 import { Announcer, LOW_HEALTH, LowHealthWatch, announcementsFor, tagNotReady } from '../a11y/announcer';
 import type { PauseDialog } from '../a11y/pause-dialog';
 import { collectSide } from '../hud/bars';
@@ -66,7 +66,7 @@ import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import type { MotionSmoother } from '../fx/ability-motion-view';
 import { ReplayCursor } from '../replay/cursor';
-import { buildMatchEnd, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
+import { buildMatchEnd, demoMatch, effectsHeld, playbackFrame, syncArcadeBg } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import { createArenaProbe } from './arena-probe';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
@@ -78,9 +78,6 @@ const LOW_HEALTH_POLL_FRAMES = 10;
 
 /** Beat between the final blow and the results route. */
 const END_DELAY_MS = 1200;
-
-/** Online: how often an ended session still answers its peer (one wall tick, as the driver would). */
-const LINGER_MS = 20;
 
 const DEMO_SETUP: MatchSetup = {
   simVersion: SIM_VERSION,
@@ -142,7 +139,7 @@ export class Arena extends Phaser.Scene {
   private actionBar: ActionBarView | undefined;
   /** Local two-player: Player 2's small mirrored readout (view only). */
   private actionBar2: ActionBarView | undefined;
-  private backdrop: Backdrop | undefined;
+  private backdrop: Backdrop | undefined; private arcadeBg: Phaser.GameObjects.Image | undefined;
   /** Per-stage ambient particles behind the fighters (view only; none under reduced motion). */
   private ambient: StageAmbient | undefined;
   private clicks: number[] = [];
@@ -279,7 +276,7 @@ export class Arena extends Phaser.Scene {
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
-    else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1);
+    else if (bg) this.arcadeBg = this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1).setVisible(!arcade); // QA r126: hidden until the sim stage is known (syncArcadeBg)
     if (element && arcade) mountTallFills(this, this.view, element, bg ? `bg:${bg}` : undefined, this.cleanups);
     if (element) this.ambient = createStageAmbient(this, element, arcade ? arcadePlayfield().w : width);
 
@@ -526,23 +523,13 @@ export class Arena extends Phaser.Scene {
     if (!over && !timedOut) return;
     this.ended = true;
     this.driver?.pause('ended');
-    if (this.session) this.lingerSession(this.session);
+    if (this.session) this.cleanups.push(lingerSession(this.session, this.launch?.net?.batchEvery));
     const s = world.state;
     const end = buildMatchEnd(over, this.session?.winner, s.teams[TeamField.activeSlot] ?? 0, capturedRosterIndices(s, 1));
     // Wall clock, not `this.time`: Phaser caps a frame's delta at 200 ms, so under a slow (software) renderer the scene
     // clock runs several times slower than real time and the results could take many seconds to arrive.
     const t = setTimeout(() => { this.launch?.onEnd?.(end); }, END_DELAY_MS);
     this.cleanups.push(() => { clearTimeout(t); });
-  }
-
-  /**
-   * Online: the datagram link is lossy and a lockstep side that ended may still owe its peer the inputs it needs to end too. Keep
-   * receiving and re-sending (no stepping: an ended session only does that) until the scene shuts down, so the peer always finishes
-   * instead of stalling to a timeout. Wall clock, not the paused driver.
-   */
-  private lingerSession(session: LockstepSession): void {
-    const t = setInterval(() => { session.update(0); }, LINGER_MS);
-    this.cleanups.push(() => { clearInterval(t); });
   }
 
   /** Tester mode only: a one-shot cheat on the running match (a state edit outside `step`; the replay is flagged `cheats`). */
@@ -679,7 +666,7 @@ export class Arena extends Phaser.Scene {
     this.swapNotice?.checkBusySwap(view.arcade()?.gameTick);
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
-    this.ambient?.update(getPrefs().reduceMotion);
+    this.ambient?.update(getPrefs().reduceMotion); if (this.arcadeBg && arcade) syncArcadeBg(this.arcadeBg, arcade.stage, view.heroElement(), this.textures);
     this.reportPlayback();
     this.frameTick = tick;
     this.frameAlpha = alpha;

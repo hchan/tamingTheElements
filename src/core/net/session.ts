@@ -15,6 +15,7 @@ import {
   PacketFlag,
   type HashEntry,
 } from './packet';
+import { BATCH_AHEAD_SLACK } from './limits';
 import type { Transport } from './transport';
 
 export type SessionStatus =
@@ -36,10 +37,12 @@ export interface LockstepOptions {
   readonly adaptive?: boolean;
   /** Exchange a state hash every N ticks (default 50). */
   readonly hashInterval?: number;
-  /** Update calls without any packet before the remote is forfeited (default 250 = 5 s at 50 Hz). */
+  /** Update calls without new remote input before the remote is forfeited (default 250 = 5 s at 50 Hz). */
   readonly timeoutTicks?: number;
   /** Same, while the remote has announced it is paused or hidden (default 1500 = 30 s). */
   readonly pauseTimeoutTicks?: number;
+  /** Same, while the relay reports the peer disconnected (default 750; see DEFAULT_PEER_AWAY_TIMEOUT_TICKS). */
+  readonly peerAwayTimeoutTicks?: number;
   /** Stop (as `ended`, no winner) when the sim reaches this tick: the match time limit. */
   readonly tickLimit?: number;
   /**
@@ -72,10 +75,12 @@ export interface UpdateResult {
 }
 
 export interface DesyncInfo {
-  /** First checkpoint tick at which the two hashes differ. */
+  /** First checkpoint tick at which the two hashes differ; for 'restore' and batch-* checks, the sim tick at detection. */
   readonly tick: number;
   readonly local: number;
   readonly remote: number;
+  /** What detected it (absent on old callers): checkpoint hash, rollback restore, or an impossible batch. */
+  readonly check?: 'hash' | 'restore' | 'batch-ack' | 'batch-first' | 'batch-ahead';
 }
 
 export interface SessionStats {
@@ -158,6 +163,17 @@ class TickBuf<T> {
   }
 }
 
+/** Default update calls without new remote input before the remote is forfeited (250 = 5 s at 50 Hz). */
+export const DEFAULT_TIMEOUT_TICKS = 250;
+/** Default, while the remote has announced it is paused or hidden (1500 = 30 s). */
+export const DEFAULT_PAUSE_TIMEOUT_TICKS = 1500;
+/**
+ * Default, while the relay says the peer is disconnected (750 = 15 s at 50 Hz). [estimate] The relay's 10 s disconnect grace is the
+ * contract (the relay's PEER_STATUS gone normally arrives first); this is a backstop of that grace plus one normal timeout as margin.
+ * Tests import it and pin it above the grace.
+ */
+export const DEFAULT_PEER_AWAY_TIMEOUT_TICKS = 750;
+
 /**
  * Two-player deterministic lockstep over an unreliable, unordered `Transport`.
  *
@@ -192,7 +208,7 @@ export class LockstepSession {
   };
   /** First hash mismatch found, if any. Once set the session stops stepping. */
   desync: DesyncInfo | undefined;
-  /** Winning team, -1 for a draw, null while undecided. */
+  /** Winning team, -1 for a draw, null while undecided and after a timeout (who stalled is unknown). */
   winner: number | null = null;
   forfeitReason: 'timeout' | 'conceded' | 'remote-conceded' | undefined;
 
@@ -206,6 +222,7 @@ export class LockstepSession {
   private readonly hashInterval: number;
   private readonly timeoutTicks: number;
   private readonly pauseTimeoutTicks: number;
+  private readonly peerAwayTimeoutTicks: number;
   private readonly tickLimit: number;
   private delay: number;
   private readonly local = new TickBuf<Command>();
@@ -225,7 +242,9 @@ export class LockstepSession {
   private readonly cmdLog: [number[], number[]] = [[], []];
   private clock = 0;
   private startClock = -1;
-  private lastHeard = 0;
+  /** Clock of the last update that advanced remoteNeeded (new remote input); a packet without inputs does not count. */
+  private lastProgress = 0;
+  private peerAway = false;
   private remotePaused = false;
   private hidden = false;
   private stallRun = 0;
@@ -269,8 +288,9 @@ export class LockstepSession {
     this.maxDelay = Math.max(this.delay, opts.maxInputDelay ?? 4);
     this.adaptive = opts.adaptive ?? true;
     this.hashInterval = opts.hashInterval ?? 50;
-    this.timeoutTicks = opts.timeoutTicks ?? 250;
-    this.pauseTimeoutTicks = opts.pauseTimeoutTicks ?? 1500;
+    this.timeoutTicks = opts.timeoutTicks ?? DEFAULT_TIMEOUT_TICKS;
+    this.pauseTimeoutTicks = opts.pauseTimeoutTicks ?? DEFAULT_PAUSE_TIMEOUT_TICKS;
+    this.peerAwayTimeoutTicks = opts.peerAwayTimeoutTicks ?? DEFAULT_PEER_AWAY_TIMEOUT_TICKS;
     this.tickLimit = opts.tickLimit ?? Number.POSITIVE_INFINITY;
     this.rbWindow = opts.rollbackWindow ?? 0;
     this.batchEvery = opts.batchEvery ?? 1;
@@ -341,6 +361,12 @@ export class LockstepSession {
     if (this.ended) return 'ended';
     if (this.stallRun > 0) return this.remotePaused ? 'remote-paused' : 'waiting';
     return 'running';
+  }
+
+  /** The relay says the peer is disconnected (true) or back (false). Back restarts the normal timeout. Sends nothing. */
+  setPeerAway(away: boolean): void {
+    if (this.peerAway && !away) this.lastProgress = this.clock;
+    this.peerAway = away;
   }
 
   /** Tab went hidden (or the player paused): tell the peer immediately so it extends its timeout instead of forfeiting us. */
@@ -425,12 +451,16 @@ export class LockstepSession {
         this.clock - this.startClock - this.simTick,
       );
       if (
-        this.clock - this.lastHeard >
-          (this.remotePaused ? this.pauseTimeoutTicks : this.timeoutTicks) &&
+        this.clock - this.lastProgress >
+          (this.remotePaused
+            ? this.pauseTimeoutTicks
+            : this.peerAway
+              ? Math.max(this.timeoutTicks, this.peerAwayTimeoutTicks)
+              : this.timeoutTicks) &&
         !this.ended
       ) {
         this.forfeitReason = 'timeout';
-        this.winner = this.side;
+        this.winner = null;
       }
     }
     this.trim();
@@ -554,7 +584,7 @@ export class LockstepSession {
     }
     if (bad >= 0 && !ring.restoreTick(this.world.state, bad)) {
       // Cannot happen while the ring holds window + 2 snapshots; fail loudly instead of drifting to a later hash mismatch.
-      if (this.desync === undefined || bad < this.desync.tick) this.desync = { tick: bad, local: 0, remote: 0 };
+      if (this.desync === undefined || bad < this.desync.tick) this.desync = { tick: bad, local: 0, remote: 0, check: 'restore' };
     } else if (bad >= 0) {
       this.stats.rollbacks++;
       this.stats.maxRollbackDepth = Math.max(this.stats.maxRollbackDepth, target - bad);
@@ -625,8 +655,10 @@ export class LockstepSession {
     const l = this.localHashes.get(tick);
     const r = this.remoteHashes.get(tick);
     if (l === undefined || r === undefined || l === r) return;
+    // A batch-* cause is the first evidence of a broken peer; a later hash mismatch must not overwrite it.
+    if (this.desync?.check?.startsWith('batch-') === true) return;
     if (this.desync === undefined || tick < this.desync.tick)
-      this.desync = { tick, local: l, remote: r };
+      this.desync = { tick, local: l, remote: r, check: 'hash' };
   }
 
   private sampleAdvantage(): void {
@@ -650,11 +682,27 @@ export class LockstepSession {
         continue;
       }
       this.stats.packetsReceived++;
-      this.lastHeard = this.clock;
-      this.remotePaused = (p.flags & PacketFlag.paused) !== 0;
+      const paused = (p.flags & PacketFlag.paused) !== 0;
+      if (this.remotePaused && !paused) this.lastProgress = this.clock; // resumed: a full normal timeout to resend
+      this.remotePaused = paused;
       if ((p.flags & PacketFlag.forfeit) !== 0 && this.forfeitReason === undefined && !this.ended) {
         this.forfeitReason = 'remote-conceded';
         this.winner = this.side;
+      }
+      if (this.desync === undefined && !this.ended && this.forfeitReason === undefined) {
+        // Order-independent impossibilities (an honest peer, even with loss, duplication or reorder, never sends these).
+        const check =
+          p.ack > this.sentUpTo
+            ? 'batch-ack'
+            : p.firstTick > this.remoteNeeded
+              ? 'batch-first'
+              : p.firstTick + p.inputs.length > this.local.length + BATCH_AHEAD_SLACK
+                ? 'batch-ahead'
+                : undefined;
+        if (check !== undefined) {
+          this.desync = { tick: this.simTick, local: 0, remote: 0, check };
+          continue;
+        }
       }
       this.remoteAck = Math.min(Math.max(this.remoteAck, p.ack), this.local.length);
       const now = this.ring === undefined ? this.simTick : this.confirmed;
@@ -664,7 +712,9 @@ export class LockstepSession {
         if (tick < now || tick >= now + MAX_AHEAD || this.remote.get(tick) !== undefined) return;
         this.remote.set(tick, cmd & this.inputMask);
       });
+      const before = this.remoteNeeded;
       while (this.remote.get(this.remoteNeeded) !== undefined) this.remoteNeeded++;
+      if (this.remoteNeeded > before) this.lastProgress = this.clock;
       for (const h of p.hashes) {
         if (h.tick < this.hashFloor) continue;
         if (!this.remoteHashes.has(h.tick)) this.remoteHashes.set(h.tick, h.hash);
@@ -674,6 +724,8 @@ export class LockstepSession {
   }
 
   private sendPacket(): void {
+    // After a batch-* desync the peer is broken: go silent so it times out in about 5 s and the relay sees the disagreement.
+    if (this.desync?.check?.startsWith('batch-') === true) return;
     this.sinceSend = 0;
     const first = Math.min(this.remoteAck, this.local.length);
     const inputs = this.local.slice(first, first + MAX_INPUTS_PER_PACKET);

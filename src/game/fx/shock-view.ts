@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
-import { POP_RECTS_KEY } from '../hud/arcade-hud';
+import { POP_RECTS_KEY, viewOfCamera } from '../hud/arcade-hud';
+import { cutNumberFadeOf } from '../hud/cut-numbers';
 import type { ChromaticSplit } from './chromatic-filter-impl';
 import { KO_SPLIT_MS, KO_WASH_MS, POP_MS, POP_POOL, RING_POOL, popMerges, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, popFrame, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
@@ -124,8 +125,20 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     if (popRects) scene.registry.remove(POP_RECTS_KEY);
     popRects = undefined;
   };
+  const camView = { x: 0, y: 0, w: 0, h: 0 };
+  /** A pop's y: it floats up as it ages. */
+  const popY = (p: Pop): number => p.y - 14 * Math.min(1, p.age / 120) - 26 * (p.age / POP_MS);
+  /** qa-r119 #3: a plain-hit number over the super cut-in band fades (band rows are HUD units; the camera maps world y to the screen). */
+  const popCutFade = (p: Pop): number => {
+    const cam = scene.cameras.main;
+    const k = cam.zoom / resolutionOf(scene); // the camera also scales by the render resolution
+    const sy = (popY(p) - viewOfCamera(cam, camView).y) * k;
+    const half = (p.text.displayHeight / 2) * k;
+    return cutNumberFadeOf(scene.registry, sy - half, sy + half);
+  };
   function tick(_time: number, delta: number): void {
     if (!paused()) step(delta);
+    else if (cutUp()) for (const p of pops) if (p.live) p.text.setAlpha((popFrame(p.age)?.alpha ?? 0) * popCutFade(p)); // a held sim still shows the fade
   }
   function step(delta: number): void {
     if (held.length > 0 && !cutUp()) for (const f of held.splice(0)) f();
@@ -194,7 +207,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
         continue;
       }
       numsLive = true;
-      p.text.setPosition(p.x, p.y - 14 * Math.min(1, p.age / 120) - 26 * (p.age / POP_MS)).setScale(f.scale).setAlpha(f.alpha);
+      p.text.setPosition(p.x, popY(p)).setScale(f.scale).setAlpha(f.alpha * popCutFade(p));
     }
     publish();
     if (washAge < 0 && splitAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();

@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SIM_VERSION } from '@core/index';
 import type { ArenaLaunch } from '../scenes/launch';
 import { OnlineClient } from '../net/ws/online-client';
-import { errorFrame, Harness, matchStart, peerStatus, type TestWs } from '../../testing/net/fake-online-service';
+import { errorFrame, Harness, matchStart, peerStatus, resultAck, type TestWs } from '../../testing/net/fake-online-service';
 import { FakeRelay } from '../../testing/net/fake-relay';
+import { attachRelayCore } from '../../testing/net/relay-core-service';
+import { ACK_STATUS, HASH_REPORT_MS, type ReportSession } from '../net/ws/match-report';
+import { CONNECTION_LOST_TEXT, RESULT_DISAGREE_TEXT } from './online-quick-model';
 
 const h$ = vi.hoisted(() => ({
   created: [] as Array<{ host: HTMLElement; launch: ArenaLaunch; destroyed: boolean }>,
@@ -257,6 +260,22 @@ describe('quick match screen', () => {
     r.unmounts.forEach((u) => { u(); });
   });
 
+  it('a failure shows once: the alert box, not also the status line', async () => {
+    const r = rig();
+    r.h.svc.refuseSockets = 2;
+    const n = r.mount();
+    click(n, 'quickFind');
+    await r.h.flush();
+    expect(shown(n, 'quickFailure')).toBe(true);
+    expect(q(n, 'quickFailure').textContent).not.toBe('');
+    expect(shown(n, 'quickStatus')).toBe(false);
+    click(n, 'quickRetry');
+    await r.h.flush();
+    expect(shown(n, 'quickFailure')).toBe(false);
+    expect(shown(n, 'quickStatus')).toBe(true);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
   it('a refused socket fails, and Try again reaches the queue', async () => {
     const r = rig();
     r.h.svc.refuseSockets = 2;
@@ -294,6 +313,39 @@ describe('quick match screen', () => {
     await r.h.flush();
     expect(h$.created[0]?.destroyed).toBe(true);
     expect(shown(a, 'quickAgain')).toBe(true);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('peer disconnected and back are passed to the session; one before the first status applies on it', async () => {
+    const r = rig();
+    await play(r);
+    const ws = r.h.svc.sockets[0] as TestWs;
+    const setPeerAway = vi.fn();
+    const sess = { ...sessionWith(1), setPeerAway } as never;
+    ws.serve(peerStatus(1, 0)); // away before the arena reported any status
+    await r.h.flush();
+    expect(setPeerAway).not.toHaveBeenCalled();
+    h$.created[0]?.launch.net?.onStatus?.('running', sess);
+    expect(setPeerAway.mock.calls).toEqual([[true]]);
+    ws.serve(peerStatus(1, 1));
+    await r.h.flush();
+    expect(setPeerAway.mock.calls).toEqual([[true], [false]]);
+    ws.serve(peerStatus(1, 0));
+    await r.h.flush();
+    expect(setPeerAway.mock.calls.at(-1)).toEqual([true]);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('a gateway notice after the match ended leaves the end line', async () => {
+    const r = rig();
+    const [a] = await play(r);
+    const ws = r.h.svc.sockets[0] as TestWs;
+    ws.serve(peerStatus(1, 2));
+    await r.h.flush();
+    const end = q(a, 'quickStatus').textContent;
+    ws.emit('message', { data: '{"message": "Too Many Requests"}' });
+    await r.h.flush();
+    expect(q(a, 'quickStatus').textContent).toBe(end);
     r.unmounts.forEach((u) => { u(); });
   });
 
@@ -360,6 +412,120 @@ describe('quick match screen', () => {
     (r.h.svc.sockets.at(-1) as TestWs).serve(errorFrame(8));
     await r.h.flush();
     expect(n.textContent).not.toMatch(FORBIDDEN);
+    r.unmounts.forEach((u) => { u(); });
+  });
+});
+
+/** The same two screens, but the service behind the sockets is the real RelayCore over an in-memory store (not the FakeRelay). */
+function relayRig(): Rig & ReturnType<typeof attachRelayCore> {
+  const r = rig();
+  return { ...r, ...attachRelayCore(r.h.svc, r.h.clock) };
+}
+
+/** What the arena would hand the screen: a session that has one checkpoint (tick 50) with `hash`, ended at tick 120. */
+const sessionWith = (hash: number, extra: Partial<ReportSession> = {}): ReportSession => ({
+  simTick: 120,
+  forfeitReason: undefined,
+  desync: undefined,
+  checkpoints: () => [[50, hash]],
+  hashAt: (t) => (t === 120 ? 999 : undefined),
+  ...extra,
+});
+const statusOf = (i: number, s: ReportSession): void => {
+  h$.created[i]?.launch.net?.onStatus?.(s.desync === undefined ? 'running' : 'desync', s as never);
+};
+const endOf = (i: number, winner: number): void => {
+  h$.created[i]?.launch.onEnd?.({ winner, activeSlot: 0, capturedIndices: [] });
+};
+const count = (r: Rig, i: number, op: number): number => frames(r.h.svc.sockets[i] as TestWs, op);
+
+describe('online result reporting (RelayCore)', () => {
+  it('sends HASH about once a second and one RESULT at the end; both get RESULT_ACK 0', async () => {
+    const r = relayRig();
+    await play(r);
+    expect(h$.created).toHaveLength(2);
+    for (const i of [0, 1]) statusOf(i, sessionWith(111));
+    await run(r, 100);
+    expect(count(r, 0, 0x41)).toBe(1);
+    // Inside HASH_REPORT_MS no second HASH (only one checkpoint exists anyway).
+    await run(r, HASH_REPORT_MS);
+    for (const i of [0, 1]) statusOf(i, sessionWith(111));
+    expect(count(r, 0, 0x41)).toBe(1);
+    for (const i of [0, 1]) endOf(i, 0);
+    await run(r, 200);
+    expect([count(r, 0, 0x50), count(r, 1, 0x50)]).toEqual([1, 1]);
+    expect(r.acks.filter((a) => a.status === ACK_STATUS.agreed).map((a) => a.conn).sort()).toEqual([0, 1]);
+    expect(r.events.find((e) => e.kind === 'result')).toMatchObject({ agreed: true, winner: 0, ticks: 120, finalHash: 999 });
+    // The ack stopped the resend.
+    await run(r, 2000);
+    expect([count(r, 0, 0x50), count(r, 1, 0x50)]).toEqual([1, 1]);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('different hashes at one checkpoint give RESULT_ACK 2 to both and offer the report', async () => {
+    const r = relayRig();
+    const [a, b] = await play(r);
+    statusOf(0, sessionWith(111));
+    statusOf(1, sessionWith(222));
+    await run(r, 200);
+    expect(r.acks.map((x) => x.status)).toEqual([ACK_STATUS.disagreed, ACK_STATUS.disagreed]);
+    for (const n of [a, b]) {
+      expect(say(n)).toBe(RESULT_DISAGREE_TEXT);
+      expect(shown(n, 'quickReport')).toBe(true);
+    }
+    r.unmounts.forEach((u) => { u(); });
+  });
+
+  it('a desync the session found is sent as DESYNC once, then RESULT, and the answer stops the resend', async () => {
+    const r = relayRig();
+    await play(r);
+    const bad = sessionWith(111, { desync: { tick: 50, local: 111, remote: 222 } });
+    statusOf(0, bad);
+    statusOf(0, bad);
+    await run(r, 100);
+    expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 1]);
+    expect(r.events.find((e) => e.kind === 'desync')).toMatchObject({ tick: 50, by: 0 });
+    await run(r, 2000);
+    // The peer sent nothing, so the ACK says "waiting" (1): the 500 ms resend stops, and the slow re-poll (RESULT_REPOLL_MS) sends RESULT once more.
+    expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 2]);
+    r.unmounts.forEach((u) => { u(); });
+  });
+});
+
+describe('online Play again with RESULT unanswered', () => {
+  it('keeps the arena through ACK 1, drops it when the queue frame is out, and ignores a stale ACK 2 afterwards', async () => {
+    const r = relayRig();
+    const [a] = await play(r);
+    const q0 = count(r, 0, 0x10);
+    for (const i of [0, 1]) statusOf(i, sessionWith(111));
+    endOf(0, 0);
+    await run(r, 200); // RESULT sent, the peer's is missing: ACK 1 (waiting)
+    click(a, 'quickAgain');
+    await run(r, 1000); // under PLAY_AGAIN_ACK_WAIT_MS
+    expect([h$.created[0]?.destroyed, count(r, 0, 0x10)]).toEqual([false, q0]);
+    endOf(1, 0); // the peer's RESULT: the next ACK 0 (the re-poll) releases the held join
+    await run(r, 2500);
+    expect(count(r, 0, 0x10)).toBe(q0 + 1);
+    expect(h$.created[0]?.destroyed).toBe(true);
+    (r.h.svc.sockets[0] as TestWs).serve(resultAck(1, ACK_STATUS.disagreed));
+    await r.h.flush();
+    expect(say(a)).not.toBe(RESULT_DISAGREE_TEXT);
+    expect(shown(a, 'quickReport')).toBe(false);
+    r.unmounts.forEach((u) => { u(); });
+  });
+});
+
+describe('online end line after a timeout', () => {
+  it('a "disagreed" ACK from a gone peer leaves the no-winner line and offers no report', async () => {
+    const r = relayRig();
+    const [a] = await play(r);
+    statusOf(0, sessionWith(111));
+    h$.created[0]?.launch.net?.onStatus?.('forfeit', { ...sessionWith(111, { forfeitReason: 'timeout' }), status: 'forfeit', setPeerAway: () => undefined } as never);
+    expect(say(a)).toBe(CONNECTION_LOST_TEXT);
+    (r.h.svc.sockets[0] as TestWs).serve(resultAck(1, ACK_STATUS.disagreed));
+    await r.h.flush();
+    expect(say(a)).toBe(CONNECTION_LOST_TEXT);
+    expect(shown(a, 'quickReport')).toBe(false);
     r.unmounts.forEach((u) => { u(); });
   });
 });

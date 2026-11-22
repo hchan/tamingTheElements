@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FakeRelay } from './fake-relay';
 import { onlineConfig, parseOnlineUrl } from '../../game/net/ws/config';
 import { DEFAULT_RESTING_SEC, friendlyMessage, OnlineClient, PROTOCOL_VERSION, type FetchLike } from '../../game/net/ws/online-client';
-import { WebSocketTransport } from '../../game/net/ws/transport';
+import { PLAY_AGAIN_ACK_WAIT_MS, RESULT_REPOLL_CAP_MS, RESULT_REPOLL_MS, RETRY_MS, WebSocketTransport } from '../../game/net/ws/transport';
 import { decodeFrame, encodeFrame } from '../../game/net/ws/wire';
 import { ascii, BASE, BATCH, ctor, errorFrame, Harness, matchStart, peerStatus, pkt, reply, resultAck, SESSION_ID, TestWs } from './fake-online-service';
 
@@ -183,6 +183,13 @@ describe('OnlineClient', () => {
     expect(r.ok && r.value.malformed).toBe(2);
   });
 
+  it('asks every socket for ArrayBuffer messages (a Blob would be decoded asynchronously and reorder frames)', async () => {
+    const h = new Harness();
+    const { c } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    expect((h.svc.sockets[0] as TestWs & { binaryType?: string }).binaryType).toBe('arraybuffer'); // the contract value, not the constant
+  });
+
   it('an expired ticket (older than 60 s) is refused by the service', async () => {
     const h = new Harness();
     const deps = h.deps(true, { WebSocket: ctor((url) => { h.clock.ms += 61_000; return h.svc.makeSocket(url); }) });
@@ -324,6 +331,88 @@ describe('OnlineClient', () => {
     expect(a.events.filter((e) => e.t === 'result-ack')).toHaveLength(2);
   });
 
+  describe('RESULT re-poll (client-owned timer)', () => {
+    const results = (w: TestWs): number => w.sent.filter((m) => m[0] === 0x50).length;
+    const queues = (w: TestWs): number => w.sent.filter((m) => m[0] === 0x10).length;
+
+    it('after ACK 1 (waiting) RESULT is re-sent every RESULT_REPOLL_MS until ACK 0/2, without any session.update or tick()', async () => {
+      const { h, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      wa.serve(resultAck(1, 1));
+      const n = results(wa);
+      expect(n).toBe(1);
+      await h.step(RESULT_REPOLL_MS - 1);
+      expect(results(wa)).toBe(n);
+      await h.step(1);
+      expect(results(wa)).toBe(n + 1);
+      await h.step(RESULT_REPOLL_MS);
+      expect(results(wa)).toBe(n + 2);
+      wa.serve(resultAck(1, 2)); // The relay's completion answer finally arrives (a dropped copy was re-polled).
+      await h.step(RESULT_REPOLL_MS * 3);
+      expect(results(wa)).toBe(n + 2);
+    });
+
+    it('the re-poll gives up after RESULT_REPOLL_CAP_MS', async () => {
+      const { h, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      wa.serve(resultAck(1, 1));
+      await h.step(RESULT_REPOLL_CAP_MS + RESULT_REPOLL_MS);
+      const n = results(wa);
+      expect(n).toBeGreaterThan(5);
+      await h.step(RESULT_REPOLL_MS * 5);
+      expect(results(wa)).toBe(n);
+    });
+
+    it('RESULT without any ACK keeps being resent by the client timer (arena gone, nobody calls tick())', async () => {
+      const { h, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      await h.step(RETRY_MS * 3);
+      expect(results(wa)).toBe(4);
+    });
+
+    it('Play again before the ACK waits for it: the queue frame follows the ACK, RESULT keeps going meanwhile', async () => {
+      const { h, a, ta, wa } = await pair();
+      const q0 = queues(wa);
+      ta.sendResult(1, 0, 0, 100, 5);
+      expect(a.c.joinQueue()).toBe(true);
+      expect(queues(wa)).toBe(q0);
+      await h.step(RETRY_MS);
+      expect(results(wa)).toBe(2);
+      expect(queues(wa)).toBe(q0);
+      wa.serve(resultAck(1, 0));
+      expect(queues(wa)).toBe(q0 + 1);
+      await h.step(PLAY_AGAIN_ACK_WAIT_MS * 2);
+      expect(queues(wa)).toBe(q0 + 1);
+    });
+
+    it('a held Play again whose send fails (socket gone) is reported as an error, not silently lost', async () => {
+      const { h, a, ta, wa } = await pair();
+      ta.sendResult(1, 0, 0, 100, 5);
+      expect(a.c.joinQueue()).toBe(true);
+      const before = a.events.length;
+      wa.readyState = 3; // Dropped without a close event: the held send finds a dead socket.
+      await h.step(PLAY_AGAIN_ACK_WAIT_MS);
+      expect(a.events.slice(before)).toContainEqual({ t: 'error', failure: { kind: 'network' } });
+    });
+
+    it('Play again without any ACK joins the queue after PLAY_AGAIN_ACK_WAIT_MS, then never sends RESULT again', async () => {
+      const { h, a, ta, wa } = await pair();
+      const q0 = queues(wa);
+      ta.sendResult(1, 0, 0, 100, 5);
+      a.c.joinQueue();
+      await h.step(PLAY_AGAIN_ACK_WAIT_MS - 1);
+      expect(queues(wa)).toBe(q0);
+      await h.step(1);
+      expect(queues(wa)).toBe(q0 + 1);
+      const n = results(wa);
+      for (let t = 0; t < RESULT_REPOLL_CAP_MS; t += RETRY_MS) {
+        ta.tick(); // The transport itself must have nothing left to resend, whatever ResultPoll does.
+        await h.step(RETRY_MS);
+      }
+      expect(results(wa)).toBe(n);
+    });
+  });
+
   it('PEER_STATUS of another match is ignored', async () => {
     const { a, wa, h } = await pair();
     wa.serve(peerStatus(1, 0));
@@ -353,6 +442,32 @@ describe('OnlineClient', () => {
     expect(a.events.at(-1)).toEqual({ t: 'result-ack', matchId: 1, status: 2 });
     wa.serve(Uint8Array.of(0x51, 9, 2)); // Another match: ignored.
     expect(a.events.filter((e) => e.t === 'result-ack').length).toBe(1);
+  });
+
+  it('after RESULT_ACK a late BATCH from the old session is not sent (no stray frame into the next lobby state)', async () => {
+    const { a, ta, wa } = await pair();
+    const before = wa.sent.length;
+    wa.serve(Uint8Array.of(0x51, 1, 0));
+    expect(a.events.at(-1)).toEqual({ t: 'result-ack', matchId: 1, status: 0 });
+    ta.send(Uint8Array.of(1, 2, 3, 4));
+    expect(wa.sent.length).toBe(before);
+  });
+
+  it('RESULT_ACK 1 (waiting) keeps the match: BATCH still flows and the peer receives a frame whose predecessor was dropped', async () => {
+    const { h, a, ta, tb, wa } = await pair();
+    ta.send(pkt(1, 0)); // The last pre-ACK frame: the relay drops it (never advanced to B).
+    h.svc.relay?.advance();
+    wa.sent.length = 0;
+    wa.serve(Uint8Array.of(0x51, 1, 1)); // Waiting for the peer's RESULT.
+    expect(a.events.at(-1)).toEqual({ t: 'result-ack', matchId: 1, status: 1 });
+    ta.send(pkt(1, 5)); // The linger keeps sending after the waiting reply.
+    expect(wa.sent.filter((m) => m[0] === 0x40).length).toBe(1);
+    h.svc.relay?.advance();
+    expect(drain(tb).length).toBeGreaterThan(0);
+    wa.serve(Uint8Array.of(0x51, 1, 0)); // The final answer ends it.
+    const n = wa.sent.length;
+    ta.send(pkt(1, 6));
+    expect(wa.sent.length).toBe(n);
   });
 
   it('wraps the matchId 255 to 1: the next match plays', async () => {

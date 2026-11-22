@@ -333,3 +333,24 @@ Owner request 2026-11-17 (work on balance a bit more). Data only, Arcade only (C
 - Fun gates pass before and after (1v1 round median 31.56 s).
 - The 8-seed fixed-partner 2v2 fixture (88 games/race, SE about 5.3) moved more than 5 pp for cyclonius, morblass, pax, treenoc and wispera, so the random-partner run is the measure.
 - Tour boss: AI teams beat the Void 46.2% vs 51.4% (boss-probe 12); the Void numbers are unchanged.
+
+## Arcade stun-immunity retune (SIM_VERSION 99)
+
+SIM_VERSION 98 (stun immunity, 20 ticks) moved wins from ranged to melee: melee vs ranged .454 -> .591, style gap about .099 (limit .06). Data-only retune of six `ARCADE_RACE_NUMBERS` rows (life, damage; `STUN_IMMUNE_TICKS` stays 20, `ARCADE_2V2_LIFE_PM` untouched): fiara 4210/1373 -> 4508/1470, pax 4600/1442 -> 4351/1364, wispera 7365/1291 -> 6833/1198, treenoc 6215/1180 -> 5998/1139, rokcore 1850/640 -> 1949/674, sindarosa 2860/724 -> 3001/760 (plan: Rank 1 option A).
+
+Measurements (1v1, 16 seeds per block, SE about 3.8 pp per race; seeds 1-16 is the committed baseline, seeds 41-56 the second block):
+
+| Race | v98 (1-16) | v99 (1-16) | v99 (41-56) | Mean of both |
+|---|---|---|---|---|
+| wispera | 64.2 | 50.6 | 44.3 | 47.5 |
+| pax | 60.2 | 51.7 | 54.5 | 53.1 |
+| treenoc | 56.3 | 50.0 | 44.9 | 47.5 |
+| fiara | 39.8 | 43.2 | 46.0 | 44.6 |
+| rokcore | 42.0 | 49.4 | 48.9 | 49.2 |
+| sindarosa | 42.6 | 47.2 | 46.0 | 46.6 |
+
+Style (seeds 1-16): melee vs ranged 59.1 -> 51.1, melee mean .558 -> .507, ranged mean .459 -> .495. Seeds 41-56: melee vs ranged 48.4, mean gap .017. Untouched races (v99 1-16 / 41-56): ishimi 54.0 / 57.4 (high, noise-level, not retuned), lavax 52.8 / 55.1, curomo 52.8 / 52.3, cyclonius 51.7 / 50.0, morblass 48.3 / 51.7, echo 48.3 / 48.9.
+
+Open: fiara is still the weakest (about 44.6 percent over both blocks, inside noise of .45); the planned Rank 3 lever (`HIT_STUN_OVERRIDE` fireball or Fireball cooldown 26 -> 25) was not applied. A melee-favouring mechanic may still hide behind the data; the two-block means show no style gap above .06. Baselines re-recorded: Arcade 1v1 and Arcade 2v2 (the 2v2 life table is unchanged, the base numbers move); Classic is unchanged.
+
+The scripted `arcade-moves` golden needed two edits for sindarosa's extra life (`tools/gen/arcade-moves.ts`): round 1 beat-down 12 -> 15 cones (the cones now finish p2), and the parry segment moved to the start of round 3. `trap.test.ts` uses fiara's new damage 1470.

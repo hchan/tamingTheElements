@@ -9,6 +9,7 @@ import { CLEANSE_COOLDOWN } from './cleanse-clock';
 import { elementalShown } from '../platform/cleanse-info';
 import { abilityNameOfSprite, abilityShortOfSprite, trapNameOfElement, trapShortOfElement, trapTextOfElement } from './kit-names';
 import { COMMON_EFFECT, HERO_EFFECT, elementalEffect, elementalTitle } from '../platform/ability-text';
+import { stunWord } from './stun-secs';
 
 const ELEMENT_BY_KIND = ['void', 'fire', 'water', 'earth', 'air'] as const;
 
@@ -199,12 +200,12 @@ export function tipExpired(since: number, now: number): boolean {
   return now - since >= TIP_MAX_MS;
 }
 
-/** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
-export const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
+/** Line colour per element kind (index 0 is Void, a violet, so a Void box is not left bone; a second cue only: the icon's shape and the slot's words say which). */
+export const ELEMENT_TINT: readonly number[] = [0xb48cff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
 
 /** A ready tile's edge: the tile's element colour dulled to ash, or bone when it has none (readiness is also the lit text and the missing cooldown shade). */
 export function readyEdge(element: number | undefined): number {
-  return element ? mute(ELEMENT_TINT[element] ?? 0xffffff, 0.5, 0.75) : 0xa89f88;
+  return element !== undefined ? mute(ELEMENT_TINT[element] ?? 0xffffff, 0.5, 0.75) : 0xa89f88;
 }
 
 /** Horizontal scale (at most 1) that keeps a text `width` wide inside a slot `size` wide, leaving `pad` px each side. */
@@ -456,10 +457,9 @@ export const RUN_BLOCK_NOTE: Readonly<Record<RunBlock, string>> = { rooted: "Can
 /** Reads one team's `ArcadeBar` off the render view's Arcade read-outs (a team with no active hero reads as full and idle). */
 export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean, cleanseIn: (id: number) => number = () => 0): ArcadeBar {
   const id = ar.active(team);
-  // The sim's own swap rules (`swapAllowed`): WAIT outside the fight, STUN while the active hero is hit-stunned. Frozen
-  // (in Arcade, a melee cast's recovery) and busy show no word; a press then gets the notice line (swap-notice.ts).
+  // The sim's `swapAllowed`: WAIT outside the fight, `STUN 0.6s` while hit-stunned; frozen and busy show no word (swap-notice.ts).
   const bits = ar.swapBlock(team);
-  const swapBlock = (bits & SwapBlock.wait) !== 0 ? 'WAIT' : (bits & SwapBlock.stun) !== 0 ? 'STUN' : undefined;
+  const swapBlock = (bits & SwapBlock.wait) !== 0 ? 'WAIT' : (bits & SwapBlock.stun) !== 0 ? stunWord('STUN', id >= 0 ? ar.stunLeft(id) : 0) : undefined;
   return {
     ...(swapBlock !== undefined ? { swapBlock } : {}),
     ...(id >= 0 && ar.stunned(id) ? { runBlock: 'stunned' as const } : id >= 0 && ar.rooted(id) ? { runBlock: 'rooted' as const } : {}),
@@ -574,7 +574,7 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     const el = arcade ? bar.elemental?.kind : undefined;
     add({
       kind: 'trap', cmd: Cmd.trap, sprite: '', icon: ACTION_ICON.trap, touch: arcade ? 'Trap' : '', highlight: false, disabled: false,
-      ...(el ? { element: el } : {}),
+      ...(el !== undefined ? { element: el } : {}),
       progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t, trapShortOfElement(el)),
     }, TRAP_LABEL);
   }

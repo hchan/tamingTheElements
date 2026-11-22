@@ -54,4 +54,14 @@ describe('desync report', () => {
     expect(v.ok).toBe(false);
     expect(v.firstDivergentTick).toBe(150);
   });
+
+  it('an end record goes to the top level and into the replay member, and the replay still verifies', () => {
+    const m = runNetMatch({ ...base, conditions: NET, session: { adaptive: false } });
+    const end = { reason: 2, detail: 'relay-closed', tick: 123, winner: 0, resultSent: true } as const;
+    const report = buildDesyncReport(SETUP, m.sessions[0], end);
+    expect(report.end).toEqual(end);
+    expect(report.replay.end).toEqual(end);
+    expect(playReplay(parseReplay(serializeReplay(report.replay)), SIM_VERSION).ok).toBe(true);
+    expect(buildDesyncReport(SETUP, m.sessions[0]).end).toBeUndefined();
+  });
 });

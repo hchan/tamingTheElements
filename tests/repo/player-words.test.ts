@@ -19,7 +19,7 @@ describe('words a first-time player must not see', () => {
   it('main menu entries: five, none with a forbidden word', () => {
     const items = block(read('src/ui/screens/main-menu.ts'), 'export const MENU_ITEMS', '];');
     const labels = [...items.matchAll(/label: '([^']*)'/g)].map((m) => m[1] as string);
-    expect(labels).toEqual(['Play', 'Versus', 'Online', 'Settings', 'Help']);
+    expect(labels).toEqual(['World Tour', 'Versus', 'Online', 'Settings', 'Help']);
     expect(labels.filter((l) => FORBIDDEN.test(l))).toEqual([]);
     // Only the player-facing `sub:` lines: the route name 'arcade' is internal.
     const subs = [...items.matchAll(/sub: '([^']*)'/g)].map((m) => m[1] as string);

@@ -354,5 +354,13 @@
  *    (1v1 45.7, 2v2 46.0 percent, full roster, level 3, both in the 45-55 band). The Pyre Totem ally no-flinch zone is out of scope (a new zone system, slot 3, later).
  *    Release set stays empty.
  *    Re-record reason: version bump only; every golden changes only the simVersion header.
+ * 97: Easy Arcade AI opening grace (QA r110 #12), AI only (precedent 55), no sim rule or data change: Easy drops its attack, charge, trap, weather, elemental
+ *    and super bits for 175 ticks after each round's FIGHT; a hit on the AI hero ends it early. New agent memory slot `openAt`; Normal and Hard commands are unchanged.
+ *    Re-record reason: version bump only; every golden changes only the simVersion header (goldens and balance baselines run Normal).
+ * 98: Arcade only (Classic hashes unchanged). Stun immunity (qa-r109 #2 stun lock): after any stun ends (natural end or cap recovery) the victim cannot be
+ *    re-stunned for STUN_IMMUNE_TICKS = 20 game ticks; damage and knockback still apply; parry, guard break and supers keep their stun. No new state (read from stunUntil).
+ *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 98 stun immunity).
+ * 99: Arcade only (Classic hashes unchanged). Data-only retune of six ARCADE_RACE_NUMBERS rows (fiara, pax, wispera, treenoc, rokcore, sindarosa) after the v98 stun immunity moved wins from ranged to melee.
+ *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 99 life/damage retune).
  */
-export const SIM_VERSION = 96;
+export const SIM_VERSION = 99;

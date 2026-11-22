@@ -1,5 +1,6 @@
 ---
 status: idea
+triaged: c (earth mirror readability open; rest fixed, dropped or noted)
 added: 2026-11-16
 ---
 
@@ -36,3 +37,8 @@ Screenshots in .scratch/r81/shots/ of the QA worktree (agent-aed425986345e4924):
 ## Gaps
 
 Round-end screen and a full Tour run not played; hero art roster24 is hidden and was not assessed; lint, typecheck, vitest not run.
+
+## Triage 2026-11-21 (code-checked)
+
+Fixed: Versus picker roster cut at 720p (r119 triage, `src/ui/styles/main/10-picker-layout.css`); hit-stop confirmed working (r119 N4, `ideas/done/sf-hit-stop-juice.md`); first-blood hint fades on its own (`src/ui/styles/main/09-help-first-run.css:51`, e2e first-run-hint). Dropped (phone/portrait): findings 1 and 2 and the phone part of 4. Not a bug: hint staying in manual-step shots.
+Open (low, needs a screenshot): Earth mirror readability (finding 3): Rokcore vs Pax grey golems on a flat sand stage; no AI-side tint or outline in `src/game/fx/hero-grade.ts` (only a Rokcore sunlit rim). Earth stage flat (from r80) is the same visual question; earlier lift in `src/game/fx/earth-light.ts`.

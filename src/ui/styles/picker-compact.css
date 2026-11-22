@@ -1,108 +1,59 @@
-/* Versus picker on a short landscape phone (QA r60/r61: 667x375 and 812x375 showed the option rows and the You / Computer cards, and no hero
-   tile until you scrolled). The four option rows pair up (Opponent + Arena, Team + AI level) so they take two 44 px rows instead of three, and
-   the fighter cards and padding tighten. Touch targets stay 44 px; the Fight bar is untouched. */
-@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
-  #menu #arcadePick .vsFieldset {
-    gap: 0 0.6em;
-    padding-block: 0.1em 0.3em;
-  }
-  #menu #arcadePick .vsFieldset > * {
-    order: 5;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
-    order: 1;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeStage) {
-    order: 2;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeSize) {
-    order: 3;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeLevel) {
-    order: 4;
-  }
-  /* Opponent and Arena share row one: their labels go visually hidden (still the groups' names); the buttons say it. */
-  #arcadePick .vsControl:has(#arcadeMode) > label,
-  #arcadePick .vsControl:has(#arcadeStage) > label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  #arcadePick .vsSegment {
-    padding: 2px 8px;
-  }
-  /* Each fighter card is one row: the title and status beside the hero slot, not above it. */
-  #arcadePick .vsSide {
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 0.5em;
-  }
-  #arcadePick .vsSide .vsSideTitle {
-    grid-row: 1;
-    grid-column: 1;
-  }
-  #arcadePick .vsSide {
-    position: relative;
-  }
-  #arcadePick .vsSide .vsStatus {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-  #arcadePick .vsSide .teamSlots {
-    grid-row: 1;
-    grid-column: 2;
-  }
-  #arcadePick .vsSide .vsReady {
-    grid-column: 1 / -1;
-  }
-  #arcadePick .pickScroll {
-    padding-block: 4px 8px;
-  }
-  #arcadePick .vsStage {
-    gap: 0.4em;
-  }
-  #arcadePick .vsSide {
-    padding: 0.25em 0.4em;
-  }
-  #arcadePick .vsSide .vsSideTitle {
-    margin: 0;
-  }
-  /* The fighter cards share a row with the title, so a slot is too narrow for "Your partner (2v2)" on one line (QA r41): let the label wrap whole instead of ellipsising. */
-  #menu #arcadePick .vsSide .vsSlotLabel {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    line-height: 1.1;
-  }
+/* Versus picker (MvC-style): one options strip on top (Who plays, Team, AI level, Arena: each a radio group over its real select),
+   then the two numbered team stacks around the hero grid and panel (06-versus-picker.css), the hints and the folded key sheet below.
+   `.vsOptions` dissolves into the fieldset so the four choices wrap as one strip, in the order a player reads them. */
+#menu #arcadePick .vsFieldset > .vsOptions {
+  display: contents;
+}
+#menu #arcadePick .vsFieldset {
+  gap: 4px 1.2em;
+  align-items: center;
+}
+#menu #arcadePick .vsFieldset > * {
+  order: 5;
+}
+#menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
+  order: 1;
+  flex: 0 0 auto;
+}
+#menu #arcadePick .vsOptions > .vsControl:has(#arcadeSize) {
+  order: 2;
+}
+#menu #arcadePick .vsOptions > .vsControl:has(#arcadeLevel) {
+  order: 3;
+}
+#menu #arcadePick .vsOptions > .vsControl:has(#arcadeStage) {
+  order: 4;
+}
+#menu #arcadePick .vsOptions > .vsControl {
+  flex: 0 1 auto;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em 0.5em;
+  align-items: center;
+  min-width: 0;
+}
+#menu #arcadePick .vsFieldset > .vsStage {
+  order: 6;
+}
+#menu #arcadePick .vsFieldset > .vsHints {
+  order: 7;
+}
+#arcadePick .vsKeysFold {
+  margin: 0.5em 0 0;
+}
+#arcadePick .vsKeysSummary {
+  display: list-item;
+  min-height: 44px;
+  line-height: 44px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#arcadePick .vsKeysFold > .vsKeys {
+  margin-top: 0.25em;
 }
 
-/* Portrait phone (QA r83 P6: at 390x844 Opponent, Team, AI level and Arena stacked about 600 px above the hero grid, so the first hero card sat behind
-   a long scroll). The hero pick comes first: the fighter cards and grid lead the scrolling region and the option rows follow it. The fieldset is a
-   wrapping flex row, so `order` moves the stage up without touching the DOM or the Tab order of the cards' own controls (the options stay
-   reachable by scrolling, and "More below" still shows while they are off screen). Touch targets are unchanged (44 px). */
-@media (max-width: 640px) and (orientation: portrait) {
-  #menu #arcadePick .vsFieldset > .vsStage {
-    order: -1;
-  }
-  #menu #arcadePick .pickScroll {
-    padding-block: 4px 8px;
-  }
-  #menu #arcadePick .heading {
-    margin-block: 0.25em;
-    font-size: 1.6em;
-  }
-}
-
-/* Desktop laptop heights (QA r80/r81: at 1280x720 Opponent, Team + AI level and Arena took three rows before the hero grid, so the Fire row sat half
-   behind the Fight bar). Pointer-fine only: the option rows tighten (36 px buttons, Opponent and Arena share a row, labels shrink), the heading and
-   the hero tiles lose a few pixels, and the fighter cards stay as they are. Phones keep their 44 px targets and their own rules above. */
+/* Laptop heights (QA r80/r81: the option rows pushed the Fire row behind the Fight bar). Pointer-fine only: smaller buttons and tiles. */
 @media (pointer: fine) and (min-width: 1001px) and (max-height: 820px) {
   #menu #arcadePick .heading {
     margin-block: 0.15em;
@@ -110,26 +61,6 @@
   }
   #menu #arcadePick .pickScroll {
     padding-block: 4px 6px;
-  }
-  #menu #arcadePick .vsFieldset {
-    gap: 4px 1.2em;
-    align-items: center;
-    padding-bottom: 6px;
-  }
-  #menu #arcadePick .vsFieldset > * {
-    order: 5;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
-    order: 1;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeSize) {
-    order: 2;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeLevel) {
-    order: 3;
-  }
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeStage) {
-    order: 4;
   }
   #arcadePick .vsControl > label {
     font-size: 0.85em;
@@ -159,67 +90,11 @@
   }
 }
 
-/* Small portrait phone (QA r89 P2: at 360x640 the Fight bar stacked Fight! over Back, 130 px of a 640 px screen, so the scrolling region left
-   only about 430 px for the cards, the roster and the option rows below it). Back and Fight! share one row (Fight takes the room, Back keeps
-   its 44 px target), the bar's padding tightens, and the long hint stays hidden. Render-only; the DOM and Tab order are unchanged. */
-@media (max-width: 640px) and (orientation: portrait) {
-  #menu #arcadePick .vsActions {
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.5em;
-    padding: 0.35em 0.6em max(0.35em, env(safe-area-inset-bottom));
-  }
-  #menu #arcadePick .vsActions .vsFight {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin: 0;
-  }
-  #menu #arcadePick .vsActions a.menuButton {
-    flex: none;
-    margin: 0;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-  }
-}
-
-/* QA r91 P3: on a phone the "More below" tab (main.css, 18 px tall plus its 6 px lift) sat on top of the last visible hero row and touched the bar's
-   border. While the cue shows, the bar keeps a 28 px strip above it, so the tab sits in free space and covers no card. */
+/* The bar keeps a 28 px strip above it while the "More below" tab shows, so the tab covers no card. */
 @media (max-width: 520px), (max-height: 520px) {
   #menu #arcadePick .pickScroll[data-more] + .vsActions,
   #menu .heroSelect > .pickScroll[data-more] + .heroActions {
     margin-top: 28px;
-  }
-}
-
-/* QA r90 P3: on a portrait phone the option rows sit below the hero grid (about 1000 px down). The Options strip leads the scrolling region, shows what
-   is set (Computer, 1v1, Normal, Random) and jumps to the rows. Hidden everywhere else, where the rows are already on screen. */
-.vsOptsJump {
-  display: none;
-}
-@media (max-width: 640px) and (orientation: portrait) {
-  #menu #arcadePick .vsOptsJump {
-    display: block;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 44px;
-    margin: 0 0 6px;
-    padding: 6px 10px;
-    border: 1px solid #8a7a3a;
-    border-radius: 6px;
-    background: #1d1b3a;
-    color: #f2d98a;
-    font: inherit;
-    font-size: 0.95em;
-    text-align: left;
-    cursor: pointer;
-  }
-  #menu #arcadePick .vsOptsJump:focus-visible {
-    outline: 3px solid #fff;
-    outline-offset: 2px;
   }
 }
 
@@ -254,114 +129,5 @@
     height: 40px;
     min-height: 40px;
     z-index: 1;
-  }
-}
-
-/* QA r94 P3: the sticky Options strip stopped 8 px under the region's top edge (its padding), so scrolled fighter-card text showed in the gap above it.
-   It now sticks flush (negative top), and an opaque shadow fills the padding above it and the gap below. */
-@media (max-width: 640px) and (orientation: portrait) {
-  #menu #arcadePick .vsOptsJump {
-    top: -8px;
-    margin-top: -8px;
-    padding-top: 14px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    background: #1d1b3a;
-    box-shadow: 0 6px 0 #14122b, 0 -1px 0 #14122b;
-  }
-}
-
-/* QA r96 P3: the strip is one line at phone widths (long text is cut with an ellipsis, the full text stays in the accessible name and tooltip), and it
-   shows its state: the arrow turns up and the border brightens while the option rows are on screen (aria-expanded mirrors it). */
-@media (max-width: 640px) and (orientation: portrait) {
-  #menu #arcadePick .vsOptsJump {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 0.74em;
-    padding-inline: 8px;
-  }
-  #menu #arcadePick .vsOptsJump[aria-expanded='true'] {
-    border-color: #f2d98a;
-    background: #2a2754;
-  }
-}
-
-/* Versus (MENU-B): "Who plays" is one full-width choice above everything else; Team, AI level and Arena share ONE compact options row (the
-   .vsOptions wrapper); the key sheet is a collapsed <details>. These come last so they win over the per-viewport order rules above. */
-#menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
-  order: -3;
-  flex: 0 0 100%;
-}
-#menu #arcadePick .vsFieldset > .vsOptions {
-  order: 2;
-  flex: 0 0 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 1.2em;
-  min-width: 0;
-}
-@media (max-width: 640px) and (orientation: portrait) {
-  /* The hero pick still leads on a phone; the options row follows it (the Options strip jumps there). */
-  #menu #arcadePick .vsFieldset > .vsOptions {
-    order: 0;
-  }
-}
-#menu #arcadePick .vsOptions > .vsControl {
-  flex: 0 1 auto;
-  max-width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25em 0.5em;
-  align-items: center;
-  min-width: 0;
-}
-#arcadePick .vsKeysFold {
-  margin: 0.5em 0 0;
-}
-#arcadePick .vsKeysSummary {
-  display: list-item;
-  min-height: 44px;
-  line-height: 44px;
-  cursor: pointer;
-  font-weight: bold;
-}
-#arcadePick .vsKeysFold > .vsKeys {
-  margin-top: 0.25em;
-}
-@media (max-width: 640px) {
-  #menu #arcadePick .vsOptions > .vsControl {
-    gap: 0 0.4em;
-  }
-}
-
-/* WP-F4 (667x375 and 812x375 phone landscape): MENU-B's full-width "Who plays" row plus the Team / AI level row plus a wrapped Arena row took three
-   option rows, so no hero tile showed above the Fight bar. Here the options wrapper dissolves into the fieldset and Opponent + Arena share
-   row one (the Arena label is already visually hidden above), Team + AI level share row two. Buttons stay 44 px. */
-@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
-  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
-    flex: 0 0 auto;
-  }
-  #menu #arcadePick .vsFieldset > .vsOptions {
-    display: contents;
-  }
-  #menu #arcadePick .vsOptions > .vsControl:has(#arcadeStage) {
-    order: -2;
-  }
-  #menu #arcadePick .vsOptions > .vsControl:has(#arcadeSize) {
-    order: 1;
-  }
-  #menu #arcadePick .vsOptions > .vsControl:has(#arcadeLevel) {
-    order: 2;
-  }
-  #arcadePick .vsOptions > .vsControl:has(#arcadeStage) > label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 }
