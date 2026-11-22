@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { BASE } from '../fake-online-service';
 import { CONF, runConformanceCli, type WsConformanceDeps } from './conformance-ws-adapter';
 import { LOCAL_HTTP_SCHEME, LOCAL_WS_SCHEME, LOOPBACK_HOST } from './constants';
+import type { RelayOptions } from '../../../core/relay/core';
 import { startWsServer, type Delivery, type WsServer } from './server';
 
 /** The relay:conformance runner against the in-process RelayCore server: no real backend, loopback only. Real timers, short waits. */
@@ -28,8 +29,8 @@ function localDeps(s: WsServer): WsConformanceDeps {
   return { fetch: (input, init) => fetch(map(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, LOCAL_HTTP_SCHEME), init), WebSocket: Local };
 }
 
-async function run(args: readonly string[], delivery: Delivery = 'text', closeCodeOverride?: number): Promise<{ code: number; out: string; err: string }> {
-  srv = await startWsServer({ backend: 'relay', delivery, ...(closeCodeOverride === undefined ? {} : { closeCodeOverride }) });
+async function run(args: readonly string[], delivery: Delivery = 'text', closeCodeOverride?: number, relayOptions?: RelayOptions): Promise<{ code: number; out: string; err: string }> {
+  srv = await startWsServer({ backend: 'relay', delivery, ...(relayOptions === undefined ? {} : { relayOptions }), ...(closeCodeOverride === undefined ? {} : { closeCodeOverride }) });
   let out = '';
   let err = '';
   const code = await runConformanceCli(args, { [CONF.urlEnv]: BASE }, { out: (l) => { out += `${l}\n`; }, err: (l) => { err += `${l}\n`; } }, localDeps(srv));
@@ -69,6 +70,23 @@ describe('relay:conformance runner', () => {
     const adv = await run(['--only', 'malformed', '--advisory-close', ...FAST], 'text', GATEWAY_CLOSE);
     expect((JSON.parse(adv.out) as { report: { failed: number } }).report.failed).toBe(0);
     expect(adv.code).toBe(CONF.exit.ok);
+  });
+
+  it('--only chat: the chat cases pass over real sockets with chat on', async () => {
+    const r = await run(['--only', 'chat', ...FAST], 'text', undefined, { chat: true });
+    const j = JSON.parse(r.out) as { report: { passed: number; failed: number; results: { id: string; status: string }[] } };
+    expect(j.report.failed).toBe(0);
+    expect(j.report.passed).toBeGreaterThanOrEqual(6);
+    expect(j.report.results.every((x) => x.id.startsWith('chat.'))).toBe(true);
+    expect(r.code).toBe(CONF.exit.ok);
+  });
+
+  it('--only chat: every chat case skips (no failure) with chat off', async () => {
+    const r = await run(['--only', 'chat', ...FAST]);
+    const j = JSON.parse(r.out) as { report: { passed: number; failed: number; skipped: number } };
+    expect([j.report.passed, j.report.failed]).toEqual([0, 0]);
+    expect(j.report.skipped).toBeGreaterThanOrEqual(8);
+    expect(r.code).toBe(CONF.exit.ok);
   });
 
   it('--no-binary skips malformed.binary instead of sending a binary message', async () => {

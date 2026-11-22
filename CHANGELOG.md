@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Relay package 1.1.0 (MINOR, `PROTOCOL_VERSION` stays 3): conformance chat cases (`chat.forward`, `chat.bad-text`, `chat.rate`, `chat.oversize`, `chat.stale-match`, `chat.limit`, `chat.undelivered`, `chat.after-result`; docs/ONLINE-PROTOCOL.md 4a) that skip unless WELCOME `caps` bit0 is set, so a relay with chat off still passes the suite; select them with `relay:conformance --only chat`. Verified against the in-repo RelayCore with chat on (no skips) and off (chat cases skip). Tag `relay-v1.1.0` is the coordinator's.
+
 - Roster24 Brazgor kit step (step S, `SIM_VERSION` 96): the kit already has no twin (Forge Gore was de-duped at 91; Molten Hide is the only thorns ability), pinned in `abilities-c.test.ts`; no data change and no life retune (1v1 45.7, 2v2 46.0 percent). The Pyre Totem no-flinch zone is not in this step (a new zone system, slot 3). Arcade only; the release set stays empty. Re-record reason: version bump only, every golden changes only the simVersion header.
 
 - Roster24 Kindrel kit step (step S, `SIM_VERSION` 95): the kit already has no twin (Ember Bite and Cinder Spray share no kind, box and damage with any other ability), pinned in `abilities-c.test.ts`; the light hit-strength override and the omni AI rule already exist, so no data change and no life retune (1v1 45.9, 2v2 46.7 percent). Arcade only; the release set stays empty. Re-record reason: version bump only, every golden changes only the simVersion header.
