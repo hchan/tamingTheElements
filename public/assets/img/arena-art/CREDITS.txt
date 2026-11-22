@@ -1,0 +1,4 @@
+Title splash and element arena backdrops: AI-generated (SDXL base 1.0, own work, no third-party art), cropped and converted to WebP
+by tools/assets/arena-gen/install-arena-art.py. Approved by the art-director agent, see tools/assets/arena-gen/provenance/approval.json.
+No attribution required. SDXL base is under the CreativeML Open RAIL++-M licence; its terms for shipping generated images are an open
+owner question, as for the other SDXL art (see tools/assets/splash-gen/license.txt).

@@ -108,9 +108,9 @@
     "beats_shipped": true
   },
   "spore_burst": {
-    "approved": "r263-spore-burst_100731_512x512.png",
+    "approved": "r944-spore-burst_119508.png",
     "reviewer": "art-director",
-    "date": "2026-11-20",
+    "date": "2026-11-22",
     "beats_shipped": true
   },
   "cinder_spray": {
@@ -153,6 +153,24 @@
     "approved": "bristle_stomp.png",
     "reviewer": "art-director",
     "date": "2026-11-20",
+    "beats_shipped": true
+  },
+  "wind_wall": {
+    "approved": "glyph-wind-a6.png",
+    "reviewer": "art-director",
+    "date": "2026-11-22",
+    "beats_shipped": true
+  },
+  "talon_rake": {
+    "approved": "glyph-b.png",
+    "reviewer": "art-director",
+    "date": "2026-11-22",
+    "beats_shipped": true
+  },
+  "skitter": {
+    "approved": "skitter-s3.png",
+    "reviewer": "art-director",
+    "date": "2026-11-22",
     "beats_shipped": true
   }
 }

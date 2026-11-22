@@ -1,5 +1,5 @@
 {
-  "licence": "own work (AI-generated, SDXL on the project GPU box)",
+  "licence": "own work (AI-generated, SDXL on the project GPU box), except icons with a credit field",
   "icons": {
     "ember_bite": {
       "url": "img/hud/ability-icons-ai/ember_bite.png",
@@ -257,12 +257,12 @@
       "url": "img/hud/ability-icons-ai/spore_burst.png",
       "w": 128,
       "h": 128,
-      "sha256": "ee27dd28a566329bee9c8f9cf6af8cd44ec1d3adf8a1b9860e601068529ec262",
-      "source": "r263-spore-burst_100731_512x512.png",
+      "sha256": "685ae1c01db4510e584a9c6ddb44a0542e4211250c75e520b0c5f8f2588a86a8",
+      "source": "r944-spore-burst_119508.png",
       "approval": {
-        "approved": "r263-spore-burst_100731_512x512.png",
+        "approved": "r944-spore-burst_119508.png",
         "reviewer": "art-director",
-        "date": "2026-11-20",
+        "date": "2026-11-22",
         "beats_shipped": true,
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
@@ -361,6 +361,49 @@
         "approved": "bristle_stomp.png",
         "reviewer": "art-director",
         "date": "2026-11-20",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "wind_wall": {
+      "url": "img/hud/ability-icons-ai/wind_wall.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "b5d5ea30332299bb7eb3f4b5d5e7e109ee124e1a595342fe30cfe622af02fe9c",
+      "source": "glyph-wind-a6.png",
+      "approval": {
+        "approved": "glyph-wind-a6.png",
+        "reviewer": "art-director",
+        "date": "2026-11-22",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
+    },
+    "talon_rake": {
+      "url": "img/hud/ability-icons-ai/talon_rake.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "9b9b0d7696cc92e6c9eaa63e7fc7b716c225e5928a0135f8a94d95aec0d60414",
+      "source": "glyph-b.png",
+      "approval": {
+        "approved": "glyph-b.png",
+        "reviewer": "art-director",
+        "date": "2026-11-22",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      },
+      "credit": "Talon Rake: glyph \"Triple scratches\" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), rasterised, tinted and embossed on a procedural medallion."
+    },
+    "skitter": {
+      "url": "img/hud/ability-icons-ai/skitter.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "e9723d21fc66d125d40171b80a490ae3fd85baba4222657b9ad4fb4446a28957",
+      "source": "skitter-s3.png",
+      "approval": {
+        "approved": "skitter-s3.png",
+        "reviewer": "art-director",
+        "date": "2026-11-22",
         "beats_shipped": true,
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }

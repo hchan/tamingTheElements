@@ -21,6 +21,12 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
       expect(aiIconUrl(slot)).toBe(`assets/${index.icons[slot]?.url ?? ''}`);
     }
   });
+  it('credits the third-party talon_rake glyph (Lorc, CC BY 3.0) in the index and CREDITS.txt', () => {
+    const credit = (index.icons as Record<string, { credit?: string }>).talon_rake?.credit ?? '';
+    expect(credit).toContain('Lorc');
+    expect(credit).toContain('CC BY 3.0');
+    expect(readFileSync(`${DIR}/CREDITS.txt`, 'utf8')).toContain(credit);
+  });
   it('ties each keyed-output approval to the shipped bytes', () => {
     const keyed = JSON.parse(readFileSync('tools/assets/icon-gen/provenance/keyed-approval.json', 'utf8')) as Record<string, { reviewer?: string; sha256?: string }>;
     for (const [slot, v] of Object.entries(keyed)) {
@@ -31,7 +37,7 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
   });
   it('maps the abilities that have an icon and no others', () => {
     expect(aiIconKeyOfSprite('emberBite')).toBe('hud:ability:ember_bite');
-    expect(aiIconKeyOfSprite('talonRake')).toBe('hud:ability:gale_talon');
+    expect(aiIconKeyOfSprite('talonRake')).toBe('hud:ability:talon_rake');
     expect(aiIconKeyOfSprite('stoop')).toBe('hud:ability:stoop');
     expect(aiIconKeyOfSprite('myceliumMend')).toBe('hud:ability:mycelium_mend');
     expect(aiIconKeyOfSprite('boulderRoll')).toBe('hud:ability:boulder_roll');
@@ -45,7 +51,7 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
     expect(aiIconKeyOfSprite('cinderSpray')).toBe('hud:ability:cinder_spray');
     expect(aiIconKeyOfSprite('staticMote')).toBe('hud:ability:static_mote');
     expect(aiIconKeyOfSprite('bristleStomp')).toBe('hud:ability:bristle_stomp');
-    expect(aiIconKeyOfSprite('skitter')).toBeUndefined(); // failed five review rounds, not installed
+    expect(aiIconKeyOfSprite('skitter')).toBe('hud:ability:skitter');
     expect(aiIconKeyOfSprite('healSpring')).toBeUndefined();
     expect(aiIconKeyOfSprite('tideSurge')).toBeUndefined();
     expect(aiIconKeyOfSprite('whirlpool')).toBeUndefined();
