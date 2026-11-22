@@ -360,5 +360,7 @@
  * 98: Arcade only (Classic hashes unchanged). Stun immunity (qa-r109 #2 stun lock): after any stun ends (natural end or cap recovery) the victim cannot be
  *    re-stunned for STUN_IMMUNE_TICKS = 20 game ticks; damage and knockback still apply; parry, guard break and supers keep their stun. No new state (read from stunUntil).
  *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 98 stun immunity).
+ * 99: Arcade only (Classic hashes unchanged). Data-only retune of six ARCADE_RACE_NUMBERS rows (fiara, pax, wispera, treenoc, rokcore, sindarosa) after the v98 stun immunity moved wins from ranged to melee.
+ *    Re-record reason: Arcade goldens and the balance baseline change (SIM_VERSION 99 life/damage retune).
  */
-export const SIM_VERSION = 98;
+export const SIM_VERSION = 99;
