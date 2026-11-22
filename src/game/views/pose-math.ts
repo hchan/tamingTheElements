@@ -117,7 +117,8 @@ export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, pow
   if (kind === PoseKind.tagIn) {
     p.alpha *= tagInAlpha(Math.min(1, Math.max(0, fadeAgeMs / dur)));
     if (!reduced) {
-      p.ox += -dir * tagEntrySlide(t);
+      p.ox += -dir * tagEntrySlide(t) * Math.max(1, power); // power: slide scale from tagEntryPower
+      if (dir === 0) p.oy -= tagEntrySlide(t) * 0.75; // dir 0: no room at a wall, drop in from above
       const pop = popScale(t);
       p.sx *= pop;
       p.sy *= pop;
