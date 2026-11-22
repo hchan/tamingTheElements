@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PoseKind, applyPose, easeOutCubic, resetPose, type Pose } from './pose-math';
-import { TAG_IN_SLIDE_PX, tagEntryDir, tagEntrySlide } from './tag-entry';
+import { TAG_IN_BODY_PX, TAG_IN_MAX_SCALE, TAG_IN_SLIDE_PX, tagEntryDir, tagEntryOf, tagEntryPower, tagEntrySlide } from './tag-entry';
 
 const HERO_W = 100;
 
@@ -34,5 +34,38 @@ describe('tag-entry', () => {
     const p: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
     applyPose(p, PoseKind.tagIn, 0, dir, 1, false);
     expect(toLeft + p.ox + HERO_W).toBeLessThanOrEqual(foeLeft);
+  });
+
+  // qa-r125 left wall: at x 20 with the foe about 100 px away the 120 px slide left the incoming sprite (wider than its sim box) on the foe.
+  it('a foe in contact lengthens the slide so the sprite clears it; a far foe keeps the base slide', () => {
+    const have = [1, 1, 0];
+    const near = tagEntryPower(2, 0, 0, [0, 1, 0], have, [20, 122, 0]);
+    expect(near).toBeGreaterThan(1);
+    expect(near).toBeLessThanOrEqual(TAG_IN_MAX_SCALE);
+    expect(TAG_IN_SLIDE_PX * near + 100).toBeGreaterThanOrEqual(TAG_IN_BODY_PX); // gap 102 + slide covers the body width
+    expect(tagEntryPower(2, 0, 0, [0, 1, 0], have, [20, 900, 0])).toBe(1);
+    expect(tagEntryPower(2, -1, 0, [0, 1, 0], have, [20, 122, 0])).toBe(1); // no outgoing position: base slide
+  });
+
+  it('applyPose scales the tag-in slide by the power (left wall, foe in contact)', () => {
+    const power = tagEntryPower(2, 0, 0, [0, 1, 0], [1, 1, 0], [20, 122, 0]);
+    const base: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
+    const long: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
+    applyPose(base, PoseKind.tagIn, 0, 1, 1, false);
+    applyPose(long, PoseKind.tagIn, 0, 1, power, false);
+    expect(long.ox).toBeLessThan(base.ox - 30);
+  });
+
+  it('at a wall the hero drops in from above instead of sliding out of the arena', () => {
+    const ev = { to: 2, from: 0, team: 0 };
+    const left = tagEntryOf(ev, 3, [0, 1, 0], [1, 1, 0], [20, 122, 0]);
+    expect(left[0]).toBe(0);
+    const right = tagEntryOf(ev, 3, [0, 1, 0], [1, 1, 0], [1850, 1700, 0]);
+    expect(right[0]).toBe(0);
+    expect(tagEntryOf(ev, 3, [0, 1, 0], [1, 1, 0], [800, 1000, 0])[0]).toBe(1); // mid arena: the usual sideways slide
+    const p: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
+    applyPose(p, PoseKind.tagIn, 0, 0, 1, false);
+    expect(p.ox).toBeCloseTo(0);
+    expect(p.oy).toBeLessThan(-40);
   });
 });
