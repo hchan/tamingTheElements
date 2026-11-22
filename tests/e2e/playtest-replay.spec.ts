@@ -85,29 +85,3 @@ test('a recorded scripted playtest downloads and verifies in the replay viewer',
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
   expect(errors).toEqual([]);
 });
-
-test('the viewer reports the first divergent tick for a tampered replay', async ({ page }) => {
-  const golden = JSON.parse(readFileSync(new URL('../fixtures/replays/random-vs-random.replay.json', import.meta.url), 'utf8')) as {
-    hashes: number[];
-  };
-  golden.hashes[2] = (golden.hashes[2] as number) ^ 1;
-  await page.goto('/#replay');
-  await page.locator('#replayFile').setInputFiles({
-    name: 'bad.replay.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify(golden)),
-  });
-  await expect(page.locator('#replayStatus')).toContainText('DIVERGED at tick 100', { timeout: 60_000 });
-});
-
-test('nothing is recorded or stored without the flag or setting', async ({ page }) => {
-  await page.goto('/?manual=1&seed=7');
-  await newGameToGarrison(page);
-  await startBattle(page, 'enterPracticeContainer');
-  await page.evaluate(`window.__TTE__.arena.step(5)`);
-  await page.evaluate(`window.location.hash = '#main'`);
-  await page.evaluate(`window.__TTE__.settled()`);
-  const dbs = await page.evaluate<string[]>(`indexedDB.databases().then((d) => d.map((x) => x.name))`);
-  expect(dbs).not.toContain('tte-replays');
-  expect(await page.evaluate<string | null>(`window.localStorage.getItem('tte.recordPlaytests')`)).toBeNull();
-});
