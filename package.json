@@ -56,6 +56,7 @@
     "e2e:durations": "tsx tools/ci/e2e-durations.ts",
     "gate:commit": "tsx tools/ci/gate.ts commit",
     "gate:push": "tsx tools/ci/gate.ts push",
+    "gate:fast": "tsx tools/ci/gate-fast.ts",
     "nightly:submit": "tsx tools/ci/nightly-e2e.ts submit",
     "nightly:collect": "tsx tools/ci/nightly-e2e.ts collect",
     "nightly:status": "tsx tools/ci/nightly-e2e.ts status",
