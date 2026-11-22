@@ -69,8 +69,10 @@ test.afterEach(async () => {
 
 class RouteSender implements Sender {
   readonly routes = new Map<string, WebSocketRoute>();
+  /** When true the relay sends each frame as a binary message holding the same ASCII text (docs/ONLINE-PROTOCOL.md); the client reads it as an ArrayBuffer. */
+  binary = false;
   send(conn: string, text: string): void {
-    this.routes.get(conn)?.send(text);
+    this.routes.get(conn)?.send(this.binary ? Buffer.from(text, 'ascii') : text);
   }
   close(conn: string, code: number): void {
     void this.routes.get(conn)?.close({ code });
@@ -113,9 +115,10 @@ async function serve(page: Page, name: string, rig: Rig): Promise<void> {
 }
 
 /** Two pages, matched, picks done, arenas running (short match, bots on both sides). */
-async function startMatch(browser: import('@playwright/test').Browser): Promise<{ rig: Rig; a: Page; b: Page }> {
+async function startMatch(browser: import('@playwright/test').Browser, opts: { binary?: boolean } = {}): Promise<{ rig: Rig; a: Page; b: Page }> {
   const events: RelayEvent[] = [];
   const sender = new RouteSender();
+  sender.binary = opts.binary === true;
   const clock = { skew: 0 };
   const ctx: RelayCtx = { now: () => Date.now() + clock.skew, randomInt: (n) => Math.floor(Math.random() * n) };
   const core = new RelayCore(new InMemoryStore(() => ctx.now()), sender, { onEvent: (e) => { events.push(e); } });
@@ -215,6 +218,18 @@ test('a dropped socket mid-match resumes the same match, with no second game', a
 
   for (const p of [a, b]) await expect(p.locator('#quickAgain')).toBeVisible({ timeout: 90_000 });
   expect(rig.events.filter((e) => e.kind === 'match-start')).toHaveLength(1);
+  await expect.poll(() => results(rig).length, { timeout: 15_000, message: 'relay result events' }).toBeGreaterThan(0);
+  expect(results(rig).every((r) => r.agreed)).toBe(true);
+  expect(rig.events.some((e) => e.kind === 'desync')).toBe(false);
+  for (const p of [a, b]) await expect(p.locator('#quickFailure')).toBeHidden();
+});
+
+// Long gate (two pages, about 40 s, estimate). Same match with every relay frame sent as a binary WebSocket message (ASCII text inside): the real browser path of
+// inbound.ts (binaryType arraybuffer, synchronous decode) rather than the unit-test fake.
+test('a match with binary relay frames ends agreed on both pages', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const { rig, a, b } = await startMatch(browser, { binary: true });
+  for (const p of [a, b]) await expect(p.locator('#quickAgain')).toBeVisible({ timeout: 90_000 });
   await expect.poll(() => results(rig).length, { timeout: 15_000, message: 'relay result events' }).toBeGreaterThan(0);
   expect(results(rig).every((r) => r.agreed)).toBe(true);
   expect(rig.events.some((e) => e.kind === 'desync')).toBe(false);
