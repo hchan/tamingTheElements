@@ -13,8 +13,8 @@ import { CODE_LENGTH } from './rooms-rules';
 /** Decoded fields per frame (docs/ONLINE-PROTOCOL.md section 4). Integers are big-endian on the wire. */
 export interface FrameFields {
   hello: { ver: number; simVersion: number; resumeSession: number };
-  /** `caps` (byte 7): bit0 = chat. Optional on the type so a relay that does not set it sends 0; decode always fills it. */
-  welcome: { ver: number; sessionId: number; resumed: number; caps?: number; serverHint: number };
+  /** `caps` (byte 7): bit0 = chat. */
+  welcome: { ver: number; sessionId: number; resumed: number; caps: number; serverHint: number };
   queueJoin: { mode: number };
   queueLeave: object;
   queueState: { waitingSec: number };
