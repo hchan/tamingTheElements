@@ -12,6 +12,15 @@ describe('docs/ABILITY-AUDIT.md', () => {
     expect(doc).toContain(name);
   });
 
+  it.each(['hoof-crash', 'kelp-lash', 'boulder-roll', 'stinging-filament', 'bell-pulse'])('row for "%s" carries its damage and cooldown', (id) => {
+    const def = ALL_ABILITIES.find((a) => String(a.id) === id);
+    expect(def, id).toBeDefined();
+    const row = doc.split('\n').find((l) => l.startsWith('|') && l.includes(id.replace(/-/g, ' ')));
+    expect(row, id).toBeDefined();
+    expect(row).toContain(`${String(def?.damage)} dmg`);
+    expect(row).toContain(`${String((def?.cooldownMs ?? 0) / 1000)} s cd`);
+  });
+
   it('has the graphics pass section', () => {
     expect(doc).toContain('## graphics pass');
   });

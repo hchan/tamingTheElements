@@ -22,12 +22,12 @@ Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not 
 | Fiara | Fireball | range | 15 dmg, 0.6 s cd (Arcade 26 ticks), max 2, speed 8, 25x12; 25 DPS | 7.5% Classic damage; lowest ranged DPS of the fire heroes, the Arcade damagePm is 1450 to compensate | OK: fire-coloured, clear |
 | Kindrel (fire, melee) | Ember Bite | melee | roster-24 batch 1: short fast bite chain, 8 dmg, 340 ms cd, max 3 active, Arcade numbers fitted with mat.sh; lesson words in ability-lessons.ts | New hero, balance fitted in SIM_VERSION 72 | Art pending the batch-1 bake |
 | Kindrel | Cinder Spray | range cone | roster-24 batch 1: omni ring of embers, 8 dmg, speed 6, 4 s cd; lesson words in ability-lessons.ts | New hero, see Ember Bite | Art pending |
-| Nykra (water, melee) | Hoof Crash | melee | roster-24 batch 1: heavy stomp with knockback | New hero, see Ember Bite | Art pending |
-| Nykra | Kelp Lash | melee | roster-24 batch 1: long-reach whip | New hero, see Ember Bite | Art pending |
+| Nykra (water, melee) | Hoof Crash | melee | roster-24 batch 1: 20 dmg, 1 s cd, max 2, 70x50 box, heavy stomp with knockback | New hero, see Ember Bite | Art pending |
+| Nykra | Kelp Lash | melee | roster-24 batch 1: 14 dmg, 2.5 s cd, 130x30 box, long-reach whip | New hero, see Ember Bite | Art pending |
 | Quarrak (earth, ranged) | Hurl Rock | range | 40 dmg, 0.5 s cd (Arcade 90 ticks), max 2, speed 8, 35x35; 80 DPS (about 22 at the Arcade cooldown) | Set A data, reused for Quarrak by roster-24 batch 1 (SIM_VERSION 72); it had no owner at the audit. Quarrak is unreleased: the pickers show him only with ?ff=roster24 in dev and test builds | Sprites img/fx/hurlRock.png and img/fx/loop/hurlRockLoop.png; cast sound rockBullet |
-| Quarrak | Boulder Roll | range | roster-24 batch 1: slow heavy boulder, knockback | New hero, see Ember Bite | Art pending |
-| Hyalia (air, ranged) | Stinging Filament | range | roster-24 batch 1: thin fast filament, short stun; with flag withOverTime also leaves Venom (venom 19, halves healing) | New hero, see Ember Bite | Art pending |
-| Hyalia | Bell Pulse | range | roster-24 batch 1: slow pulse ring with knockback | New hero, see Ember Bite | Art pending |
+| Quarrak | Boulder Roll | range | roster-24 batch 1: 26 dmg, 3.5 s cd, speed 4, slow heavy boulder, knockback | New hero, see Ember Bite | Art pending |
+| Hyalia (air, ranged) | Stinging Filament | range | roster-24 batch 1: 10 dmg, 0.9 s cd, max 2, speed 12, thin fast filament, short stun; with flag withOverTime also leaves Venom (venom 19, halves healing) | New hero, see Ember Bite | Art pending |
+| Hyalia | Bell Pulse | range | roster-24 batch 1: 6 dmg, 5 s cd, speed 5, slow pulse ring with knockback | New hero, see Ember Bite | Art pending |
 | Brazgor (fire, melee) | Forge Gore | melee | roster-24 batch 2: 30 dmg, 2 s cd, 600 ms recovery, 70x80 box, slow overhead anvil blow (SIM_VERSION 91 de-dupe); lesson words in ability-lessons.ts; cast FX in brazgor-fx.ts | New hero, fitted in SIM_VERSION 73 | Generated art, see fx batch k |
 | Brazgor | Molten Hide | buff | 3 s, -50% damage taken, thorns 4 per melee hit that lands on the bearer (WP 2.0 thorns); lesson words in ability-lessons.ts; cast glow in brazgor-fx.ts | New hero, see Forge Gore | Generated art |
 | Glimmaw (water, ranged) | Lure Orb | range | 14 dmg, hovers at 360 px for 80 ticks as a hazard (WP 2.0 hover) | New hero, see Forge Gore | Generated art |
