@@ -2,7 +2,7 @@ import { ROOM_CODE_RE } from '../relay';
 
 /** Lobby-side frames (spec section 4) that `wire.ts` does not carry. */
 export type Lobby =
-  | { t: 'welcome'; ver: number; sessionId: number; resumed: boolean }
+  | { t: 'welcome'; ver: number; sessionId: number; resumed: boolean; caps: number }
   | { t: 'queue'; waitingSec: number }
   | { t: 'room-created'; code: string; ttlSec: number }
   | { t: 'room-peer'; joined: boolean }
@@ -18,7 +18,7 @@ export function decodeLobby(b: Uint8Array): Lobby | undefined {
   if (LOBBY_SIZE[type] !== b.length) return undefined;
   const d = new DataView(b.buffer, b.byteOffset, b.byteLength);
   switch (type) {
-    case 0x02: return { t: 'welcome', ver: d.getUint8(1), sessionId: d.getUint32(2), resumed: d.getUint8(6) === 1 };
+    case 0x02: return { t: 'welcome', ver: d.getUint8(1), sessionId: d.getUint32(2), resumed: d.getUint8(6) === 1, caps: d.getUint8(7) };
     case 0x12: return { t: 'queue', waitingSec: d.getUint16(1) };
     case 0x21: {
       const code = String.fromCharCode(...b.subarray(1, 7));

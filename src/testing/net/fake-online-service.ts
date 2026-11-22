@@ -61,10 +61,10 @@ export class TestWs implements WsLike, ServedWs {
   }
 }
 
-export const welcome = (ver: number, resumed: number): Uint8Array => {
+export const welcome = (ver: number, resumed: number, caps = 0): Uint8Array => {
   const b = new Uint8Array(9);
   const d = new DataView(b.buffer);
-  b[0] = 0x02; b[1] = ver; d.setUint32(2, SESSION_ID); b[6] = resumed; d.setUint16(7, 64);
+  b[0] = 0x02; b[1] = ver; d.setUint32(2, SESSION_ID); b[6] = resumed; b[7] = caps; b[8] = 64;
   return b;
 };
 /** MATCH_START; `p` overrides what the service says about input delay, sim version and batch period (defaults: 2, 86, 1). */
@@ -97,6 +97,8 @@ export class FakeService {
   resumeSessions = true;
   serverVer = PROTOCOL_VERSION;
   welcomeVer: number | undefined;
+  /** WELCOME byte 7 (bit0 = chat). */
+  caps = 0;
   /** What MATCH_START announces (tests change them to exercise the screen). */
   simVersion = 86;
   inputDelay = 2;
@@ -155,7 +157,7 @@ export class FakeService {
           return;
         }
         const resumed = this.resumeSessions && hello.resume === SESSION_ID;
-        ws.serve(welcome(this.welcomeVer ?? this.serverVer, resumed ? 1 : 0));
+        ws.serve(welcome(this.welcomeVer ?? this.serverVer, resumed ? 1 : 0, this.caps));
         if (resumed) ws.serve(matchStart(this.slots.get(ws) ?? 0, this.matchNo, this));
         break;
       }
