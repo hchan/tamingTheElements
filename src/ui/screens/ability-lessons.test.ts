@@ -39,7 +39,7 @@ describe('ability lessons', () => {
 
   it('pins the Nykra lessons', () => {
     expect(lessonsFor(characterId('nykra')).map((l) => l?.abilityId)).toEqual(['hoof-crash', 'kelp-lash']);
-    expect(ABILITY_LESSONS.get('hoof-crash')?.line).toContain('knocks the foe back');
+    expect(ABILITY_LESSONS.get('hoof-crash')?.line).toContain('heavy stomp');
   });
 
   it('pins the Abyssor lessons', () => {
