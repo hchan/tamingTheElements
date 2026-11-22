@@ -31,3 +31,16 @@ export const DISAGREE_TICK = 50;
 export const DISAGREE_HASHES = [0x1111, 0x2222] as const;
 /** ESTIMATE: wall-clock budget of one scenario's steady send pacing, in frames per second per side; asserted below the grant by the tests. */
 export const SCENARIO_FRAMES_PER_SEC = 1000 / BATCH_GAP_MS;
+
+// --chat scenario (chat-9). The rate (1 line/s) and burst (3) are CONTRACT and come from the relay's truth module, not copied here.
+export { CHAT_BURST, CHAT_RATE_PER_SEC } from '../src/core/relay/chat-rules';
+/** ESTIMATE: gap between paced chat lines (at the contract's 1 line/s per sender, so none should be refused). */
+export const CHAT_GAP_MS = 1000;
+/** ESTIMATE: gap inside the over-rate burst (20 lines/s per sender, far above the contract rate). */
+export const CHAT_BURST_GAP_MS = 50;
+/** ESTIMATE: paced lines each side sends before RESULT. */
+export const CHAT_PACED_PER_SIDE = 5;
+/** ESTIMATE: lines one side sends in the burst; more than CHAT_BURST so at least one is refused. */
+export const CHAT_BURST_SIZE = 5;
+/** ESTIMATE: idle time before the burst, so the relay's bucket is full again (needs at least CHAT_BURST * 1000 / CHAT_RATE_PER_SEC = 3000 ms). */
+export const CHAT_IDLE_BEFORE_BURST_MS = 3500;

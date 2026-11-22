@@ -3,7 +3,9 @@ import { FakeRelay } from '../../src/testing/net/fake-relay';
 import { Harness, peerStatus, resultAck, type TestWs } from '../../src/testing/net/fake-online-service';
 import { decodeText } from '../../src/game/net/ws/text-codec';
 import { SIM_VERSION } from '../../src/core/version';
-import { BATCH_GAP_MS, GRANT_FRAMES_PER_SEC, SCENARIO_FRAMES_PER_SEC, SCENARIO_FRAMES_PER_SIDE } from '../../tools/live-match-constants';
+import { BATCH_GAP_MS, CHAT_BURST, CHAT_BURST_GAP_MS, CHAT_BURST_SIZE, CHAT_IDLE_BEFORE_BURST_MS, CHAT_PACED_PER_SIDE, CHAT_RATE_PER_SEC, GRANT_FRAMES_PER_SEC, SCENARIO_FRAMES_PER_SEC, SCENARIO_FRAMES_PER_SIDE } from '../../tools/live-match-constants';
+import { RelayCore, encodeText as relayEncode } from '../../src/core/relay';
+import { InMemoryStore } from '../../src/core/relay/testing';
 import { badVersion, HELP, runPaired, SCENARIOS, type MatchEv, type Peer, type Rig } from '../../tools/live-match-scenarios';
 import { main } from '../../tools/live-match';
 
@@ -26,9 +28,16 @@ describe('live-match constants and flags', () => {
   });
 });
 
-async function setup(): Promise<{ h: Harness; a: Peer; b: Peer; wa: TestWs; wb: TestWs; m: MatchEv; rig: Rig; steps: string[] }> {
+async function setup(core?: { chat: boolean }): Promise<{ h: Harness; a: Peer; b: Peer; wa: TestWs; wb: TestWs; m: MatchEv; rig: Rig; steps: string[] }> {
   const h = new Harness();
-  h.svc.relay = new FakeRelay(h.clock, 1);
+  if (core === undefined) h.svc.relay = new FakeRelay(h.clock, 1);
+  else {
+    // The in-repo RelayCore behind the in-memory sockets (as src/testing/net/relay-core-service.ts, but with chat switchable).
+    const rc = new RelayCore(new InMemoryStore(() => h.clock.ms), { send: (id, text) => { (h.svc.sockets[Number(id.slice(1))] as TestWs).emit('message', { data: text }); }, close: () => undefined }, { chat: core.chat });
+    let lcg = 7;
+    const ctx = { now: () => h.clock.ms, randomInt: (n: number) => { lcg = (Math.imul(lcg, 1103515245) + 12345) >>> 0; return lcg % n; } };
+    h.svc.onFrame = (ws, bytes) => { void rc.handle(`c${String(h.svc.sockets.indexOf(ws as TestWs))}`, relayEncode(bytes), ctx); };
+  }
   const a = { name: 'A', ...h.client() };
   const b = { name: 'B', ...h.client() };
   const ra = a.c.connect(); await h.flush();
@@ -37,10 +46,11 @@ async function setup(): Promise<{ h: Harness; a: Peer; b: Peer; wa: TestWs; wb: 
   const [wa, wb] = [h.svc.sockets[0] as TestWs, h.svc.sockets[1] as TestWs];
   h.svc.wire(wa, wb);
   a.c.joinQueue(); b.c.joinQueue(); await h.flush();
+  if (core !== undefined) await h.step(10);
   const m = a.events.find((e): e is MatchEv => e.t === 'match') as MatchEv;
   const steps: string[] = [];
   const rig: Rig = {
-    sleep: async (ms) => { await h.step(ms); (h.svc.relay as FakeRelay).advance(); await h.flush(); },
+    sleep: async (ms) => { await h.step(ms); h.svc.relay?.advance(); await h.flush(); },
     now: () => h.clock.ms,
     step: (l) => { steps.push(l); },
     drop: (p) => {
@@ -99,5 +109,37 @@ describe('live-match scenarios against FakeRelay', () => {
   it('a scenario cannot exceed its per-side frame budget', async () => {
     const { rig, a, b, m } = await setup();
     await expect((async () => { for (let i = 0; i < 6; i++) await runPaired('malformed', rig, a, b, m); })()).rejects.toThrow(/frame budget/);
+  });
+});
+
+describe('live-match --chat against the in-repo RelayCore', () => {
+  it('chat constants: lines stay under the frame budget and the grant; the idle refills the bucket', () => {
+    expect(CHAT_PACED_PER_SIDE + 1 + 1 + CHAT_BURST_SIZE).toBeLessThanOrEqual(SCENARIO_FRAMES_PER_SIDE); // paced + RESULT + one after it + burst
+    expect(2 * (1000 / CHAT_BURST_GAP_MS)).toBeLessThanOrEqual(GRANT_FRAMES_PER_SEC);
+    expect(CHAT_IDLE_BEFORE_BURST_MS).toBeGreaterThanOrEqual((CHAT_BURST * 1000) / CHAT_RATE_PER_SEC);
+    expect(CHAT_BURST_SIZE).toBeGreaterThan(CHAT_BURST);
+  });
+  it('chat on: lines forward, the burst is refused in part, no close, RESULT agreed, peak rate reported', async () => {
+    const { rig, a, b, m, steps } = await setup({ chat: true });
+    expect(a.c.chatSupported()).toBe(true);
+    expect(await runPaired('chat', rig, a, b, m)).toBe(true);
+    const log = steps.join('\n');
+    expect(log).toMatch(/chat: A->B paced 5\/5 after-result 1\/1 ok=true/);
+    expect(log).toMatch(/chat: burst A delivered \d+ refused \d+/);
+    expect(log).toMatch(/chat: peak \d+ frames\/s/);
+    expect(log).not.toMatch(/SKIPPED/);
+    expect(a.events.some((e) => e.t === 'closed') || b.events.some((e) => e.t === 'closed')).toBe(false);
+  });
+  it('chat on: the log never carries line text', async () => {
+    const { rig, a, b, m, steps } = await setup({ chat: true });
+    await runPaired('chat', rig, a, b, m);
+    expect(steps.join('\n')).not.toMatch(/line [AB]/i);
+  });
+  it('chat off: skipped with a clear message, nothing sent', async () => {
+    const { rig, a, b, m, steps } = await setup({ chat: false });
+    expect(a.c.chatSupported()).toBe(false);
+    expect(await runPaired('chat', rig, a, b, m)).toBe(true);
+    expect(steps.join('\n')).toMatch(/chat: SKIPPED.*chat is off/);
+    expect(steps.join('\n')).not.toMatch(/peak/);
   });
 });
