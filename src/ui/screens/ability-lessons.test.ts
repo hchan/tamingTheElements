@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARCADE_SNAG_SLOT, CHARACTERS, characterId, isLegacyCharacter, isReleased } from '@core/index';
+import { ARCADE_SNAG_SLOT, CHARACTERS, ROSTER_24_CHARACTERS, characterId, isLegacyCharacter, isReleased } from '@core/index';
 import { DEFAULT_BINDINGS, rebind } from '../../game/platform/input/bindings';
 import { ABILITY_LESSONS, SNAG_LESSON, lessonsFor, promptFor } from './ability-lessons';
 
@@ -80,6 +80,16 @@ describe('ability lessons', () => {
     const lessons = lessonsFor(characterId('hyalia'));
     expect(lessons).toHaveLength(2);
     expect(lessons.map((l) => l?.abilityId)).toEqual(['stinging-filament', 'bell-pulse']);
+  });
+
+  it('has Ouroth lessons ready while the hero is still hidden', () => {
+    const lessons = lessonsFor(characterId('ouroth'));
+    expect(lessons).toHaveLength(2);
+    expect(lessons.map((l) => l?.abilityId)).toEqual(['wyrm-coil', 'scorch-breath']);
+  });
+
+  it('has a lesson row for every roster24 ability, released or not', () => {
+    for (const c of ROSTER_24_CHARACTERS) for (const a of c.abilities) expect(ABILITY_LESSONS.has(a), `${c.id} ${a}`).toBe(true);
   });
 
   it('never uses the retired words', () => {
