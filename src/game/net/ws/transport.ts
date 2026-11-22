@@ -197,7 +197,7 @@ export class WebSocketTransport implements Transport {
           this.staleMatch++;
           break;
         }
-        for (const d of this.reorder.push((f as Match).seq, f, this.now(), f.t === 'batch')) this.deliver(d);
+        for (const d of this.reorder.push((f as Match).seq, f, this.now(), f.t === 'batch', f.t === 'batch')) this.deliver(d);
         break;
       case 'setup':
         this.link.onFrame(f.ctlSeq, f.ackCtl, f.body);

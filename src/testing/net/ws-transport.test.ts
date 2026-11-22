@@ -191,20 +191,37 @@ describe('WebSocketTransport unit behaviour', () => {
     expect(b.peerPause).toBeUndefined();
   });
 
-  it('delivers a gap after 40 ms, accepts the late frame once and drops a duplicate', () => {
+  it('delivers a BATCH at once after a seq gap, drops repeats, and takes the missing one when it arrives', () => {
     const { clock, relay, b } = mk();
     const batch = (seq: number) => encodeFrame({ t: 'batch', seq, packet: pkt(seq) });
     const feed = (bytes: Uint8Array) => { relay.b.deliver(encodeText(bytes)); };
-    feed(batch(1));
-    expect(b.receive()).toBeUndefined();
-    feed(batch(1));
-    clock.ms = 40;
-    expect(b.receive()).toBeDefined();
-    expect(b.receive()).toBeUndefined();
-    feed(batch(0)); // Skipped over, now late: a BATCH is idempotent, so it is delivered once.
-    expect(b.receive()).toBeDefined();
     feed(batch(0));
+    expect(b.receive()).toBeDefined();
+    feed(batch(2)); // Seq 1 is lost: no 40 ms hold for a BATCH.
+    expect(b.receive()).toBeDefined();
+    feed(batch(2));
     expect(b.receive()).toBeUndefined();
+    clock.ms = 40;
+    expect(b.receive()).toBeUndefined();
+    feed(batch(1)); // Late: still delivered once.
+    expect(b.receive()).toBeDefined();
+    feed(batch(1));
+    expect(b.receive()).toBeUndefined();
+  });
+
+  it('keeps PAUSE in order: it waits behind a missing seq while BATCHes after the gap are delivered', () => {
+    const { clock, relay, b } = mk();
+    const feed = (f: Parameters<typeof encodeFrame>[0]) => { relay.b.deliver(encodeText(encodeFrame(f))); };
+    feed({ t: 'batch', seq: 0, packet: pkt(0) });
+    feed({ t: 'pause', seq: 2, matchId: 0, flags: 1 });
+    feed({ t: 'batch', seq: 3, packet: pkt(3) });
+    expect(b.receive()).toBeDefined();
+    expect(b.receive()).toBeDefined();
+    expect(b.receive()).toBeUndefined();
+    expect(b.peerPause).toBeUndefined();
+    clock.ms = 40;
+    b.receive();
+    expect(b.peerPause).toEqual({ matchId: 0, flags: 1 });
   });
 
   it('times PING round trips, tracks peer pause, errors, and retries DESYNC/RESULT until stopped', () => {

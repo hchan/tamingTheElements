@@ -250,6 +250,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
   for (const s of sessions) transports[s.side].sendResult(matchId, s.winner ?? 2, 0, s.simTick, finalHashes[s.side]);
   for (let i = 0; i < 2000 && !events.some((e) => e.kind === 'result'); i++) {
     clock.ms++;
+    for (const t of transports) t.tick(); // RESULT is resent every RETRY_MS: lossy links need the timers running.
     await drain();
   }
 
