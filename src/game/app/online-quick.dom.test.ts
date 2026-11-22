@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SIM_VERSION } from '@core/index';
 import type { ArenaLaunch } from '../scenes/launch';
 import { OnlineClient } from '../net/ws/online-client';
-import { errorFrame, Harness, matchStart, peerStatus, type TestWs } from '../../testing/net/fake-online-service';
+import { errorFrame, Harness, matchStart, peerStatus, resultAck, type TestWs } from '../../testing/net/fake-online-service';
 import { FakeRelay } from '../../testing/net/fake-relay';
 import { attachRelayCore } from '../../testing/net/relay-core-service';
 import { ACK_STATUS, HASH_REPORT_MS, type ReportSession } from '../net/ws/match-report';
@@ -468,6 +468,29 @@ describe('online result reporting (RelayCore)', () => {
     await run(r, 2000);
     // The peer sent nothing, so the ACK says "waiting" (1): the 500 ms resend stops, and the slow re-poll (RESULT_REPOLL_MS) sends RESULT once more.
     expect([count(r, 0, 0x42), count(r, 0, 0x50)]).toEqual([1, 2]);
+    r.unmounts.forEach((u) => { u(); });
+  });
+});
+
+describe('online Play again with RESULT unanswered', () => {
+  it('keeps the arena through ACK 1, drops it when the queue frame is out, and ignores a stale ACK 2 afterwards', async () => {
+    const r = relayRig();
+    const [a] = await play(r);
+    const q0 = count(r, 0, 0x10);
+    for (const i of [0, 1]) statusOf(i, sessionWith(111));
+    endOf(0, 0);
+    await run(r, 200); // RESULT sent, the peer's is missing: ACK 1 (waiting)
+    click(a, 'quickAgain');
+    await run(r, 1000); // under PLAY_AGAIN_ACK_WAIT_MS
+    expect([h$.created[0]?.destroyed, count(r, 0, 0x10)]).toEqual([false, q0]);
+    endOf(1, 0); // the peer's RESULT: the next ACK 0 (the re-poll) releases the held join
+    await run(r, 2500);
+    expect(count(r, 0, 0x10)).toBe(q0 + 1);
+    expect(h$.created[0]?.destroyed).toBe(true);
+    (r.h.svc.sockets[0] as TestWs).serve(resultAck(1, ACK_STATUS.disagreed));
+    await r.h.flush();
+    expect(say(a)).not.toBe(RESULT_DISAGREE_TEXT);
+    expect(shown(a, 'quickReport')).toBe(false);
     r.unmounts.forEach((u) => { u(); });
   });
 });

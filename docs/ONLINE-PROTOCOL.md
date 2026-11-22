@@ -163,6 +163,7 @@ Details:
   resends the oldest unacknowledged one every 200 ms [choice], puts the highest `ctlSeq` it has delivered in `ackCtl`, delivers only in `ctlSeq` order and drops duplicates. The reorder and skip-ahead rules above do not apply to it.
 - SETUP details (implemented in `src/game/net/ws/`): the `seq u32` field in SETUP is reserved and sent as 0; `ackCtl = 0xFF` means "nothing delivered yet"; a SETUP with `n = 0` is a pure acknowledgement; a sender holds at most 32 unacknowledged control messages [choice].
 - The relay must never skip BATCH/PAUSE numbers of a sender; the far-ahead cap above is the client's guard if it does.
+- Ordering between PAUSE and BATCH is relaxed: a BATCH may be delivered immediately (it is idempotent), while PAUSE still waits its turn in the reorder buffer, so the two can reach the game in a different order than they were sent.
 - Relay rules: in a queue match slot 0 goes to the player who waited longer, in a room match to the host [choice]; a RESULT retry that arrives after the match record closed (for example by DESYNC) is answered with the current status; HELLO while the service is resting is closed without an answer frame (section 3) [choice].
 - Only match-phase frames are numbered. Control frames (`0x01`-`0x30`) are request/answer and carry no seq; the client tolerates a duplicate answer.
 

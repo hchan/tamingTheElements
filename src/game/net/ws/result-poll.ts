@@ -24,34 +24,45 @@ export class ResultPoll {
   begin(): void {
     this.timer?.();
     this.active = true;
+    this.since = this.d.now() || 1; // One cap for the whole RESULT exchange (resend loop and re-poll alike).
     const pump = (): void => {
       if (!this.active) return;
+      if (this.d.now() - this.since >= RESULT_REPOLL_CAP_MS) { this.stop(); return; }
       this.transport.tick();
       this.timer = this.d.after(RETRY_MS, pump);
     };
     this.timer = this.d.after(RETRY_MS, pump);
   }
 
-  /** RESULT_ACK for the current match: status 1 keeps polling (unless an action waits, which then runs), 0/2 ends it. */
+  /** RESULT_ACK for the current match: status 1 keeps polling (a held action keeps waiting too), 0/2 ends it and runs a held action. */
   onAck(status: number): void {
-    if (status === 1 && this.active && this.held === undefined) this.waiting();
+    if (status === 1 && this.active) this.waiting();
     else {
       this.stop();
       this.held?.();
     }
   }
 
-  /** Runs `action` now, or (while RESULT is unanswered) after the first ACK or PLAY_AGAIN_ACK_WAIT_MS; a newer action replaces an older one. */
-  defer(action: () => void): void {
-    if (!this.active) { action(); return; }
+  /**
+   * Runs `action` now, or (while RESULT is unanswered) after ACK 0/2 or PLAY_AGAIN_ACK_WAIT_MS (never on ACK 1); a newer action replaces an older one.
+   * Returns false only when an action that ran now returned false (a failed send); a held action is accepted (true) and its outcome goes to `onDone`.
+   */
+  defer(action: () => boolean | undefined, onDone?: (ok: boolean) => void): boolean {
+    if (!this.active) {
+      const ok = action() !== false;
+      onDone?.(ok);
+      return ok;
+    }
     this.dropHeld();
     const go = (): void => {
       this.dropHeld();
       this.stop();
-      action();
+      const ok = action() !== false;
+      onDone?.(ok);
     };
     this.held = go;
     this.cancelHeld = this.d.after(PLAY_AGAIN_ACK_WAIT_MS, go);
+    return true;
   }
 
   stop(): void {
@@ -70,7 +81,6 @@ export class ResultPoll {
   private waiting(): void {
     this.timer?.();
     this.transport.stopRetry();
-    if (this.since === 0) this.since = this.d.now() || 1;
     const poll = (): void => {
       if (!this.active) return;
       if (this.d.now() - this.since >= RESULT_REPOLL_CAP_MS) { this.stop(); return; }

@@ -65,7 +65,7 @@ export class ReorderBuffer<T> {
       return immediate ? [item, ...rest] : rest;
     }
     this.next = (this.next + 1) >>> 0;
-    return [item, ...this.drain()];
+    return [item, ...this.drain(now)];
   }
 
   /** Releases held frames whose gap has waited long enough. */
@@ -73,13 +73,14 @@ export class ReorderBuffer<T> {
     return this.held.length > 0 && now - this.since >= REORDER_SKIP_MS ? this.skip() : [];
   }
 
-  private drain(): T[] {
+  private drain(now: number): T[] {
     const out: T[] = [];
     for (let h = this.held[0]; h && h.seq === this.next; h = this.held[0]) {
       if (!h.done) out.push(h.item);
       this.held.shift();
       this.next = (this.next + 1) >>> 0;
     }
+    if (this.held.length > 0) this.since = now; // Wait for the next gap from here, not from the first arrival.
     return out;
   }
 

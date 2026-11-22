@@ -124,7 +124,10 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     view?.root.classList.remove('onlineLive');
     view?.reportButton(false);
   };
+  /** Play again was asked: the arena lingers (hidden) until the queue frame is actually out, so RESULT can still be ACKed (see ResultPoll.defer). */
+  let dropPending = false;
   const dropMatch = (): void => {
+    dropPending = false;
     lastEnd = reporter?.end ?? lastEnd;
     reporter = undefined;
     stopTicker();
@@ -273,6 +276,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     switch (e.t) {
       case 'queue':
         queueConfirmed = true;
+        if (dropPending) dropMatch(); // The deferred queue frame went out: the old match is over.
         if (state === 'queued') set('queued', waitText(e.waitingSec));
         break;
       case 'match':
@@ -291,6 +295,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
         break;
       case 'result-ack':
         // The relay compared both RESULTs (or the hashes): 0 agreed, 2 the games disagree; 1 (waiting) changes nothing.
+        if (current === undefined || e.matchId !== current.matchId || dropPending) break; // A stale answer (the match was dropped or left) must not touch this screen.
         if (e.status === ACK_STATUS.disagreed) {
           view?.say(RESULT_DISAGREE_TEXT);
           view?.reportButton(true);
@@ -379,12 +384,15 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
     set('idle', IDLE_TEXT);
   };
   const again = (): void => {
-    dropMatch();
     if (connected && client !== undefined) {
+      dropPending = current !== undefined; // Keep the arena alive (hidden by the queued state) until the deferred join is sent.
       queueConfirmed = false;
       set('queued', waitText(0));
       client.joinQueue();
-    } else find();
+    } else {
+      dropMatch();
+      find();
+    }
   };
   const leave = (): void => {
     teardown();
