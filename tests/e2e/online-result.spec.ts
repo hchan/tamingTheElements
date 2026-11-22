@@ -221,7 +221,7 @@ test('a dropped socket mid-match resumes the same match, with no second game', a
   for (const p of [a, b]) await expect(p.locator('#quickFailure')).toBeHidden();
 });
 
-// Long gate (two pages, about 20 s). Page b is reported hidden for 3 s (headless has no real tab switch, so document.hidden is overridden and visibilitychange fired, as
+// Long gate (two pages, about 40 s on the PC, measurement). Page b is reported hidden for 3 s (headless has no real tab switch, so document.hidden is overridden and visibilitychange fired, as
 // tests/e2e/pause-reasons.spec.ts does). Arena then calls session.setHidden, so the hidden side keeps the peer informed; the match must still end agreed with no failure banner.
 test('a tab hidden for a few seconds mid-match still ends agreed on both pages', async ({ browser }) => {
   test.setTimeout(240_000);
