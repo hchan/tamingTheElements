@@ -38,18 +38,21 @@ for (const race of HEROES) {
   });
 }
 
-// Kindrel cast FX (src/game/fx/kindrel-fx.ts): Ember Bite (primary) and Cinder Spray (secondary) shots 1, 5 and 10 ticks after the cast.
-const KINDREL_CASTS = [
-  { name: 'ember-bite', cmd: 16, gap: 120 },
-  { name: 'cinder-spray', cmd: 32, gap: 300 },
+// Cast FX shots 1, 5 and 10 ticks after the cast: Kindrel Ember Bite (primary) and Cinder Spray (secondary), src/game/fx/kindrel-fx.ts;
+// Brazgor Forge Gore (primary) and Molten Hide (secondary), src/game/fx/brazgor-fx.ts.
+const CASTS = [
+  { hero: 'kindrel', name: 'ember-bite', cmd: 16, gap: 120 },
+  { hero: 'kindrel', name: 'cinder-spray', cmd: 32, gap: 300 },
+  { hero: 'brazgor', name: 'forge-gore', cmd: 16, gap: 100 },
+  { hero: 'brazgor', name: 'molten-hide', cmd: 32, gap: 100 },
 ] as const;
 
-for (const c of KINDREL_CASTS) {
-  test(`kindrel ${c.name}: cast shots, no page errors`, async ({ page }, testInfo) => {
+for (const c of CASTS) {
+  test(`${c.hero} ${c.name}: cast shots, no page errors`, async ({ page }, testInfo) => {
     const errors = collectErrors(page);
     const frames = (): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
     await page.goto(`${START}&ff=arcade,roster24#arcade`);
-    await page.getByLabel('Your race').selectOption('kindrel');
+    await page.getByLabel('Your race').selectOption(c.hero);
     await page.getByLabel('AI race').selectOption('fiara');
     await page.getByRole('button', { name: 'Fight!' }).click();
     await waitForArena(page);
@@ -65,7 +68,7 @@ for (const c of KINDREL_CASTS) {
       done = at;
       await frames();
       // Attached (not SHOT_DIR) so a remote PC run returns the shots in test-results.
-      await testInfo.attach(`kindrel-${c.name}-${String(at)}`, { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
+      await testInfo.attach(`${c.hero}-${c.name}-${String(at)}`, { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
     }
     expect(errors).toEqual([]);
   });
