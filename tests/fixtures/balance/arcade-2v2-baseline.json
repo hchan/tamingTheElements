@@ -17,18 +17,18 @@
   "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.466,
-    "cyclonius": 0.591,
-    "echo": 0.489,
-    "fiara": 0.58,
-    "ishimi": 0.489,
-    "lavax": 0.534,
-    "morblass": 0.466,
-    "pax": 0.398,
-    "rokcore": 0.489,
-    "sindarosa": 0.409,
-    "treenoc": 0.625,
-    "wispera": 0.466
+    "curomo": 0.432,
+    "cyclonius": 0.545,
+    "echo": 0.568,
+    "fiara": 0.5,
+    "ishimi": 0.466,
+    "lavax": 0.557,
+    "morblass": 0.432,
+    "pax": 0.443,
+    "rokcore": 0.511,
+    "sindarosa": 0.477,
+    "treenoc": 0.648,
+    "wispera": 0.42
   },
   "styleSummary": {
     "styles": [
@@ -43,13 +43,13 @@
         },
         {
           "games": 280,
-          "winRate": 0.482
+          "winRate": 0.504
         }
       ],
       [
         {
           "games": 280,
-          "winRate": 0.518
+          "winRate": 0.496
         },
         {
           "games": 336,
@@ -59,12 +59,12 @@
     ],
     "crossMeleeVsRanged": {
       "games": 280,
-      "winRate": 0.482,
+      "winRate": 0.504,
       "stdErr": 0.03
     },
     "meanWinRate": {
-      "melee": 0.489,
-      "ranged": 0.508
+      "melee": 0.502,
+      "ranged": 0.498
     },
     "heroCount": {
       "melee": 5,
@@ -72,22 +72,22 @@
     },
     "byElement": {
       "air": {
-        "melee": 0.478,
-        "ranged": 0.591,
-        "gap": -0.113
+        "melee": 0.494,
+        "ranged": 0.545,
+        "gap": -0.051
       },
       "earth": {
-        "melee": 0.512,
-        "ranged": 0.489,
-        "gap": 0.023
+        "melee": 0.546,
+        "ranged": 0.511,
+        "gap": 0.035
       },
       "fire": {
-        "ranged": 0.508
+        "ranged": 0.511
       },
       "water": {
-        "melee": 0.466,
-        "ranged": 0.478,
-        "gap": -0.012
+        "melee": 0.432,
+        "ranged": 0.449,
+        "gap": -0.017
       }
     },
     "top6": {
@@ -101,11 +101,11 @@
     "compositions": {
       "MR": {
         "games": 880,
-        "winRate": 0.501
+        "winRate": 0.502
       },
       "RR": {
         "games": 176,
-        "winRate": 0.494
+        "winRate": 0.489
       }
     }
   }
