@@ -132,3 +132,5 @@ ADR index: [docs/adr/README.md](adr/README.md)
 `src/ui/screens/settings-touch.ts` (the Settings "On-screen buttons" group: `touchGroup`, `hasTouchScreen`, `readTouchForm`; split out of `settings.ts`)
 
 `tools/ci/nightly-push.ts` (clean-night push of local main by the 02:00 job after a green or known-red-only full e2e; pure `nightVerdict`/`cleanPushBlockers`); see [TESTING.md](TESTING.md) "Nightly fix loop".
+
+`tools/ci/merge-queue.ts` (`pnpm merge:queue <branch> "<subject>"`: serial `--no-ff` merge that waits for a gate on main, auto-resolves additive REPO-MAP/core-index conflicts, runs `gate:fast`, never pushes; pure `gateOnMain`/`resolveAdditive`) and `tools/ci/load-check.ts` (`pnpm load:check [--cap N]`: 1-min load vs cap; pure `loadVerdict`), tested by `tests/repo/merge-queue.test.ts`.
