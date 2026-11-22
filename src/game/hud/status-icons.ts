@@ -48,6 +48,8 @@ function chipRank(r: { key: string; hostile: boolean }): number {
 export const DEFAULT_CHIP_LAYOUT: ChipLayout = { scale: 1, top: CHIP_Y };
 /** Font px of the chip word at layout scale 1 (the chip box is sized for it). */
 export const CHIP_FONT = 12;
+/** Chip fill opacity: high enough that the word reads over the crowd band and torch glow (qa-r126). */
+export const CHIP_FILL_ALPHA = 0.9;
 
 export type ChipGlyph = 'plus' | 'cross';
 
