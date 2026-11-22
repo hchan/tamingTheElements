@@ -5,7 +5,6 @@ import type { Announcement } from '../a11y/announcer';
 import { resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { POP_NEAR_X, POP_NEAR_Y, POP_NUMBER_CLEAR_PX, popCeil, popLaneLift, type LivePop } from './pop-lanes';
 import { type Box, clearAbove, dropBelow, easeTo, easeUp, overlapsAny, slideClear } from './defence-callouts';
-import { clashDim } from './clash-fx';
 import { mountClashView } from './clash-view';
 import { styleCombatText } from '../hud/combat-text';
 import {
@@ -131,8 +130,6 @@ export function mountDefenceView(
   const RG = 8;
   const rings = new Float64Array(RING_POOL * RG);
   let liveRings = 0;
-  /** View time of the last clash burst: rings thin while it plays (clashDim). */
-  let lastClash = -Infinity;
   // Call-out rects in WORLD px (one reused array under CALLOUT_RECTS_KEY), so the HUD's damage numbers move clear of the words.
   let calloutRects: { x: number; y: number; w: number; h: number }[] | undefined;
   const publishCallouts = (): void => {
@@ -662,11 +659,10 @@ export function mountDefenceView(
       const y = rings[o + 1] ?? 0;
       const size = rings[o + 2] ?? 0;
       const color = rings[o + 5] ?? 0;
-      const dim = clashDim(clock, lastClash);
-      if (rings[o + 7] === 1) over.fillStyle(color, 0.8 * (1 - p) * dim).fillCircle(x, y, size);
+      if (rings[o + 7] === 1) over.fillStyle(color, 0.8 * (1 - p) * clash.dim(clock)).fillCircle(x, y, size);
       else {
         const flat = rings[o + 6] === 1;
-        over.lineStyle(flat ? 4 : 5, color, (flat ? 1 : 1 - p) * dim).strokeCircle(x, y, ringRadius(p, size, flat));
+        over.lineStyle(flat ? 4 : 5, color, (flat ? 1 : 1 - p) * clash.dim(clock)).strokeCircle(x, y, ringRadius(p, size, flat));
       }
     }
     placePops(clock, delta);
@@ -702,7 +698,6 @@ export function mountDefenceView(
     if (events.some((e) => e.kind === SimEventKind.roundStarted)) for (let i = 0; i < POP_POOL; i++) { popData[i * 4 + 2] = HIDDEN; resetEased(i); texts[i]?.setVisible(false); }
     if (events.some((e) => e.kind === SimEventKind.roundStarted)) publishCallouts();
     fx.consume(events);
-    if (events.some((e) => e.kind === SimEventKind.clash)) lastClash = now();
     clash(events);
     onTick();
   };

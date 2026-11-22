@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import type { RenderView, SimEvent } from '@core/index';
-import { BURST_TICKS, ClashFx, burstAlpha, burstRadius } from './clash-fx';
+import { BURST_TICKS, ClashFx, burstAlpha, burstRadius, clashDim } from './clash-fx';
 
 /**
  * Phaser side of the Arcade clash burst (WP-arcade-clash): the defence view (`defence-view.ts`, itself mounted by the
@@ -22,15 +22,19 @@ export interface ClashPrefs {
   readonly reduceMotion: boolean;
 }
 
+/** The event consumer; `dim(t)` is the ring multiplier at view time `t` (thin while a burst plays, see clashDim). */
+export type ClashConsumer = ((events: readonly SimEvent[]) => void) & { dim(t: number): number };
+
 /** Mounts the clash burst in the Arena `scene` for `view`; returns the event consumer. `prefs` is read on each clash. */
 export function mountClashView(
   scene: Phaser.Scene,
   view: RenderView,
   prefs: () => ClashPrefs,
-): (events: readonly SimEvent[]) => void {
+): ClashConsumer {
   let g: Phaser.GameObjects.Graphics | undefined;
   const bursts = new Float64Array(BURST_POOL * BS);
   let live = 0;
+  let lastBurst = -Infinity;
   let tick = view.tick;
   let drawnTick = tick;
   let sub = 0;
@@ -39,6 +43,7 @@ export function mountClashView(
   const fx = new ClashFx(
     {
       burst(x, y, under, over, cancel, flat): void {
+        lastBurst = now();
         g ??= scene.add.graphics().setDepth(DEPTH);
         let slot = live;
         if (slot >= BURST_POOL) {
@@ -86,9 +91,10 @@ export function mountClashView(
   };
   scene.events.on('postupdate', draw);
   scene.events.once('shutdown', off).once('destroy', off);
-  return (events) => {
+  const consume = (events: readonly SimEvent[]): void => {
     tick = view.tick;
     sub = 0;
     fx.consume(events);
   };
+  return Object.assign(consume, { dim: (t: number): number => clashDim(t, lastBurst) });
 }
