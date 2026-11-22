@@ -212,8 +212,7 @@ test.describe('screen reader announcements', () => {
     await startBattle(page, 'enterPracticeContainer');
     const assertive = page.locator('#liveRegionAssertive');
     const polite = page.locator('#liveRegion');
-    await expect(assertive).toHaveAttribute('role', 'alert');
-    await expect(polite).toHaveAttribute('aria-live', 'polite');
+    // The region roles and aria-live values are asserted in src/game/a11y/live-region.dom.test.ts.
     await expect(assertive).toContainText('Match started');
 
     const [hero] = await characters(page, 0);

@@ -31,7 +31,7 @@ test('first-run hint shows, dismisses and is remembered', async ({ page }) => {
   await fight();
   const card = page.locator('#firstRunHint');
   await expect(card).toBeVisible({ timeout: 15_000 });
-  expect(await card.innerText()).not.toMatch(/classic|arcade|ruleset|capture/i);
+  // The banned-words check on the card text lives in src/game/app/first-run-hint.dom.test.ts.
   await page.getByRole('button', { name: 'Got it' }).click();
   await expect(card).toHaveCount(0);
   expect(await page.evaluate(`localStorage.getItem('tte.firstRunHint')`)).toBe('1');

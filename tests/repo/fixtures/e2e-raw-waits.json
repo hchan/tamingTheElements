@@ -3,7 +3,7 @@
     "poll": 4,
     "waitForFunction": 3,
     "waitForTimeout": 0,
-    "expects": 41
+    "expects": 39
   },
   "a11y-trap.spec.ts": {
     "poll": 2,
@@ -249,7 +249,7 @@
     "poll": 2,
     "waitForFunction": 0,
     "waitForTimeout": 0,
-    "expects": 13
+    "expects": 8
   },
   "hero-portrait-shot.spec.ts": {
     "poll": 2,
