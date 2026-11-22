@@ -8,6 +8,8 @@ import { decodeLobby, type Lobby } from './lobby-codec';
 import { BINARY_TYPE, gatewayEvent, inboundBytes } from './inbound';
 import { encodeText } from './text-codec';
 import { decodeFrame } from './wire';
+import { CHAT_CAP_BIT, CHAT_MAX_BYTES, CHAT_TYPE, validateChatText } from './chat-rules';
+import { chatErrorSeq, decodeChat, encodeChat } from './chat-wire';
 
 /** Client of the relay service (docs/ONLINE-PROTOCOL.md section 3, 5, 7; docs/ONLINE-CLIENT.md). Network and clock are injected; nothing here throws. */
 export const PROTOCOL_VERSION = 3;
@@ -55,7 +57,11 @@ class SocketHub implements SocketLike {
   }
 }
 
-type Dialled = { ws: WsLike; sessionId: number; resumed: boolean };
+type Dialled = { ws: WsLike; sessionId: number; resumed: boolean; caps: number };
+
+/** A peer line (validated text) and a refused own line (docs/ONLINE-PROTOCOL.md 4a: tagged ERROR, `seq` = the line's chatSeq, the socket stays open). */
+export interface ChatIn { readonly seq: number; readonly text: string }
+export interface ChatRefused { readonly seq: number; readonly code: number; readonly retryAfterSec: number }
 
 /**
  * One online connection: `connect()` runs session, ticket, WebSocket and HELLO/WELCOME and resolves with a connected `WebSocketTransport`
@@ -66,6 +72,9 @@ type Dialled = { ws: WsLike; sessionId: number; resumed: boolean };
 export class OnlineClient {
   readonly transport: WebSocketTransport;
   onEvent: (e: OnlineEvent) => void = () => undefined;
+  /** Chat lines never enter the transport, the lockstep or the seq space. */
+  onChat: (m: ChatIn) => void = () => undefined;
+  onChatError: (e: ChatRefused) => void = () => undefined;
   private readonly hub = new SocketHub();
   private token: { value: string; until: number } | undefined;
   private restUntil = 0;
@@ -76,6 +85,11 @@ export class OnlineClient {
   /** The last WELCOME said resumed: a MATCH_START with the running matchId is then the same match again (spec section 7). */
   private resumePending = false;
   private inMatch = false;
+  /** WELCOME byte 7 of the live connection (bit0 = chat). */
+  private caps = 0;
+  /** Chat is open for this matchId from MATCH_START until the client leaves (queue, room, close): it outlives RESULT. */
+  private chatMatch: number | undefined;
+  private chatSeq = 0;
   private stopped = false;
   private reconnecting = false;
   /** Read through a method so a flag flipped by `close()` during an await is not narrowed away. */
@@ -105,6 +119,24 @@ export class OnlineClient {
   joinRoom(text: string): boolean {
     const code = cleanRoomCode(text);
     return code !== undefined && this.lobbyAction([0x22, ...Array.from({ length: code.length }, (_, i) => code.charCodeAt(i))]);
+  }
+
+  /** The relay offers chat (WELCOME caps bit0); read again after 'reconnected'. */
+  chatSupported(): boolean { return (this.caps & CHAT_CAP_BIT) !== 0; }
+
+  /**
+   * Sends one line to the peer: the chatSeq used (u8, counts per match, wraps) or `undefined` when nothing was sent (no chat cap, not in
+   * a match, socket down, text invalid or over 120 UTF-8 bytes). Rate and per-match caps are the caller's and the relay's.
+   */
+  sendChat(text: string): number | undefined {
+    if (!this.chatSupported() || this.chatMatch === undefined || this.hub.readyState !== 1) return undefined;
+    const bytes = new TextEncoder().encode(text);
+    if (bytes.length > CHAT_MAX_BYTES || !validateChatText(bytes, 0, bytes.length)) return undefined;
+    const frame = encodeChat(this.chatMatch, this.chatSeq, bytes);
+    if (frame === undefined || !this.sendLobby(Array.from(frame))) return undefined;
+    const seq = this.chatSeq;
+    this.chatSeq = (seq + 1) & 0xff;
+    return seq;
   }
 
   /** Median round trip of the latest pings, and its grade (spec section 4, Heartbeat). */
@@ -213,6 +245,7 @@ export class OnlineClient {
         if (r.ok) {
           this.hub.cur = ws;
           this.resumePending = r.value.resumed;
+          this.caps = r.value.caps;
         } else {
           try { ws.close(); } catch { /* already closed */ }
         }
@@ -232,7 +265,7 @@ export class OnlineClient {
         const b = inboundBytes(ev.data);
         const w = b && decodeLobby(b);
         const e = b && decodeFrame(b);
-        if (w?.t === 'welcome') finish(w.ver === PROTOCOL_VERSION ? ok({ ws, sessionId: w.sessionId, resumed: w.resumed }) : fail({ kind: 'update-needed' }));
+        if (w?.t === 'welcome') finish(w.ver === PROTOCOL_VERSION ? ok({ ws, sessionId: w.sessionId, resumed: w.resumed, caps: w.caps }) : fail({ kind: 'update-needed' }));
         else if (e?.t === 'error') finish(fail(this.errorFailure(e.code, e.retryAfterSec)));
       });
     });
@@ -254,6 +287,7 @@ export class OnlineClient {
         if (!this.sendLobby(bytes)) return false;
         this.result.stop();
         this.leaveMatch();
+        this.chatMatch = undefined; // Queue or room: the pair is over (RESULT alone keeps chat open).
         return true;
       },
       (ok) => { if (!ok && !sync) this.onEvent({ t: 'error', failure: NET }); },
@@ -281,12 +315,15 @@ export class OnlineClient {
     if (ws !== this.hub.cur || this.stopped) return;
     const gw = gatewayEvent(data); if (gw) { this.onEvent(gw); return; } // Not a frame: the transport never sees it, so it is not malformed.
     const b = inboundBytes(data);
+    if (b?.[0] === CHAT_TYPE) { this.chatIn(b); return; }
     const w = b && decodeLobby(b);
     if (w) {
       this.lobby(w);
       return;
     }
     const e = b && decodeFrame(b);
+    const tagged = e?.t === 'error' ? chatErrorSeq(e.detail) : undefined;
+    if (e?.t === 'error' && tagged !== undefined) { this.onChatError({ seq: tagged, code: e.code, retryAfterSec: e.retryAfterSec }); return; } // One refused line: not a server error, no close.
     if (e?.t === 'error') {
       this.lastError = { code: e.code, retryAfterSec: e.retryAfterSec };
       this.serverError(e.code, e.retryAfterSec);
@@ -294,14 +331,23 @@ export class OnlineClient {
     for (const l of this.hub.onMessage) l({ data }); // Match frames (and anything malformed, which the transport counts).
   }
 
+  /** A peer line: only for the running match, strict length and UTF-8; anything else is dropped without a trace (not malformed, not fatal). */
+  private chatIn(b: Uint8Array): void {
+    const f = decodeChat(b);
+    if (f === undefined || f.match !== this.chatMatch || !validateChatText(f.bytes, 0, f.bytes.length)) return;
+    this.onChat({ seq: f.seq, text: new TextDecoder('utf-8', { ignoreBOM: true }).decode(f.bytes) });
+  }
+
   private lobby(w: Lobby): void {
     switch (w.t) {
-      case 'welcome': break; // A duplicate answer is tolerated (spec section 6).
+      case 'welcome': this.caps = w.caps; break; // A duplicate answer is tolerated (spec section 6).
       case 'match': {
         // Same match again only after a resumed WELCOME and with the running matchId (a duplicate MATCH_START is tolerated); anything else is a new match.
         const resumed = this.resumePending && this.inMatch && w.matchId === this.transport.matchId;
         if (!resumed) this.result.reset();
         this.transport.startMatch(w.matchId, resumed);
+        this.chatMatch = w.matchId;
+        if (!resumed) this.chatSeq = 0;
         this.inMatch = true;
         this.onEvent({ ...w, resumed });
         break;
@@ -384,6 +430,7 @@ export class OnlineClient {
   private end(failure: OnlineFailure | undefined): void {
     if (this.stopped) return;
     this.stopped = true;
+    this.chatMatch = undefined;
     this.cancelPing?.();
     this.result.reset();
     const ws = this.hub.cur;
