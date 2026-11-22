@@ -21,6 +21,7 @@ reads no clock or randomness of its own and keeps no state between calls. It rel
 - A change to the wire format (frame layout, a type byte, an error code's meaning, `PROTOCOL_VERSION`) is a **MAJOR** bump, and
   `PROTOCOL_VERSION` changes with it.
 - New optional exports, new `RelayEvent` kinds, or behaviour fixes that keep the wire unchanged are MINOR or PATCH.
+- **Capability-gated additions (amendment, chat).** A wire addition that is capability-gated and off by default is MINOR; turning it on is the operator's step. The chat frame `0x70` (ONLINE-PROTOCOL.md section 4a) is the first: WELCOME's `caps` byte (bit0 = chat) is 0 unless `RelayOptions.chat` is true, `PROTOCOL_VERSION` stays 3, and with chat off a `0x70` frame is bad-frame as before. `packages/relay` goes 1.0.0 to **1.1.0**, with the new `RelayEvent` kind `{ kind: 'chat'; match; slot; outcome }` (outcomes `sent`, `rate`, `bad`, `cap`, `away`, `stale`; counts only, no text, no length) and `RelayOptions.chat?: boolean` (default false). The conformance chat cases skip unless WELCOME `caps` bit0 is set. Deploy order: 1.1.0 with chat off, run the kit (chat cases skip), set `chat: true`, run the kit again.
 - Changing the `Store` or `Sender` interface in a way that breaks an existing implementation is MAJOR.
 - `./testing` follows the same rules, but may add helpers in MINOR releases.
 - `./conformance` may add cases in MINOR releases (a new entrypoint or case is MINOR; `1.0.0` is the first publish). A case that only tightens
