@@ -76,6 +76,10 @@ async function setup(page: Page, race: string): Promise<void> {
   // Step past the ramp, tick-based, so every probe sees a fully faded-in aura.
   await step(page, 20);
   await frames(page);
+  // The FIGHT! banner dims by an eased factor per drawn frame while a fighter sits under it (round-view / banner-clear.ts, 66a1708e;
+  // fire and earth heroes do, air and water do not). Draw enough frames (about 25 settle it) that the shown and hidden shots see
+  // the same banner; otherwise two hidden shots differ by ~40k px and the visibility check below drowns in "noise".
+  for (let i = 0; i < 8; i++) await settle(page);
 }
 
 async function shot(page: Page, name: string): Promise<void> {
