@@ -10,19 +10,24 @@ test('r125 shot', async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
   await page.evaluate(`window.__TTE__.arena.step(91)`);
+  const first = (await characters(page, 0))[0]?.id;
+  let done = false;
   await page.keyboard.down('ArrowRight');
-  let gap = 9999;
-  for (let i = 0; i < 80 && gap > 20; i++) {
-    await page.evaluate(`window.__TTE__.arena.stepLive(5)`);
+  for (let i = 0; i < 400 && !done; i++) {
     const cs = await characters(page);
     const a = cs.find((c) => c.team === 0), b = cs.find((c) => c.team === 1);
-    if (a && b) gap = Math.abs(b.x - a.x) - (a.w + b.w) / 2;
-    console.log('gap', gap, a?.x, b?.x, a?.w, b?.w);
+    const gap = a && b ? Math.abs(b.x - a.x) - (a.w + b.w) / 2 : 9999;
+    if (gap < 60) {
+      await page.keyboard.up('ArrowRight');
+      await page.keyboard.down('Digit3');
+      await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+      await page.keyboard.up('Digit3');
+      done = (await characters(page, 0))[0]?.id !== first;
+      console.log('tag try', i, gap, done);
+      if (!done) await page.keyboard.down('ArrowRight');
+    }
+    if (!done) await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
   }
-  await page.keyboard.up('ArrowRight');
-  await page.keyboard.down('Digit3');
-  await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
-  await page.keyboard.up('Digit3');
   for (const n of [1, 3, 6, 12]) {
     await page.evaluate(`window.__TTE__.arena.stepLive(${String(n)})`);
     await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
