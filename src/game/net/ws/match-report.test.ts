@@ -80,3 +80,28 @@ describe('MatchReporter end record', () => {
     expect(r.end?.detail).toBe('opponent-left');
   });
 });
+
+describe('MatchReporter forfeit end (mp-result-timeout)', () => {
+  it('a timeout the Arena never ends naturally sends exactly one RESULT, reason timeout, winner from the session', () => {
+    const { r, s, results } = rig({ forfeitReason: 'timeout' });
+    r.finishForfeit({ ...s, winner: 1 });
+    r.finishForfeit({ ...s, winner: 1 });
+    expect(results).toEqual([[1, 1, RESULT_REASON.timeout, 0, 0]]);
+  });
+
+  it('a concession sends reason forfeit; a later natural finish adds nothing', () => {
+    const { r, s, results } = rig({ forfeitReason: 'remote-conceded' });
+    r.finishForfeit({ ...s, winner: 0 });
+    r.finish(s, 0);
+    expect(results).toEqual([[1, 0, RESULT_REASON.forfeit, 0, 0]]);
+  });
+
+  it('no winner on the session reports nobody; no forfeit reason sends nothing', () => {
+    const a = rig({ forfeitReason: 'timeout' });
+    a.r.finishForfeit({ ...a.s, winner: null });
+    expect(a.results[0]?.[1]).toBe(RESULT_WINNER_NONE);
+    const b = rig();
+    b.r.finishForfeit({ ...b.s, winner: 0 });
+    expect(b.results).toHaveLength(0);
+  });
+});
