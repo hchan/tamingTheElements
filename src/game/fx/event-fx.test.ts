@@ -1,3 +1,4 @@
+import { HOT_CORE } from './fire-core';
 import { describe, expect, it } from 'vitest';
 import {
   ALL_ABILITIES, Cmd, DEFAULT_SIM_FLAGS, RandomBot, SIM_VERSION, SimEventKind, characterId, collectCommands, createMatch, step,
@@ -131,6 +132,18 @@ describe('EventFx element signature', () => {
   });
 });
 
+describe('EventFx light fire core', () => {
+  it('a light fire hit adds one white-hot spark; a medium fire hit and a light water hit add none', () => {
+    const sparks: number[] = [];
+    const mk = (el: 'fire' | 'water'): EventFx =>
+      new EventFx({ ...recorder().sink, spark: (_t, color) => sparks.push(color) }, { reducedMotion: () => false, arcade: true, elementOf: () => el });
+    mk('fire').consume([confirmed(3, 0)]);
+    mk('fire').consume([confirmed(4, 1)]);
+    mk('water').consume([confirmed(5, 0)]);
+    expect(sparks).toEqual([HOT_CORE]);
+  });
+});
+
 describe('EventFx hit sound cue', () => {
   it('asks for the attacker element once per hit, in Classic (damage) and Arcade (hitConfirmed)', () => {
     const calls: string[] = [];
@@ -211,7 +224,7 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
       arcadeFx(sink).consume([dmg(1, 0), confirmed(1, strength)]);
       const fire = ELEMENT_COLORS.fire.toString(16);
       // A super hit (3) gets the big gold superHit number only, never the small white one on top (qa-r18).
-      expect(log).toEqual([`flash3:${fire}`, ...(strength === 3 ? [] : ['number3=12']), `burst3x${String(SPARKS_BY_STRENGTH[strength])}:${fire}`]);
+      expect(log).toEqual([`flash3:${fire}`, ...(strength === 3 ? [] : ['number3=12']), `burst3x${String(SPARKS_BY_STRENGTH[strength])}:${fire}`, ...(strength === 0 ? ['spark3'] : [])]);
     }
   });
   it('tags scaled and counter hits and falls back to the void colour for an unknown attacker', () => {
@@ -224,11 +237,11 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     for (const strength of [0, 1, 2, 3]) {
       const { sink, log } = recorder();
       arcadeFx(sink).consume([confirmed(10, strength), stop(10, 6)]);
-      expect(log.slice(strength === 3 ? 2 : 3)).toEqual(['jitter3<17', ...(shakes[strength] ?? [])]);
+      expect(log.slice(strength === 3 ? 2 : strength === 0 ? 4 : 3)).toEqual(['jitter3<17', ...(shakes[strength] ?? [])]);
     }
     const { sink, log } = recorder();
     arcadeFx(sink).consume([confirmed(10, 0), stop(10, 30, 3)]);
-    expect(log.slice(3)).toEqual(['jitter3<41', `shake${String(KO_SHAKE[0])}@${String(KO_SHAKE[1])}`]);
+    expect(log.slice(4)).toEqual(['jitter3<41', `shake${String(KO_SHAKE[0])}@${String(KO_SHAKE[1])}`]);
   });
   it('a KO stop punches the camera in, but not under reduced motion and not for an ordinary hit', () => {
     for (const reduced of [false, true]) {
