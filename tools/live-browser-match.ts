@@ -46,6 +46,9 @@ export async function runOnce(env: Readonly<Record<string, string | undefined>>,
   if (!parseOnlineUrl(raw).configured) { out('TTE_RELAY_URL is not an https base URL'); return 2; }
   const t0 = performance.now();
   const sentA = new RateCounter(); const sentB = new RateCounter(); const sentAll = new RateCounter();
+  // Receive-side evidence per client: count, last arrival, longest gap between arrivals (measurements, ms since t0).
+  const recv: Record<string, { got: number; last: number; maxGap: number }> = { A: { got: 0, last: 0, maxGap: 0 }, B: { got: 0, last: 0, maxGap: 0 } };
+  const recvLine = (): string => ['A', 'B'].map((n) => { const r = recv[n]; return r ? `${n} received ${String(r.got)}, last at ${String(r.last)} ms, longest gap ${String(r.maxGap)} ms` : ''; }).join('; ');
   const step = (s: string): void => { out(`${String(Math.round(performance.now() - t0)).padStart(6)} ms  ${s}`); };
   const build = spawnSync('corepack', ['pnpm', 'exec', 'vite', 'build', '--mode', 'test', '--outDir', OUT_DIR, '--emptyOutDir'], { env: { ...process.env, VITE_ONLINE_URL: raw ?? '' }, stdio: 'ignore' });
   if (build.status !== 0) { out('vite build failed'); return 1; }
@@ -72,6 +75,8 @@ export async function runOnce(env: Readonly<Record<string, string | undefined>>,
         ws.on('framesent', () => { sent++; const now = Date.now(); outRate.record(now); (name === 'A' ? sentA : sentB).record(now); sentAll.record(now); });
         ws.on('framereceived', (f) => {
           got++; inRate.record(Date.now());
+          const r = recv[name]; const at = Math.round(performance.now() - t0);
+          if (r) { if (r.got > 0) r.maxGap = Math.max(r.maxGap, at - r.last); r.got++; r.last = at; }
           const t = typeof f.payload === 'string' ? f.payload : '';
           if (t.length > 0 && t.length < 200 && (t.startsWith('{') || t.includes(' '))) step(`${name} gateway text after ${String(sent)} sent / ${String(got)} received: ${redact(t)}`);
         });
@@ -99,14 +104,14 @@ export async function runOnce(env: Readonly<Record<string, string | undefined>>,
     await b.locator('#quickReady').click();
     for (const p of pages) if (!(await wait(p, '#quickLink', LIVE_BROWSER_STEP_MS))) { out(`arena did not start: ${redact(await status(p))}`); return 1; }
     step('arenas running');
-    for (const p of pages) if (!(await wait(p, '#quickAgain', LIVE_BROWSER_END_MS))) { out(`match did not end: ${redact(await status(p))}`); return 1; }
+    for (const p of pages) if (!(await wait(p, '#quickAgain', LIVE_BROWSER_END_MS))) { out(`match did not end: ${redact(await status(p))}`); step(`at failure: ${recvLine()} (measurement)`); return 1; }
     const [ta, tb] = [await status(a), await status(b)];
     step(`ended: ${ta} | ${tb}`);
     const failed = (await Promise.all(pages.map((p) => p.locator('#quickFailure').isVisible()))).some(Boolean);
     if (failed) { out('a failure banner is showing'); return 1; }
     if (!mirrored(ta, tb)) { out('end lines do not mirror'); return 1; }
     for (const l of rateLines(sentA.summary(), sentB.summary(), sentAll.summary())) out(l);
-    step('ok');
+    step(`ok: ${recvLine()}`);
     return 0;
   } finally {
     await browser.close();
