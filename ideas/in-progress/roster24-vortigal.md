@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md (lesson rows done 2026-11-21; audit and design doc rows not touched)
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -32,3 +32,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 
 - 2026-11-19: file created from the one-hero plan; data checked against `src/core/data` (melee/ranged, abilities and super match the plan).
 - 2026-11-20: S step (SIM_VERSION 94). Kit has no twin (pinned in abilities-c.test.ts). Full roster, Arcade, level 3: 1v1 51.9 (16 seeds, in band); 2v2 was 41.6 at 665, 49.0 at 740 (26 seeds; 1 retune round). `ARCADE_2V2_LIFE_PM` vortigal 665 -> 740. The planned Stoop airborne-dive rework and Talon Rake wound swap are NOT done (deferred: sim-behaviour change plus art/FX dependency); S checkbox stays open for that. Goldens re-recorded: Arcade 2v2 match with Vortigal changed, others header only.
+- 2026-11-21 P3 (words only, no src/core change): lesson rows for Stoop and Talon Rake in ability-lessons.ts with a pin test in ability-lessons.test.ts.

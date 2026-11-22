@@ -44,6 +44,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('rock-pellet', 'A quick pellet of rock thrown at the foe.', 'Fire it in a steady rhythm from range.'),
   L('entangling-vines', 'Vines that root the foe where they stand.', "Throw it along the foe's path, then move in."),
   L('strangling-branches', 'A short, fast lash of branches.', 'Stay close and keep lashing.'),
+  L('hurl-rock', 'A heavy rock thrown straight at the foe, ready again almost at once.', 'Keep throwing it from range and step back as the foe closes.'),
+  L('boulder-roll', 'A big slow boulder rolls along the ground and knocks the foe back.', 'Send it down the foe\'s lane early, since it takes time to arrive.'),
   // Air
   L('tornado', 'Sends a spinning tornado out ahead of you.', 'Fire it in front of the foe so they run into it.'),
   L('wind-cone', 'A cone of wind that hits across a wide arc.', 'Fire it when the foe is a little off your aim.'),
@@ -51,6 +53,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('hurricane', 'A hurricane that follows you and hurts anyone inside it.', 'Press it, then stay close to the foe.'),
   L('sonar-blast', 'A pulse of sound that flies out and hits the foe.', 'Aim along the line to the foe and fire.'),
   L('steal-health', 'A strike that heals you for the harm it does.', 'Land it when you are hurt, then keep landing it.'),
+  L('stoop', 'A diving strike that carries you forward into the foe.', 'Use it from a gap to close in; it leaves you open after.'),
+  L('talon-rake', 'A quick rake that leaves a wound that keeps hurting.', 'Rake twice in a row, then back off while the wound works.'),
   // Story-only heroes (the dummy target and the Eternal Void), still in the released range
   L('stick', 'A stick thrown at the foe.', 'Fire it from range.'),
   L('chaos-bolt', 'A fast bolt of chaos.', 'Fire it down the line to the foe.'),

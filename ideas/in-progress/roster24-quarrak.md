@@ -24,7 +24,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
 - [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
-- [ ] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
+- [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md (lesson rows done 2026-11-21; audit and design doc rows not touched)
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
 - [ ] R (release flip, coordinator): append to RELEASED_ROSTER24, 1v1 and 2v2 balance in band, `fun:gates`, `balance:record`, `gate:commit` then `gate:push`
 
@@ -36,3 +36,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
   Win rates at the unchanged kit (1v1 / 2v2): Quarrak 45.7 / 53.2; others unchanged by this step. Out of band, not touched: 1v1 abyssor 56.7, hyalia 42.1, and legacy heroes; 2v2 nykra 59.7, vortigal 42.3 (also cyclonius 66.9, echo 57.0, ishimi 43.6, rokcore 39.5, sindarosa 44.6, treenoc 42.5).
   Not done: AI rule (Hurl Rock and Boulder Roll usage not measured), hit strength rows (Boulder Roll is already heavy).
 - 2026-11-20 (P1 art, done): rig source = approved quarrak-96214.png keyed with key-flat-bg.py + make-rig-source.py; quadruped landmarks tools/assets/portrait-rig/r24/quarrak.landmarks.json (swing 12, lift 6), gen-r24.py --promote, then tune-quarrak-anim.py (livelier idle/walk, reversed walkBack with head tucked, rear-up cast with held lunge, rear-up victory, 2-frame recoil hurt). KO is procedural (quarrak-ko-keys.py: shell retract-and-drop with ground shadow, no rotation, no limb tearing). Art-director four rounds: 3.4 (KO hard reject, cast 2), 3.7, 3.8, then APPROVE 4.0 (provenance/quarrak-approval.json). Follow-up (non-blocking): idle is subtle at 80 px. RELEASED_ROSTER24 not flipped.
+- 2026-11-21 P3 (words only, no src/core change): lesson rows for Hurl Rock and Boulder Roll in ability-lessons.ts with a pin test in ability-lessons.test.ts.
