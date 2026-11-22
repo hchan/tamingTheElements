@@ -274,6 +274,14 @@ describe('arcadePickView (DOM)', () => {
     expect(flags(2)?.textContent).toContain('You 1');
   });
 
+  it('a tile with a pick chip does not repeat "You" in its cursor chip', () => {
+    mount();
+    const tile = document.querySelectorAll<HTMLButtonElement>('.heroTile')[2];
+    tile?.click();
+    expect(tile?.querySelector('.vsFlags')?.textContent).toContain('You 1');
+    expect(tile?.querySelector('.vsCursors')?.textContent).toBe('');
+  });
+
   const key = (code: string): void => {
     document.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }));
   };
