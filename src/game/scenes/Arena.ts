@@ -2,6 +2,7 @@ import { HoldLerp } from '../loop/hold-lerp';
 import { mountShakeScroll } from '../fx/camera-shake';
 import { LowLifeVignette } from '../fx/low-life-vignette';
 import { mountTallFills } from './tall-fills';
+import { lingerSession } from '../net/linger';
 import { PlayOnce } from '../net/play-once';
 import Phaser from 'phaser';
 import {
@@ -78,9 +79,6 @@ const LOW_HEALTH_POLL_FRAMES = 10;
 
 /** Beat between the final blow and the results route. */
 const END_DELAY_MS = 1200;
-
-/** Online: how often an ended session still answers its peer (one wall tick, as the driver would). */
-const LINGER_MS = 20;
 
 const DEMO_SETUP: MatchSetup = {
   simVersion: SIM_VERSION,
@@ -526,23 +524,13 @@ export class Arena extends Phaser.Scene {
     if (!over && !timedOut) return;
     this.ended = true;
     this.driver?.pause('ended');
-    if (this.session) this.lingerSession(this.session);
+    if (this.session) this.cleanups.push(lingerSession(this.session, this.launch?.net?.batchEvery));
     const s = world.state;
     const end = buildMatchEnd(over, this.session?.winner, s.teams[TeamField.activeSlot] ?? 0, capturedRosterIndices(s, 1));
     // Wall clock, not `this.time`: Phaser caps a frame's delta at 200 ms, so under a slow (software) renderer the scene
     // clock runs several times slower than real time and the results could take many seconds to arrive.
     const t = setTimeout(() => { this.launch?.onEnd?.(end); }, END_DELAY_MS);
     this.cleanups.push(() => { clearTimeout(t); });
-  }
-
-  /**
-   * Online: the datagram link is lossy and a lockstep side that ended may still owe its peer the inputs it needs to end too. Keep
-   * receiving and re-sending (no stepping: an ended session only does that) until the scene shuts down, so the peer always finishes
-   * instead of stalling to a timeout. Wall clock, not the paused driver.
-   */
-  private lingerSession(session: LockstepSession): void {
-    const t = setInterval(() => { session.update(0); }, LINGER_MS);
-    this.cleanups.push(() => { clearInterval(t); });
   }
 
   /** Tester mode only: a one-shot cheat on the running match (a state edit outside `step`; the replay is flagged `cheats`). */
