@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Hyalia rigged (quadruped wyvern from approved matte 96433, art-director APPROVE 4/5), 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: wings baked into the body, hurt/KO rows weak.
+
 - Zephra display scale (render-only): `DISPLAY_SCALE` in `src/game/views/display-scale.ts` draws Zephra 15% larger about her feet; hitbox, sim, goldens and `SIM_VERSION` unchanged.
 
 - SIM 109: Arcade 2v2/3v3 life retune (data only): fiara 730->682, morblass 865->810, echo 661->700, nykra 655->692, durrok 625->675; Classic and Arcade 1v1 unchanged. Goldens and `arcade-2v2-baseline.json` re-recorded (8 goldens change content, the rest the simVersion header).
