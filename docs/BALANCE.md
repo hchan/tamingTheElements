@@ -492,3 +492,17 @@ Reason: long stuns removed agency (ideas/brainstorm/qa-r109-findings.md #2). Dat
 | 10/120 | 30.74 | 4 | .659 | .398 | .591 |
 
 The round median (floor 30 s) is close to its band edge. Fiara's stun share as victim fell 21.5% -> 18.8%. Re-record: `golden:record --ruleset arcade` and `golden:record` (Classic header only), `balance:record --ruleset arcade` with and without `--team-size 2`; `baseline.json` (Classic) untouched.
+
+## Arcade 2v2 sindarosa and abyssor life retune (SIM_VERSION 106)
+
+After SIM_VERSION 105 the random-partner pass (`snag-trap-teams.mts partners 2 16 --roster full`, 4416 matches, SE about 1.8 pp per race) had sindarosa (released) at .622 and abyssor (hidden) at .445. A previous pass at v103 gave .594 and .415; the v104-v105 changes moved both. Data-only change to two `ARCADE_2V2_LIFE_PM` rows (1v1 untouched). Method: `TTE_MODS` life mods, one process, no repo edit until accepted, cap 2 rounds. All numbers are measurements; the slope used to pick round 1 was an estimate (1.4 pp per 1% life for sindarosa, 0.7 for abyssor; measured round 1 gave 1.4 and 0.7).
+
+| round | sindarosa life | abyssor life | sindarosa rate | abyssor rate |
+|---|---|---|---|---|
+| v105 baseline | 830 | 550 | .622 | .445 |
+| 1 | 800 | 575 | .571 | .477 |
+| 2 (committed) | 785 | 590 | .563 | .527 |
+
+Abyssor is inside .45-.55. Sindarosa is still above the band (.563, about 0.7 SE over .55); the 2-round cap was reached, so a further step (about 760) is left for the next pass. Lead-only rates: sindarosa .587 -> .524, abyssor .438 -> .503. Every other race moved by 2.5 pp or less (fiara .581 -> .592, morblass .588 -> .590, durrok .389 -> .385).
+
+Re-record: all goldens (Arcade `arcade-*` hashes change; Classic only the simVersion header) and `arcade-2v2-baseline.json` (the fixed-partner sindarosa row moved 45.5 -> 36.4%, past the 5 pp tolerance; echo +3.4 pp and cyclonius/lavax +2.3 pp are within it).
