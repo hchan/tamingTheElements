@@ -261,6 +261,8 @@ def candidate2(ring_path, g, seed, ang, scale, off, ember_ang, nrubble):
                 b = crack_path(rng, *pts[j], a + rng.choice([-1, 1]) * rng.uniform(.5, 1.0), rng.integers(50, 130), 16)
                 tapered(cd, b, 5 * scale, .8)
     cmask = np.asarray(cm, np.float32) / 255
+    if glyph is not None:
+        cmask *= 1 - np.clip(blur(pm, 2) * 1.5, 0, 1)  # keep cracks off the toes
     emask = np.asarray(em, np.float32) / 255
     # heightfield: lumpy earth, heaved mound around the print, deep pit with sloped walls, cracks carved in
     H = noise(rng, 64, .35) + noise(rng, 20, .07) + noise(rng, 5, .02)
@@ -345,7 +347,7 @@ def wedge_points(cx, cy, L, W, gap, sx, tilt, tip=False):
     return [(cx + x * c - y * sn, cy + x * sn + y * c) for x, y in pts]
 
 
-def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512):
+def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512, glyph=None):
     rng = np.random.default_rng(seed)
     src = np.asarray(Image.open(ring_path).convert("RGB"), np.float32)
     yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
@@ -358,6 +360,10 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
         c, sn = np.cos(rad), np.sin(rad)
         return [(cx + (x - cx) * c - (y - cy) * sn, cy + (x - cx) * sn + (y - cy) * c) for x, y in pts]
     pm = mask_of(lambda d: [d.polygon(rot(wedge_points(cx, cy, L, W, gap, sx, np.deg2rad(7), tip)), fill=255) for sx in (-1, 1)])
+    if glyph is not None:
+        pm = glyph_mask(glyph, cx, cy, 540 * scale)
+        tip = True  # thin dark rim
+        L = 430 * scale
     cm, em = Image.new("L", (S, S), 0), Image.new("L", (S, S), 0)
     cd, ed = ImageDraw.Draw(cm), ImageDraw.Draw(em)
 
@@ -468,7 +474,30 @@ def round4(r0, outdir):
     im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r4_1_128.png"))
 
 
+def glyph_mask(png, cx, cy, height):
+    """Round 5: one print from the game-icons.net 'deer-track' glyph (white on black, delapouite, CC BY 3.0),
+    cropped to the lower-left print, rotated upright, scaled to `height` px and centred on (cx, cy) in S space."""
+    a = Image.open(png).convert("L").crop((0, 380, 480, 1000))
+    a = a.rotate(24, resample=Image.BICUBIC, expand=True)
+    a = a.crop(a.point(lambda v: 255 if v > 128 else 0).getbbox())
+    k = height / a.height
+    a = a.resize((max(1, round(a.width * k)), round(height)), Image.LANCZOS)
+    m = Image.new("L", (S, S), 0)
+    m.paste(a, (round(cx - a.width / 2) + 12, round(cy - a.height / 2)))
+    return np.asarray(m, dtype=np.float32) / 255
+
+
+def round5(ring, glyph_png, outdir):
+    """Glyph mode: earth plate around a CC BY 3.0 cloven-hoof glyph; 1024 px and 128 px."""
+    os.makedirs(outdir, exist_ok=True)
+    im = candidate3(ring, RINGS[0], 21, 0, 1.0, (0, 0), (-38, -12, 14, 40), 150, 24, size=1024, glyph=glyph_png)
+    im.save(os.path.join(outdir, "bristle_stomp_r5_1.png"))
+    im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r5_1_128.png"))
+
+
 def main():
+    if sys.argv[1:2] == ["--glyph"]:
+        return round5(*sys.argv[2:5])
     if sys.argv[1:2] == ["--round4"]:
         return round4(*sys.argv[2:4])
     if sys.argv[1:2] == ["--round3"]:
