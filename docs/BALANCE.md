@@ -506,3 +506,24 @@ After SIM_VERSION 105 the random-partner pass (`snag-trap-teams.mts partners 2 1
 Abyssor is inside .45-.55. Sindarosa is still above the band (.563, about 0.7 SE over .55); the 2-round cap was reached, so a further step (about 760) is left for the next pass. Lead-only rates: sindarosa .587 -> .524, abyssor .438 -> .503. Every other race moved by 2.5 pp or less (fiara .581 -> .592, morblass .588 -> .590, durrok .389 -> .385).
 
 Re-record: all goldens (Arcade `arcade-*` hashes change; Classic only the simVersion header) and `arcade-2v2-baseline.json` (the fixed-partner sindarosa row moved 45.5 -> 36.4%, past the 5 pp tolerance; echo +3.4 pp and cyclonius/lavax +2.3 pp are within it).
+
+## Arcade 1v1 low-band life re-fit (SIM_VERSION 108)
+
+After the v104 stun change moved 1v1 wins from melee to ranged (melee vs ranged 40.4%, 43.0% in two blocks), the low band (pax, echo, treenoc) sat at .41-.45 and lavax at .65. Data-only change to four `ARCADE_RACE_NUMBERS` `hpPm` rows, with `ARCADE_2V2_LIFE_PM` offset exactly so 2v2 and 3v3 team life is bit-identical (v86 method: `floor(hpPm * f / 1000)` equals the old team life for every row). All numbers are measurements (1v1, aiLevel 3). Block A is `balance:compare --ruleset arcade` (seed set of the baseline, SE about 3.8 pp); block B is `sim:match --tournament --ruleset arcade --ai-level 3 --seeds 16 --seed 41 --style` (560 games per race, SE about 2 pp). The what-if used `TTE_MODS` (hp and life mods, no repo edit) with 2 rounds.
+
+| race | v107 hpPm / 2v2 factor | v108 | A before | B before | mean before | A after | B after | mean after |
+|---|---|---|---|---|---|---|---|---|
+| pax | 4351 / 675 | 4540 / 647 | .409 | .466 | .438 | .483 | .517 | .500 |
+| echo | 6750 / 710 | 7250 / 661 | .415 | .398 | .407 | .466 | .472 | .469 |
+| treenoc | 5998 / 785 | 6540 / 720 | .443 | .455 | .449 | .483 | .528 | .506 |
+| lavax | 4000 / 804 | 3680 / 874 | .653 | .580 | .617 | .540 | .494 | .517 |
+
+Round 1 (pax 4830, echo 7548, treenoc 6540, lavax 3602) overshot: pax .588, echo .557, lavax .480 (two-block means), treenoc .475. Measured slopes from it: pax about 1.5 pp per 1% life, echo about 1.3, lavax about 1.4, treenoc about 0.3 (noisy). Round 2 (committed) re-fit pax, echo, lavax with them; treenoc kept at 6540.
+
+Untouched races (block A before -> after): curomo .472 -> .489, cyclonius .528 -> .534, fiara .500 -> .483, ishimi .557 -> .540, morblass .568 -> .540, rokcore .506 -> .500, sindarosa .494 -> .483, wispera .455 -> .460. Block B: sindarosa .477 -> .420 and wispera .489 -> .489, fiara .438 -> .438. Melee vs ranged 40.4% -> 46.3% (A), 43.0% -> 49.1% (B); report-only.
+
+Fun gates (1v1): round median 30.5 s -> 30.9 s, worst race .398 -> .432, best race .614 -> .545, all ok; the 2v2 block is identical to before (round median 59.12 s, worst .364, best .648). 2v2 fixture baseline (`balance:compare --team-size 2`) shows 0.0 pp everywhere. The random-partner 2v2 pass was not re-run (team life is unchanged by construction).
+
+Open: echo is still .47 and sindarosa is .42-.48 in block B (about 1 SE under); curomo and wispera stay .46-.49. Next pass could lift echo about 2% and sindarosa 1v1 life, via `TTE_MODS`.
+
+Re-record: Arcade 1v1 goldens (`arcade-1v1`, `arcade-run`) and `arcade-baseline.json` change; other goldens change only the simVersion header; `arcade-2v2-baseline.json` and `baseline.json` do not move.
