@@ -4,6 +4,7 @@ import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
 import { HERO_IMAGE_NAME, arcadeHeroScale, boxSpanX, clampSpanX, visualBox, type Box, type SpanX } from './hero-scale';
+import { displayScaleOf } from './display-scale';
 import { SHADOW_ALPHA_CAP } from './pose-depth';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
@@ -307,7 +308,7 @@ export class CharacterView {
       y -= JITTER_PX * this.jitterSign;
     }
     if (this.fit) this.scale = arcadeHeroScale(c.h);
-    const k = this.scale;
+    const k = this.scale * displayScaleOf(c.sprite);
     // The drawn body box (tucked inside the world in Arcade): the image and every attachment follow it, not the sim x (WALL-3a).
     const vb = visualBox(x, y, c.w, c.h, k, this.vbScratch, this.fit ? arcadePlayfield().w : undefined);
     // `shift` (throw/pull smoothing, MotionSmoother.shiftFor) moves the drawn body only; attachments, hit boxes and the sim stay put.

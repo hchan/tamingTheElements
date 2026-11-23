@@ -15,7 +15,7 @@ const BATCHES = {
 const HEROES = [...BATCHES.b1, ...BATCHES.b2, ...BATCHES.b3];
 
 for (const race of HEROES) {
-  test(`${race} vs fiara renders from its sheet`, async ({ page }) => {
+  test(`${race} vs fiara renders from its sheet`, async ({ page }, testInfo) => {
     const errors = collectErrors(page);
     await page.goto(`${START}&ff=arcade,roster24#arcade`);
     await page.getByLabel('Your race').selectOption(race);
@@ -30,6 +30,8 @@ for (const race of HEROES) {
     await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
     const sheets = await page.evaluate<{ characters: { texture: string }[] } | undefined>('window.__TTE__.arena.sheets()');
     expect(sheets?.characters.some((c) => c.texture.endsWith(`:${race}`)), JSON.stringify(sheets)).toBe(true);
+    // Always attached too, so a routed (remote) run returns the shot in its test-results.
+    await testInfo.attach(`${race}-vs-fiara`, { body: await page.screenshot(), contentType: 'image/png' });
     if (SHOT_DIR) {
       mkdirSync(SHOT_DIR, { recursive: true });
       await page.screenshot({ path: `${SHOT_DIR}/${race}-vs-fiara.png` });
