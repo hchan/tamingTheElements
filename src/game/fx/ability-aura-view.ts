@@ -13,6 +13,7 @@ import { HURL_POP, HURL_SPRITE, HURL_TICKS, ROLL_POP, ROLL_SPRITE, ROLL_TICKS, b
 import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL_BOX, COIL_COLOR, COIL_POP, COIL_SPRITE, COIL_TICKS, meleeBox, scorchBreath, wyrmCoil, type Box } from './ouroth-fx';
 import { SKITTER_COLOR, SKITTER_POP, SKITTER_SPRITE, SKITTER_TICKS, skitterHop } from './zephra-fx';
 import { MEND_COLOR, MEND_POP, MEND_SPRITE, MEND_TICKS, SPORE_COLOR, SPORE_DARK, SPORE_SPRITE, SPORE_TICKS, myceliumMend, sporeBurst } from './umbrel-fx';
+import { LURE_COLOR, LURE_CORE, LURE_POP, LURE_SPRITE, LURE_TICKS, lureOrb } from './glimmaw-fx';
 import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
@@ -63,7 +64,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter' | 'spore' | 'mend'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter' | 'spore' | 'mend' | 'lure'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   /** Each fighter's sim box (top-left, size), for FX drawn to a melee hitbox. */
@@ -165,6 +166,8 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       // Umbrel (roster24): Spore Burst cloud over the projectile (no word: the cloud is the cue) and Mycelium Mend threads.
       { sprite: SPORE_SPRITE, kind: 'spore' as const, word: '', base: 22 },
       { sprite: MEND_SPRITE, kind: 'mend' as const, word: MEND_POP, base: 24 },
+      // Glimmaw (roster24): Lure Orb anglerfish lure (next free base is 28).
+      { sprite: LURE_SPRITE, kind: 'lure' as const, word: LURE_POP, base: 26 },
     ];
     for (const team of [0, 1]) {
       for (const k of kindrelCasts) {
@@ -293,6 +296,21 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         paintEmbers(glow, g.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: g.alpha })), GORE_COLOR, 0.9);
         return age <= GORE_TICKS;
       }
+      if (f.kind === 'lure') {
+        const l = lureOrb(f.x, f.y, f.dir, age, reduced);
+        if (!l) return false;
+        // Grim deep-sea look: dark smoky stalk, teal swell rings and halo, a gold core in a murky teal bulb, plankton motes.
+        const stalk = toPts(l.stalk);
+        gfx.lineStyle(6, 0x000000, 0.28 * l.alpha).strokePoints(stalk, false);
+        gfx.lineStyle(2.5, 0x1d4a4a, 0.85 * l.alpha).strokePoints(stalk, false);
+        for (const r of l.rings) gfx.lineStyle(1.5, LURE_COLOR, 0.35 * r.a * l.alpha).strokeCircle(l.bulb.x, l.bulb.y, r.r);
+        glow.fillStyle(LURE_COLOR, 0.14 * l.alpha).fillCircle(l.bulb.x, l.bulb.y, l.bulb.r * 3.2);
+        glow.fillStyle(LURE_COLOR, 0.3 * l.alpha).fillCircle(l.bulb.x, l.bulb.y, l.bulb.r * 1.6);
+        gfx.fillStyle(0x145c5a, 0.85 * l.alpha).fillCircle(l.bulb.x, l.bulb.y, l.bulb.r);
+        glow.fillStyle(LURE_CORE, 0.9 * l.alpha).fillCircle(l.bulb.x, l.bulb.y, l.core);
+        paintEmbers(glow, l.motes.map((m) => ({ x: m.x, y: m.y, r: m.r, a: l.alpha })), LURE_COLOR, 0.8);
+        return age <= LURE_TICKS;
+      }
       if (f.kind === 'hide') {
         const h = moltenHide(f.x, f.y, age, reduced);
         if (!h) return false;
@@ -343,7 +361,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const look = popLook(age, reduced);
       // SNAG is a pale parchment with a thick dark outline (it was a dim tan that read grey over the lava floor, QA r77).
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : p.word === MEND_POP ? '#c8c48a' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : p.word === MEND_POP ? '#c8c48a' : p.word === LURE_POP ? '#9fd8cf' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);

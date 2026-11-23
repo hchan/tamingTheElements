@@ -54,6 +54,8 @@ const CASTS = [
   // Umbrel (src/game/fx/umbrel-fx.ts): the spore cloud rides the projectile; the mend threads grow round the caster.
   { hero: 'umbrel', name: 'spore-burst', cmd: 16, gap: 300 },
   { hero: 'umbrel', name: 'mycelium-mend', cmd: 32, gap: 300 },
+  // Glimmaw Lure Orb (src/game/fx/glimmaw-fx.ts); long gate, per-hero visual.
+  { hero: 'glimmaw', name: 'lure-orb', cmd: 16, gap: 300 },
 ] as const;
 
 for (const c of CASTS) {
