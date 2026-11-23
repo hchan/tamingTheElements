@@ -1,1 +1,63 @@
-{"glimmaw_victory": {"approved": "out/r971-glimmaw-vic_60160_d0.35.png", "reviewer": "art-director", "date": "2026-11-23", "beats_shipped": true, "facing": "right", "note": "same turtle as matte 96303; head raised, full body, flat grey bg"}}
+{
+ "glimmaw_victory": {
+  "approved": "out/r971-glimmaw-vic_60160_d0.35.png",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "facing": "right",
+  "note": "same turtle as matte 96303; head raised, full body, flat grey bg",
+  "source": "r971-glimmaw-vic_60160_d0.35.png"
+ },
+ "brazgor_victory": {
+  "approved": "brazgor_win.png",
+  "reviewer": "art-director",
+  "date": "2026-11-22",
+  "beats_shipped": true,
+  "source": "brazgor_win.png",
+  "facing": "left",
+  "note": "waveB approval.json has approved=brazgor_win.png and no REVISE verdict, written after the fix.py hairline cleanup; no overall score recorded"
+ },
+ "nykra_victory": {
+  "approved": "nykra_win.png",
+  "reviewer": "art-director",
+  "date": "2026-11-22",
+  "beats_shipped": true,
+  "source": "nykra_win.png",
+  "facing": "left",
+  "note": "waveB approval.json: approved, no overall score recorded"
+ },
+ "hyalia_victory": {
+  "approved": "hyalia_win.png",
+  "reviewer": "art-director",
+  "date": "2026-11-22",
+  "beats_shipped": true,
+  "source": "hyalia_win.png",
+  "facing": "right",
+  "note": "waveB approval.json: approved, no overall score recorded"
+ },
+ "kindrel_victory": {
+  "approved": "kindrel_win.png",
+  "verdict": "APPROVE",
+  "reviewer": "art-director",
+  "date": "2026-11-22",
+  "beats_shipped": true,
+  "source": "kindrel_win.png",
+  "facing": "right"
+ },
+ "vortigal_victory": {
+  "approved": "out/r979-vortigal-win_97903_d0.35.png",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "source": "r979-vortigal-win_97903_d0.35.png",
+  "facing": "right"
+ },
+ "zephra_victory": {
+  "approved": "out/r978-zephra-win2_97810_d0.2.png",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "source": "r978-zephra-win2_97810_d0.2.png",
+  "facing": "left"
+ }
+}
