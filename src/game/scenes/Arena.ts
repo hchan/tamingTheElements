@@ -229,6 +229,11 @@ export class Arena extends Phaser.Scene {
         () => view.tick,
         hud && ((x, y, amount, scaled, counter) => { hud.spawn(x, y, amount, scaled, counter); }),
         () => getPrefs().highContrast,
+        (id) => {
+          let sprite: string | undefined;
+          view.forEachCharacter((c) => { if (c.id === id) sprite = c.sprite; });
+          return sprite;
+        },
       ),
       { reducedMotion: () => getPrefs().reduceMotion, arcade, elementOf: (id) => pool.peek(id)?.element, maxLifeOf: (id) => world.state.maxHp[id], sfx: playSfx },
     );

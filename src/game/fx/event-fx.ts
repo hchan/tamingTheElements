@@ -13,6 +13,7 @@ import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
 import { createShockLayer } from './shock-view';
 import { koPunch } from './arena-pan';
+import { shouldCutin } from './cutin-gate';
 import { arcadeHeroScale } from '../views/hero-scale';
 
 /**
@@ -365,6 +366,7 @@ export function createPhaserFxSink(
   viewTick: () => number,
   numberAt?: (x: number, y: number, amount: number, scaled: boolean, counter: boolean) => void,
   highContrast: () => boolean = () => false,
+  heroOf: (id: number) => string | undefined = () => undefined,
 ): FxSink {
   // Pooled dots (at most SPARK_POOL): dots[0..live) are in flight, advanced by one scene update listener that only
   // exists while dots are in flight. Finished dots are swapped behind `live`, so nothing allocates after warm-up.
@@ -523,6 +525,11 @@ export function createPhaserFxSink(
       if (host.dispatchEvent && host.Event) host.dispatchEvent(new host.Event('tte:super-cut'));
       const v = viewOf(caster);
       if (v) void import('./super-view').then((m) => { m.superCut(scene, v, fromTick, untilTick, reduced, viewTick, paused, superId); });
+      const hero = heroOf(caster);
+      if (v && hero && shouldCutin(hero, (globalThis as { location?: { search: string } }).location?.search ?? '',import.meta.env.DEV || import.meta.env.MODE === 'test')) {
+        const side = (centre(caster)?.x ?? 640) < 640 ? -1 : 1;
+        void import('./cutin-view').then((m) => { m.showCutin(scene, hero, fromTick, reduced, side, viewTick, paused, import.meta.env.BASE_URL); });
+      }
     },
   };
 }
