@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- SIM 109: Arcade 2v2/3v3 life retune (data only): fiara 730->682, morblass 865->810, echo 661->700, nykra 655->692, durrok 625->675; Classic and Arcade 1v1 unchanged. Goldens and `arcade-2v2-baseline.json` re-recorded (8 goldens change content, the rest the simVersion header).
+
 - SIM 108: Arcade 1v1 life re-fit for pax, echo, treenoc and lavax (data only); 2v2 and 3v3 team life unchanged. Goldens and `arcade-baseline.json` re-recorded.
 
 - Hurl Rock impact burst (render-only): `hurlImpact` in `src/game/fx/quarrak-hit-fx.ts` draws 16 larger chips, a wider dust ring and a soft stone flash. No sim, golden or `SIM_VERSION` change.
