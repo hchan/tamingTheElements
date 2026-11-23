@@ -145,14 +145,14 @@
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
    "spec": "d64f6c813ed792cbd47f739f092b1919e625098aca337a7cbb83e5849ab23b6d",
-   "anim": "880bbf628b5ca19d09265251038d4c06567bfc077cc65d66b95645baffb5d347",
+   "anim": "eb6f03a1828b509bdb136d07efaad07b57df95d1a96a13899a5bd1e505691970",
    "portrait": "e9c846daca76f138320e5a0ec95a72adff849c5323c6ca95bd7e45329f5e422b"
   },
   "outputs": {
    "parts/body.png": "71d377b53391eb24a0cbf9d503eabc4bce367bb6dbc12fdc5fe5804bdfe5f41b",
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "289da5081e72f84ef28d894391cc517c18c7c8ba2af2f06e68b80acc491d00ce",
-   "rig.json": "8420c37fdaedb45b4392993e4f8f48e0e120dbd1fe4a49bb5943c1ad5f6661a1"
+   "rig.json": "c65ceb734e0fcb3007b51f16a782afd00597d1331b3f16f01320c162c4fdf600"
   }
  },
  "ouroth": {
