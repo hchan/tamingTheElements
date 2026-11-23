@@ -9,7 +9,7 @@ You implement ONE work package. You never commit, push or tag; the coordinator d
 
 ## Procedure
 
-1. Confirm the worktree: `git rev-parse HEAD` and `git rev-parse main`. If they differ, run `git checkout -B "$(git branch --show-current)" main` (the worktree branch is yours alone).
+1. Step 0, before reading anything: worktrees can start up to 100+ commits behind local main (measured 2026-11-23: stale `origin/main` base). Run `git rev-parse HEAD` and `git rev-parse main`; if they differ, run `git checkout -B "$(git branch --show-current)" main` (the worktree branch is yours alone), then `corepack pnpm install --frozen-lockfile` if `node_modules` is missing. State both shas in your report.
 2. Read the WP text (goal, files, acceptance, DO NOT) and `CLAUDE.md`.
 3. Implement exactly the WP, touching only files it lists. Append-only exceptions: `docs/REPO-MAP.md`, `CHANGELOG.md`, `src/core/index.ts` exports.
 4. Size: about 400 LOC or fewer excluding md, tests, lockfile and generated files. If you see it will exceed about 450, STOP and report a split proposal instead of continuing.
