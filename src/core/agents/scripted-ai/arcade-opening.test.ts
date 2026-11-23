@@ -76,7 +76,7 @@ describe('Easy slow fingers (SIM_VERSION 105)', () => {
     const saved = t.save() as { mem: number[] };
     saved.mem.length -= 2;
     expect(() => {
-      t.load(saved as unknown as ReturnType<ArcadeTactics['save']>);
+      t.load(saved);
     }).not.toThrow();
     expect((t.save() as { mem: number[] }).mem.length).toBe(saved.mem.length + 2);
   });
