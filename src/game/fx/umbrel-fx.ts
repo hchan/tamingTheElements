@@ -18,7 +18,7 @@ export const SPORE_TICKS = 40;
 export const MEND_TICKS = 40;
 export const SPORE_COLOR = 0x8a8f3c;
 export const SPORE_DARK = 0x4a3a52;
-export const MEND_COLOR = 0xb9b08a;
+export const MEND_COLOR = 0xe6e0a8;
 export const MEND_POP = 'MEND';
 
 export interface Puff { readonly x: number; readonly y: number; readonly r: number; readonly a: number }
@@ -72,9 +72,9 @@ export function myceliumMend(x: number, y: number, age: number, reduced: boolean
   const grown = Math.min(1, t * 2.2);
   const gy = y + 36;
   const threads: number[][] = [];
-  for (let i = 0; i < 6; i++) {
-    const bx = x + (i - 2.5) * 13 + (hash01(i, 111) - 0.5) * 6;
-    const h = (34 + hash01(i, 112) * 38) * grown;
+  for (let i = 0; i < 8; i++) {
+    const bx = x + (i - 3.5) * 13 + (hash01(i, 111) - 0.5) * 6;
+    const h = (50 + hash01(i, 112) * 50) * grown;
     const pts: number[] = [];
     for (let k = 0; k <= 5; k++) {
       const u = k / 5;
@@ -83,9 +83,9 @@ export function myceliumMend(x: number, y: number, age: number, reduced: boolean
     threads.push(pts);
   }
   const motes: Puff[] = [];
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 14; i++) {
     const life = reduced ? 0.5 : (t * (0.8 + hash01(i, 113) * 0.8) + hash01(i, 114)) % 1;
-    motes.push({ x: x + (hash01(i, 115) - 0.5) * 70 + (reduced ? 0 : Math.sin(age * 0.2 + i) * 4), y: gy - 6 - life * 70, r: 2.5 + hash01(i, 116) * 2, a: Math.sin(Math.PI * life) });
+    motes.push({ x: x + (hash01(i, 115) - 0.5) * 100 + (reduced ? 0 : Math.sin(age * 0.2 + i) * 4), y: gy - 6 - life * 100, r: 4 + hash01(i, 116) * 3, a: Math.sin(Math.PI * life) });
   }
-  return { threads, motes, ring: { x, y: gy + 2, r: 16 + 30 * grown }, alpha: reduced ? 0.85 : 1 - t * t };
+  return { threads, motes, ring: { x, y: gy + 2, r: 26 + 44 * grown }, alpha: reduced ? 0.85 : 1 - t * t };
 }

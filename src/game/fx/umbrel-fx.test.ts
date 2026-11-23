@@ -33,7 +33,7 @@ describe('umbrel fx', () => {
   it('threads grow and the ring spreads, then fade', () => {
     const a = myceliumMend(0, 0, 2, false);
     const b = myceliumMend(0, 0, 20, false);
-    expect(a?.threads).toHaveLength(6);
+    expect(a?.threads).toHaveLength(8);
     expect(b?.ring.r).toBeGreaterThan(a?.ring.r ?? 0);
     expect(b?.alpha).toBeLessThan(a?.alpha ?? 0);
   });

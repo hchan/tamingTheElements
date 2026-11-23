@@ -3,7 +3,7 @@ import { HURL_HIT_TICKS, ROLL_HIT_TICKS, hurlImpact, rollImpact } from './quarra
 
 describe('quarrak hit fx', () => {
   it('is drawn while live and gone after its ticks or before the cast', () => {
-    expect(hurlImpact(0, 0, 0, 0, false)?.shards).toHaveLength(9);
+    expect(hurlImpact(0, 0, 0, 0, false)?.shards).toHaveLength(14);
     expect(hurlImpact(0, 0, 0, HURL_HIT_TICKS + 1, false)).toBeUndefined();
     expect(rollImpact(0, 0, 0, ROLL_HIT_TICKS + 1, false)).toBeUndefined();
     expect(rollImpact(0, 0, 0, -1, false)).toBeUndefined();
