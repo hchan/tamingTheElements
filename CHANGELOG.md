@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Art: victory stills for Ouroth, Umbrel and Abyssor added (ten in total, drawn on the Versus results behind `?ff=roster24`, render only; `victory-key.py` gained a per-hero `POCKET_TOL`). No sim change.
+
 - Art: victory stills for Brazgor, Kindrel, Vortigal, Zephra, Nykra and Hyalia installed and drawn on the Versus results (`?ff=roster24`, lazy, render only). No sim change.
 
 - Glimmaw victory still now drawn on the Versus results when Glimmaw wins (`?ff=roster24`, lazy, render only; supersedes the install-only note below). No sim change.
