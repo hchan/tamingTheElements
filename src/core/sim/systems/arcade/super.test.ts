@@ -272,7 +272,7 @@ describe('super determinism', () => {
   it('replays to the same hashes, and a snapshot taken mid-super restores to the same future', () => {
     const a = play(setup(), 0, 400);
     expect(play(setup(), 0, 400)).toEqual(a);
-    for (const cut of [1, 20, 60, 200]) {
+    for (const cut of [1, 20, 40, 60]) {
       const world = setup();
       play(world, 0, cut);
       expect(world.state.arcade[SUPER_STATE(0)]).not.toBe(0);

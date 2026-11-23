@@ -476,3 +476,19 @@ Change (data only, 1v1 untouched): kindrel 755 -> 710, abyssor 475 -> 550 (one f
 Open for a later round (not a cap-3 change): abyssor is weak with any partner except sindarosa (as a partner about .32; the sindarosa/abyssor pair is .45), and sindarosa (released) is .59, as a partner about .66. Sindarosa was held because changing a released value moves the legacy goldens and arcade-2v2-baseline.json.
 
 Re-record: `golden:record` (replay fixtures; reason: round 3 life retune). Legacy-12 balance is unaffected by hidden-hero rows.
+
+### SIM_VERSION 104: shorter Arcade juggle and combo stun
+
+Reason: long stuns removed agency (ideas/brainstorm/qa-r109-findings.md #2). Data change in `src/core/data/arcade.ts`: `JUGGLE_STUN_STEP` 2 -> 6, `COMBO_STUN_CAP_TICKS` 150 -> 120. Sweep of step {6, 8, 10} x cap {100, 120} with `fun:gates` (the plan's headline was 8/100); every cell passed all bands, so the mildest (6/120) was taken.
+
+| step/cap | round median s | combo p90 | comeback | worst race | best race |
+|---|---|---|---|---|---|
+| 2/150 (v103) | 31.08 | 5 | .642 | .443 | .568 |
+| 6/100 | 30.98 | 4 | .644 | .398 | .614 |
+| 6/120 (chosen) | 30.50 | 4 | .642 | .398 | .614 |
+| 8/100 | 30.46 | 4 | .680 | .409 | .614 |
+| 8/120 | 30.50 | 4 | .680 | .409 | .614 |
+| 10/100 | 30.70 | 4 | .659 | .398 | .591 |
+| 10/120 | 30.74 | 4 | .659 | .398 | .591 |
+
+The round median (floor 30 s) is close to its band edge. Fiara's stun share as victim fell 21.5% -> 18.8%. Re-record: `golden:record --ruleset arcade` and `golden:record` (Classic header only), `balance:record --ruleset arcade` with and without `--team-size 2`; `baseline.json` (Classic) untouched.

@@ -62,12 +62,13 @@ export function hitStrengthFor(slug: string, baseDamage: number, melee: boolean)
  * was 1 hit; at 32 a light hit covers one cooldown (median combo 2+ in the round robin). The caps below still bound it.
  */
 export const HIT_STUN_TICKS: PerStrength = [32, 38, 44, 48];
-export const JUGGLE_STUN_STEP = 2;
+/** SIM_VERSION 104: 6 (was 2), so a juggle chain shortens fast (FUN-DESIGN 2.3). */
+export const JUGGLE_STUN_STEP = 6;
 export const MIN_HIT_STUN_TICKS = 6;
 /** At `juggle >= JUGGLE_LIMIT` the next hit deals damage but no stun and the victim recovers. */
 export const JUGGLE_LIMIT = 5;
-/** A combo's stun chain never exceeds this many game ticks (3 s): the hit that would pass it ends the stun instead. */
-export const COMBO_STUN_CAP_TICKS = 150;
+/** A combo's stun chain never exceeds this many game ticks (2.4 s, SIM_VERSION 104; was 150 / 3 s): the hit that would pass it ends the stun instead. */
+export const COMBO_STUN_CAP_TICKS = 120;
 /** Invulnerability after either cap ends a combo (`recovered` reason 1 or 2), so a capped combo cannot restart at once. */
 export const RECOVERY_INVULN_TICKS = 20;
 /** Game ticks after any stun ends in which a plain hit still lands (damage, knockback) but starts no new stun (SIM_VERSION 98). */

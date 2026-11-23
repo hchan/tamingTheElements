@@ -248,6 +248,8 @@ Saves are outside the hashed sim state and are never read by `step`. The format,
 [SAVE-FORMAT.md](SAVE-FORMAT.md) (code: `src/core/save/`). A save-affecting change needs a schema version, not a `SIM_VERSION`
 bump, unless it also changes sim inputs.
 
+SIM_VERSION 104 (Arcade only; Classic bit-identical): `JUGGLE_STUN_STEP` 2 -> 6 and `COMBO_STUN_CAP_TICKS` 150 -> 120, so juggle and combo stun are shorter. Arcade goldens and the Arcade baselines were re-recorded; Classic goldens change only in the `simVersion` header.
+
 ## Changing the contract or data
 
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value
