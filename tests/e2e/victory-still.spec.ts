@@ -17,7 +17,7 @@ test('glimmaw wins the match: the victory still replaces the portrait on the res
   await page.getByLabel('Your race').selectOption('glimmaw');
   await page.getByLabel('AI race').selectOption('fiara');
   await page.getByRole('button', { name: 'Fight!' }).click();
-  await page.waitForFunction(ARENA_READY);
+  await waitFor(page, 'arena ready', ARENA_READY);
   await page.evaluate(`window.__TTE__.arena.step(91)`);
   expect(stillRequests).toEqual([]);
   for (let round = 0; round < 2; round++) {
