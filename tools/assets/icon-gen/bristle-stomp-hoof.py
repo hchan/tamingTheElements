@@ -1,5 +1,5 @@
 """Candidate art for the missing Durrok ability icon bristle_stomp: a hoof drawn with CPU code on a clean empty ring.
-Round 2: add --round2 as the first argument and pass <ring> <ring> <outdir> <icons dir> (deep lit print, 3 variants, contact sheet).
+Round 3 (D-shaped wedges): same arguments with --round3. Round 2: add --round2 as the first argument and pass <ring> <ring> <outdir> <icons dir> (deep lit print, 3 variants, contact sheet).
 Run: ~/claudetmp/venv/bin/python -I tools/assets/icon-gen/bristle-stomp-hoof.py <ring.png> <ring.png> <outdir> [<ability-icons-ai dir>]
 Deterministic (fixed numpy seeds), needs Pillow + numpy. Writes 4 candidates (512 px, ring keyed onto the icon backdrop with a circular matte as
 install-ai-ability-icons.py does for its radial keys) as bristle_stomp_cand{1..4}.png plus 128 px cand*_128.png. With the icons dir it also writes
@@ -330,7 +330,133 @@ def round2(r0, r1, outdir, icons_dir):
     contact_sheet(outdir, icons_dir, len(plan), "bristle_stomp_r2_{}")
 
 
+# ---- round 3: two mirrored D-shaped wedges, fewer tapering cracks, lit lip / dark crescent, ember through the gap ----
+def wedge_points(cx, cy, L, W, gap, sx, tilt):
+    """One D-shaped toe: straight inner edge at x = sx*gap/2, rounded outer edge, slight heel pinch, tipped outward by tilt (radians)."""
+    pts = []
+    for k in range(61):
+        u = k / 60
+        hw = W * max(0.0, 1 - (2 * u - 1) ** 2) ** .5 * (1 - .12 * max(0.0, (u - .72) / .28) ** 1.5 * 1.5)
+        pts.append((sx * (gap / 2 + hw), -L / 2 + L * u))
+    pts += [(sx * gap / 2, L / 2), (sx * gap / 2, -L / 2)]
+    c, sn = np.cos(-sx * tilt), np.sin(-sx * tilt)
+    return [(cx + x * c - y * sn, cy + x * sn + y * c) for x, y in pts]
+
+
+def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble):
+    rng = np.random.default_rng(seed)
+    src = np.asarray(Image.open(ring_path).convert("RGB"), np.float32)
+    yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
+    dd = np.hypot(xx - g["c"][0], yy - g["c"][1])
+    cx, cy = g["c"][0] + off[0], g["c"][1] + off[1]
+    rad = np.deg2rad(ang)
+    L, W, gap = 300 * scale, 112 * scale, 28
+
+    def rot(pts):  # rotate the print frame by ang around (cx, cy)
+        c, sn = np.cos(rad), np.sin(rad)
+        return [(cx + (x - cx) * c - (y - cy) * sn, cy + (x - cx) * sn + (y - cy) * c) for x, y in pts]
+    pm = mask_of(lambda d: [d.polygon(rot(wedge_points(cx, cy, L, W, gap, sx, np.deg2rad(7))), fill=255) for sx in (-1, 1)])
+    cm, em = Image.new("L", (S, S), 0), Image.new("L", (S, S), 0)
+    cd, ed = ImageDraw.Draw(cm), ImageDraw.Draw(em)
+
+    def leave(a):  # radius where the ray from the print centre leaves the print
+        r0 = 20.0
+        while r0 < 420 and pm[int(np.clip(cy + r0 * np.sin(a), 0, S - 1)), int(np.clip(cx + r0 * np.cos(a), 0, S - 1))] > .4:
+            r0 += 4
+        return r0
+    # 4 cracks fanning forward (up) and 1 down-side crack, thick at the print edge, tapering to a point; none off the sides
+    for deg in list(up_angles) + [dn_extra]:
+        a = rad - np.pi / 2 + np.deg2rad(deg)
+        r0 = leave(a)
+        pts = crack_path(rng, cx + (r0 - 8) * np.cos(a), cy + (r0 - 8) * np.sin(a), a, 220 * scale + rng.integers(40, 160), 18)
+        tapered(cd, pts, 15 * scale, .4)
+    # ember crack: runs through the gap between the lobes, then on past the heel as a tapering fissure
+    ax, ay = np.sin(rad) * -1, np.cos(rad)  # print "down" direction after rotation
+    x0, y0 = cx - ax * (L / 2 * .8), cy - ay * (L / 2 * .8)
+    gap_pts = [(x0 + ax * t, y0 + ay * t) for t in np.linspace(0, L * .8, 12)]
+    tail = crack_path(rng, *gap_pts[-1], np.arctan2(ay, ax), 190 * scale, 18)
+    path = gap_pts + tail[1:]
+    tapered(ed, gap_pts, 3.2, 3.2)
+    tapered(ed, tail, 3.2, .6)
+    tapered(cd, tail, 12 * scale, .5)
+    cmask = np.asarray(cm, np.float32) / 255
+    emask = np.asarray(ed._image, np.float32) / 255 if False else np.asarray(em, np.float32) / 255
+    H = noise(rng, 64, .30) + noise(rng, 20, .06) + noise(rng, 5, .02)
+    moundf = np.clip(blur(pm, 30 * scale), 0, 1) * (1 - blur(pm, 5)) * 2.0
+    H += moundf + blur(pm, 80 * scale) * .5 - blur(pm, 3) * 1.8 - blur(cmask, 2) * .5
+    gy, gx = np.gradient(blur(H, 1.8))
+    lit = np.clip(.46 + (gx * -.7 + gy * -.7) * 30, 0, 1)
+    ao = np.clip((blur(H, 22) - H) * 2.0, 0, 1)
+    lit = np.clip(lit * (1 - .55 * ao) + noise(rng, 3, .08), 0, 1)
+    dark, mid, high = np.array((16, 13, 12), np.float32), np.array((98, 74, 52), np.float32), np.array((214, 172, 120), np.float32)
+    t = lit[..., None]
+    field = np.where(t < .5, dark + (mid - dark) * t * 2, mid + (high - mid) * (t - .5) * 2)
+    # weight: bright lip on the upper left of the heaved earth, dark crescent on the lower right
+    my, mx = np.gradient(blur(moundf, 4))
+    dm = mx * -.7 + my * -.7
+    field = field + np.array((120, 92, 58), np.float32) * np.clip(dm * 55, 0, 1)[..., None]
+    field *= (1 - .6 * np.clip(-dm * 55, 0, 1))[..., None]
+    pit = blur(pm, 1.2)  # print floor: cool charcoal so the print separates from the ground
+    dome = np.clip(.55 + (gx * -.7 + gy * -.7) * 14 + blur(pm, 26) * .5 - .25, 0, 1.2)[..., None]
+    over(field, np.array((52, 44, 42), np.float32) + np.array((66, 52, 40), np.float32) * dome, pit, .95)
+    # re-light the pit walls so the print keeps a lit rim top-left
+    rim = np.clip((gx * -.7 + gy * -.7) * 60, 0, 1) * np.clip(blur(pm, 5) * (1 - blur(pm, 5)) * 4, 0, 1)
+    field += np.array((150, 118, 82), np.float32) * rim[..., None] * .8
+    field *= 1 - .6 * blur(cmask, 1.5)[..., None]
+    rub = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    rd = ImageDraw.Draw(rub)
+    for _ in range(nrubble):
+        a, r = rng.uniform(0, 2 * np.pi), rng.uniform(250, 370)
+        x, y, sz = cx + r * np.cos(a), cy + r * np.sin(a) * .95, rng.uniform(6, 20)
+        if np.hypot(x - g["c"][0], y - g["c"][1]) > g["ro"] - 110:
+            continue
+        poly = [(x + sz * rng.uniform(.6, 1.1) * np.cos(q), y + sz * rng.uniform(.5, .9) * np.sin(q)) for q in np.linspace(0, 2 * np.pi, 7)[:-1]]
+        rd.polygon([(px + 5, py + 6) for px, py in poly], fill=(4, 3, 3, 150))
+        rd.polygon(poly, fill=(92, 78, 64, 255))
+        rd.line(poly[3:6], fill=(206, 182, 146, 255), width=3)
+    rub = np.asarray(rub.filter(ImageFilter.GaussianBlur(.8)), np.float32)
+    over(field, rub[..., :3], rub[..., 3] / 255)
+    for dx, dy, r in [(-.9, .75, 120), (.8, .8, 130), (0, 1.15, 150), (.4, -1.0, 80)]:
+        m = mask_of(lambda d, x=cx + dx * 250, y=cy + dy * 250, r=r: d.ellipse((x - r, y - r * .6, x + r, y + r * .6), fill=255))
+        over(field, flat((140, 114, 86)), np.clip(blur(m, r * .5) * (.6 + noise(rng, 14, .9)), 0, 1), .32)
+    core = blur(emask, 1.2)
+    field = field + np.array((255, 160, 55), np.float32) * np.clip(core * 1.8, 0, 1)[..., None] + np.array((210, 80, 18), np.float32) * (blur(emask, 10) * .8)[..., None]
+    lum = field.mean(axis=2, keepdims=True)
+    field = lum + (field - lum) * .88
+    field *= (1 - .65 * np.clip((dd - 200) / (g["ro"] - 50 - 200), 0, 1) ** 1.6)[..., None]
+    rw = 44
+    ringc = src * .5
+    gl = ringc.mean(axis=2, keepdims=True)
+    ringc = gl + (ringc - gl) * .5
+    inner = g["ro"] - rw
+    ringc = ringc * (.6 + .4 * np.clip((dd - inner) / rw, 0, 1))[..., None]
+    final = field.copy()
+    over(final, ringc, np.clip((dd - inner + 3) / 6, 0, 1))
+    img = Image.fromarray(np.clip(final, 0, 255).astype(np.uint8))
+    m = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(m).ellipse((g["c"][0] - g["ro"], g["c"][1] - g["ro"], g["c"][0] + g["ro"], g["c"][1] + g["ro"]), fill=255)
+    out = Image.composite(img, Image.new("RGB", (S, S), BACKDROP), m.filter(ImageFilter.GaussianBlur(3)))
+    k = 512 * 0.97
+    out = out.transform((S, S), Image.EXTENT, (g["c"][0] - k, g["c"][1] - k, g["c"][0] + k, g["c"][1] + k), Image.BICUBIC, fillcolor=BACKDROP)
+    return out.resize((512, 512), Image.LANCZOS)
+
+
+def round3(r0, r1, outdir, icons_dir):
+    os.makedirs(outdir, exist_ok=True)
+    plan = [(r0, RINGS[0], 21, 0, 1.0, (0, 0), (-38, -12, 14, 40), 150, 24),
+            (r1, RINGS[1], 22, -8, 1.08, (-6, 4), (-42, -16, 10, 36), 210, 30),
+            (r0, RINGS[0], 23, 7, .95, (6, 6), (-34, -8, 18, 44), 155, 20)]
+    for i, (path, g, seed, ang, sc, off, ups, dn, nr) in enumerate(plan, 1):
+        im = candidate3(path, g, seed, ang, sc, off, ups, dn, nr)
+        im.save(os.path.join(outdir, f"bristle_stomp_r3_{i}.png"))
+        im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, f"bristle_stomp_r3_{i}_128.png"))
+        print(f"r3 cand{i}")
+    contact_sheet(outdir, icons_dir, len(plan), "bristle_stomp_r3_{}")
+
+
 def main():
+    if sys.argv[1:2] == ["--round3"]:
+        return round3(*sys.argv[2:6])
     if sys.argv[1:2] == ["--round2"]:
         return round2(*sys.argv[2:6])
     if len(sys.argv) not in (4, 5):
