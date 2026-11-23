@@ -5,7 +5,7 @@ import { cutinFlagOn } from './cutin-gate';
  * the Versus result screen when that hero wins. Render only, behind `?ff=roster24` in dev/test builds (the cut-in gate); the image
  * is fetched when the screen shows, never preloaded. Other heroes and every loss or draw keep the portrait card.
  */
-export const VICTORY_HEROES: ReadonlySet<string> = new Set(['glimmaw']);
+export const VICTORY_HEROES: ReadonlySet<string> = new Set(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia']);
 
 export const victoryStillUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/victory/${hero}_victory.png`;
 
