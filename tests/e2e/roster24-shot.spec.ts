@@ -43,13 +43,15 @@ const KINDREL_CASTS = [
   { name: 'ember-bite', cmd: 16, gap: 120 },
   { name: 'cinder-spray', cmd: 32, gap: 300 },
 ] as const;
+// Glimmaw Lure Orb (src/game/fx/glimmaw-fx.ts), primary ability, ranged gap.
+const GLIMMAW_CASTS = [{ name: 'lure-orb', cmd: 16, gap: 300 }] as const;
 
-for (const c of KINDREL_CASTS) {
-  test(`kindrel ${c.name}: cast shots, no page errors`, async ({ page }, testInfo) => {
+for (const c of [...KINDREL_CASTS.map((k) => ({ ...k, hero: 'kindrel' })), ...GLIMMAW_CASTS.map((k) => ({ ...k, hero: 'glimmaw' }))]) {
+  test(`${c.hero} ${c.name}: cast shots, no page errors`, async ({ page }, testInfo) => {
     const errors = collectErrors(page);
     const frames = (): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
     await page.goto(`${START}&ff=arcade,roster24#arcade`);
-    await page.getByLabel('Your race').selectOption('kindrel');
+    await page.getByLabel('Your race').selectOption(c.hero);
     await page.getByLabel('AI race').selectOption('fiara');
     await page.getByRole('button', { name: 'Fight!' }).click();
     await waitForArena(page);
@@ -65,7 +67,7 @@ for (const c of KINDREL_CASTS) {
       done = at;
       await frames();
       // Attached (not SHOT_DIR) so a remote PC run returns the shots in test-results.
-      await testInfo.attach(`kindrel-${c.name}-${String(at)}`, { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
+      await testInfo.attach(`${c.hero}-${c.name}-${String(at)}`, { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
     }
     expect(errors).toEqual([]);
   });
