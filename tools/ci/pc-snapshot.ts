@@ -11,12 +11,12 @@ import { mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { JOB_ID_RE } from './pc-job';
 
-export const DEFAULT_MAX_BYTES = 200 * 1024 * 1024;
+export const DEFAULT_MAX_BYTES = 600 * 1024 * 1024; // raised 2026-11-23: unpushed art commits made the bundle 231 MB; size is not a concern (owner)
 
 export interface PlanOptions {
   /** Ignored paths (relative to cwd) to force-add to the snapshot. */
   include?: readonly string[];
-  /** Bundle size cap in bytes (default 200 MB). */
+  /** Bundle size cap in bytes (default 600 MB). */
   maxBytes?: number;
   /** Where the bundle is written (default <cwd>/.scratch/remote-e2e/<id>). */
   outDir?: string;
