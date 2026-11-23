@@ -10,3 +10,5 @@ Seeding `tte.tour.v1` to `{v:1,seed:7,hero:[curomo,pax,wispera],stage:8,continue
 Also unverified: whether a "Play again" button exists after a live win. A saved 'won' run does not show it.
 
 Idea: a short victory scene with the team, run stats, a title card, and clear Play again / Menu buttons. A saved 'won' run should reopen the same screen.
+
+Verified 2026-11-22 on main with real-game headless screenshots in .scratch/shots (r25-tour-win, r27-ko-20, r28-fight-snag-2).

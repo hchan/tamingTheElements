@@ -24,7 +24,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [qa-r10-fight-readability](../done/qa-r10-fight-readability.md): QA r10: fight readability and intro. - ROUND 1 banner sits on the centre floor chip ("PAX x2" bleeds through the letters, fire-t1900.png);
 - [qa-r13-visual-readability](../done/qa-r13-visual-readability.md): Readability and art notes (r13). Play screen: the "More heroes below" pill overlaps the hero stat row at 1280x720 and the intro paragraph is long (02-play.png).
 - [qa-r41-fight-polish](../brainstorm/qa-r41-fight-polish.md): QA r41: fight polish (desktop 1280x720). Verified from r40: ghost trail shows on Sindarosa fading (2v2-hit.png, translucent red trail plus ring and FADE 2s chip);
-- [qa-r30-round-banner-contrast](../brainstorm/qa-r30-round-banner-contrast.md): ROUND 2 banner is washed out. The big grey ROUND 2 with fighter names has low contrast on the fire stage.
+- [qa-r30-round-banner-contrast](../done/qa-r30-round-banner-contrast.md): ROUND 2 banner is washed out. The big grey ROUND 2 with fighter names has low contrast on the fire stage.
 - [fight-banner-contact-cut](../in-progress/fight-banner-contact-cut.md): FIGHT! banner: cut it short on first contact. The FIGHT! banner now shows for 30 ticks (0.6 s, FIGHT_BANNER_TICKS).
 - [hud-numbers-wide-view-projection](../in-progress/hud-numbers-wide-view-projection.md): HUD damage numbers and the TAG! call project with the 1280 frame on wide views. Hud.ts (damage numbers, ~l630) and tag-view.ts (~l258) project world points into HUD_FRAME (0..1280).
 - [tag-call-position-wide-view](../brainstorm/tag-call-position-wide-view.md): TAG! call position on the wide view. On the panned wide camera the TAG! call can sit away from the incoming hero.
@@ -68,7 +68,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-3 Round banner and stat mismatch
 
-- Members: [qa-r30-round-banner-contrast](../brainstorm/qa-r30-round-banner-contrast.md), [fight-banner-contact-cut](../in-progress/fight-banner-contact-cut.md), [round-result-banner](../in-progress/round-result-banner.md), [qa-stat-mismatch](../brainstorm/qa-stat-mismatch.md)
+- Members: [qa-r30-round-banner-contrast](../done/qa-r30-round-banner-contrast.md), [fight-banner-contact-cut](../in-progress/fight-banner-contact-cut.md), [round-result-banner](../in-progress/round-result-banner.md), [qa-stat-mismatch](../brainstorm/qa-stat-mismatch.md)
 - Size: S
 - Shared files: round banner view, Hud.ts
 - Flags: needs browser/e2e
