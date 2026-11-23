@@ -45,7 +45,7 @@ export const FULL_RACES: readonly string[] = CHARACTERS.filter((c) => c.element 
 /** Elements of the 12 races, in the order of the matrix rows and columns. */
 export const MATRIX_ELEMENTS: readonly Element[] = ELEMENTS.filter((e) => e !== 'void');
 
-export type AgentKind = 'scripted' | 'random';
+export type AgentKind = 'scripted' | 'random' | 'idle';
 export type EndReason = 'ko' | 'timeout' | 'stalemate';
 export type Ruleset = 'classic' | 'arcade';
 
@@ -244,7 +244,23 @@ export function arcadeLevel(aiLevel: number): ArcadeAiLevel {
   return aiLevel <= 2 ? AI_EASY : aiLevel === 3 ? AI_NORMAL : AI_HARD;
 }
 
+/** `idle`: sends no command ever (a stationary foe for spacing probes, tools/sim/footsie-probe.ts). */
+export class IdleAgent implements Agent {
+  readonly id: string;
+  constructor(id: string) {
+    this.id = id;
+  }
+  observe(): Command {
+    return 0;
+  }
+  save(): AgentState {
+    return null;
+  }
+  load(): void {}
+}
+
 export function makeAgent(kind: AgentKind, race: string, opponent = race, aiLevel = 3, frozenV1 = false): Agent {
+  if (kind === 'idle') return new IdleAgent(`idle:${race}`);
   return kind === 'random' ? new RandomBot(`random:${race}`) : new ScriptedAI(race, `scripted:${race}`, opponent, aiLevel, undefined, frozenV1);
 }
 
@@ -715,9 +731,9 @@ export function formatTournament(t: TournamentSummary): string {
 
 function parseAgents(v: string | undefined): readonly [AgentKind, AgentKind] {
   const parts = (v ?? 'scripted,scripted').split(',');
-  const ok = (x: string | undefined): x is AgentKind => x === 'scripted' || x === 'random';
+  const ok = (x: string | undefined): x is AgentKind => x === 'scripted' || x === 'random' || x === 'idle';
   const [x, y = x] = parts;
-  if (!ok(x) || !ok(y) || parts.length > 2) throw new Error(`--agents must be scripted|random[,scripted|random], got "${v ?? ''}"`);
+  if (!ok(x) || !ok(y) || parts.length > 2) throw new Error(`--agents must be scripted|random|idle[,scripted|random|idle], got "${v ?? ''}"`);
   return [x, y];
 }
 
