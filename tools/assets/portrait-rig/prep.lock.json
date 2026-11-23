@@ -99,6 +99,22 @@
    "rig.json": "405b3a8219a6195704412a56c3c13d86491569dca6139bdcf0a36a1002e954be"
   }
  },
+ "glimmaw": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "78bab55ec91ae73ce580fc52f10e5d153e8c92f4644f62b7c39c6432cc4a1a9e",
+   "anim": "0ca4116e0d22ea0fc8d7ec80a406d816f5b91486f41767a7bdd6e84bf288be60",
+   "portrait": "dac21b886faeb399774066b0dc008e354fa15cced6ae15ab5f6a6e448fb14d6f"
+  },
+  "outputs": {
+   "parts/body.png": "9d28419762c2a831b66bde2800166d00ba0404da1a5035cb46e5a18e2b55e521",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "bf2991732d48cacb679db604da510c13fc5be6c06f4943e391dabfcbb6c1dd93",
+   "parts/rim.png": "4005b0c3d4d5f1950fe3f7ea4b0fa9d162859f8b1fc5cc63530f42c96ae778a4",
+   "parts/flash.png": "cfba1bd7bedfc18a48558eb9babb7b5997fe81faedb1492e7e4e01c29b385eec",
+   "rig.json": "29b1970c0e78200aba2d17c456a25b88248a4a8f5fff31ef75b87facaf45a8f8"
+  }
+ },
  "ishimi": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
