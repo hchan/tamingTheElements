@@ -29,4 +29,3 @@ Plan: .scratch/plans/roster24-one-hero.md (section 3, rank 3). Release set stays
   (body_plans/serpent.py, r24/ouroth.landmarks.json, tune-ouroth-anim.py, ouroth-ko-keys.py). Keying step used on the source: key-grey-box.py with box 65 135 115 185 (defaults lum 105, sat 0.2).
   Art box is now 170x160 (squarish coil) but the sim body is still ouroth [200, 90] in src/core/data/size.ts: check the hurtbox in a real-game screenshot and retune the size (sim change, not part of P1).
   brazgor-ko-keys.py still has the old off-by-one (oy = bb[3] - floor), so Brazgor KO frames sit 1 px high: fix on a Brazgor re-bake. docs/REPO-MAP.md and portrait-rig/README.md rows for serpent/r24/new scripts left for the REPO-MAP owner (shared file).
-- 2026-11-22 P3 (words only, no src/core change): lesson rows for Wyrm Coil and Scorch Breath in ability-lessons.ts with a pin test in ability-lessons.test.ts. Audit rows already carry the numbers.
