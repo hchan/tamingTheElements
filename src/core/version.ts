@@ -379,5 +379,7 @@
  * 107: Arcade only (Classic hashes unchanged); Hard AI only (precedent 85, 105): footsies (`arcade-footsies.ts`): committed steps (no reversal within 8 ticks), whiff punish of a recovering foe that is not stunned and in no combo, ranged close-in to 620 px.
  *    Re-record reason: Hard AI commands change; recorded goldens change only the simVersion header (they run Normal or no scripted AI) and the balance baselines (Normal) do not move.
  * 108: Arcade only (Classic hashes unchanged). Data-only 1v1 life re-fit after the v104 stun change moved 1v1 wins from melee to ranged: ARCADE_RACE_NUMBERS hpPm pax 4351 -> 4540, echo 6750 -> 7250, treenoc 5998 -> 6540, lavax 4000 -> 3680; ARCADE_2V2_LIFE_PM compensated (pax 675 -> 647, echo 710 -> 661, treenoc 785 -> 720, lavax 804 -> 874) so 2v2/3v3 team life is bit-identical (v86 method); numbers in docs/BALANCE.md. Re-record reason: Arcade 1v1 goldens (arcade-1v1, arcade-run) and arcade-baseline.json change; other goldens change only the simVersion header; arcade-2v2-baseline.json and baseline.json do not move.
+ * 109: Arcade 2v2 and 3v3 only (Classic and Arcade 1v1 hashes unchanged). Data-only `ARCADE_2V2_LIFE_PM` retune from the full-roster random-partner pass at 108 (`snag-trap-teams.mts partners 2 16 --roster full`): fiara 730 -> 682, morblass 865 -> 810, echo 661 -> 700, nykra 655 -> 692, durrok 625 -> 675 (-6.6, -6.4, +5.9, +5.7, +8.0 percent each); measurements, docs/BALANCE.md.
+ *    Re-record reason: goldens with a moved race in a 2- or 3-hero Arcade roster and arcade-2v2-baseline.json change content; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 108;
+export const SIM_VERSION = 109;

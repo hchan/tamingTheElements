@@ -85,11 +85,11 @@ export const ARCADE_2V2_LIFE_SCALE_PM = 1300;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   curomo: 700, // 740 before SIM_VERSION 101
   cyclonius: 810, // 770 before SIM_VERSION 86
-  echo: 661, // 710 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 680 before SIM_VERSION 101; 650 before SIM_VERSION 100
-  fiara: 730, // 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
+  echo: 700, // 661 before SIM_VERSION 109; 710 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 680 before SIM_VERSION 101; 650 before SIM_VERSION 100
+  fiara: 682, // 730 before SIM_VERSION 109; 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
   ishimi: 630, // 670 before SIM_VERSION 101; 720 before SIM_VERSION 86
   lavax: 874, // 804 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged)
-  morblass: 865, // 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
+  morblass: 810, // 865 before SIM_VERSION 109; 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
   pax: 647, // 675 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 660 before SIM_VERSION 100
   rokcore: 740, // 670 before SIM_VERSION 69 (roster WP 0.4)
   sindarosa: 785, // 830 before SIM_VERSION 106; 800 before SIM_VERSION 101
@@ -98,10 +98,10 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   hyalia: 650,
   quarrak: 675, // 725 before SIM_VERSION 102
   kindrel: 710, // 755 before SIM_VERSION 103; 725 before 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
-  nykra: 655, // 740 before SIM_VERSION 102
+  nykra: 692, // 655 before SIM_VERSION 109; 740 before SIM_VERSION 102
   brazgor: 490, // 460 before SIM_VERSION 102
   glimmaw: 670,
-  durrok: 625, // 590 before SIM_VERSION 102
+  durrok: 675, // 625 before SIM_VERSION 109; 590 before SIM_VERSION 102
   zephra: 830, // 760 before SIM_VERSION 102
   ouroth: 590,
   abyssor: 590, // 550 before SIM_VERSION 106; 475 before SIM_VERSION 103; 430 before 102
