@@ -1,4 +1,4 @@
-"""Install the art-director-approved roster24 victory stills (glimmaw, brazgor, kindrel, vortigal, zephra, nykra, hyalia) as transparent full-body PNGs.
+"""Install the art-director-approved roster24 victory stills (glimmaw, brazgor, kindrel, vortigal, zephra, nykra, hyalia, ouroth, umbrel, abyssor) as transparent full-body PNGs.
 
 Usage: python -I tools/assets/victory-gen/victory-key.py [outdir]   (default public/assets/img/victory)
 Reads each source named in HEROES from tools/assets/victory-gen/provenance/ (approval and facing in provenance/approval.json, sha256 pinned in
@@ -25,13 +25,18 @@ HEROES = {
     "zephra": "r978-zephra-win2_97810_d0.2.png",
     "nykra": "nykra_win.png",
     "hyalia": "hyalia_win.png",
+    "ouroth": "r821-ouroth-vic_59822_d0.45.png",
+    "umbrel": "r805-umbrel-victory_58210_d0.5.png",
+    "abyssor": "r842-abyssor-vic_61100_d0.4.png",
 }
 TOL, MARGIN, BOX = 14, 12, (320, 314)
 KEY = (255, 0, 255)
 POCKETS = True
+# per-hero flatness tolerance for the enclosed-pocket seeds (default 3): hazy pockets (soft fog behind a coil) need more
+POCKET_TOL = {"ouroth": 12, "umbrel": 12, "abyssor": 12}
 
 
-def key(src: Image.Image) -> Image.Image:
+def key(src: Image.Image, pocket_tol: int = 3) -> Image.Image:
     rgb = src.convert("RGB")
     flood = rgb.copy()
     for xy in ((0, 0), (rgb.width - 1, 0), (0, rgb.height - 1), (rgb.width - 1, rgb.height - 1)):
@@ -42,7 +47,7 @@ def key(src: Image.Image) -> Image.Image:
     if POCKETS:
         for y in range(4, rgb.height - 4, 6):
             for x in range(4, rgb.width - 4, 6):
-                if flood.getpixel((x, y)) != KEY and all(max(abs(a - b) for a, b in zip(rgb.getpixel((x + dx, y + dy)), bg)) <= 3 for dx, dy in ((-3, 0), (3, 0), (0, -3), (0, 3), (0, 0))):
+                if flood.getpixel((x, y)) != KEY and all(max(abs(a - b) for a, b in zip(rgb.getpixel((x + dx, y + dy)), bg)) <= pocket_tol for dx, dy in ((-3, 0), (3, 0), (0, -3), (0, 3), (0, 0))):
                     ImageDraw.floodfill(flood, (x, y), KEY, thresh=TOL)
     # flooded background equals KEY (difference 0); everything else is body
     matte = ImageChops.difference(flood, Image.new("RGB", rgb.size, KEY)).convert("L").point(lambda v: 0 if v == 0 else 255)
@@ -54,7 +59,7 @@ def key(src: Image.Image) -> Image.Image:
 
 def install(hero: str, out_dir: Path) -> None:
     src = Image.open(PROV / HEROES[hero])
-    im = src.convert("RGBA") if "A" in src.getbands() else key(src)
+    im = src.convert("RGBA") if "A" in src.getbands() else key(src, POCKET_TOL.get(hero, 3))
     box = im.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
     if box is None:
         raise SystemExit(f"{hero}: empty matte")
