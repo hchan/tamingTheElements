@@ -527,3 +527,21 @@ Fun gates (1v1): round median 30.5 s -> 30.9 s, worst race .398 -> .432, best ra
 Open: echo is still .47 and sindarosa is .42-.48 in block B (about 1 SE under); curomo and wispera stay .46-.49. Next pass could lift echo about 2% and sindarosa 1v1 life, via `TTE_MODS`.
 
 Re-record: Arcade 1v1 goldens (`arcade-1v1`, `arcade-run`) and `arcade-baseline.json` change; other goldens change only the simVersion header; `arcade-2v2-baseline.json` and `baseline.json` do not move.
+
+## Arcade 2v2 life retune from the v108 random-partner pass (SIM_VERSION 109)
+
+At SIM_VERSION 108 the random-partner pass (`snag-trap-teams.mts partners 2 16 --roster full`, 4416 matches, SE about 1.8 pp per race) had fiara .592 and morblass .590 above the band and echo .417, nykra .421, durrok .385 below it (quarrak .434 and sindarosa .563 within about 1 SE: held). v106 and v108 are one sample (team life was bit-identical, seeds deterministic). Data-only change to five `ARCADE_2V2_LIFE_PM` rows (`hpPm` untouched, so Classic and Arcade 1v1 are bit-identical; 3v3 reads the same table and moves by the same life percent). Round 0 re-measure: `balance:compare --ruleset arcade` and `--team-size 2` 0.0 everywhere; `fun:gates` 1v1 round median 30.92 s, 2v2 59.12 s, all ok. Round 1 was dry-run with `TTE_MODS` (`life:` edits) before the source edit, the same seeds as R0.
+
+| race | factor | team life | R0 rate (108) | R1 rate | R1 lead-only |
+|---|---|---|---|---|---|
+| fiara | 730 -> 682 | -6.6% | .592 | .542 | .554 |
+| morblass | 865 -> 810 | -6.4% | .590 | .495 | .516 |
+| echo | 661 -> 700 | +5.9% | .417 | .476 | .492 |
+| nykra | 655 -> 692 | +5.7% | .421 | .472 | .465 |
+| durrok | 625 -> 675 | +8.0% | .385 | .462 | .481 |
+
+Round 1 met the acceptance bar, so round 2 was not run. All five moved races are in .45-.55 and at least halfway to .50. Untouched races: sindarosa .563 -> .551, quarrak .434 -> .433, curomo .450 -> .449 (all within noise; quarrak and curomo stay at the band edge), no untouched race moved past .432-.568. Measured slopes (pp per 1% team life, one-step): fiara about 0.8, morblass about 1.5, echo about 1.0, nykra about 0.9, durrok about 1.0 (measurements, SE about 1.8 pp each, so only the pooled value, about 1.0, is meaningful; the plan's 1.4 undershot safely).
+
+Open: quarrak (.433) and curomo (.449) sit at the band edge; pre-checked next rows are quarrak 675 -> 705 and curomo 700 -> 720. Pax note: the v108 "team life unchanged" is off by 1 pm for pax (4351 x 675 -> team 2936, 4540 x 647 -> 2937; 2v2 3816 -> 3818): same HP at max health 100, +1 HP at e.g. 120; no integer factor gives 2936, so it is left as is.
+
+Re-record: `golden:record --ruleset arcade` and `golden:record` (Classic header only), `balance:record --ruleset arcade --team-size 2` (fixed-partner fixture, regression only); `arcade-baseline.json` and `baseline.json` (1v1) untouched.
