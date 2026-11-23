@@ -51,6 +51,9 @@ const CASTS = [
   { hero: 'quarrak', name: 'boulder-roll', cmd: 32, gap: 300 },
   { hero: 'zephra', name: 'static-mote', cmd: 16, gap: 300 },
   { hero: 'zephra', name: 'skitter', cmd: 32, gap: 100 },
+  // Umbrel (src/game/fx/umbrel-fx.ts): the spore cloud rides the projectile; the mend threads grow round the caster.
+  { hero: 'umbrel', name: 'spore-burst', cmd: 16, gap: 300 },
+  { hero: 'umbrel', name: 'mycelium-mend', cmd: 32, gap: 300 },
 ] as const;
 
 for (const c of CASTS) {
