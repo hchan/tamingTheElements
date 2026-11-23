@@ -14,3 +14,5 @@ K.O., SINDAROSA IN!, SNAG, AIR x2 and damage numbers stack in the middle of the 
 ## Follow-up (banner timing)
 
 The intro banner (ROUND n / SUDDEN DEATH) now starts its own clock (fade, scale-in, name cards) when the round result card ends, not under it. A tag call waiting for a banner (not the super cut-in) is held at most 15 view ticks (`BANNER_WAIT_TICKS`), so a tag during FIGHT! shows within 0.3 s. The intro banner is still on screen only about 30 ticks (card ends at +100, FIGHT! at about +130): a full 1.2 s would need a shorter result card or a longer intro in the sim.
+
+Verified 2026-11-22 on main with real-game headless screenshots in .scratch/shots (r25-tour-win, r27-ko-20, r28-fight-snag-2).
