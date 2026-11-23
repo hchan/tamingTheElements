@@ -10,6 +10,7 @@ import { GORE_COLOR, GORE_POP, GORE_SPRITE, GORE_TICKS, HIDE_COLOR, HIDE_POP, HI
 import { BITE_COLOR, BITE_POP, BITE_SPRITE, BITE_TICKS, SPRAY_COLOR, SPRAY_POP, SPRAY_SPRITE, SPRAY_TICKS, cinderSpray, emberBite } from './kindrel-fx';
 import { HURL_POP, HURL_SPRITE, HURL_TICKS, ROLL_POP, ROLL_SPRITE, ROLL_TICKS, boulderRoll, hurlRock, paintRock } from './quarrak-fx';
 import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL_BOX, COIL_COLOR, COIL_POP, COIL_SPRITE, COIL_TICKS, meleeBox, scorchBreath, wyrmCoil, type Box } from './ouroth-fx';
+import { SKITTER_COLOR, SKITTER_POP, SKITTER_SPRITE, SKITTER_TICKS, skitterHop } from './zephra-fx';
 import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
@@ -60,7 +61,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'coil' | 'breath'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'coil' | 'breath' | 'skitter'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   /** Each fighter's sim box (top-left, size), for FX drawn to a melee hitbox. */
@@ -157,6 +158,8 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       // Ouroth (roster24): Wyrm Coil and Scorch Breath, drawn to the sim's melee hitbox.
       { sprite: COIL_SPRITE, kind: 'coil' as const, word: COIL_POP, base: 12 },
       { sprite: BREATH_SPRITE, kind: 'breath' as const, word: BREATH_POP, base: 14 },
+      // Zephra (roster24): Skitter's hop streaks and landing puff.
+      { sprite: SKITTER_SPRITE, kind: 'skitter' as const, word: SKITTER_POP, base: 16 },
     ];
     for (const team of [0, 1]) {
       for (const k of kindrelCasts) {
@@ -227,6 +230,19 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         paintEmbers(glow, b.embers.map((e) => ({ x: e.x, y: e.y, r: e.r, a: b.alpha })), BREATH_COLOR, 0.9);
         return age <= BREATH_TICKS;
       }
+      if (f.kind === 'skitter') {
+        const h = skitterHop(f.x, f.y, f.dir, age, reduced);
+        if (!h) return false;
+        for (const s of h.streaks) {
+          gfx.lineStyle(6, 0x000000, 0.16 * h.alpha).lineBetween(s.x0, s.y0, s.x1, s.y1);
+          gfx.lineStyle(2.5, SKITTER_COLOR, 0.7 * h.alpha).lineBetween(s.x0, s.y0, s.x1, s.y1);
+          glow.lineStyle(8, SKITTER_COLOR, 0.1 * h.alpha).lineBetween(s.x0, s.y0, s.x1, s.y1);
+        }
+        gfx.lineStyle(5, 0x000000, 0.16 * h.alpha).strokeCircle(h.puff.x, h.puff.y, h.puff.r);
+        gfx.lineStyle(2, SKITTER_COLOR, 0.55 * h.alpha).strokeCircle(h.puff.x, h.puff.y, h.puff.r);
+        paintEmbers(glow, h.motes.map((m) => ({ x: m.x, y: m.y, r: m.r, a: h.alpha })), SKITTER_COLOR, 0.9);
+        return age <= SKITTER_TICKS;
+      }
       if (f.kind === 'gore') {
         const g = forgeGore(f.x, f.y, f.dir, age, reduced);
         if (!g) return false;
@@ -288,7 +304,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const look = popLook(age, reduced);
       // SNAG is a pale parchment with a thick dark outline (it was a dim tan that read grey over the lava floor, QA r77).
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);

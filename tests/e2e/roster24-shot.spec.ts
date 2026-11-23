@@ -79,3 +79,28 @@ for (const c of CASTS) {
     expect(errors).toEqual([]);
   });
 }
+
+// Zephra Skitter cast FX (src/game/fx/zephra-fx.ts): the secondary (cmd 32) shots 1, 5 and 10 ticks after the cast. Long gate (untagged): per-hero visual.
+test('zephra skitter: cast shots, no page errors', async ({ page }, testInfo) => {
+  const errors = collectErrors(page);
+  const frames = (): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+  await page.goto(`${START}&ff=arcade,roster24#arcade`);
+  await page.getByLabel('Your race').selectOption('zephra');
+  await page.getByLabel('AI race').selectOption('fiara');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await waitForArena(page);
+  const card = page.getByRole('button', { name: 'Got it' });
+  if (await card.isVisible()) await card.click();
+  await page.evaluate(`window.__TTE__.arena.step(91)`);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 700, 360, 0); a.place(f.id, 800, 360, 4); })()`);
+  await frames();
+  await page.evaluate(`window.__TTE__.arena.step(1, [32, 0])`);
+  let done = 1;
+  for (const at of [1, 5, 10]) {
+    await page.evaluate(`window.__TTE__.arena.step(${String(at - done)})`);
+    done = at;
+    await frames();
+    await testInfo.attach(`zephra-skitter-${String(at)}`, { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
+  }
+  expect(errors).toEqual([]);
+});
