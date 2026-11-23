@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Glimmaw rigged (turtle, art-director APPROVE 4/5), distinct walk/cast/hurt/KO rows, 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: idle and hurt row 2 subtle, walk frame 3 leg smear.
+
 - Vortigal rigged (eagle from matte r149 8710, art-director APPROVE 4/5), wings as separate bones, KO tilt-and-drop; 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: idle and hurt rows subtle.
 
 - Hyalia rigged (quadruped wyvern from approved matte 96433, art-director APPROVE 4/5), 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: wings baked into the body, hurt/KO rows weak.
