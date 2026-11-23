@@ -49,7 +49,7 @@ describe('ability lessons', () => {
 
   it('pins the Ouroth lessons', () => {
     expect(lessonsFor(characterId('ouroth')).map((l) => l?.abilityId)).toEqual(['wyrm-coil', 'scorch-breath']);
-    expect(ABILITY_LESSONS.get('wyrm-coil')?.line).toContain('beats Guard');
+    expect(ABILITY_LESSONS.get('wyrm-coil')?.line).toContain('Guard does not stop it');
   });
 
   it('pins the Vortigal lessons', () => {
