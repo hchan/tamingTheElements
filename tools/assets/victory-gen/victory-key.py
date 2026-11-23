@@ -1,4 +1,4 @@
-"""Install the art-director-approved roster24 victory stills (glimmaw, brazgor, kindrel, vortigal, zephra, nykra, hyalia, ouroth, umbrel, abyssor) as transparent full-body PNGs.
+"""Install the art-director-approved roster24 victory stills (glimmaw, brazgor, kindrel, vortigal, zephra, nykra, hyalia, ouroth, umbrel, abyssor, durrok) as transparent full-body PNGs.
 
 Usage: python -I tools/assets/victory-gen/victory-key.py [outdir]   (default public/assets/img/victory)
 Reads each source named in HEROES from tools/assets/victory-gen/provenance/ (approval and facing in provenance/approval.json, sha256 pinned in
@@ -28,6 +28,7 @@ HEROES = {
     "ouroth": "r821-ouroth-vic_59822_d0.45.png",
     "umbrel": "r805-umbrel-victory_58210_d0.5.png",
     "abyssor": "r842-abyssor-vic_61100_d0.4.png",
+    "durrok": "r992-durrok-vic_99200_d0.2.png",
 }
 TOL, MARGIN, BOX = 14, 12, (320, 314)
 KEY = (255, 0, 255)
