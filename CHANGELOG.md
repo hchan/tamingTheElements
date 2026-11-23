@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Hyalia (roster24, behind `?ff=roster24`): re-tuned baked rows: breathing idle, bobbing walk with wing flap, rearing cast with eye glow, hurt recoil and eye flash, toppling KO (`tools/assets/portrait-rig/tune-hyalia-anim.py`). Art only; no sim change.
+
 - Roster24 super cut-in composites show for about 0.6 s on a hero's super (`?ff=roster24`, lazy-loaded, fade only under reduced motion). Render only; no sim change.
 
 - Art: Glimmaw victory still (turtle, art-director approved 4/5, 2026-11-23) installed as `public/assets/img/victory/glimmaw_victory.png` by `tools/assets/victory-gen/victory-key.py`; install-only, not drawn yet, Glimmaw stays behind `?ff=roster24`. No sim change.
