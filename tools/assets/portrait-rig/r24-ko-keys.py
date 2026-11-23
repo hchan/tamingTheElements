@@ -14,8 +14,9 @@ MARGIN = 4
 # (rotation degrees clockwise about the feet, horizontal scale, vertical scale, dx, dy) per frame; the last frame holds
 POSES = [(0, 1.0, 0.94, -2, 0), (0, 1.04, 0.84, -4, 0), (0, 1.08, 0.74, -5, 0), (0, 1.1, 0.7, -5, 0)]
 # per-hero overrides: vortigal (a flier) tips over and drops hard, so the four frames read as a fall and not a squash
-HERO_POSES = {"vortigal": [(0, 1.0, 1.0, -2, 0), (24, 0.93, 0.9, -6, 6), (58, 0.88, 0.82, -10, 16), (82, 0.86, 0.78, -12, 22)]}
-MARGINS = {"vortigal": 9}  # the blurred contact shadow reaches a few px past the wing tips, so a flier needs a wider crop margin
+HERO_POSES = {"hyalia": [(0, 1.0, 0.98, -2, 0), (10, 0.92, 0.88, -5, 3), (22, 0.9, 0.78, -8, 8), (30, 0.9, 0.72, -9, 12)],  # hyalia: a tall quadruped that topples and slumps
+              "vortigal": [(0, 1.0, 1.0, -2, 0), (24, 0.93, 0.9, -6, 6), (58, 0.88, 0.82, -10, 16), (82, 0.86, 0.78, -12, 22)]}
+MARGINS = {"hyalia": 8, "vortigal": 9}  # the blurred contact shadow reaches a few px past the wing tips, so a flier needs a wider crop margin
 heroes = sys.argv[1:] or sys.exit("usage: r24-ko-keys.py HERO [HERO...]")
 
 for hero in heroes:

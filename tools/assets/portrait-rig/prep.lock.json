@@ -105,14 +105,14 @@
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
    "spec": "bb1ddd1eba1f4f268d8405e6ad74b1a8e91bf2561458dd1882cc30b78d49b932",
-   "anim": "968f1ab69d0e2349ea0039098aa74e70ba68b3c739789587d0f8f1f2dfbedfbd",
+   "anim": "2bacd36990cceebed5d8188ea4cba183e4b8be66f4c0dd47fc4097e21462230c",
    "portrait": "90ddc5ad789c90a6bf2ed61dbae5d0285d4137dc6ed5fb1dd5dc4a78cf72b49b"
   },
   "outputs": {
    "parts/body.png": "62e583756af9ce3592ad8356b1140ff9f8ab126cd09cbc309cda7ff69ad393cf",
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "6bd7bb8ec6231d39e2e4adfdc765ad0b72eb6badcf9b80a6bdb12475a7cce77b",
-   "rig.json": "405b3a8219a6195704412a56c3c13d86491569dca6139bdcf0a36a1002e954be"
+   "rig.json": "e2ea80320cde992075092b867f7412b89f4b4ad8d8fbad43d18c748a48ff6963"
   }
  },
  "ishimi": {
