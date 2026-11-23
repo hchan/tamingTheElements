@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Art: Quarrak boulderRoll, Umbrel sporeBurst, Kindrel cinderSpray and Hyalia stingingFilament get real 8-frame loop bodies cut from the approved stills (`tools/assets/fx-gen/batch-m-real-loops.py`); reduced motion holds frame 0. No sim change.
 - Art: Bristle Stomp ability icon replaced with a regraded hoof-print glyph ("Deer Track" by Delapouite, game-icons.net, CC BY 3.0; credited in About). Art-director approved r7, 4.1. No sim change.
 
 - Art: victory stills for Ouroth, Umbrel and Abyssor added (ten in total, drawn on the Versus results behind `?ff=roster24`, render only; `victory-key.py` gained a per-hero `POCKET_TOL`). No sim change.
