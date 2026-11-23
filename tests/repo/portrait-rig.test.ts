@@ -25,7 +25,8 @@ const HEROES = readdirSync(SPEC_DIR)
   .sort();
 // the owner's originals keep their painted fringes (lavax: blue flame edge; morblass: wet-brush mist; wispera: the redrawn cloud has a soft dark vapour edge, WISPERA-R2);
 // their specs predate `haloMax`, so the numbers stay here: a spec's own `haloMax` wins.
-const HALO_MAX: Record<string, number> = { lavax: 0.12, morblass: 0.07, wispera: 0.12 };
+const HALO_MAX: Record<string, number> = { lavax: 0.12, morblass: 0.07, wispera: 0.12, abyssor: 0.15 };
+// abyssor: the art-director-approved matte carries a deliberate 4 px teal rim light (abyssor-82145-rim2), which the edge-luma check reads as halo.
 const haloMax = (hero: string): number => readSpec(hero).haloMax ?? HALO_MAX[hero] ?? 0.05;
 const BAKED = ['E', 'SE', 'S', 'N', 'NE'] as const;
 const frameFile = (hero: string, action: string, dir: string, i: number): string =>

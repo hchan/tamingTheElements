@@ -4,10 +4,10 @@
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
    "spec": "e6fa47e63ca2dd380e2150a2f36e0c0b35ac4656c58df93252a6c07eb75b56c7",
    "anim": "afc56545e57c5b264cf5717c8a054427f5a87f0f567d4abaaa743828440d8783",
-   "portrait": "3d419c014637a45bb443498ef1e00866f749656f5f3a1c738def45a7d873c3ec"
+   "portrait": "36d0cd0105d4e7c343058bc422cba41474c348870ddd3712cd7163d5be155eb0"
   },
   "outputs": {
-   "parts/body.png": "9170f59fc0f85442b7e73c0768c0fe2b85311877033401d801c55e94f1f78a94",
+   "parts/body.png": "7e1ec485e45e5095b9a76a606c3c8d33a396625f23c73c5792bea4713209e9c6",
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "1d1e566410f11df7b5690504e6a45031f4e9a2f30245c701320dc80755ad1402",
    "rig.json": "44183a97014982e995b6a27ad411bc470ba5ea07f7685b0033ca77c61d36c985"
@@ -128,6 +128,20 @@
    "rig.json": "b413a7f8a15b8ecf566309457f4bd3bba6fed573229dbdf12ad962488e751e7e"
   }
  },
+ "nykra": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "d64f6c813ed792cbd47f739f092b1919e625098aca337a7cbb83e5849ab23b6d",
+   "anim": "880bbf628b5ca19d09265251038d4c06567bfc077cc65d66b95645baffb5d347",
+   "portrait": "e9c846daca76f138320e5a0ec95a72adff849c5323c6ca95bd7e45329f5e422b"
+  },
+  "outputs": {
+   "parts/body.png": "71d377b53391eb24a0cbf9d503eabc4bce367bb6dbc12fdc5fe5804bdfe5f41b",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "289da5081e72f84ef28d894391cc517c18c7c8ba2af2f06e68b80acc491d00ce",
+   "rig.json": "8420c37fdaedb45b4392993e4f8f48e0e120dbd1fe4a49bb5943c1ad5f6661a1"
+  }
+ },
  "ouroth": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
@@ -233,15 +247,15 @@
  "zephra": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
-   "spec": "9e5d3792dad78ff5ed6948a3de0ec85f52aea486f374640fb3484cef6ed327db",
-   "anim": "09811e22a002b5c47bb5ca4a5d194e895d25e3ace0a7ac5e4fca995b7fdd9151",
-   "portrait": "53d30645de62f0d40ba2edcfd8863db27a2e1452ceefad28b48821e686bfe174"
+   "spec": "3147cce01ab775420f7fc1f9eff1eabc3c0a302aba373abab68492dce82e5d8d",
+   "anim": "7d636cf04fcae42c97682330b992b1fd45af82657436e32b0b9d4cf4af78149d",
+   "portrait": "d6e97851881aa5b2bab461e7a0f5b76c0a71263d085ff3597392b17a199d01b4"
   },
   "outputs": {
-   "parts/body.png": "926fabe113be4cc9bd25489c1f407ffd3f645904df9d2bfe3ee4944c7e9e69e6",
+   "parts/body.png": "6d36cebf6d712b1c6a7e26bdcf0285b0207e938261fe3acb942bb226d466f783",
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "c2381afad756e3ac6c51eb8fbc1e668b0669317cccbddb4b1c69ec77dc5bcf6e",
-   "rig.json": "0004a952e90a5d3e945540e8a757f1510858e2868466ce947253d2fc743e3f82"
+   "rig.json": "fa4ff05027056a47d9311d8280613d3d71e9c1eeac81a88c4c9bd6d6361c7dc7"
   }
  }
 }
