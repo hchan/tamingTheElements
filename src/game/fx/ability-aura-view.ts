@@ -8,6 +8,7 @@ import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } fr
 import { viewHeight, viewWidth } from '../boot/viewport';
 import { GORE_COLOR, GORE_POP, GORE_SPRITE, GORE_TICKS, HIDE_COLOR, HIDE_POP, HIDE_SPRITE, HIDE_TICKS, forgeGore, moltenHide } from './brazgor-fx';
 import { BITE_COLOR, BITE_POP, BITE_SPRITE, BITE_TICKS, SPRAY_COLOR, SPRAY_POP, SPRAY_SPRITE, SPRAY_TICKS, cinderSpray, emberBite } from './kindrel-fx';
+import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL_BOX, COIL_COLOR, COIL_POP, COIL_SPRITE, COIL_TICKS, meleeBox, scorchBreath, wyrmCoil, type Box } from './ouroth-fx';
 import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
@@ -58,9 +59,11 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide'; x: number; y: number; dir: number; born: number }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'coil' | 'breath'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
+  /** Each fighter's sim box (top-left, size), for FX drawn to a melee hitbox. */
+  const simBox = new Map<number, Box>();
   const lastReady = new Map<number, number>();
   let popId = 0;
   const camView = { x: 0, y: 0, w: 0, h: 0 };
@@ -85,6 +88,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 }, view.arcade() ? arcadePlayfield().w : undefined);
       anchor.set(c.team, { x: vb.x + vb.w / 2, y: vb.y });
       aim.set(c.team, { x: vb.x + vb.w / 2, y: vb.y + vb.h / 2, dir: c.dir });
+      simBox.set(c.team, { x: c.x, y: c.y, w: c.w, h: c.h });
       view.forEachStatus(c.id, (st) => {
         const a = AURAS.find((k) => k.status === st.id);
         if (!a) return;
@@ -146,6 +150,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       // Brazgor (roster24): Forge Gore blow and Molten Hide glow, same readyTick read.
       { sprite: GORE_SPRITE, kind: 'gore' as const, word: GORE_POP, base: 8 },
       { sprite: HIDE_SPRITE, kind: 'hide' as const, word: HIDE_POP, base: 10 },
+      // Ouroth (roster24): Wyrm Coil and Scorch Breath, drawn to the sim's melee hitbox.
+      { sprite: COIL_SPRITE, kind: 'coil' as const, word: COIL_POP, base: 12 },
+      { sprite: BREATH_SPRITE, kind: 'breath' as const, word: BREATH_POP, base: 14 },
     ];
     for (const team of [0, 1]) {
       for (const k of kindrelCasts) {
@@ -156,7 +163,10 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         lastReady.set(key, slot.readyTick);
         const at = aim.get(team);
         if (prev === undefined || slot.readyTick <= prev || !at) continue;
-        kfx.push({ kind: k.kind, ...at, born: now });
+        const me = simBox.get(team);
+        const size = k.kind === 'coil' ? COIL_BOX : BREATH_BOX;
+        const box = me && (k.kind === 'coil' || k.kind === 'breath') ? meleeBox(at.dir, me.x, me.y, me.w, me.h, size.w, size.h) : undefined;
+        kfx.push({ kind: k.kind, ...at, born: now, box });
         if (k.kind !== 'bite') {
           const py = anchor.get(team)?.y ?? at.y - 8;
           pops.push({ id: ++popId, word: k.word, team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
@@ -177,6 +187,35 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         }
         paintEmbers(glow, b.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: b.alpha })), BITE_COLOR, 0.9);
         return age <= BITE_TICKS;
+      }
+      if (f.kind === 'coil' && f.box) {
+        const c = wyrmCoil(f.box, f.dir, age, reduced);
+        if (!c) return false;
+        const frame = toPts(c.box);
+        gfx.lineStyle(2, COIL_COLOR, 0.3 * c.alpha).strokePoints(frame, true);
+        for (const band of c.bands) {
+          const pts = toPts(band);
+          gfx.lineStyle(14, 0x000000, 0.26 * c.alpha).strokePoints(pts, false);
+          gfx.lineStyle(9, COIL_COLOR, 0.85 * c.alpha).strokePoints(pts, false);
+          gfx.lineStyle(2, mute(0xd8b060, 0.5, 1.2), 0.7 * c.alpha).strokePoints(pts, false);
+          glow.lineStyle(16, BREATH_COLOR, 0.12 * c.alpha).strokePoints(pts, false);
+        }
+        paintEmbers(glow, c.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: c.alpha })), BREATH_COLOR, 0.9);
+        return age <= COIL_TICKS;
+      }
+      if (f.kind === 'breath' && f.box) {
+        const b = scorchBreath(f.box, f.dir, age, reduced);
+        if (!b) return false;
+        gfx.lineStyle(2, BREATH_COLOR, 0.25 * b.alpha).strokePoints(toPts(b.box), true);
+        for (const tongue of b.tongues) {
+          softFill(gfx, tongue, BREATH_COLOR, 5 * b.alpha);
+          gfx.fillStyle(0x000000, 0.14 * b.alpha).fillPoints(toPts(tongue), true);
+          gfx.fillStyle(BREATH_COLOR, 0.55 * b.alpha).fillPoints(toPts(tongue), true);
+          glow.lineStyle(10, BREATH_COLOR, 0.14 * b.alpha).strokePoints(toPts(tongue), true);
+          gfx.lineStyle(1.5, 0xffc060, 0.7 * b.alpha).strokePoints(toPts(tongue), true);
+        }
+        paintEmbers(glow, b.embers.map((e) => ({ x: e.x, y: e.y, r: e.r, a: b.alpha })), BREATH_COLOR, 0.9);
+        return age <= BREATH_TICKS;
       }
       if (f.kind === 'gore') {
         const g = forgeGore(f.x, f.y, f.dir, age, reduced);
@@ -239,7 +278,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const look = popLook(age, reduced);
       // SNAG is a pale parchment with a thick dark outline (it was a dim tan that read grey over the lava floor, QA r77).
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP ? '#f0b070' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);
