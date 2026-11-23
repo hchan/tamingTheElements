@@ -163,6 +163,12 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         ...(replay ? { onDownload: () => { void downloadReplay(replay); } } : {}),
       }),
     );
+    // Roster24 victory still for the winner (render only; lazy chunk, gated inside fx/victory-still).
+    if (view && (r.outcome === 'win' || (r.pick.local && r.outcome !== 'draw'))) {
+      const root = view;
+      const hero = heroesOf(r).winner.id;
+      void import('../fx/victory-still').then((m) => { m.showVictoryStill(root, hero, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test', import.meta.env.BASE_URL); });
+    }
     // The primary action takes focus (not the heading), and a held Enter or Space must not auto-repeat into Rematch.
     view?.querySelector<HTMLElement>('#arcadeRematch')?.focus({ preventScroll: true });
     listenEscape((e) => {
