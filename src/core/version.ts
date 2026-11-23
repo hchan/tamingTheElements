@@ -368,5 +368,7 @@
  *    Re-record reason: Arcade goldens and the 2v2 balance baseline change (SIM_VERSION 101 2v2 life retune 2).
  * 102: Arcade only (Classic hashes unchanged). Data-only hidden-hero 2v2 life retune: eight ARCADE_2V2_LIFE_PM rows (kindrel 725->755, nykra 740->655, quarrak 725->675, brazgor 460->490, durrok 590->625, zephra 760->830, abyssor 430->475, vortigal 740->650); released races untouched.
  *    Re-record reason: roster-24 2v2 life retune from the v101 full-roster tournament (only the arcade-roster24 goldens change hash).
+ * 103: Arcade only (Classic hashes unchanged). Data-only third hidden-hero 2v2 life retune from the v102 random-partner pass (`snag-trap-teams.mts partners 2 16 --roster full`): kindrel 755->710, abyssor 475->550.
+ *    Re-record reason: roster-24 2v2 life retune round 3 (only arcade goldens that field kindrel or abyssor change hash).
  */
-export const SIM_VERSION = 102;
+export const SIM_VERSION = 103;

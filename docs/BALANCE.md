@@ -439,3 +439,40 @@ Pair table (win rate, legacy-led / hidden-led, mean). before = v101, after = rou
 Spread .326-.726 -> .448-.584. 22 of 24 teams are inside .45-.55; the exceptions are wispera .584 and curomo .546/kindrel .535 pair mean .540 (within noise of the +-3 pp acceptance, not refit: the 2-round cap). Wispera is a released race, held; its rise is the field effect of fixing the low pairs. Random-partner (`snag-trap-teams.mts partners --roster full`) was not run for this change; the harness now accepts `--roster full` for the next retune.
 
 Re-record: arcade and classic goldens (only `arcade-roster24-b1/-b2/-b3` change hash; every other golden changes only the simVersion header). `balance:compare --ruleset arcade --team-size 2` (legacy 12) is unchanged; no `balance:record`.
+
+### Round 3 (SIM_VERSION 103)
+
+Round 3 (the last, cap 3) used the random-partner pass at v102: `snag-trap-teams.mts partners 2 16 --roster full` (4416 matches, 0 timeouts, 1 stalemate; SE about 1.8 pp per race; raw output was in the agent worktree `.scratch/partners-full-v102.json` and `-v103.json`). Rate = team win rate over every roster the hero is on (lead or partner). At v102 most heroes were inside .45-.55, with these exceptions: abyssor .299, kindrel .585, sindarosa .592 (released, held), zephra .551 and umbrel .549 (within noise), curomo .454 / nykra .452 / durrok .437 (edge or just below). Wispera is .469 here, so its .584 in the fixed-pair table was a field effect and it is not touched.
+
+Change (data only, 1v1 untouched): kindrel 755 -> 710, abyssor 475 -> 550 (one fit, slope about 1.4 pp per 1% of life). Re-run at v103: kindrel .585 -> .511, abyssor .299 -> .415 (still low, not refit: cap reached), and the rest moved by 1 pp or less except vortigal .527 -> .506 and brazgor .470 -> .489.
+
+| race | v102 | v103 |
+|---|---|---|
+| sindarosa | .592 | .594 |
+| zephra | .551 | .551 |
+| umbrel | .549 | .546 |
+| glimmaw | .537 | .542 |
+| fiara | .543 | .535 |
+| treenoc | .542 | .535 |
+| morblass | .520 | .525 |
+| ouroth | .512 | .521 |
+| ishimi | .532 | .517 |
+| cyclonius | .513 | .515 |
+| kindrel | .585 | .511 |
+| vortigal | .527 | .506 |
+| lavax | .510 | .501 |
+| brazgor | .470 | .489 |
+| rokcore | .488 | .488 |
+| hyalia | .479 | .488 |
+| quarrak | .476 | .485 |
+| pax | .487 | .479 |
+| echo | .466 | .471 |
+| wispera | .469 | .465 |
+| nykra | .452 | .444 |
+| curomo | .454 | .443 |
+| durrok | .437 | .427 |
+| abyssor | .299 | .415 |
+
+Open for a later round (not a cap-3 change): abyssor is weak with any partner except sindarosa (as a partner about .32; the sindarosa/abyssor pair is .45), and sindarosa (released) is .59, as a partner about .66. Sindarosa was held because changing a released value moves the legacy goldens and arcade-2v2-baseline.json.
+
+Re-record: `golden:record` (replay fixtures; reason: round 3 life retune). Legacy-12 balance is unaffected by hidden-hero rows.

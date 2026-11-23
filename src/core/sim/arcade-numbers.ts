@@ -97,14 +97,14 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   wispera: 710, // 690 before SIM_VERSION 101; 650 before SIM_VERSION 100; 632 before SIM_VERSION 86
   hyalia: 650,
   quarrak: 675, // 725 before SIM_VERSION 102
-  kindrel: 755, // 725 before SIM_VERSION 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
+  kindrel: 710, // 755 before SIM_VERSION 103; 725 before 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
   nykra: 655, // 740 before SIM_VERSION 102
   brazgor: 490, // 460 before SIM_VERSION 102
   glimmaw: 670,
   durrok: 625, // 590 before SIM_VERSION 102
   zephra: 830, // 760 before SIM_VERSION 102
   ouroth: 590,
-  abyssor: 475, // 430 before SIM_VERSION 102
+  abyssor: 550, // 475 before SIM_VERSION 103; 430 before 102
   vortigal: 650, // 740 before SIM_VERSION 102; 665 before SIM_VERSION 94 (41.6% in 2v2)
   umbrel: 660,
 };
