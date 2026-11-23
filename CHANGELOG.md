@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Art: victory stills for Brazgor, Kindrel, Vortigal, Zephra, Nykra and Hyalia installed and drawn on the Versus results (`?ff=roster24`, lazy, render only). No sim change.
+
 - Glimmaw victory still now drawn on the Versus results when Glimmaw wins (`?ff=roster24`, lazy, render only; supersedes the install-only note below). No sim change.
 
 - Hyalia (roster24, behind `?ff=roster24`): re-tuned baked rows: breathing idle, bobbing walk with wing flap, rearing cast with eye glow, hurt recoil and eye flash, toppling KO (`tools/assets/portrait-rig/tune-hyalia-anim.py`). Art only; no sim change.
