@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Art: Bristle Stomp ability icon replaced with a regraded hoof-print glyph ("Deer Track" by Delapouite, game-icons.net, CC BY 3.0; credited in About). Art-director approved r7, 4.1. No sim change.
+
 - Art: victory stills for Ouroth, Umbrel and Abyssor added (ten in total, drawn on the Versus results behind `?ff=roster24`, render only; `victory-key.py` gained a per-hero `POCKET_TOL`). No sim change.
 
 - Art: victory stills for Brazgor, Kindrel, Vortigal, Zephra, Nykra and Hyalia installed and drawn on the Versus results (`?ff=roster24`, lazy, render only). No sim change.
