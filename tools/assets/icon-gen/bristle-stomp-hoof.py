@@ -331,19 +331,21 @@ def round2(r0, r1, outdir, icons_dir):
 
 
 # ---- round 3: two mirrored D-shaped wedges, fewer tapering cracks, lit lip / dark crescent, ember through the gap ----
-def wedge_points(cx, cy, L, W, gap, sx, tilt):
+def wedge_points(cx, cy, L, W, gap, sx, tilt, tip=False):
     """One D-shaped toe: straight inner edge at x = sx*gap/2, rounded outer edge, slight heel pinch, tipped outward by tilt (radians)."""
     pts = []
     for k in range(61):
         u = k / 60
         hw = W * max(0.0, 1 - (2 * u - 1) ** 2) ** .5 * (1 - .12 * max(0.0, (u - .72) / .28) ** 1.5 * 1.5)
+        if tip and u < .5:
+            hw = W * (u / .5) ** 1.15
         pts.append((sx * (gap / 2 + hw), -L / 2 + L * u))
     pts += [(sx * gap / 2, L / 2), (sx * gap / 2, -L / 2)]
     c, sn = np.cos(-sx * tilt), np.sin(-sx * tilt)
     return [(cx + x * c - y * sn, cy + x * sn + y * c) for x, y in pts]
 
 
-def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble):
+def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512):
     rng = np.random.default_rng(seed)
     src = np.asarray(Image.open(ring_path).convert("RGB"), np.float32)
     yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
@@ -355,7 +357,7 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     def rot(pts):  # rotate the print frame by ang around (cx, cy)
         c, sn = np.cos(rad), np.sin(rad)
         return [(cx + (x - cx) * c - (y - cy) * sn, cy + (x - cx) * sn + (y - cy) * c) for x, y in pts]
-    pm = mask_of(lambda d: [d.polygon(rot(wedge_points(cx, cy, L, W, gap, sx, np.deg2rad(7))), fill=255) for sx in (-1, 1)])
+    pm = mask_of(lambda d: [d.polygon(rot(wedge_points(cx, cy, L, W, gap, sx, np.deg2rad(7), tip)), fill=255) for sx in (-1, 1)])
     cm, em = Image.new("L", (S, S), 0), Image.new("L", (S, S), 0)
     cd, ed = ImageDraw.Draw(cm), ImageDraw.Draw(em)
 
@@ -401,7 +403,11 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     over(field, np.array((52, 44, 42), np.float32) + np.array((66, 52, 40), np.float32) * dome, pit, .95)
     # re-light the pit walls so the print keeps a lit rim top-left
     rim = np.clip((gx * -.7 + gy * -.7) * 60, 0, 1) * np.clip(blur(pm, 5) * (1 - blur(pm, 5)) * 4, 0, 1)
-    field += np.array((150, 118, 82), np.float32) * rim[..., None] * .8
+    if tip:  # round 4: thin dark rim instead of a bright one
+        edge = np.clip(blur(pm, 2.2) * (1 - blur(pm, 2.2)) * 4, 0, 1)
+        field *= (1 - .75 * edge)[..., None]
+    else:
+        field += np.array((150, 118, 82), np.float32) * rim[..., None] * .8
     field *= 1 - .6 * blur(cmask, 1.5)[..., None]
     rub = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     rd = ImageDraw.Draw(rub)
@@ -438,7 +444,7 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     out = Image.composite(img, Image.new("RGB", (S, S), BACKDROP), m.filter(ImageFilter.GaussianBlur(3)))
     k = 512 * 0.97
     out = out.transform((S, S), Image.EXTENT, (g["c"][0] - k, g["c"][1] - k, g["c"][0] + k, g["c"][1] + k), Image.BICUBIC, fillcolor=BACKDROP)
-    return out.resize((512, 512), Image.LANCZOS)
+    return out.resize((size, size), Image.LANCZOS)
 
 
 def round3(r0, r1, outdir, icons_dir):
@@ -454,7 +460,17 @@ def round3(r0, r1, outdir, icons_dir):
     contact_sheet(outdir, icons_dir, len(plan), "bristle_stomp_r3_{}")
 
 
+def round4(r0, outdir):
+    """r3_1 only: both lobes taper to a point at the top, thin dark rim; 1024 px and 128 px."""
+    os.makedirs(outdir, exist_ok=True)
+    im = candidate3(r0, RINGS[0], 21, 0, 1.0, (0, 0), (-38, -12, 14, 40), 150, 24, tip=True, size=1024)
+    im.save(os.path.join(outdir, "bristle_stomp_r4_1.png"))
+    im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r4_1_128.png"))
+
+
 def main():
+    if sys.argv[1:2] == ["--round4"]:
+        return round4(*sys.argv[2:4])
     if sys.argv[1:2] == ["--round3"]:
         return round3(*sys.argv[2:6])
     if sys.argv[1:2] == ["--round2"]:
