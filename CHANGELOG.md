@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Art: roster24 Durrok victory still installed (r992, art-director APPROVE 4.2, behind ?ff=roster24, render only). The victory-still e2e now covers umbrel and durrok (quake supers need the foe close). No sim change.
 - Art: Quarrak boulderRoll, Umbrel sporeBurst, Kindrel cinderSpray and Hyalia stingingFilament get real 8-frame loop bodies cut from the approved stills (`tools/assets/fx-gen/batch-m-real-loops.py`); reduced motion holds frame 0. No sim change.
 - Art: Bristle Stomp ability icon replaced with a regraded hoof-print glyph ("Deer Track" by Delapouite, game-icons.net, CC BY 3.0; credited in About). Art-director approved r7, 4.1. No sim change.
 

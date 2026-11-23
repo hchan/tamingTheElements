@@ -9,7 +9,9 @@ const SUPER = 1 << 13;
 const SHOT_DIR = process.env['SHOT_DIR'];
 const ROUND = 90 + 30 + 120 + 60 + 71;
 
-for (const hero of ['glimmaw', 'kindrel', 'umbrel']) test(`${hero} wins the match: the victory still replaces the portrait on the results screen`, async ({ page }) => {
+// Quake supers (umbrel, durrok) are rings out to 480 px, so those heroes start close.
+const CLOSE = new Set(['umbrel', 'durrok']);
+for (const hero of ['glimmaw', 'kindrel', 'umbrel', 'durrok']) test(`${hero} wins the match: the victory still replaces the portrait on the results screen`, async ({ page }) => {
   const errors = collectErrors(page);
   const stillRequests: string[] = [];
   page.on('request', (r) => { if (r.url().includes('/assets/img/victory/')) stillRequests.push(r.url()); });
@@ -21,7 +23,7 @@ for (const hero of ['glimmaw', 'kindrel', 'umbrel']) test(`${hero} wins the matc
   await page.evaluate(`window.__TTE__.arena.step(91)`);
   expect(stillRequests).toEqual([]);
   for (let round = 0; round < 2; round++) {
-    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 300, 360, 0); a.place(f.id, 900, 360, 4); a.setMeter(0, 1000); a.setHp(f.id, 1); a.step(1, [${String(SUPER)}, 0]); a.step(${String(ROUND)}); })()`);
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 300, 360, 0); a.place(f.id, ${CLOSE.has(hero) ? '540' : '900'}, 360, 4); a.setMeter(0, 1000); a.setHp(f.id, 1); a.step(1, [${String(SUPER)}, 0]); a.step(${String(ROUND)}); })()`);
   }
   await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
   await expect(page.locator('#arcadeResults .matchEndStill')).toHaveAttribute('data-hero', hero);
