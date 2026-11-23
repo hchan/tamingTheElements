@@ -1,0 +1,6 @@
+{"bristle_stomp": {"approved": "bristle_stomp_r7_1.png", "reviewer": "art-director", "date": "2026-11-23", "beats_shipped": true,
+ "candidates": {"bristle_stomp_r7_1": {"overall": 4.1, "verdict": "APPROVE", "hoof_reads": true,
+  "scores": {"gamer_appeal": 4, "element_identity": 4.5, "readability": 4.5, "painterly_texture": 3.5, "artifacts": 4},
+  "note": "All six r6 faults are fixed. Toes are mid-brown with plate grain and a lighter pad, no longer black. Outline is thin and fades on the shadowed side. Rim is about 8 percent, bevelled, tan-grey and matches the 118214 ring stone, with no dark gaps. Four bevelled diamond studs. Debris is small, brown and varied. Ember and bloom unchanged and still the single accent. Reads as a cloven hoof at 128 px.",
+  "optional_polish": ["A faint cream edge is still visible on the top-left of the toes; blur or drop it further.", "Rim is smoother and cleaner than the carved 118214 ring; add stone grain or crack noise at about 20 percent.", "Toe interiors are slightly smooth; add a little more grain."],
+  "licence": "Credit Delapouite, CC BY 3.0, game-icons.net in the licence file before shipping."}}}}
