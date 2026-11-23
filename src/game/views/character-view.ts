@@ -6,7 +6,6 @@ import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-fe
 import { HERO_IMAGE_NAME, arcadeHeroScale, boxSpanX, clampSpanX, visualBox, type Box, type SpanX } from './hero-scale';
 import { displayScaleOf } from './display-scale';
 import { SHADOW_ALPHA_CAP } from './pose-depth';
-
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
 export const FROZEN_TINT = 0x88ccff;
