@@ -12,6 +12,7 @@ import { HURL_FLIGHT, HURL_HIT_TICKS, ROLL_FLIGHT, ROLL_HIT_TICKS, hurlImpact, p
 import { HURL_POP, HURL_SPRITE, HURL_TICKS, ROLL_POP, ROLL_SPRITE, ROLL_TICKS, boulderRoll, hurlRock, paintRock } from './quarrak-fx';
 import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL_BOX, COIL_COLOR, COIL_POP, COIL_SPRITE, COIL_TICKS, meleeBox, scorchBreath, wyrmCoil, type Box } from './ouroth-fx';
 import { SKITTER_COLOR, SKITTER_POP, SKITTER_SPRITE, SKITTER_TICKS, skitterHop } from './zephra-fx';
+import { MEND_COLOR, MEND_POP, MEND_SPRITE, MEND_TICKS, SPORE_COLOR, SPORE_DARK, SPORE_SPRITE, SPORE_TICKS, myceliumMend, sporeBurst } from './umbrel-fx';
 import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
@@ -62,7 +63,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter' | 'spore' | 'mend'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   /** Each fighter's sim box (top-left, size), for FX drawn to a melee hitbox. */
@@ -161,6 +162,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       { sprite: BREATH_SPRITE, kind: 'breath' as const, word: BREATH_POP, base: 20 },
       // Zephra (roster24): Skitter's hop streaks and landing puff.
       { sprite: SKITTER_SPRITE, kind: 'skitter' as const, word: SKITTER_POP, base: 16 },
+      // Umbrel (roster24): Spore Burst cloud over the projectile (no word: the cloud is the cue) and Mycelium Mend threads.
+      { sprite: SPORE_SPRITE, kind: 'spore' as const, word: '', base: 22 },
+      { sprite: MEND_SPRITE, kind: 'mend' as const, word: MEND_POP, base: 24 },
     ];
     for (const team of [0, 1]) {
       for (const k of kindrelCasts) {
@@ -177,7 +181,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         kfx.push({ kind: k.kind, ...at, born: now, box });
         // Quarrak's rock bursts where its flight ends: born in the future, drawn from then (age < 0 holds below).
         if (k.kind === 'hurl' || k.kind === 'roll') kfx.push({ kind: k.kind === 'hurl' ? 'hurlhit' : 'rollhit', ...at, born: now + (k.kind === 'hurl' ? HURL_FLIGHT : ROLL_FLIGHT) });
-        if (k.kind !== 'bite' && k.kind !== 'hurl' && k.kind !== 'roll') {
+        if (k.kind !== 'bite' && k.kind !== 'hurl' && k.kind !== 'roll' && k.kind !== 'spore') {
           const py = anchor.get(team)?.y ?? at.y - 8;
           pops.push({ id: ++popId, word: k.word, team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
         }
@@ -253,6 +257,31 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         paintEmbers(glow, h.motes.map((m) => ({ x: m.x, y: m.y, r: m.r, a: h.alpha })), SKITTER_COLOR, 0.9);
         return age <= SKITTER_TICKS;
       }
+      if (f.kind === 'spore') {
+        const sp = sporeBurst(f.x, f.y, f.dir, age, reduced);
+        if (!sp) return false;
+        for (const p of sp.puffs) {
+          glow.fillStyle(SPORE_COLOR, p.a * 0.35 * sp.alpha).fillCircle(p.x, p.y, p.r * 1.5);
+          gfx.fillStyle(SPORE_DARK, p.a * 0.3 * sp.alpha).fillCircle(p.x + 2, p.y + 2, p.r);
+          gfx.fillStyle(SPORE_COLOR, p.a * 0.6 * sp.alpha).fillCircle(p.x, p.y, p.r);
+        }
+        paintEmbers(glow, sp.trail.map((m) => ({ x: m.x, y: m.y, r: m.r, a: m.a * sp.alpha })), SPORE_COLOR, 0.9);
+        return age <= SPORE_TICKS;
+      }
+      if (f.kind === 'mend') {
+        const m = myceliumMend(f.x, f.y, age, reduced);
+        if (!m) return false;
+        gfx.lineStyle(5, 0x000000, 0.16 * m.alpha).strokeEllipse(m.ring.x, m.ring.y, m.ring.r * 2, m.ring.r * 0.7);
+        gfx.lineStyle(2, MEND_COLOR, 0.6 * m.alpha).strokeEllipse(m.ring.x, m.ring.y, m.ring.r * 2, m.ring.r * 0.7);
+        for (const th of m.threads) {
+          const pts = toPts(th);
+          gfx.lineStyle(5, 0x000000, 0.18 * m.alpha).strokePoints(pts, false);
+          gfx.lineStyle(2.5, MEND_COLOR, 0.8 * m.alpha).strokePoints(pts, false);
+          glow.lineStyle(9, SPORE_COLOR, 0.12 * m.alpha).strokePoints(pts, false);
+        }
+        paintEmbers(glow, m.motes.map((e) => ({ x: e.x, y: e.y, r: e.r, a: e.a * m.alpha })), SPORE_COLOR, 0.9);
+        return age <= MEND_TICKS;
+      }
       if (f.kind === 'gore') {
         const g = forgeGore(f.x, f.y, f.dir, age, reduced);
         if (!g) return false;
@@ -314,7 +343,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const look = popLook(age, reduced);
       // SNAG is a pale parchment with a thick dark outline (it was a dim tan that read grey over the lava floor, QA r77).
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : p.word === MEND_POP ? '#c8c48a' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);
