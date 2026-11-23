@@ -13,6 +13,8 @@ F = 240
 MARGIN = 4
 # (rotation degrees clockwise about the feet, horizontal scale, vertical scale, dx, dy) per frame; the last frame holds
 POSES = [(0, 1.0, 0.94, -2, 0), (0, 1.04, 0.84, -4, 0), (0, 1.08, 0.74, -5, 0), (0, 1.1, 0.7, -5, 0)]
+# per-hero overrides: vortigal (a flier) tips over and drops hard, so the four frames read as a fall and not a squash
+HERO_POSES = {"vortigal": [(0, 1.0, 1.0, -2, 0), (24, 1.0, 0.96, -6, 6), (58, 0.96, 0.9, -10, 16), (82, 0.94, 0.86, -12, 22)]}
 heroes = sys.argv[1:] or sys.exit("usage: r24-ko-keys.py HERO [HERO...]")
 
 for hero in heroes:
@@ -24,7 +26,7 @@ for hero in heroes:
         assert bbox is not None
         pivot = ((bbox[0] + bbox[2]) // 2, bbox[3])  # the feet line
         H = F // 2
-        for i, (rot, sx, sy, dx, dy) in enumerate(POSES):
+        for i, (rot, sx, sy, dx, dy) in enumerate(HERO_POSES.get(hero, POSES)):
             img = src.resize((round(F * sx), round(F * sy)), Image.LANCZOS)
             big = Image.new("RGBA", (F * 2, F * 2), (0, 0, 0, 0))
             big.alpha_composite(img, (pivot[0] + H - round(pivot[0] * sx), pivot[1] + H - round(pivot[1] * sy)))
