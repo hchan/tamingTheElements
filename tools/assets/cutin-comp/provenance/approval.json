@@ -1,0 +1,84 @@
+{
+ "slot": "r24-cutin-composites",
+ "reviewer": "art-director",
+ "date": "2026-11-23",
+ "round": 3,
+ "beats_shipped": true,
+ "heroes": {
+  "abyssor": {
+   "verdict": "APPROVE",
+   "score": 4.5,
+   "note": "unchanged"
+  },
+  "glimmaw": {
+   "verdict": "APPROVE",
+   "score": 4.5,
+   "note": "unchanged"
+  },
+  "hyalia": {
+   "verdict": "APPROVE",
+   "score": 4.5,
+   "note": "unchanged"
+  },
+  "quarrak": {
+   "verdict": "APPROVE",
+   "score": 4.5,
+   "note": "unchanged"
+  },
+  "kindrel": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "unchanged"
+  },
+  "vortigal": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "unchanged"
+  },
+  "brazgor": {
+   "verdict": "APPROVE",
+   "score": 4.5,
+   "note": "r2: shoulder hole gone, leg outline clean, strong lava match"
+  },
+  "ouroth": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "r2: halo gone, coil gaps show backdrop. One small pale-grey patch in the lower-left coil gap (about 445,405 at 1344 wide) is acceptable; fill it if touched again"
+  },
+  "umbrel": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "r2: shadow chunk gone, purple contact shadow reads, tentacle curls clean. Contact shadow could be a bit stronger; optional"
+  },
+  "zephra": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "r2: head, muzzle, horns and wing intact, no fragments, legs solid. Hard reject lifted"
+  },
+  "durrok": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "r2: tinted warm, grain and contact shadow ground it; blob removed. Still slightly photographic but acceptable. Thin pale sliver of tail tuft at left rear leg is minor"
+  },
+  "nykra": {
+   "verdict": "APPROVE",
+   "score": 4,
+   "note": "r3: hind-leg gap shows sea backdrop, grey hole gone, tail tip reads as spray, mane band clean. Minor: slightly blocky mane fragments at upper left of the mane (about 560,270); optional"
+  }
+ },
+ "approved": [
+  "abyssor",
+  "brazgor",
+  "durrok",
+  "glimmaw",
+  "hyalia",
+  "kindrel",
+  "nykra",
+  "ouroth",
+  "quarrak",
+  "umbrel",
+  "vortigal",
+  "zephra"
+ ],
+ "revise": []
+}

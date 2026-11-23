@@ -1,4 +1,4 @@
-public/assets/img/cutin/<hero>.png (1344x168 super cut-in backdrop bands for the 12 unreleased roster24 heroes; no people, no text):
+SUPERSEDED 2026-11-23 by tools/assets/cutin-comp (1344x768 composites now installed at the same paths). Former text: public/assets/img/cutin/<hero>.png (1344x168 super cut-in backdrop bands for the 12 unreleased roster24 heroes; no people, no text):
 generated on the owner's GPU PC with SDXL-Turbo / SDXL img2img (4060 job server), approved by the art-director agent
 (provenance/approval.json, 2026-11-19, beats_shipped), cropped to 1344x168 (y=300) by
 ~/claudetmp/venv/bin/python -I tools/assets/cutin-gen/crop-cutins.py <art-session .scratch dir>; Ouroth is darkened 30% (art-director note).

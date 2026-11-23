@@ -1,0 +1,50 @@
+{
+ "abyssor": {
+  "source": "cutin_comp_abyssor.png",
+  "sha256": "87f40d86fe0c049bcc23ba1d426911fc514f5f302e1ddcddbc318097ee87fc07"
+ },
+ "brazgor": {
+  "source": "cutin_comp_brazgor_r2.png",
+  "sha256": "54687ab078cb5fd79592c00deddc05f433bf4d4e879a96e60e925f78b36a8219"
+ },
+ "durrok": {
+  "source": "cutin_comp_durrok_r2.png",
+  "sha256": "7c779c321f06ad27f834f9fe5c7fe4c9e2d81b02ec06606553478a32dbc283c3"
+ },
+ "glimmaw": {
+  "source": "cutin_comp_glimmaw.png",
+  "sha256": "323ad09339b0f631e3cc4e02859666d3f8ad84556700616fd649c3c0e22a43b2"
+ },
+ "hyalia": {
+  "source": "cutin_comp_hyalia.png",
+  "sha256": "222d3aa89cf826e4f88363d644f0b6581eb9136a1d067883fa643842e066ee44"
+ },
+ "kindrel": {
+  "source": "cutin_comp_kindrel.png",
+  "sha256": "b63b129643343df424fa35e4420c79a713df56d88d01c310d78f616ef4f966fb"
+ },
+ "nykra": {
+  "source": "cutin_comp_nykra_r3.png",
+  "sha256": "438a185fc4a6d9e9d2939bb4144747ee29556f6ec229b1375210c267edfce980"
+ },
+ "ouroth": {
+  "source": "cutin_comp_ouroth_r2.png",
+  "sha256": "6363a7dd3e193b5dcfe354cc151c18a170631e2769ef02a2b637c5f73230747f"
+ },
+ "quarrak": {
+  "source": "cutin_comp_quarrak.png",
+  "sha256": "d4465185e17941b340d7791b555ab5bde50db52a70088447c6dc0614c32993de"
+ },
+ "umbrel": {
+  "source": "cutin_comp_umbrel_r2.png",
+  "sha256": "b6b39a24379c59fd0c66bf1613e47b1f266e258cbd82dda5efd9454dc858f356"
+ },
+ "vortigal": {
+  "source": "cutin_comp_vortigal.png",
+  "sha256": "c443ab27caedbcf570a288d07ad36c9e30aebdaefb5f36f33515ac8ede83bec7"
+ },
+ "zephra": {
+  "source": "cutin_comp_zephra_r2.png",
+  "sha256": "87dd531586f9d5e80194afa38b585e8d3a5c9fb586da4309abcfbde7f97ce080"
+ }
+}
