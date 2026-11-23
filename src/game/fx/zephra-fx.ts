@@ -29,7 +29,7 @@ export function skitterHop(x: number, y: number, dir: number, age: number, reduc
   const side = dir >= 3 && dir <= 5 ? 1 : -1;
   const ex = x + side * SKITTER_HOP_PX;
   const streaks: { x0: number; y0: number; x1: number; y1: number }[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 7; i++) {
     const y0 = y + (i - 2) * 9 + (hash01(i, 51) - 0.5) * 4;
     const from = hash01(i, 52) * 0.25;
     const len = 0.45 + hash01(i, 53) * 0.35;
@@ -40,10 +40,10 @@ export function skitterHop(x: number, y: number, dir: number, age: number, reduc
   }
   const motes: { x: number; y: number; r: number }[] = [];
   const grown = Math.min(1, t * 1.6);
-  for (let i = 0; i < 8; i++) {
-    const ang = (i / 8) * Math.PI * 2 + hash01(i, 54) * 0.5;
-    const d = (10 + 22 * grown) * (0.7 + hash01(i, 55) * 0.6);
-    motes.push({ x: ex + Math.cos(ang) * d, y: y + 18 + Math.sin(ang) * d * 0.45 - (reduced ? 0 : t * 8), r: 3 - t * 1.5 });
+  for (let i = 0; i < 12; i++) {
+    const ang = (i / 12) * Math.PI * 2 + hash01(i, 54) * 0.5;
+    const d = (18 + 40 * grown) * (0.7 + hash01(i, 55) * 0.6);
+    motes.push({ x: ex + Math.cos(ang) * d, y: y + 18 + Math.sin(ang) * d * 0.45 - (reduced ? 0 : t * 8), r: 5 - t * 2 });
   }
-  return { streaks, puff: { x: ex, y: y + 18, r: 10 + 26 * grown }, motes, alpha: reduced ? 0.8 : 1 - t * t };
+  return { streaks, puff: { x: ex, y: y + 18, r: 20 + 48 * grown }, motes, alpha: reduced ? 0.8 : 1 - t * t };
 }

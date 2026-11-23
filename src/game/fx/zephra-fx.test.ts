@@ -3,7 +3,7 @@ import { SKITTER_HOP_PX, SKITTER_TICKS, skitterHop } from './zephra-fx';
 
 describe('zephra skitter fx', () => {
   it('is drawn while live and gone after its ticks', () => {
-    expect(skitterHop(0, 0, 0, 0, false)?.streaks).toHaveLength(5);
+    expect(skitterHop(0, 0, 0, 0, false)?.streaks).toHaveLength(7);
     expect(skitterHop(0, 0, 0, SKITTER_TICKS + 1, false)).toBeUndefined();
   });
   it('hops backward: facing east lands west, facing west lands east', () => {
