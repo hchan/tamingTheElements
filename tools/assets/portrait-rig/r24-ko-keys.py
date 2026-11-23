@@ -14,10 +14,12 @@ MARGIN = 4
 # (rotation degrees clockwise about the feet, horizontal scale, vertical scale, dx, dy) per frame; the last frame holds
 POSES = [(0, 1.0, 0.94, -2, 0), (0, 1.04, 0.84, -4, 0), (0, 1.08, 0.74, -5, 0), (0, 1.1, 0.7, -5, 0)]
 # per-hero overrides: vortigal (a flier) tips over and drops hard, so the four frames read as a fall and not a squash
-HERO_POSES = {"vortigal": [(0, 1.0, 1.0, -2, 0), (24, 1.0, 0.96, -6, 6), (58, 0.96, 0.9, -10, 16), (82, 0.94, 0.86, -12, 22)]}
+HERO_POSES = {"vortigal": [(0, 1.0, 1.0, -2, 0), (24, 0.93, 0.9, -6, 6), (58, 0.88, 0.82, -10, 16), (82, 0.86, 0.78, -12, 22)]}
+MARGINS = {"vortigal": 9}  # the blurred contact shadow reaches a few px past the wing tips, so a flier needs a wider crop margin
 heroes = sys.argv[1:] or sys.exit("usage: r24-ko-keys.py HERO [HERO...]")
 
 for hero in heroes:
+    M = MARGINS.get(hero, MARGIN)
     for d in DIRS:
         src = Image.open(os.path.join(ROOT, "imgWorkArea", "sheets", hero, "idle", d, "00.png")).convert("RGBA")
         out_dir = os.path.join(ROOT, "imgWorkArea", "rigs", hero, "keys", "ko", d)
@@ -33,8 +35,8 @@ for hero in heroes:
             big = big.rotate(-rot, resample=Image.BICUBIC, center=(pivot[0] + H, pivot[1] + H))
             bb = big.getbbox()
             assert bb is not None
-            ox = max(min(H - dx, bb[0] - MARGIN), bb[2] + MARGIN - F)
-            oy = max(min(H - dy, bb[1] - MARGIN), bb[3] + MARGIN - F)
+            ox = max(min(H - dx, bb[0] - M), bb[2] + M - F)
+            oy = max(min(H - dy, bb[1] - M), bb[3] + M - F)
             out = big.crop((ox, oy, ox + F, oy + F))
             sh = Image.new("RGBA", (F, F), (0, 0, 0, 0))
             b2 = out.getbbox()
