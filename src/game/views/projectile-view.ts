@@ -167,7 +167,7 @@ export class ProjectileView {
       }
     }
     if (this.loopFrames > 0) {
-      const f = `loop${String(loopFrameAt(this.scene.time.now, this.loopFrames))}`;
+      const f = `loop${String(loopFrameAt(reduced ? 0 : this.scene.time.now, this.loopFrames))}`;
       this.image.setFrame(f);
       this.glow.setFrame(f);
     }

@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { MIN_BOLT_LONG_SIDE, ProjectileView, SPRITE_BOOST, boltDisplaySize, lookup, snagSpriteFor } from './projectile-view';
+import { LOOP_FPS, MIN_BOLT_LONG_SIDE, ProjectileView, SPRITE_BOOST, boltDisplaySize, loopFrameAt, lookup, snagSpriteFor } from './projectile-view';
 
 /** Chainable fake Image that really stores alpha, so the test sees what the pose layer would multiply. */
 interface FakeImage { alpha: number; [method: string]: unknown }
@@ -257,5 +257,14 @@ describe('ProjectileView ability smoothing (optional clock, shift, reduced)', ()
     expect(pos[0]).toEqual([150, 70]);
     expect(angles.every((a) => a === 0)).toBe(true);
     expect(view.image.alpha).toBe(1);
+  });
+});
+
+describe('loopFrameAt', () => {
+  it('cycles all frames by age and stays on frame 0 for a static (reduced-motion) clock', () => {
+    const seen = new Set([0, 1, 2, 3, 4, 5, 6, 7].map((i) => loopFrameAt((i + 0.5) * (1000 / LOOP_FPS), 8)));
+    expect(seen.size).toBe(8);
+    expect(loopFrameAt(0, 8)).toBe(0);
+    expect(loopFrameAt(5000, 0)).toBe(0);
   });
 });
