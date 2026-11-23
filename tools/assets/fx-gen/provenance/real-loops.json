@@ -1,0 +1,77 @@
+{
+  "note": "AI-generated in-project stills, approved by the art-director; no third-party licence. CPU cut by batch-m-real-loops.py.",
+  "loops": {
+    "boulderRoll": {
+      "source": "tools/assets/fx-gen/provenance/real-loop-sources/boulder-r631.png",
+      "sourceSha256": "f31190afa2ee97dc0c219b00621a04d52c349b04b5e4d2ad394245f80eb98c9b",
+      "output": "public/assets/img/fx/loop/boulderRollLoop.png",
+      "outputSha256": "0ff59cc47873d1c36990119a9ed44819e7b500780ccef9f9f43c35e523458cc8",
+      "frames": 8,
+      "frame": 160,
+      "frameSha256": [
+        "4bedbd52641a13cf02fd0d940abad9979d61317094ae3e16e406907a3b07a406",
+        "3762722a97b2aea3f929a0d36168912bf3a3765de055b7e7f9e0b1ff4c9fcfd8",
+        "6abb1bb6eda9f827778e9b067bd8cecb3e0ad0785950bc621e0fc778b4df60f4",
+        "badc3d85b71925cfe5ca9e487860725ce1085ec81d30eebed1798916eb78b125",
+        "d13d9373e9316555dafc2343db12958eb057544df9766d2a84b5a6709d35ac49",
+        "eb899d88aacda701b063437b83896f6bcc4d8a15453b1c949b547729f218839c",
+        "3dd087c9ad9ed36f6d4aec44e843b72f3141c41907b2c7d7e8fe19b30efb1be8",
+        "eb39af377b3ff125c5b1ec20734e3334c99c079f52b24a0b6f3cba7fea9c0a36"
+      ]
+    },
+    "sporeBurst": {
+      "source": "tools/assets/fx-gen/provenance/real-loop-sources/spore-r731.png",
+      "sourceSha256": "a27f80fd2192285d780ef1c80cf6b1847c69ddfd9479607f727b2c70620c300f",
+      "output": "public/assets/img/fx/loop/sporeBurstLoop.png",
+      "outputSha256": "8b52c4964a69b12edac643f4255ce1529a27925bd59755b3b2a1423121a79c25",
+      "frames": 8,
+      "frame": 160,
+      "frameSha256": [
+        "586d95a1a3f53ac9988e7072a4683629410d76a66b8af290083e10c69ce56589",
+        "ef338ac4ebbba83b4b8e706526b6120a9be557a9932e9214b4d8b0b96373205b",
+        "02776f937cd11339cb7e5124f2967683b523a4f9f32485dc46a39b6bdf32516a",
+        "2e1ba3273c53913153e71bd7d93e740e228d8e1c873815b422d27bfb32c32e16",
+        "a6ee5177a2e7cecd070b7997248a77a66f303ec4d26f0e1fe565bc39490dacf1",
+        "2e1ba3273c53913153e71bd7d93e740e228d8e1c873815b422d27bfb32c32e16",
+        "02776f937cd11339cb7e5124f2967683b523a4f9f32485dc46a39b6bdf32516a",
+        "ef338ac4ebbba83b4b8e706526b6120a9be557a9932e9214b4d8b0b96373205b"
+      ]
+    },
+    "cinderSpray": {
+      "source": "tools/assets/fx-gen/provenance/real-loop-sources/cinder-r692.png",
+      "sourceSha256": "7e748046b14d064b6438ec882c30d00a75ea281984ba5bf0576a42b5e15e2318",
+      "output": "public/assets/img/fx/loop/cinderSprayLoop.png",
+      "outputSha256": "b8a993f1ad80b2ff4ec2bebec42679ab55bef0144c81b18b84f308566317941f",
+      "frames": 8,
+      "frame": 160,
+      "frameSha256": [
+        "b6f777e1c309217589193bc8bb0286748731785082b60765f760349517f66fb8",
+        "0f6a4b2dae8f74ef7773a948275f29bb13aae7eab69217ac2f550fb9c1bfbfd3",
+        "a88448f2c3eaa7bbb0ed0f1922dd6e4effac2f5bc910b1a0e08c484175517515",
+        "3b05d8a06246f66981cd03840e22a55bed896a201f13e9172cd6b64a501b437a",
+        "b6f777e1c309217589193bc8bb0286748731785082b60765f760349517f66fb8",
+        "0f6a4b2dae8f74ef7773a948275f29bb13aae7eab69217ac2f550fb9c1bfbfd3",
+        "a88448f2c3eaa7bbb0ed0f1922dd6e4effac2f5bc910b1a0e08c484175517515",
+        "3b05d8a06246f66981cd03840e22a55bed896a201f13e9172cd6b64a501b437a"
+      ]
+    },
+    "stingingFilament": {
+      "source": "tools/assets/fx-gen/provenance/real-loop-sources/r24-filament-41307.png",
+      "sourceSha256": "a6f51023735edc03926b511575113e4835e0cc0bbfb1ad0d27711543d94b8cc5",
+      "output": "public/assets/img/fx/loop/stingingFilamentLoop.png",
+      "outputSha256": "a56153070342ce0008133008cd465608a3bbd1a013d1fef8f4db0045772d6a10",
+      "frames": 8,
+      "frame": 160,
+      "frameSha256": [
+        "53d0fb70811d4b5ec3a9bd1905d441f75dba6ac2bfc2f0e9c7ceb183077011fd",
+        "7936c9aae7d0f96bd51b958bda26a5832408f18b6ae8fb98181a789d5c8b456c",
+        "bb9acf152be2e9eace2bfca5d098af3a0b41899b3a4ea5133b94ad4db2ed877b",
+        "66e0d9a4b1bd7432c276c095b3031ea9fbf17b785c2369f988b6287476297605",
+        "0bdfb76b0c2dcca2cb509e7e987dead02e78a741b8660587ef051636388cf27b",
+        "06ade0ca23bf992a4fbf31b719b2f6a68b9da6229eda4ce7e66f4b6197fa1397",
+        "8dac0fad12a6f7595d1e7a577280d26dc5a8410f241b240182a7840d33787777",
+        "e08970fe3415988d7e4c6acffd63e93548842acc858920e602d2712c762c88ed"
+      ]
+    }
+  }
+}
