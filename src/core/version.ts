@@ -376,5 +376,7 @@
  *    Re-record reason: Easy AI commands change (Easy mirror per-side damage by tick 400 56.9 -> 22.8, measurement); recorded goldens change only the simVersion header (they run Normal or no scripted Arcade Easy); balance baselines (aiLevel 3) do not move.
  * 106: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Data-only `ARCADE_2V2_LIFE_PM` retune from the full-roster random-partner pass (`snag-trap-teams.mts partners 2 16 --roster full`): sindarosa 830 -> 785 (62.2 -> 56.3 percent), abyssor 550 -> 590 (44.5 -> 52.7 percent); measurements, docs/BALANCE.md.
  *    Re-record reason: Arcade 2v2 goldens and the Arcade 2v2 balance baseline change (sindarosa, abyssor life); other goldens change only the simVersion header.
+ * 107: Arcade only (Classic hashes unchanged); Hard AI only (precedent 85, 105): footsies (`arcade-footsies.ts`): committed steps (no reversal within 8 ticks), whiff punish of a recovering foe that is not stunned and in no combo, ranged close-in to 620 px.
+ *    Re-record reason: Hard AI commands change; recorded goldens change only the simVersion header (they run Normal or no scripted AI) and the balance baselines (Normal) do not move.
  */
-export const SIM_VERSION = 106;
+export const SIM_VERSION = 107;
