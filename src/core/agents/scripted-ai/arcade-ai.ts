@@ -23,6 +23,13 @@ export function easyOpening(level: ArcadeAiLevel, tick: number, openAt: number):
   return level === AI_EASY && tick - openAt < ARCADE_AI_EASY_OPENING_TICKS;
 }
 
+/** Easy "slow fingers" (SIM_VERSION 105): a wanted primary or secondary press passes only after this many wanting ticks (estimate, tune 20-50). */
+export const ARCADE_AI_EASY_READY_DELAY = 55;
+/** True when `wanted` ticks of wanting a slot (this one included) reach the Easy delay. */
+export function easyPaceReady(wanted: number): boolean {
+  return wanted >= ARCADE_AI_EASY_READY_DELAY;
+}
+
 /** Personalities (FUN-DESIGN 2.11 table; Tagger waits for WP-arcade-tag): rows of ARCADE_AI_STYLES. */
 export const RUSHDOWN = 0;
 export const ZONER = 1;

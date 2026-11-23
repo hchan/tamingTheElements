@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_FATIGUE_REFLEX_MAX, ARCADE_AI_FATIGUE_RESET_TICKS, ARCADE_AI_FATIGUE_WINDOW, ARCADE_AI_GUARD_AT, ARCADE_AI_KIT_CORNER_FOE_PX, ARCADE_AI_KIT_CORNER_PX, ARCADE_AI_KIT_HEAL_BELOW_PM, ARCADE_AI_KIT_HIDE_PX, ARCADE_AI_KIT_HOP_PX, ARCADE_AI_KIT_OMNI_PX, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, ARCADE_AI_EASY_OPENING_MASK, easyOpening, ccAvoidImmune, fatigueScale, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, ARCADE_AI_EASY_OPENING_MASK, ARCADE_AI_EASY_READY_DELAY, easyOpening, easyPaceReady, ccAvoidImmune, fatigueScale, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, wallHold, weatherSensible, zoneStep, type ArcadeAiLevel, type KitKind, type Style,
 } from './arcade-ai';
 
@@ -227,14 +227,16 @@ const enum Mem {
   runY,
   runStill,
   openAt,
+  want0,
+  want1,
 }
 
 type Memory = [
   number, number, number, number, number, number, number, number, number, number,
   number, number, number, number, number, number, number, number, number, number,
-  number, number, number, number,
+  number, number, number, number, number, number,
 ];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1000];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1000, ARCADE_AI_EASY_READY_DELAY, ARCADE_AI_EASY_READY_DELAY];
 
 /**
  * Run Away / Run Towards (SIM_VERSION 89, Normal and Hard; FUN-DESIGN 2.29). A ranged hero runs away once the foe is within
@@ -344,7 +346,28 @@ export class ArcadeTactics {
     const escape = ccEscape(this.level, a);
     if (escape !== -1) return escape;
     const final = ccAvoidImmune(this.level, a, full, [slotReady(view, 0, a.snagSlot), slotReady(view, 1, a.snagSlot)]);
-    return easyOpening(this.level, view.tick, this.mem[Mem.openAt]) ? final & ~ARCADE_AI_EASY_OPENING_MASK : final;
+    if (easyOpening(this.level, view.tick, this.mem[Mem.openAt])) {
+      this.mem[Mem.want0] = 0;
+      this.mem[Mem.want1] = 0;
+      return final & ~ARCADE_AI_EASY_OPENING_MASK;
+    }
+    return this.level === AI_EASY ? this.easyPace(final) : final;
+  }
+
+  /** Easy slow fingers (SIM_VERSION 105): a wanted primary or secondary press waits ARCADE_AI_EASY_READY_DELAY wanting ticks. */
+  private easyPace(final: Command): Command {
+    let out = final;
+    const slots: readonly [Command, Mem][] = [[Cmd.primary, Mem.want0], [Cmd.secondary, Mem.want1]];
+    for (const [bit, slot] of slots) {
+      if ((final & bit) === 0) continue;
+      const w = this.mem[slot] + 1;
+      if (easyPaceReady(w)) this.mem[slot] = 0;
+      else {
+        this.mem[slot] = w;
+        out &= ~bit;
+      }
+    }
+    return out;
   }
 
   /**
@@ -778,8 +801,8 @@ export class ArcadeTactics {
   load(state: AgentState): void {
     const rec = stateRecord(state ?? { mem: FRESH, rng: null }, 'ArcadeTactics');
     const mem = [...(rec['mem'] as number[])];
-    // An older save pads with 0, except `openAt`: no grace (-1000), as a fresh agent first seen mid-round.
-    while (mem.length < FRESH.length) mem.push(mem.length === (Mem.openAt as number) ? -1000 : 0);
+    // An older save pads with 0, except `openAt`: no grace (-1000), as a fresh agent first seen mid-round, and the two `want` slots: ready.
+    while (mem.length < FRESH.length) mem.push(mem.length === (Mem.openAt as number) ? -1000 : mem.length > (Mem.openAt as number) ? ARCADE_AI_EASY_READY_DELAY : 0);
     this.mem = mem as Memory;
     this.rng.load(rec['rng'] ?? null);
   }

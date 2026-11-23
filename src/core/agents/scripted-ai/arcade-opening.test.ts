@@ -8,12 +8,13 @@ import { createMatch, type MatchSetup } from '../../sim/match';
 import { step } from '../../sim/step';
 import { createObservationView, type ArcadeView, type FighterView, type ObservationView } from '../agent';
 import { ArcadeTactics } from './arcade';
-import { AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_EASY_OPENING_MASK, ARCADE_AI_EASY_OPENING_TICKS, RUSHDOWN, type ArcadeAiLevel } from './arcade-ai';
+import { AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_EASY_OPENING_MASK, ARCADE_AI_EASY_OPENING_TICKS, ARCADE_AI_EASY_READY_DELAY, RUSHDOWN, type ArcadeAiLevel } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
 
 /** Easy opening grace (SIM_VERSION 97, QA r110 #12): Easy drops offensive bits for 175 ticks after each round's FIGHT. */
 
 const OPEN = ARCADE_AI_EASY_OPENING_TICKS;
+const DELAY = ARCADE_AI_EASY_READY_DELAY;
 const fighter = (x: number, hp: number): FighterView => ({ id: 0, x, y: 300, w: 80, h: 80, hp, maxHp: 1000, flags: 0, alive: true });
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
@@ -40,11 +41,52 @@ const intro = (t: ArcadeTactics, ticks = 71): void => {
 };
 const fresh = (level: ArcadeAiLevel): ArcadeTactics => new ArcadeTactics(level, RUSHDOWN, false, ['none', 'none']);
 
+describe('Easy slow fingers (SIM_VERSION 105)', () => {
+  const primaryOnly = (t: ArcadeTactics, from: number, ticks: number, bit: Command): number[] => {
+    const out: number[] = [];
+    for (let i = 0; i < ticks; i++) if ((t.apply(view(from + i, 1), bit) & bit) !== 0) out.push(from + i);
+    return out;
+  };
+  it('Easy holds a wanted primary for DELAY - 1 ticks after the grace, presses, then waits again; same for secondary', () => {
+    for (const bit of [Cmd.primary, Cmd.secondary]) {
+      const t = fresh(AI_EASY);
+      intro(t);
+      const presses = primaryOnly(t, 71, OPEN + 3 * DELAY, bit);
+      expect(presses[0]).toBe(71 + OPEN + DELAY - 1);
+      expect(presses.slice(0, 3)).toEqual([71 + OPEN + DELAY - 1, 71 + OPEN + 2 * DELAY - 1, 71 + OPEN + 3 * DELAY - 1]);
+    }
+  });
+  it('Normal and Hard press on every wanted tick', () => {
+    for (const level of [AI_NORMAL, AI_HARD] as const) {
+      const t = fresh(level);
+      intro(t);
+      expect(primaryOnly(t, 71, 10, Cmd.primary).length).toBe(10);
+    }
+  });
+  it('save then load mid-delay gives the same next commands', () => {
+    const t = fresh(AI_EASY);
+    intro(t);
+    primaryOnly(t, 71, OPEN + 10, Cmd.primary);
+    const copy = fresh(AI_EASY);
+    copy.load(JSON.parse(JSON.stringify(t.save())) as ReturnType<ArcadeTactics['save']>);
+    expect(primaryOnly(copy, 71 + OPEN + 10, 3 * DELAY, Cmd.primary)).toEqual(primaryOnly(t, 71 + OPEN + 10, 3 * DELAY, Cmd.primary));
+  });
+  it('an old-length save pads the new slots with 0', () => {
+    const t = fresh(AI_EASY);
+    const saved = t.save() as { mem: number[] };
+    saved.mem.length -= 2;
+    expect(() => {
+      t.load(saved as unknown as ReturnType<ArcadeTactics['save']>);
+    }).not.toThrow();
+    expect((t.save() as { mem: number[] }).mem.length).toBe(saved.mem.length + 2);
+  });
+});
+
 describe('Easy opening grace', () => {
   it('Easy emits no offensive bit for the first OPENING fight ticks, then attacks; Normal and Hard attack at once', () => {
     const easy = fresh(AI_EASY);
     intro(easy);
-    const bits = fightBits(easy, 71, OPEN + 40);
+    const bits = fightBits(easy, 71, OPEN + DELAY + 40);
     expect(bits.slice(0, OPEN).every((b) => b === 0)).toBe(true);
     expect(bits.slice(OPEN).some((b) => b !== 0)).toBe(true);
     for (const level of [AI_NORMAL, AI_HARD] as const) {
@@ -57,7 +99,7 @@ describe('Easy opening grace', () => {
   it('a hit on the AI hero ends the grace on that tick', () => {
     const t = fresh(AI_EASY);
     intro(t);
-    const bits = fightBits(t, 71, 60, (tick) => (tick >= 100 ? 900 : 1000));
+    const bits = fightBits(t, 71, 40 + DELAY + 20, (tick) => (tick >= 100 ? 900 : 1000));
     expect(bits.slice(0, 29).every((b) => b === 0)).toBe(true);
     expect(bits.slice(29).some((b) => b !== 0)).toBe(true);
   });
@@ -77,7 +119,7 @@ describe('Easy opening grace', () => {
     fightBits(t, 71, 100);
     const copy = fresh(AI_EASY);
     copy.load(JSON.parse(JSON.stringify(t.save())) as ReturnType<ArcadeTactics['save']>);
-    const rest = fightBits(copy, 171, OPEN - 100 + 30);
+    const rest = fightBits(copy, 171, OPEN - 100 + DELAY + 30);
     expect(rest.slice(0, OPEN - 100).every((b) => b === 0)).toBe(true);
     expect(rest.slice(OPEN - 100).some((b) => b !== 0)).toBe(true);
   });
