@@ -412,3 +412,30 @@ Zero-sum check (-d/11): the six unchanged races (pax, rokcore, morblass, fiara, 
 Fun gates (seeds 8, team size 2, measurement): all pass; round median 61.76 s, worst/best race 0.42/0.648. `fun:gates --team-sizes 3` has no bands (the run aborts), so 3v3 stays report only; boss-probe output was recorded at `.scratch/boss-E.txt` (not committed, no v100 reference rerun).
 
 Re-record: arcade and classic goldens (Classic changes only the simVersion header) and `arcade-2v2-baseline.json`.
+
+## Arcade 2v2 hidden-hero life retune (SIM_VERSION 102)
+
+After SIM_VERSION 101 the full-roster 2v2 tournament (`run-match.ts --tournament --roster full --ruleset arcade --team-size 2 --ai-level 3 --seeds 16`, 4416 matches, plan `~/claudetmp/plans/small/2v2-life-retune-v101.md`) showed every team as one fixed legacy + hidden pair (legacy hero at index i, hidden hero at i + 12), with pair means .364-.677. Released races are held (their random-partner rates are in band at v101). Data-only change to eight hidden-hero `ARCADE_2V2_LIFE_PM` rows (1v1 untouched): kindrel 725 -> 755, nykra 740 -> 655, quarrak 725 -> 675, brazgor 460 -> 490, durrok 590 -> 625, zephra 760 -> 830, abyssor 430 -> 475, vortigal 740 -> 650. Held: hyalia, glimmaw, ouroth, umbrel.
+
+Method (measurements, `TTE_MODS` life mods, one sim process, no repo edit until accepted; SE about 2.6 pp per team, 1.8 pp per pair mean). Round 1 used the plan's set A (zephra 865, vortigal 610, nykra 630): zephra pair .571, treenoc/vortigal .420 and nykra pair .461 were more than 3 pp off (slopes measured 1.5, 1.46 and 1.24 pp per 1% of life, higher than the plan's 1.0). Round 2 refit those three (zephra 830, vortigal 650, nykra 655); cap of 2 rounds reached.
+
+Pair table (win rate, legacy-led / hidden-led, mean). before = v101, after = round 2 (committed values):
+
+| pair | before legacy / hidden | before mean | after legacy / hidden | after mean |
+|---|---|---|---|---|
+| curomo / kindrel | .432 / .481 | .457 | .546 / .535 | .540 |
+| cyclonius / nykra | .625 / .666 | .645 | .516 / .459 | .488 |
+| echo / quarrak | .563 / .571 | .567 | .505 / .476 | .490 |
+| fiara / hyalia | .552 / .463 | .508 | .541 / .471 | .506 |
+| ishimi / brazgor | .440 / .432 | .436 | .476 / .489 | .482 |
+| lavax / glimmaw | .505 / .507 | .506 | .489 / .501 | .495 |
+| morblass / durrok | .432 / .446 | .439 | .462 / .495 | .479 |
+| pax / zephra | .326 / .402 | .364 | .459 / .524 | .492 |
+| rokcore / ouroth | .446 / .516 | .481 | .467 / .478 | .473 |
+| sindarosa / abyssor | .375 / .408 | .391 | .470 / .530 | .500 |
+| treenoc / vortigal | .726 / .628 | .677 | .514 / .500 | .507 |
+| wispera / umbrel | .541 / .519 | .530 | .584 / .511 | .547 |
+
+Spread .326-.726 -> .448-.584. 22 of 24 teams are inside .45-.55; the exceptions are wispera .584 and curomo .546/kindrel .535 pair mean .540 (within noise of the +-3 pp acceptance, not refit: the 2-round cap). Wispera is a released race, held; its rise is the field effect of fixing the low pairs. Random-partner (`snag-trap-teams.mts partners --roster full`) was not run for this change; the harness now accepts `--roster full` for the next retune.
+
+Re-record: arcade and classic goldens (only `arcade-roster24-b1/-b2/-b3` change hash; every other golden changes only the simVersion header). `balance:compare --ruleset arcade --team-size 2` (legacy 12) is unchanged; no `balance:record`.
