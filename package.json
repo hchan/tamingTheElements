@@ -46,6 +46,7 @@
     "online:live-match": "tsx --tsconfig tsconfig.app.json tools/live-match.ts",
     "online:live-browser": "tsx --tsconfig tsconfig.app.json tools/live-browser-match.ts",
     "relay:conformance": "tsx --tsconfig tsconfig.app.json tools/relay-conformance/run.ts",
+    "ai:footsies": "tsx tools/sim/footsie-probe.ts",
     "ai:duel": "tsx tools/sim/ai-duel.ts",
     "ai:summary": "tsx tools/sim/ai-variety-summary.ts",
     "ai:stalemates": "tsx tools/sim/stalemate-probe.ts",
