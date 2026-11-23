@@ -1,5 +1,5 @@
 // Spacing ("footsies") baseline probe: how far apart do two Arcade 1v1 fighters stand in the first 400 ticks after the first move?
-// Run: pnpm ai:footsies [--foe scripted|idle] [--seeds 3] [--races 5] [--json]
+// Run: pnpm ai:footsies [--foe scripted|idle] [--seeds 3] [--races 5] [--team-size 1|2] [--json]
 //  --foe idle: side B sends no command (IdleAgent in run-match.ts); only side A (the AI) is counted in still/reversals.
 // Reports, for aiLevel 3 (Normal) and 4 (Hard): median centre distance at +150 ticks, share of still ticks, share of ticks
 // under 320 / 320-600 / over 600 px, direction reversals per fighter per 10 s, end reasons. "Still" = position unchanged
@@ -40,7 +40,7 @@ function racePairs(count: number): [string, string][] {
   return pairs;
 }
 
-export function measure(aiLevel: number, foe: AgentKind, seeds: number, raceCount: number): FootsieRow {
+export function measure(aiLevel: number, foe: AgentKind, seeds: number, raceCount: number, teamSize: 1 | 2 = 1): FootsieRow {
   const d150: number[] = [];
   const ends: Record<string, number> = {};
   let still = 0, samples = 0, melee = 0, mid = 0, far = 0, ticks = 0, rev = 0, matches = 0;
@@ -51,7 +51,7 @@ export function measure(aiLevel: number, foe: AgentKind, seeds: number, raceCoun
       let start = -1, t = 0;
       const r = runMatch({
         raceA: a, raceB: b, agentA: 'scripted', agentB: foe, seed: matchSeed(7, i), level: 1, difficulty: 1,
-        aIsTeam0: true, ruleset: 'arcade', aiLevel, teamSize: 1,
+        aIsTeam0: true, ruleset: 'arcade', aiLevel, teamSize,
         onTick: (world) => {
           const s = world.state;
           t++;
@@ -110,11 +110,13 @@ const { values } = parseArgs({
     foe: { type: 'string', default: 'scripted' },
     seeds: { type: 'string', default: '3' },
     races: { type: 'string', default: '5' },
+    'team-size': { type: 'string', default: '1' },
     json: { type: 'boolean', default: false },
   },
 });
 if (values.foe !== 'scripted' && values.foe !== 'idle') throw new Error(`--foe must be scripted|idle, got "${values.foe}"`);
-const rows = [3, 4].map((lv) => measure(lv, values.foe as AgentKind, Number(values.seeds), Number(values.races)));
+const teamSize = values['team-size'] === '2' ? 2 : 1;
+const rows = [3, 4].map((lv) => measure(lv, values.foe as AgentKind, Number(values.seeds), Number(values.races), teamSize));
 if (values.json) console.log(JSON.stringify({ foe: values.foe, rows }, null, 2));
 else {
   console.log(`foe=${values.foe} window=${String(WINDOW)} ticks after the first move`);
