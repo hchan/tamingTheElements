@@ -372,5 +372,7 @@
  *    Re-record reason: roster-24 2v2 life retune round 3 (only arcade goldens that field kindrel or abyssor change hash).
  * 104: Arcade only (Classic hashes unchanged). Data-only shorter juggle stun (qa-r109 #2): JUGGLE_STUN_STEP 2->6, COMBO_STUN_CAP_TICKS 150->120 (first-hit stun unchanged).
  *    Re-record reason: every Arcade stun chain is shorter, so Arcade goldens and both Arcade balance baselines change.
+ * 105: Arcade only (Classic hashes unchanged); AI only (precedent 55, 97): Easy waits ARCADE_AI_EASY_READY_DELAY (55) wanting ticks, counted after the opening grace, before pressing a primary or secondary slot. New agent memory slots want0/want1. Normal and Hard commands unchanged.
+ *    Re-record reason: Easy AI commands change (Easy mirror per-side damage by tick 400 56.9 -> 22.8, measurement); recorded goldens change only the simVersion header (they run Normal or no scripted Arcade Easy); balance baselines (aiLevel 3) do not move.
  */
-export const SIM_VERSION = 104;
+export const SIM_VERSION = 105;
