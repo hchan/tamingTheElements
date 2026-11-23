@@ -47,6 +47,11 @@ describe('ability lessons', () => {
     expect(ABILITY_LESSONS.get('abyssal-pull')?.line).toContain('drags the foe in');
   });
 
+  it('pins the Ouroth lessons', () => {
+    expect(lessonsFor(characterId('ouroth')).map((l) => l?.abilityId)).toEqual(['wyrm-coil', 'scorch-breath']);
+    expect(ABILITY_LESSONS.get('wyrm-coil')?.line).toContain('Guard does not stop it');
+  });
+
   it('pins the Vortigal lessons', () => {
     expect(lessonsFor(characterId('vortigal')).map((l) => l?.abilityId)).toEqual(['stoop', 'talon-rake']);
     expect(ABILITY_LESSONS.get('talon-rake')?.line).toContain('wound');

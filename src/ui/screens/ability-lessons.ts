@@ -32,6 +32,8 @@ const LESSON_LIST: readonly AbilityLesson[] = [
   L('kelp-lash', 'A long whip of kelp that reaches a good way out.', 'Lash from just outside the foe\'s reach, then step back.'),
   L('tentacle-lash', 'A long, wide lash of tentacle that hits hard at a distance.', 'Keep the foe at the tip of its reach and lash again as soon as it is ready.'),
   L('abyssal-pull', 'A tendril that flies out and drags the foe in toward you.', 'Fire it at a foe who is holding back, then lash them as they arrive.'),
+  L('wyrm-coil', 'A close grab that beats Guard, then holds the foe and throws them.', 'Use it on a foe who is blocking, up close.'),
+  L('scorch-breath', 'A short, tall gout of flame that leaves the foe burning.', 'Breathe it at close range and keep up the pressure.'),
   // Fire
   L('fireball', 'A fireball that flies straight at the foe.', 'Line up your aim, then fire from mid range.'),
   L('fire-heal', 'Heals you a little. It takes a long time to be ready again.', 'Save it for a quiet moment, not the middle of a trade.'),
