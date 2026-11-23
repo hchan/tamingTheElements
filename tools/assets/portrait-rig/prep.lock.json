@@ -85,6 +85,22 @@
    "rig.json": "9d23f7546a2335804fbd8d008443c16de9d1e1afc05ac564de2fc285f7f28ac4"
   }
  },
+ "glimmaw": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "78bab55ec91ae73ce580fc52f10e5d153e8c92f4644f62b7c39c6432cc4a1a9e",
+   "anim": "278685eaff1f68149362562da26db73e7a10f4222159b8f4d39e6317a162edf0",
+   "portrait": "dac21b886faeb399774066b0dc008e354fa15cced6ae15ab5f6a6e448fb14d6f"
+  },
+  "outputs": {
+   "parts/body.png": "9d28419762c2a831b66bde2800166d00ba0404da1a5035cb46e5a18e2b55e521",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "bf2991732d48cacb679db604da510c13fc5be6c06f4943e391dabfcbb6c1dd93",
+   "parts/rim.png": "4005b0c3d4d5f1950fe3f7ea4b0fa9d162859f8b1fc5cc63530f42c96ae778a4",
+   "parts/flash.png": "cfba1bd7bedfc18a48558eb9babb7b5997fe81faedb1492e7e4e01c29b385eec",
+   "rig.json": "f86c2c9f627186da039b3f766ecd1177e154e89f2abb537fe875fe2019196066"
+  }
+ },
  "hyalia": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
@@ -97,22 +113,6 @@
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "6bd7bb8ec6231d39e2e4adfdc765ad0b72eb6badcf9b80a6bdb12475a7cce77b",
    "rig.json": "405b3a8219a6195704412a56c3c13d86491569dca6139bdcf0a36a1002e954be"
-  }
- },
- "glimmaw": {
-  "inputs": {
-   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
-   "spec": "78bab55ec91ae73ce580fc52f10e5d153e8c92f4644f62b7c39c6432cc4a1a9e",
-   "anim": "0ca4116e0d22ea0fc8d7ec80a406d816f5b91486f41767a7bdd6e84bf288be60",
-   "portrait": "dac21b886faeb399774066b0dc008e354fa15cced6ae15ab5f6a6e448fb14d6f"
-  },
-  "outputs": {
-   "parts/body.png": "9d28419762c2a831b66bde2800166d00ba0404da1a5035cb46e5a18e2b55e521",
-   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
-   "parts/eye.png": "bf2991732d48cacb679db604da510c13fc5be6c06f4943e391dabfcbb6c1dd93",
-   "parts/rim.png": "4005b0c3d4d5f1950fe3f7ea4b0fa9d162859f8b1fc5cc63530f42c96ae778a4",
-   "parts/flash.png": "cfba1bd7bedfc18a48558eb9babb7b5997fe81faedb1492e7e4e01c29b385eec",
-   "rig.json": "29b1970c0e78200aba2d17c456a25b88248a4a8f5fff31ef75b87facaf45a8f8"
   }
  },
  "ishimi": {
@@ -277,14 +277,14 @@
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
    "spec": "fbf414a9549f038bb8a530c142decbca7ed44080a4f4d7c7cb2ac4b68d8fc768",
-   "anim": "a87c346c4afabd813f6f815ebf6d897506c0e012ce7b86f9115fb9993ba4d4fa",
+   "anim": "81df4a3dc7e6f63ba476a22e9279ae6ce9ee771978bb8229aca5ae22ffc30573",
    "portrait": "2a5c6c0a9aa4272dbda4986f625b653641b593f5db287ee635d6b2e8565baf54"
   },
   "outputs": {
    "parts/body.png": "35dd70e6854e834e119d1393723e55b9b2e4c3c7826f10c723a3da73e57f9b22",
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "37047a525cc1244f0615dfcead3118e535756ef61152ed215b72820f814cbf09",
-   "rig.json": "e162d5e3e60b6bcd91ca3525371538026ef11250cdbcc0ab891448292ea23282"
+   "rig.json": "33c2fe89ced6bb75ecdcd31bc19ba887bd77d733d4a45ccee8310878eaf68b91"
   }
  },
  "wispera": {

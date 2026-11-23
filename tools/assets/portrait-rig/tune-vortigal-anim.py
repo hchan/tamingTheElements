@@ -22,7 +22,7 @@ def put(act, target, ch, vals):
 
 
 # idle: hovering glide, slow wing beat, body bobs, tail trims
-wings("idle", [9, 0, -9, 0])
+wings("idle", [14, 0, -14, 0])
 put("idle", "body", "dy", [0, -3, 0, 3])
 put("idle", "head", "rot", [-3, 0, 3, 0])
 put("idle", "tail1", "rot", [-4, 0, 4, 0])
@@ -30,7 +30,7 @@ put("idle", "tail2", "rot", [-8, 0, 8, 0])
 
 # walk (the moving flight loop): fast wide wing beat, legs tucked and trailing, body surging
 wings("walk", [24, 0, -20, 0])
-put("walk", "body", "dy", [0, -5, 0, -5])
+put("walk", "body", "dy", [0, -2, 0, -2])
 put("walk", "body", "rot", [-2, 0, 2, 0])
 put("walk", "head", "rot", [-4, 2, 4, -2])
 for t in ("legFN0", "legHN0"):
@@ -44,15 +44,17 @@ wings("cast", [28, 40, -22, -6])
 put("cast", "body", "dx", [-8, -12, 20, 4])
 put("cast", "body", "dy", [-3, -6, 4, 0])
 put("cast", "body", "rot", [-4, -8, 6, 0])
+for ch in ("sx", "sy"):  # cell scaled down 5% (10% on f2, the SE wing tip) so the f2-f3 wing tips keep their margin
+    put("cast", "body", ch, [95, 95, 90, 95])
 put("cast", "head", "rot", [-6, -10, 6, 0])
 put("cast", "legFN0", "rot", [10, 16, -14, 0])
 put("cast", "legHN0", "rot", [10, 16, -14, 0])
 
 # hurt: hard recoil back and up, wings flared, head snapped back
-wings("hurt", [34, 18])
-put("hurt", "body", "dx", [-12, -6])
-put("hurt", "body", "dy", [-5, -2])
-put("hurt", "body", "rot", [-9, -4])
+wings("hurt", [40, 20])
+put("hurt", "body", "dx", [-16, -8])
+put("hurt", "body", "dy", [-7, -3])
+put("hurt", "body", "rot", [-12, -5])
 put("hurt", "head", "rot", [-16, -8])
 put("hurt", "legFN0", "rot", [14, 6])
 put("hurt", "legHN0", "rot", [14, 6])
