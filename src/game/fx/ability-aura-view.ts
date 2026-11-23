@@ -8,6 +8,7 @@ import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } fr
 import { viewHeight, viewWidth } from '../boot/viewport';
 import { GORE_COLOR, GORE_POP, GORE_SPRITE, GORE_TICKS, HIDE_COLOR, HIDE_POP, HIDE_SPRITE, HIDE_TICKS, forgeGore, moltenHide } from './brazgor-fx';
 import { BITE_COLOR, BITE_POP, BITE_SPRITE, BITE_TICKS, SPRAY_COLOR, SPRAY_POP, SPRAY_SPRITE, SPRAY_TICKS, cinderSpray, emberBite } from './kindrel-fx';
+import { HURL_POP, HURL_SPRITE, HURL_TICKS, ROLL_POP, ROLL_SPRITE, ROLL_TICKS, boulderRoll, hurlRock, paintRock } from './quarrak-fx';
 import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
@@ -58,7 +59,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide'; x: number; y: number; dir: number; born: number }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll'; x: number; y: number; dir: number; born: number }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   const lastReady = new Map<number, number>();
@@ -146,6 +147,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       // Brazgor (roster24): Forge Gore blow and Molten Hide glow, same readyTick read.
       { sprite: GORE_SPRITE, kind: 'gore' as const, word: GORE_POP, base: 8 },
       { sprite: HIDE_SPRITE, kind: 'hide' as const, word: HIDE_POP, base: 10 },
+      // Quarrak (roster24): thrown rock and rolling boulder with dust, same readyTick read (no word pop: the projectile is the cue).
+      { sprite: HURL_SPRITE, kind: 'hurl' as const, word: HURL_POP, base: 12 },
+      { sprite: ROLL_SPRITE, kind: 'roll' as const, word: ROLL_POP, base: 14 },
     ];
     for (const team of [0, 1]) {
       for (const k of kindrelCasts) {
@@ -157,7 +161,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         const at = aim.get(team);
         if (prev === undefined || slot.readyTick <= prev || !at) continue;
         kfx.push({ kind: k.kind, ...at, born: now });
-        if (k.kind !== 'bite') {
+        if (k.kind !== 'bite' && k.kind !== 'hurl' && k.kind !== 'roll') {
           const py = anchor.get(team)?.y ?? at.y - 8;
           pops.push({ id: ++popId, word: k.word, team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
         }
@@ -177,6 +181,12 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         }
         paintEmbers(glow, b.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: b.alpha })), BITE_COLOR, 0.9);
         return age <= BITE_TICKS;
+      }
+      if (f.kind === 'hurl' || f.kind === 'roll') {
+        const r = f.kind === 'hurl' ? hurlRock(f.x, f.y, f.dir, age, reduced) : boulderRoll(f.x, f.y, f.dir, age, reduced);
+        if (!r) return false;
+        paintRock(gfx, glow, r);
+        return age <= (f.kind === 'hurl' ? HURL_TICKS : ROLL_TICKS);
       }
       if (f.kind === 'gore') {
         const g = forgeGore(f.x, f.y, f.dir, age, reduced);
