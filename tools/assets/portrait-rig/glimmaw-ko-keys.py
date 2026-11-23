@@ -10,7 +10,7 @@ DIRS = ["E", "SE", "NE", "S", "N"]
 F = 240
 MARGIN = 4
 # (rotation degrees clockwise about the feet, horizontal scale, vertical scale, dx, dy) per frame; the last frame holds
-POSES = [(0, 1.0, 0.94, -2, 0), (0, 1.04, 0.84, -4, 0), (0, 1.08, 0.74, -5, 0), (0, 1.1, 0.7, -5, 0)]  # retract and drop: shell sinks, no limb tearing
+POSES = [(0, 1.0, 0.92, -2, 0), (2, 1.0, 0.78, -3, 0), (5, 1.0, 0.64, -4, -1), (7, 1.0, 0.54, -4, -3)]  # drop and flatten: shell sinks, body low, no limb tearing
 
 for d in DIRS:
   SRC = os.path.join(ROOT, "imgWorkArea", "sheets", "glimmaw", "idle", d, "00.png")

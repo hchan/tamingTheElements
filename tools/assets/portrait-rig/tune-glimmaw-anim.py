@@ -7,33 +7,45 @@ from pathlib import Path
 p = Path(__file__).parent / "spec" / "glimmaw.anim.json"
 a = json.loads(p.read_text())
 
-i = a["idle"]["curves"]  # slow breathing, head sway
-i["body"] = {"dy": [0, -2, -3, -1]}
-i["head"] = {"rot": [-4, 2, 5, -2]}
+i = a["idle"]["curves"]  # slow breathing (about 2% scale) and a small head bob, no leg motion
+i["body"] = {"dy": [0, -2, -3, -1], "sx": [100, 99, 98, 99], "sy": [100, 101, 102, 101]}
+i["head"] = {"rot": [-3, 2, 4, -2]}
 i["neck0"] = {"rot": [-2, 2, 3, -1]}
 i["tail0"] = {"rot": [0, 1, 0, -1]}
 
-wk = a["walk"]["curves"]  # weighty stomp: bob and a shell rock
-wk["body"]["dy"] = [2, 0, 2, 0]
-wk["body"]["rot"] = [-2, 0, 2, 0]
-wk["head"] = {"rot": [-4, 2, 4, -2]}
-wk["neck0"] = {"rot": [-3, 1, 3, -1]}
+wk = a["walk"]["curves"]  # weighty trot: diagonal pairs (FN+HF, FF+HN) swing in opposition, 7 px bob (test caps foot drift at 3 frame px), shell rock, head sway
+wk["body"]["dy"] = [5, -2, 5, -2]
+wk["body"]["rot"] = [-3, 0, 3, 0]
+for k in ("legFN0", "legHF0"):
+    wk[k] = {"rot": [-16, 0, 16, 0]}
+for k in ("legFF0", "legHN0"):
+    wk[k] = {"rot": [16, 0, -16, 0]}
+wk["head"] = {"rot": [-8, 4, 8, -4]}
+wk["neck0"] = {"rot": [-5, 2, 5, -2]}
 wk["tail0"] = {"rot": [0, 1, 0, -1]}
 
-# cast: sink, draw the neck back, then thrust head and neck forward (the lure swings out), settle
+# cast: f0 crouch (sink, neck drawn back), f1-f2 lunge head/neck forward and up with the shell rim glowing, f3 settle
 a["cast"]["curves"] = {
-    "body": {"dx": [-4, -6, 8, 4], "dy": [2, 3, -1, 0]},
-    "neck0": {"rot": [8, 14, -10, -2]},
-    "head": {"rot": [10, 18, -14, -3]},
-    "legFN0": {"rot": [-4, -6, 3, 0]},
-    "legFF0": {"rot": [-4, -6, 3, 0]},
+    "body": {"dx": [-6, 4, 10, 3], "dy": [9, 0, -3, 1]},
+    "neck0": {"rot": [10, -12, -16, -3]},
+    "head": {"rot": [14, -16, -20, -4]},
+    "legFN0": {"rot": [-6, 4, 6, 0]},
+    "legFF0": {"rot": [-6, 4, 6, 0]},
 }
 
-# hurt: shell pushed back, head snaps up, then settles
+# hurt: f0 shell pushed back and tilted away, head snaps up, flash; f1 partial recovery
 a["hurt"]["curves"] = {
-    "body": {"dx": [-9, -4], "dy": [2, 1], "rot": [-2, -1]},
-    "neck0": {"rot": [-8, -3]},
-    "head": {"rot": [-12, -5]},
+    "body": {"dx": [0, 0], "dy": [3, 1], "rot": [-8, -4]},
+    "neck0": {"rot": [-10, -4]},
+    "head": {"rot": [-16, -6]},
 }
+
+# glows: the shell rim lights only in the cast lunge, the white-red flash only on the first hurt frame
+for act, n in (("idle", 4), ("walk", 4), ("cast", 4), ("hurt", 2), ("guard", 2), ("dash", 3), ("ko", 4), ("victory", 4), ("tagIn", 4)):
+    cv = a[act]["curves"]
+    cv["rim"] = {"bright": [0] * n, "alpha": [0] * n}  # alpha 0 too: a zero-bright additive glow still leaves a faint halo
+    cv["flash"] = {"bright": [0] * n, "alpha": [0] * n}
+a["cast"]["curves"]["rim"] = {"bright": [0, 400, 512, 150], "alpha": [0, 256, 256, 120]}
+a["hurt"]["curves"]["flash"] = {"bright": [380, 100], "alpha": [150, 90]}
 p.write_text(json.dumps(a, indent=1) + "\n")
 print("tuned", p)
