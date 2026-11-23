@@ -1,0 +1,19 @@
+{
+ "durrok_120651_rg3": {
+  "approved": "sheet3.png (seed 120651, regrade 3)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "overall": 4.0,
+  "notes": "Matte approval copied from gpu-job-server .scratch/r24-durrok-regrade (approval.json). Raw r24-durrok-i2i3_120651_d0.3_1152x896.png; reproduce with tools/assets/roster24-art/durrok-chain.sh <raw> <outdir>. Rig source: key-flat-bg.py, clear-enclosed-grey.py --min 8000 --tol 22 (clears only the trunk-loop pocket), make-rig-source.py. Cast trunk rotation reduced to -1/-2/1/0 in spec/durrok.anim.json (template values smeared the trunk)."
+ },
+ "durrok_p1_bake": {
+  "approved": "baked sheets + map strip",
+  "verdict": "APPROVE",
+  "overall": 4.0,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "notes": "Round 1. Non-blocking: pale smear between rear legs on walk frames 1-2; idle/walk subtle; N is the same pose as E; KO is squash-and-tilt not a collapse; in-game ground ring reads as a selection ring (shared render, not Durrok-specific)."
+ }
+}

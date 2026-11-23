@@ -22,7 +22,7 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 
 - [ ] WP-0 prerequisites (release set, audit gate; shared, done once for all heroes)
 - [ ] S (sim): kit de-dupe, hit-strength and stun rows, AI rule, 2v2 life retune if out of band; SIM_VERSION bump at merge, golden re-record with reason
-- [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval, audit gate
+- [ ] P1 (art): rig spec, bake, sheets, art-director sheet approval (done 2026-11-23), audit gate (open)
 - [ ] P2 (hit FX): burst, hit-spark and named pop per ability in ability-aura-view.ts
 - [x] P3 (text): lesson rows in ability-lessons.ts, docs/ABILITY-AUDIT.md, docs/GAME-DESIGN.md
 - [ ] P4 (browser): `corepack pnpm e2e:smoke` and `corepack pnpm e2e -- tests/e2e/roster24-shot.spec.ts` via the router
@@ -34,3 +34,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
 - 2026-11-20: S step (no sim change, SIM_VERSION stays 92). Kit de-dupe checked: no other ability shares kind, box and damage with Tusk Gore (melee 80x50, 22) or Bristle Stomp (melee 70x40, 15); Hoof Crash is 70x50, 20. Pinned in `src/core/data/abilities-c.test.ts`. Win rate at SIM_VERSION 92, Arcade, AI level 3, full roster: 1v1 (16 seeds, 368 games) 0.535; 2v2 (26 seeds, 598 games) 0.478; both in 0.45-0.55, no tuning, no golden re-record. AI rule still open (none).
 - 2026-11-21 (P3 text, done): tusk-gore and bristle-stomp lesson rows in src/ui/screens/ability-lessons.ts (words only, no banned terms); pin test in ability-lessons.test.ts. docs/ABILITY-AUDIT.md and GAME-DESIGN.md Durrok rows already match abilities-c.ts (22 dmg, 3 s, lunge 180; 15 dmg, 0.8 s). No src/core change, no art, RELEASED_ROSTER24 still empty.
 - 2026-11-22 (2v2 life retune, SIM_VERSION 102): ARCADE_2V2_LIFE_PM changed from the v101 full-roster tournament (pair mean before .364-.677, after .473-.540 per docs/BALANCE.md 'Arcade 2v2 hidden-hero life retune'); this hero's new value and its pair rates are in that table. Refit again with --roster released at release.
+- 2026-11-23: rigged and baked Durrok (quadruped; landmarks `tools/assets/portrait-rig/r24/durrok.landmarks.json`, source `imgWorkArea/portrait-src/durrok.png`, matte chain `tools/assets/roster24-art/durrok-chain.sh`). Cast trunk rotation cut to -1/-2/1/0 (template smeared it). Art-director baked-sheet verdict APPROVE 4.0 (provenance/durrok-approval.json); non-blocking: rear-leg smear on walk, subtle idle, KO is squash-and-tilt. Still behind `?ff=roster24`; `RELEASED_ROSTER24` untouched; audit gate open.
