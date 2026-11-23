@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- SIM 108: Arcade 1v1 life re-fit for pax, echo, treenoc and lavax (data only); 2v2 and 3v3 team life unchanged. Goldens and `arcade-baseline.json` re-recorded.
+
 - Hurl Rock impact burst (render-only): `hurlImpact` in `src/game/fx/quarrak-hit-fx.ts` draws 16 larger chips, a wider dust ring and a soft stone flash. No sim, golden or `SIM_VERSION` change.
 
 - Nykra idle, walk and cast animation tune on the quadruped-landmark rig (spec anim `tools/assets/portrait-rig/spec/nykra.anim.json`, re-baked sheets). Art only; hero stays behind `?ff=roster24`.
