@@ -1,3 +1,22 @@
-{"vortigal_matte": {"approved": "vortigal.png (r149 8710)", "reviewer": "art-director", "date": "2026-11-20", "beats_shipped": true, "notes": "Matte approval copied from gpu-job-server .scratch/matte/approval.json. Source chain: key-flat-bg.py, clear-grey-pockets.py (0 pockets), make-rig-source.py (400x400 canvas), r24/vortigal.landmarks.json (quadruped plan, east-facing, wings as the two ear chains), gen-r24.py --promote, tune-vortigal-anim.py, r24-ko-keys.py (HERO_POSES tilt-and-drop)."},
- "vortigal_win_still": {"approved": "r960-vortigal-win_60100_d0.5.png", "reviewer": "art-director", "date": "2026-11-23", "beats_shipped": true, "notes": "From gpu-job-server .scratch/r960-out/approval.json."},
- "vortigal_p1_bake": {"approved": "pending", "verdict": "NOT YET REVIEWED", "reviewer": "art-director", "date": "2026-11-23", "notes": "Baked sheets and map strip need the art-director's sheet verdict; contact sheet in the builder worktree .scratch/vg/contact-small.png."}}
+{
+ "vortigal_matte": {
+  "approved": "vortigal.png (r149 8710)",
+  "reviewer": "art-director",
+  "date": "2026-11-20",
+  "beats_shipped": true,
+  "notes": "Matte approval copied from gpu-job-server .scratch/matte/approval.json. Source chain: key-flat-bg.py, clear-grey-pockets.py (0 pockets), make-rig-source.py (400x400 canvas), r24/vortigal.landmarks.json (quadruped plan, east-facing, wings as the two ear chains), gen-r24.py --promote, tune-vortigal-anim.py, r24-ko-keys.py (HERO_POSES tilt-and-drop)."
+ },
+ "vortigal_win_still": {
+  "approved": "r960-vortigal-win_60100_d0.5.png",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "notes": "From gpu-job-server .scratch/r960-out/approval.json."
+ },
+ "vortigal_p1_bake": {
+  "approved": "APPROVE 4/5",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "notes": "See vortigal-bake-approval.json. Non-blocking: idle amplitude, cast f3 and KO f3-4 margin, hurt recoil."
+ }
+}

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Vortigal rigged (eagle from matte r149 8710, art-director APPROVE 4/5), wings as separate bones, KO tilt-and-drop; 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: idle and hurt rows subtle.
+
 - Hyalia rigged (quadruped wyvern from approved matte 96433, art-director APPROVE 4/5), 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: wings baked into the body, hurt/KO rows weak.
 
 - Zephra display scale (render-only): `DISPLAY_SCALE` in `src/game/views/display-scale.ts` draws Zephra 15% larger about her feet; hitbox, sim, goldens and `SIM_VERSION` unchanged.
