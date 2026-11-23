@@ -86,5 +86,15 @@
   "source": "r842-abyssor-vic_61100_d0.4.png",
   "facing": "front",
   "note": "f563-565-approval.json abyssor_victory: approved d0.4 (not f542, whose abyssor r821 was a REJECT: crab/fish redesign)"
+ },
+ "durrok_victory": {
+  "approved": "out/durrok_vic_i2i_r992_99200_d0.2.png",
+  "verdict": "APPROVE",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "source": "r992-durrok-vic_99200_d0.2.png",
+  "facing": "right",
+  "note": "r992 approval.json durrok_victory (overall 4.2). i2i d0.2 seed 99200 from the CPU warp durrok_win3.png (durrok-120651-rg3.png, trunk raised, one forefoot lifted); chest-notch clone-out not applied"
  }
 }

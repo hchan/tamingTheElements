@@ -18,6 +18,7 @@ const STILLS: Record<string, { src: string; srcSha: string; outSha: string; faci
   ouroth: { src: 'r821-ouroth-vic_59822_d0.45.png', srcSha: '28803d26e279b9c20900240f54c170fbf8ce3dd712a4a6fee2194cea13eb3e91', outSha: '42cc1f988592e4c6d33f9217c9d6d111d2c4cc28dcf477256481a1d66b93d584', facing: 'right' },
   umbrel: { src: 'r805-umbrel-victory_58210_d0.5.png', srcSha: '0e96f965b6989867f4ec9e7105e704a2e2e0216aa69e734ac1e08c2a58aa47d0', outSha: 'fdd3b5f819a90770012068c142f72dd0d0ef3727bc9f68c473fd4a714babe0d4', facing: 'left' },
   abyssor: { src: 'r842-abyssor-vic_61100_d0.4.png', srcSha: '065281af8b8142323d19d64c50f52f634adc78cf390f1e07475624965ad3856e', outSha: 'bb9d4bf9fc0c98689617269010f50cf010e017e3b3d8a42bb90443d469163731', facing: 'front' },
+  durrok: { src: 'r992-durrok-vic_99200_d0.2.png', srcSha: '371d034b9a5eae53ca2f33eaaa61015930d66737baf664b8d1972bb810335d0f', outSha: 'e304d2b63062764ad69914ac3a83c3ffb3f38c117636a9688448a6734b4a9684', facing: 'right' },
 };
 
 describe('victory frames (tools/assets/victory-gen/victory-key.py)', () => {
