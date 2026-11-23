@@ -378,5 +378,6 @@
  *    Re-record reason: Arcade 2v2 goldens and the Arcade 2v2 balance baseline change (sindarosa, abyssor life); other goldens change only the simVersion header.
  * 107: Arcade only (Classic hashes unchanged); Hard AI only (precedent 85, 105): footsies (`arcade-footsies.ts`): committed steps (no reversal within 8 ticks), whiff punish of a recovering foe that is not stunned and in no combo, ranged close-in to 620 px.
  *    Re-record reason: Hard AI commands change; recorded goldens change only the simVersion header (they run Normal or no scripted AI) and the balance baselines (Normal) do not move.
+ * 108: Arcade only (Classic hashes unchanged). Data-only 1v1 life re-fit after the v104 stun change moved 1v1 wins from melee to ranged: ARCADE_RACE_NUMBERS hpPm pax 4351 -> 4540, echo 6750 -> 7250, treenoc 5998 -> 6540, lavax 4000 -> 3680; ARCADE_2V2_LIFE_PM compensated (pax 675 -> 647, echo 710 -> 661, treenoc 785 -> 720, lavax 804 -> 874) so 2v2/3v3 team life is bit-identical (v86 method); numbers in docs/BALANCE.md. Re-record reason: Arcade 1v1 goldens (arcade-1v1, arcade-run) and arcade-baseline.json change; other goldens change only the simVersion header; arcade-2v2-baseline.json and baseline.json do not move.
  */
-export const SIM_VERSION = 107;
+export const SIM_VERSION = 108;
