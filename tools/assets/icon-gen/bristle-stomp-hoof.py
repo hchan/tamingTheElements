@@ -302,10 +302,6 @@ def candidate2(ring_path, g, seed, ang, scale, off, ember_ang, nrubble):
     field = lum + (field - lum) * .85  # slightly desaturated
     field *= (1 - .75 * np.clip((dd - 150) / (g["ro"] - 50 - 150), 0, 1) ** 1.6)[..., None]  # strong vignette
     # thin dark ring from the outer edge of the source ring
-    if r6:
-        final = field.copy()
-        carved_ring(final, g, xx, yy)
-        return finish(final, g, size)
     rw = 44
     ringc = src * .5
     gl = ringc.mean(axis=2, keepdims=True)
@@ -351,7 +347,8 @@ def wedge_points(cx, cy, L, W, gap, sx, tilt, tip=False):
     return [(cx + x * c - y * sn, cy + x * sn + y * c) for x, y in pts]
 
 
-def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512, glyph=None, r6=False):
+def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512, glyph=None, r6=False, r7=False):
+    r6 = r6 or r7
     rng = np.random.default_rng(seed)
     src = np.asarray(Image.open(ring_path).convert("RGB"), np.float32)
     yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
@@ -422,11 +419,22 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     # weight: bright lip on the upper left of the heaved earth, dark crescent on the lower right
     my, mx = np.gradient(blur(moundf, 4))
     dm = mx * -.7 + my * -.7
-    field = field + np.array((120, 92, 58), np.float32) * np.clip(dm * 55, 0, 1)[..., None]
+    field = field + np.array((120, 92, 58), np.float32) * (np.clip(dm * 55, 0, 1) * (.12 if r7 else 1))[..., None]
     field *= (1 - .6 * np.clip(-dm * 55, 0, 1))[..., None]
     pit = blur(pm, 1.2)  # print floor: cool charcoal so the print separates from the ground
     dome = np.clip(.55 + (gx * -.7 + gy * -.7) * 14 + blur(pm, 26) * .5 - .25, 0, 1.2)[..., None]
-    if r6:  # toes filled with the plate's own cracked earth, darker than the surround
+    if r7:  # earth texture multiplied into dark brown toes (not black), lighter centre pad
+        tex_ = field / np.maximum(field.mean(axis=(0, 1), keepdims=True), 1)
+        toe_ = np.array((88, 64, 46), np.float32) * (.4 + .6 * np.clip(tex_.mean(axis=2, keepdims=True), 0, 2))
+        toe_ = .6 * toe_ + .4 * field * .55
+        padm = np.clip((blur(pm, 26) - .45) * 2.2, 0, 1)
+        toe_ = toe_ * (1 + .55 * padm ** 1.5)[..., None]
+        over(field, toe_, pit, 1.0)
+        inner_sh = np.clip(pit - np.roll(blur(pm, 6), (16, 16), (0, 1)), 0, 1)
+        lip = np.clip(pit - np.roll(blur(pm, 3), (-7, -7), (0, 1)), 0, 1)
+        field *= (1 - .45 * inner_sh)[..., None]
+        field += np.array((170, 134, 96), np.float32) * (lip * .26)[..., None]
+    elif r6:  # toes filled with the plate's own cracked earth, darker than the surround
         over(field, field * .52 + np.array((5, 4, 5), np.float32), pit, 1.0)
         inner_sh = np.clip(pit - np.roll(blur(pm, 6), (16, 16), (0, 1)), 0, 1)  # top and left
         lip = np.clip(pit - np.roll(blur(pm, 3), (-7, -7), (0, 1)), 0, 1)  # bottom and right
@@ -436,7 +444,14 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
         over(field, np.array((52, 44, 42), np.float32) + np.array((66, 52, 40), np.float32) * dome, pit, .95)
     # re-light the pit walls so the print keeps a lit rim top-left
     rim = np.clip((gx * -.7 + gy * -.7) * 60, 0, 1) * np.clip(blur(pm, 5) * (1 - blur(pm, 5)) * 4, 0, 1)
-    if r6:  # soft rim light instead of the cream outline
+    if r7:  # cream rim light: blurred, 40 percent, bottom-right edge only, none on the top-left
+        gpy, gpx = np.gradient(blur(pm, 4))
+        nn = np.hypot(gpx, gpy) + 1e-6
+        wdir = np.clip((-gpx * .7 - gpy * .7) / nn, 0, 1) ** 1.5 * np.clip(nn * 40, 0, 1)
+        edge7 = blur(np.clip(blur(pm, 2.5) * (1 - blur(pm, 2.5)) * 4, 0, 1), 2.5)
+        field += np.array((205, 172, 130), np.float32) * (edge7 * blur(wdir, 3) * .4)[..., None]
+        field *= (1 - .5 * hmask * pit)[..., None]
+    elif r6:  # soft rim light instead of the cream outline
         soft = blur(np.clip(blur(pm, 2.5) * (1 - blur(pm, 2.5)) * 4, 0, 1), 2)
         field += np.array((120, 96, 70), np.float32) * (soft * .12)[..., None]
         field *= (1 - .5 * hmask * pit)[..., None]
@@ -448,15 +463,26 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     field *= 1 - .6 * blur(cmask, 1.5)[..., None]
     rub = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     rd = ImageDraw.Draw(rub)
+    shs = []
     for _ in range(nrubble):
         a, r = rng.uniform(0, 2 * np.pi), rng.uniform(250, 370)
-        x, y, sz = cx + r * np.cos(a), cy + r * np.sin(a) * .95, rng.uniform(6, 20)
+        x, y, sz = cx + r * np.cos(a), cy + r * np.sin(a) * .95, (rng.choice([4, 7, 11, 17, 24]) * rng.uniform(.8, 1.2) if r7 else rng.uniform(6, 20))
         if np.hypot(x - g["c"][0], y - g["c"][1]) > g["ro"] - 110:
             continue
         poly = [(x + sz * rng.uniform(.6, 1.1) * np.cos(q), y + sz * rng.uniform(.5, .9) * np.sin(q)) for q in np.linspace(0, 2 * np.pi, 7)[:-1]]
+        if r7:
+            sh = Image.new("L", (S, S), 0)
+            ImageDraw.Draw(sh).polygon([(px + 4, py + 5) for px, py in poly], fill=int(255 * .35))
+            shs.append(sh)
+            rd.polygon(poly, fill=(104, 80, 58, 255))
+            rd.line(poly[3:6], fill=(150, 120, 88, 255), width=2)
+            continue
         rd.polygon([(px + 5, py + 6) for px, py in poly], fill=(4, 3, 3, 150))
         rd.polygon(poly, fill=(92, 78, 64, 255))
         rd.line(poly[3:6], fill=(206, 182, 146, 255), width=3)
+    if r7:
+        for sh in shs:
+            field *= (1 - np.asarray(sh.filter(ImageFilter.GaussianBlur(3)), np.float32) / 255 * .35)[..., None] / 1.0
     rub = np.asarray(rub.filter(ImageFilter.GaussianBlur(.8)), np.float32)
     over(field, rub[..., :3], rub[..., 3] / 255)
     for dx, dy, r in [(-.9, .75, 120), (.8, .8, 130), (0, 1.15, 150), (.4, -1.0, 80)]:
@@ -489,6 +515,9 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     inner = g["ro"] - rw
     ringc = ringc * (.6 + .4 * np.clip((dd - inner) / rw, 0, 1))[..., None]
     final = field.copy()
+    if r7:
+        carved_ring7(final, g, xx, yy)
+        return finish(final, g, size)
     over(final, ringc, np.clip((dd - inner + 3) / 6, 0, 1))
     return finish(final, g, size)
 
@@ -547,6 +576,53 @@ def carved_ring(field, g, xx, yy, rw=74):
         over(field, sc, m)
 
 
+STONE = dict(shadow=(66, 54, 42), mid=(150, 128, 98), light=(196, 172, 136))  # sampled from the tusk_gore 118214 plate
+
+
+def carved_ring7(field, g, xx, yy, rw=76):
+    """Round 7: flat-topped bevelled stone rim (7-8 percent of the diameter), highlight upper left, shadow lower
+    right, smooth outer edge, four diamond studs (about 10 percent of the diameter) at N, E, S, W."""
+    rng = np.random.default_rng(118214)
+    c0, c1 = g["c"]
+    dx, dy = xx - c0, yy - c1
+    dd = np.hypot(dx, dy) + 1e-3
+    ro = g["ro"] - 1
+    inner = ro - rw
+    t = np.clip((dd - inner) / rw, 0, 1)
+    bev = .22
+    h = np.minimum(np.minimum(t / bev, (1 - t) / bev), 1) * 14
+    hp = np.where(t < bev, 14 / (bev * rw), np.where(t > 1 - bev, -14 / (bev * rw), 0))
+    rl = (dx / dd) * -.7 + (dy / dd) * -.7  # radial direction against the light
+    b = np.clip(.5 - 2.4 * hp * rl * rw / 14 * bev * 1.0, 0, 1)
+    sh_, mi_, li_ = (np.array(STONE[k], np.float32) for k in ("shadow", "mid", "light"))
+    bb = b[..., None]
+    col = np.where(bb < .5, sh_ + (mi_ - sh_) * bb * 2, mi_ + (li_ - mi_) * (bb - .5) * 2)
+    col = col * (1 + noise(rng, 4, .07) + noise(rng, 18, .07))[..., None]
+    inner_sh = np.clip(1 - (inner - dd) / 26, 0, 1) * (dd < inner)
+    field *= (1 - .45 * inner_sh ** 2)[..., None]
+    rm = inner + rw / 2
+    studs = np.zeros_like(dd)
+    parts = []
+    for sx, sy, ax, ay in [(c0, c1 - rm, 52, 42), (c0 + rm, c1, 42, 52), (c0, c1 + rm, 52, 42), (c0 - rm, c1, 42, 52)]:
+        u, v = xx - sx, yy - sy
+        d = np.abs(u) / ax + np.abs(v) / ay
+        m = np.clip((1 - d) * 14, 0, 1)
+        nx, ny = np.sign(u) / ax, np.sign(v) / ay
+        lb = np.clip(.5 - 1.6 * (nx * .7 + ny * .7) / np.hypot(nx, ny) * .5 * 1.0, 0, 1)
+        lb = np.where(np.abs(u) / ax + np.abs(v) / ay < .08, .62, lb)
+        lbb = lb[..., None]
+        sc = np.where(lbb < .5, sh_ * .8 + (mi_ - sh_ * .8) * lbb * 2, mi_ + (li_ - mi_) * (lbb - .5) * 2)
+        sc = sc * (1 - .5 * np.exp(-((d - .97) / .05) ** 2))[..., None]
+        studs = np.maximum(studs, m)
+        parts.append((m, sc))
+    cast = np.roll(blur(studs, 5), (6, 6), (0, 1)) * (1 - studs)
+    col = col * (1 - .45 * cast)[..., None]
+    outer = np.clip((ro - dd) / 2.5, 0, 1)  # smooth outer edge
+    over(field, col, np.clip((dd - inner + 1.5) / 3, 0, 1) * outer)
+    for m, sc in parts:
+        over(field, sc, m * outer)
+
+
 def round3(r0, r1, outdir, icons_dir):
     os.makedirs(outdir, exist_ok=True)
     plan = [(r0, RINGS[0], 21, 0, 1.0, (0, 0), (-38, -12, 14, 40), 150, 24),
@@ -597,7 +673,18 @@ def round6(ring, glyph_png, outdir):
     im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r6_1_128.png"))
 
 
+def round7(ring, glyph_png, outdir):
+    """Round 7: dark-brown textured toes with a centre pad, rim light on the bottom-right only, 7-8 percent stone
+    rim with diamond studs, brown softened debris. Same ember, bloom and layout as round 6."""
+    os.makedirs(outdir, exist_ok=True)
+    im = candidate3(ring, RINGS[0], 21, 0, 1.0, (0, 0), (-38, -12, 14, 40), 150, 24, size=1024, glyph=glyph_png, r7=True)
+    im.save(os.path.join(outdir, "bristle_stomp_r7_1.png"))
+    im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r7_1_128.png"))
+
+
 def main():
+    if sys.argv[1:2] == ["--round7"]:
+        return round7(*sys.argv[2:5])
     if sys.argv[1:2] == ["--round6"]:
         return round6(*sys.argv[2:5])
     if sys.argv[1:2] == ["--glyph"]:
