@@ -36,3 +36,4 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
   Untried ideas for the next S (needs a lever that hits 2v2 harder than 1v1): Hoof Crash maxActive 2 -> 1, a longer Kelp Lash cooldown, hit strength or stun rows, or an AI rule (Nykra has none; ability usage not measured). Other out-of-band heroes in the 2v2 run (not touched): cyclonius 66.9, echo 57.0, vortigal 42.3, rokcore 39.5, treenoc 42.5.
   Not done: AI rule, hit strength rows.
 - 2026-11-21 P3 (words only, no src/core change): lesson rows for Hoof Crash and Kelp Lash in ability-lessons.ts with a pin test in ability-lessons.test.ts.
+- 2026-11-22 (2v2 life retune, SIM_VERSION 102): ARCADE_2V2_LIFE_PM changed from the v101 full-roster tournament (pair mean before .364-.677, after .473-.540 per docs/BALANCE.md 'Arcade 2v2 hidden-hero life retune'); this hero's new value and its pair rates are in that table. Refit again with --roster released at release.

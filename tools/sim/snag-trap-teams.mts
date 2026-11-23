@@ -21,14 +21,14 @@ const { ARCADE_E, ArcadeE } = await import(R + 'src/core/sim/state.ts');
 const { now } = await import(R + 'src/core/sim/clock.ts');
 const hit = await import(R + 'src/core/sim/systems/arcade/hit.ts');
 const { seedSfc32 } = await import(R + 'src/core/rng/seed.ts');
-// `--roster released|legacy` (anywhere in the args, default legacy) picks the races; the empty release set makes `released` equal the legacy 12.
+// `--roster released|legacy|full` (anywhere in the args, default legacy) picks the races; the empty release set makes `released` equal the legacy 12; `full` adds the hidden roster24 heroes (random partners remove the fixed-partner drift of run-match --roster full).
 const argv = [...process.argv];
 const ri = argv.indexOf('--roster');
 const rosterArg = ri >= 0 ? argv.splice(ri, 2)[1] : 'legacy';
-if (rosterArg !== 'legacy' && rosterArg !== 'released') throw new Error(`--roster must be legacy|released, got "${String(rosterArg)}"`);
+if (rosterArg !== 'legacy' && rosterArg !== 'released' && rosterArg !== 'full') throw new Error(`--roster must be legacy|released|full, got "${String(rosterArg)}"`);
 process.argv = argv;
 const mode = process.argv[2];
-const RACES: string[] = rosterArg === 'released' ? rm.RELEASED_RACES : rm.RACES;
+const RACES: string[] = rosterArg === 'released' ? rm.RELEASED_RACES : rosterArg === 'full' ? rm.FULL_RACES : rm.RACES;
 const inc = (o: any, k: string, v = 1) => { o[k] = (o[k] ?? 0) + v; };
 
 if (mode === 'snag') {

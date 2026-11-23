@@ -366,5 +366,7 @@
  *    Re-record reason: Arcade goldens and the 2v2 balance baseline change (SIM_VERSION 100 2v2 life retune).
  * 101: Arcade only (Classic hashes unchanged). Data-only second 2v2 life retune: six ARCADE_2V2_LIFE_PM rows (treenoc 695->785, ishimi 670->630, curomo 740->700, echo 680->710, wispera 690->710, sindarosa 800->830).
  *    Re-record reason: Arcade goldens and the 2v2 balance baseline change (SIM_VERSION 101 2v2 life retune 2).
+ * 102: Arcade only (Classic hashes unchanged). Data-only hidden-hero 2v2 life retune: eight ARCADE_2V2_LIFE_PM rows (kindrel 725->755, nykra 740->655, quarrak 725->675, brazgor 460->490, durrok 590->625, zephra 760->830, abyssor 430->475, vortigal 740->650); released races untouched.
+ *    Re-record reason: roster-24 2v2 life retune from the v101 full-roster tournament (only the arcade-roster24 goldens change hash).
  */
-export const SIM_VERSION = 101;
+export const SIM_VERSION = 102;
