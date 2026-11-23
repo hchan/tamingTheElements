@@ -57,6 +57,19 @@
    "rig.json": "76ee44b04417667f33fcc7b6d759046e492aa2a42914f62a92efe562d6a9bcc8"
   }
  },
+ "durrok": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "3e9e8fe6bfcb82dc216174d2f7f53e63efd46d7667ea96d377a343a677c047bd",
+   "anim": "bc53f01ef6c076bc54c7e951e0976f988b5289c246be8df107537ffd3c5e2da3",
+   "portrait": "81a19c667e0f5f55e5a7a1fc40cc34407c411fcab7f4814082309eb901a5cfe9"
+  },
+  "outputs": {
+   "parts/body.png": "44caf9f040276b83d5f63bd24024b9030cc35faf887fdfa363ea24e164d95bfc",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "rig.json": "177bc826749c1af7e56276fc75d02c565c046dc26e7a675763dad6c1101c2947"
+  }
+ },
  "echo": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
