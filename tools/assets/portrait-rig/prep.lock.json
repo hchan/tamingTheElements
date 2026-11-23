@@ -257,6 +257,20 @@
    "rig.json": "a3e3bccf8e98cce6dc3abe641e699a9690551271023bf16139ad58740001a5d0"
   }
  },
+ "vortigal": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "fbf414a9549f038bb8a530c142decbca7ed44080a4f4d7c7cb2ac4b68d8fc768",
+   "anim": "a87c346c4afabd813f6f815ebf6d897506c0e012ce7b86f9115fb9993ba4d4fa",
+   "portrait": "2a5c6c0a9aa4272dbda4986f625b653641b593f5db287ee635d6b2e8565baf54"
+  },
+  "outputs": {
+   "parts/body.png": "35dd70e6854e834e119d1393723e55b9b2e4c3c7826f10c723a3da73e57f9b22",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "37047a525cc1244f0615dfcead3118e535756ef61152ed215b72820f814cbf09",
+   "rig.json": "e162d5e3e60b6bcd91ca3525371538026ef11250cdbcc0ab891448292ea23282"
+  }
+ },
  "wispera": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",

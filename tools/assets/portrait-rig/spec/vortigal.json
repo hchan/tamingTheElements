@@ -1,0 +1,608 @@
+{
+ "source": "imgWorkArea/portrait-src/vortigal.png",
+ "frame": 240,
+ "box": [
+  20,
+  24,
+  200,
+  200
+ ],
+ "res": 2,
+ "feet": [
+  200,
+  388
+ ],
+ "matte": {
+  "minIsland": 40,
+  "band": 1,
+  "fringeLum": 35
+ },
+ "rim": {
+  "color": [
+   220,
+   235,
+   255
+  ],
+  "dir": [
+   -0.55,
+   -0.85
+  ],
+  "strength": 0.22,
+  "width": 1.6
+ },
+ "shadow": {
+  "rx": 120,
+  "ry": 13,
+  "alpha": 66,
+  "dy": 2
+ },
+ "bones": [
+  {
+   "id": "root",
+   "head": [
+    200,
+    388
+   ]
+  },
+  {
+   "id": "spine0",
+   "head": [
+    200,
+    300
+   ],
+   "parent": "root",
+   "tip": [
+    240,
+    270
+   ],
+   "feather": 18,
+   "poly": [
+    [
+     0,
+     0
+    ],
+    [
+     400,
+     0
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     0,
+     400
+    ]
+   ]
+  },
+  {
+   "id": "spine1",
+   "head": [
+    240,
+    270
+   ],
+   "parent": "spine0",
+   "tip": [
+    258,
+    258
+   ],
+   "feather": 14,
+   "poly": [
+    [
+     245,
+     309
+    ],
+    [
+     292,
+     277
+    ],
+    [
+     253,
+     219
+    ],
+    [
+     206,
+     251
+    ]
+   ]
+  },
+  {
+   "id": "legFN0",
+   "head": [
+    185,
+    305
+   ],
+   "parent": "spine1",
+   "tip": [
+    168,
+    335
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     171,
+     285
+    ],
+    [
+     143,
+     334
+    ],
+    [
+     182,
+     355
+    ],
+    [
+     210,
+     306
+    ]
+   ]
+  },
+  {
+   "id": "legFN1",
+   "head": [
+    168,
+    335
+   ],
+   "parent": "legFN0",
+   "tip": [
+    155,
+    362
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     153,
+     316
+    ],
+    [
+     130,
+     362
+    ],
+    [
+     170,
+     381
+    ],
+    [
+     193,
+     335
+    ]
+   ]
+  },
+  {
+   "id": "legHN0",
+   "head": [
+    215,
+    305
+   ],
+   "parent": "spine0",
+   "tip": [
+    212,
+    345
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     194,
+     292
+    ],
+    [
+     189,
+     354
+    ],
+    [
+     233,
+     358
+    ],
+    [
+     238,
+     296
+    ]
+   ]
+  },
+  {
+   "id": "legHN1",
+   "head": [
+    212,
+    345
+   ],
+   "parent": "legHN0",
+   "tip": [
+    205,
+    376
+   ],
+   "feather": 8,
+   "poly": [
+    [
+     193,
+     329
+    ],
+    [
+     181,
+     382
+    ],
+    [
+     224,
+     392
+    ],
+    [
+     236,
+     339
+    ]
+   ]
+  },
+  {
+   "id": "tail0",
+   "head": [
+    175,
+    312
+   ],
+   "parent": "spine0",
+   "tip": [
+    120,
+    322
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     186,
+     273
+    ],
+    [
+     96,
+     290
+    ],
+    [
+     109,
+     361
+    ],
+    [
+     199,
+     344
+    ]
+   ]
+  },
+  {
+   "id": "tail1",
+   "head": [
+    120,
+    322
+   ],
+   "parent": "tail0",
+   "tip": [
+    80,
+    326
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     134,
+     284
+    ],
+    [
+     59,
+     292
+    ],
+    [
+     66,
+     364
+    ],
+    [
+     141,
+     356
+    ]
+   ]
+  },
+  {
+   "id": "tail2",
+   "head": [
+    80,
+    326
+   ],
+   "parent": "tail1",
+   "tip": [
+    48,
+    323
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     101,
+     292
+    ],
+    [
+     33,
+     285
+    ],
+    [
+     27,
+     357
+    ],
+    [
+     95,
+     364
+    ]
+   ]
+  },
+  {
+   "id": "neck0",
+   "head": [
+    258,
+    258
+   ],
+   "parent": "spine1",
+   "tip": [
+    275,
+    247
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     262,
+     291
+    ],
+    [
+     304,
+     264
+    ],
+    [
+     271,
+     214
+    ],
+    [
+     229,
+     241
+    ]
+   ]
+  },
+  {
+   "id": "head",
+   "head": [
+    275,
+    247
+   ],
+   "parent": "neck0",
+   "tip": [
+    300,
+    262
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     233,
+     274
+    ],
+    [
+     296,
+     312
+    ],
+    [
+     342,
+     235
+    ],
+    [
+     279,
+     197
+    ]
+   ]
+  },
+  {
+   "id": "jaw",
+   "head": [
+    289,
+    258
+   ],
+   "parent": "head",
+   "tip": [
+    300,
+    262
+   ],
+   "feather": 6,
+   "poly": [
+    [
+     277,
+     246
+    ],
+    [
+     312,
+     246
+    ],
+    [
+     312,
+     282
+    ],
+    [
+     277,
+     282
+    ]
+   ]
+  },
+  {
+   "id": "ear00",
+   "head": [
+    205,
+    262
+   ],
+   "parent": "head",
+   "tip": [
+    30,
+    192
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     252,
+     220
+    ],
+    [
+     25,
+     130
+    ],
+    [
+     -17,
+     234
+    ],
+    [
+     210,
+     324
+    ]
+   ]
+  },
+  {
+   "id": "ear10",
+   "head": [
+    255,
+    285
+   ],
+   "parent": "head",
+   "tip": [
+    378,
+    324
+   ],
+   "feather": 10,
+   "poly": [
+    [
+     211,
+     330
+    ],
+    [
+     388,
+     386
+    ],
+    [
+     422,
+     279
+    ],
+    [
+     245,
+     223
+    ]
+   ]
+  }
+ ],
+ "glows": [
+  {
+   "id": "eye",
+   "bone": "head",
+   "at": [
+    279,
+    245
+   ],
+   "r": 3,
+   "color": [
+    255,
+    200,
+    90
+   ],
+   "gain": 0.9,
+   "hot": 0.5
+  }
+ ],
+ "dirOffsets": {
+  "SE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": 4
+   }
+  },
+  "S": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": 6
+   }
+  },
+  "N": {
+   "body": {
+    "sx": 88
+   },
+   "head": {
+    "dy": -6
+   }
+  },
+  "NE": {
+   "body": {
+    "sx": 94
+   },
+   "head": {
+    "dy": -4
+   }
+  }
+ },
+ "license": "Rig parts for vortigal: the painting is generated with Stable Diffusion XL (stabilityai/stable-diffusion-xl-base-1.0; sd-turbo/SDXL-Turbo for\nrefinements) under the CreativeML Open RAIL++-M licence, which permits commercial use of the outputs with its use-based restrictions;\nthe repository owner holds the outputs. Cut, matted and animated by tools/assets/portrait-rig (prep.py, body_plans); numpy/PIL only.\n",
+ "deformMask": {
+  "feather": 16,
+  "polys": [
+   [
+    [
+     120,
+     150
+    ],
+    [
+     102,
+     192
+    ],
+    [
+     60,
+     210
+    ],
+    [
+     18,
+     192
+    ],
+    [
+     0,
+     150
+    ],
+    [
+     18,
+     108
+    ],
+    [
+     60,
+     90
+    ],
+    [
+     102,
+     108
+    ]
+   ],
+   [
+    [
+     395,
+     290
+    ],
+    [
+     382,
+     322
+    ],
+    [
+     350,
+     335
+    ],
+    [
+     318,
+     322
+    ],
+    [
+     305,
+     290
+    ],
+    [
+     318,
+     258
+    ],
+    [
+     350,
+     245
+    ],
+    [
+     382,
+     258
+    ]
+   ]
+  ]
+ }
+}
