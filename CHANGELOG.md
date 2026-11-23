@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Art: Glimmaw victory still (turtle, art-director approved 4/5, 2026-11-23) installed as `public/assets/img/victory/glimmaw_victory.png` by `tools/assets/victory-gen/victory-key.py`; install-only, not drawn yet, Glimmaw stays behind `?ff=roster24`. No sim change.
+
 - Art: 12 roster24 super cut-in composites (1344x768, art-director approved 2026-11-23) replace the 1344x168 backdrop bands; installer and sha256 pins in `tools/assets/cutin-comp/`; not drawn yet. No sim change.
 
 - Glimmaw rigged (turtle, art-director APPROVE 4/5), distinct walk/cast/hurt/KO rows, 24-hero sheet baked behind `?ff=roster24`; art only, no sim or `SIM_VERSION` change. Known limits: idle and hurt row 2 subtle, walk frame 3 leg smear.
