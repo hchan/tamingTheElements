@@ -302,6 +302,10 @@ def candidate2(ring_path, g, seed, ang, scale, off, ember_ang, nrubble):
     field = lum + (field - lum) * .85  # slightly desaturated
     field *= (1 - .75 * np.clip((dd - 150) / (g["ro"] - 50 - 150), 0, 1) ** 1.6)[..., None]  # strong vignette
     # thin dark ring from the outer edge of the source ring
+    if r6:
+        final = field.copy()
+        carved_ring(final, g, xx, yy)
+        return finish(final, g, size)
     rw = 44
     ringc = src * .5
     gl = ringc.mean(axis=2, keepdims=True)
@@ -347,7 +351,7 @@ def wedge_points(cx, cy, L, W, gap, sx, tilt, tip=False):
     return [(cx + x * c - y * sn, cy + x * sn + y * c) for x, y in pts]
 
 
-def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512, glyph=None):
+def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble, tip=False, size=512, glyph=None, r6=False):
     rng = np.random.default_rng(seed)
     src = np.asarray(Image.open(ring_path).convert("RGB"), np.float32)
     yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
@@ -382,13 +386,29 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     ax, ay = np.sin(rad) * -1, np.cos(rad)  # print "down" direction after rotation
     x0, y0 = cx - ax * (L / 2 * .8), cy - ay * (L / 2 * .8)
     gap_pts = [(x0 + ax * t, y0 + ay * t) for t in np.linspace(0, L * .8, 12)]
+    if r6:  # jagged, wider crack that follows the cleft
+        nx, ny = -ay, ax
+        jit = np.cumsum(rng.uniform(-9, 9, 36)) * .6 + rng.uniform(-9, 9, 36)
+        jit[0] = jit[-1] = 0
+        gap_pts = [(x0 + ax * t * L * .8 + nx * j, y0 + ay * t * L * .8 + ny * j) for t, j in zip(np.linspace(0, 1, 36), jit)]
     tail = crack_path(rng, *gap_pts[-1], np.arctan2(ay, ax), 190 * scale, 18)
     path = gap_pts + tail[1:]
-    tapered(ed, gap_pts, 3.2, 3.2)
-    tapered(ed, tail, 3.2, .6)
+    if r6:
+        tapered(ed, gap_pts, 7, 5)
+        tapered(ed, tail, 6.5, .8)
+    else:
+        tapered(ed, gap_pts, 3.2, 3.2)
+        tapered(ed, tail, 3.2, .6)
     tapered(cd, tail, 12 * scale, .5)
     cmask = np.asarray(cm, np.float32) / 255
-    emask = np.asarray(ed._image, np.float32) / 255 if False else np.asarray(em, np.float32) / 255
+    emask = np.asarray(em, np.float32) / 255
+    hm = Image.new("L", (S, S), 0)
+    if r6:  # hairline cracks of the plate's own earth inside the toes
+        hd, inside = ImageDraw.Draw(hm), np.argwhere(pm > .9)
+        for _ in range(9):
+            y, x = inside[rng.integers(len(inside))]
+            tapered(hd, crack_path(rng, x, y, rng.uniform(0, 2 * np.pi), rng.integers(60, 120), 14), 5, .6)
+    hmask = np.asarray(hm, np.float32) / 255
     H = noise(rng, 64, .30) + noise(rng, 20, .06) + noise(rng, 5, .02)
     moundf = np.clip(blur(pm, 30 * scale), 0, 1) * (1 - blur(pm, 5)) * 2.0
     H += moundf + blur(pm, 80 * scale) * .5 - blur(pm, 3) * 1.8 - blur(cmask, 2) * .5
@@ -406,10 +426,21 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     field *= (1 - .6 * np.clip(-dm * 55, 0, 1))[..., None]
     pit = blur(pm, 1.2)  # print floor: cool charcoal so the print separates from the ground
     dome = np.clip(.55 + (gx * -.7 + gy * -.7) * 14 + blur(pm, 26) * .5 - .25, 0, 1.2)[..., None]
-    over(field, np.array((52, 44, 42), np.float32) + np.array((66, 52, 40), np.float32) * dome, pit, .95)
+    if r6:  # toes filled with the plate's own cracked earth, darker than the surround
+        over(field, field * .52 + np.array((5, 4, 5), np.float32), pit, 1.0)
+        inner_sh = np.clip(pit - np.roll(blur(pm, 6), (16, 16), (0, 1)), 0, 1)  # top and left
+        lip = np.clip(pit - np.roll(blur(pm, 3), (-7, -7), (0, 1)), 0, 1)  # bottom and right
+        field *= (1 - .6 * inner_sh)[..., None]
+        field += np.array((150, 118, 84), np.float32) * (lip * .16)[..., None]
+    else:
+        over(field, np.array((52, 44, 42), np.float32) + np.array((66, 52, 40), np.float32) * dome, pit, .95)
     # re-light the pit walls so the print keeps a lit rim top-left
     rim = np.clip((gx * -.7 + gy * -.7) * 60, 0, 1) * np.clip(blur(pm, 5) * (1 - blur(pm, 5)) * 4, 0, 1)
-    if tip:  # round 4: thin dark rim instead of a bright one
+    if r6:  # soft rim light instead of the cream outline
+        soft = blur(np.clip(blur(pm, 2.5) * (1 - blur(pm, 2.5)) * 4, 0, 1), 2)
+        field += np.array((120, 96, 70), np.float32) * (soft * .12)[..., None]
+        field *= (1 - .5 * hmask * pit)[..., None]
+    elif tip:  # round 4: thin dark rim instead of a bright one
         edge = np.clip(blur(pm, 2.2) * (1 - blur(pm, 2.2)) * 4, 0, 1)
         field *= (1 - .75 * edge)[..., None]
     else:
@@ -431,8 +462,23 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     for dx, dy, r in [(-.9, .75, 120), (.8, .8, 130), (0, 1.15, 150), (.4, -1.0, 80)]:
         m = mask_of(lambda d, x=cx + dx * 250, y=cy + dy * 250, r=r: d.ellipse((x - r, y - r * .6, x + r, y + r * .6), fill=255))
         over(field, flat((140, 114, 86)), np.clip(blur(m, r * .5) * (.6 + noise(rng, 14, .9)), 0, 1), .32)
-    core = blur(emask, 1.2)
-    field = field + np.array((255, 160, 55), np.float32) * np.clip(core * 1.8, 0, 1)[..., None] + np.array((210, 80, 18), np.float32) * (blur(emask, 10) * .8)[..., None]
+    if r6:
+        sm = Image.new("L", (S, S), 0)
+        sd = ImageDraw.Draw(sm)
+        for k_, rr in zip(rng.choice(len(path), 3, replace=False), (4.5, 3.2, 2.4)):
+            ang_ = rng.uniform(0, 2 * np.pi)
+            sx_, sy_ = path[k_][0] + np.cos(ang_) * rng.uniform(26, 60), path[k_][1] + np.sin(ang_) * rng.uniform(26, 60)
+            sd.ellipse((sx_ - rr, sy_ - rr, sx_ + rr, sy_ + rr), fill=255)
+        spark = np.asarray(sm, np.float32) / 255
+        hot = np.clip(emask + spark, 0, 1)
+        core = blur(hot, 1.3)
+        bloom = np.clip(blur(hot, 16) * 2.2, 0, 1) * .85 + np.clip(blur(hot, 6) * 1.2, 0, 1) * .35
+        field = 255 - (255 - field) * (1 - np.array((255, 120, 32), np.float32) / 255 * np.clip(bloom, 0, 1)[..., None])  # screen
+        field = field + np.array((255, 176, 70), np.float32) * np.clip(core * 1.7, 0, 1)[..., None]
+        field = field + np.array((255, 225, 150), np.float32) * (np.clip(core, 0, 1) ** 4)[..., None] * .8
+    else:
+        core = blur(emask, 1.2)
+        field = field + np.array((255, 160, 55), np.float32) * np.clip(core * 1.8, 0, 1)[..., None] + np.array((210, 80, 18), np.float32) * (blur(emask, 10) * .8)[..., None]
     lum = field.mean(axis=2, keepdims=True)
     field = lum + (field - lum) * .88
     field *= (1 - .65 * np.clip((dd - 200) / (g["ro"] - 50 - 200), 0, 1) ** 1.6)[..., None]
@@ -444,6 +490,11 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     ringc = ringc * (.6 + .4 * np.clip((dd - inner) / rw, 0, 1))[..., None]
     final = field.copy()
     over(final, ringc, np.clip((dd - inner + 3) / 6, 0, 1))
+    return finish(final, g, size)
+
+
+def finish(final, g, size):
+    """Circular matte over BACKDROP, recentre on the ring (EXTENT, 0.97) and resize."""
     img = Image.fromarray(np.clip(final, 0, 255).astype(np.uint8))
     m = Image.new("L", (S, S), 0)
     ImageDraw.Draw(m).ellipse((g["c"][0] - g["ro"], g["c"][1] - g["ro"], g["c"][0] + g["ro"], g["c"][1] + g["ro"]), fill=255)
@@ -451,6 +502,49 @@ def candidate3(ring_path, g, seed, ang, scale, off, up_angles, dn_extra, nrubble
     k = 512 * 0.97
     out = out.transform((S, S), Image.EXTENT, (g["c"][0] - k, g["c"][1] - k, g["c"][0] + k, g["c"][1] + k), Image.BICUBIC, fillcolor=BACKDROP)
     return out.resize((size, size), Image.LANCZOS)
+
+
+def carved_ring(field, g, xx, yy, rw=74):
+    """Round 6: bevelled stone rim (about 7% of the diameter) in the tusk-gore plate style: highlight upper left,
+    shadow lower right, four carved diamond studs at N, E, S, W. Draws into `field` in place."""
+    rng = np.random.default_rng(118214)
+    c0, c1 = g["c"]
+    dx, dy = xx - c0, yy - c1
+    dd = np.hypot(dx, dy) + 1e-3
+    ro, inner = g["ro"], g["ro"] - rw
+
+    def prof(d):
+        return np.sin(np.pi * np.clip((d - inner) / rw, 0, 1)) ** .55 * 22
+    dh = (prof(dd + 1) - prof(dd - 1)) / 2
+    shade = np.clip(-dh * ((dx / dd) * -.7 + (dy / dd) * -.7), -1.2, 1.2)
+    t = np.clip((dd - inner) / rw, 0, 1)
+    tex = noise(rng, 5, .10) + noise(rng, 22, .12) + noise(rng, 2, .05)
+    col = np.array((146, 124, 96), np.float32) * (1 + tex + .62 * shade)[..., None]
+    col *= (.5 + .5 * np.sin(np.pi * t) ** .5)[..., None]
+    col *= (1 - .55 * np.clip((dd - (ro - 5)) / 5, 0, 1))[..., None]
+    sh = np.clip(1 - (inner - dd) / 30, 0, 1) * (dd < inner)  # ring shadow on the plate
+    field *= (1 - .5 * sh ** 2)[..., None]
+    rm, a, b = inner + rw / 2, 40, rw * .46
+    studs = np.zeros_like(dd)
+    parts = []
+    for sx, sy, hor in [(c0, c1 - rm, True), (c0 + rm, c1, False), (c0, c1 + rm, True), (c0 - rm, c1, False)]:
+        u, v = (xx - sx, yy - sy) if hor else (yy - sy, xx - sx)
+        d = np.abs(u) / a + np.abs(v) / b
+        m = np.clip((1 - d) * 18, 0, 1)
+        h = np.clip(1 - d, 0, 1) * 20
+        gy, gx = np.gradient(h)
+        lit = np.clip(.5 + .7 * (gx + gy) * 1.4, 0, 1)
+        sc = np.array((30, 22, 18), np.float32) + (np.array((190, 158, 120), np.float32) - np.array((30, 22, 18), np.float32)) * lit[..., None]
+        sc *= (1 - .6 * np.exp(-((d - .5) / .05) ** 2) - .6 * np.clip((d - .85) / .15, 0, 1))[..., None]
+        sc *= (1 + noise(rng, 3, .08))[..., None]
+        studs = np.maximum(studs, m)
+        parts.append((m, sc))
+    cast = np.roll(blur(studs, 5), (7, 6), (0, 1)) * (1 - studs)
+    col *= (1 - .5 * cast)[..., None]
+    ra = np.clip((dd - inner + 1.5) / 3, 0, 1)
+    over(field, col, ra)
+    for m, sc in parts:
+        over(field, sc, m)
 
 
 def round3(r0, r1, outdir, icons_dir):
@@ -495,7 +589,17 @@ def round5(ring, glyph_png, outdir):
     im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r5_1_128.png"))
 
 
+def round6(ring, glyph_png, outdir):
+    """Finish pass on the glyph: toes in the plate's cracked earth, jagged ember with bloom and sparks, carved rim."""
+    os.makedirs(outdir, exist_ok=True)
+    im = candidate3(ring, RINGS[0], 21, 0, 1.0, (0, 0), (-38, -12, 14, 40), 150, 24, size=1024, glyph=glyph_png, r6=True)
+    im.save(os.path.join(outdir, "bristle_stomp_r6_1.png"))
+    im.resize((128, 128), Image.LANCZOS).save(os.path.join(outdir, "bristle_stomp_r6_1_128.png"))
+
+
 def main():
+    if sys.argv[1:2] == ["--round6"]:
+        return round6(*sys.argv[2:5])
     if sys.argv[1:2] == ["--glyph"]:
         return round5(*sys.argv[2:5])
     if sys.argv[1:2] == ["--round4"]:
