@@ -1,0 +1,5 @@
+Glyph: "deer-track" by Delapouite, game-icons.net, CC BY 3.0
+URL: https://game-icons.net/1x1/delapouite/deer-track.html
+Source SVG: https://raw.githubusercontent.com/game-icons/icons/master/delapouite/deer-track.svg
+Licence: https://creativecommons.org/licenses/by/3.0/ (no CC0 hoof glyph exists in game-icons; lorc/hoof.svg is also CC BY 3.0 and is a single horse hoof)
+Used: lower-left print cropped, rotated, regraded by tools/assets/icon-gen/bristle-stomp-hoof.py --glyph

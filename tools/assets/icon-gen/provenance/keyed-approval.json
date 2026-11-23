@@ -123,10 +123,10 @@
   "bristle_stomp": {
     "approved": "bristle_stomp.png",
     "reviewer": "art-director",
-    "date": "2026-11-20",
+    "date": "2026-11-23",
     "beats_shipped": true,
-    "score": 4,
-    "notes": "Procedural Pillow icon (gen-procedural-icons.py), art-director APPROVE.",
-    "sha256": "3f4b246b93cc0194419f1c849420f6de1af197d7bb1763e82c8d77cccc204302"
+    "score": 4.1,
+    "notes": "r7 glyph icon (bristle-stomp-hoof.py --round7), art-director APPROVE 4.1; verdict in provenance/bristle-stomp/approval.json.",
+    "sha256": "ef3fdb5f74e92726cca0903666e17e703e49551813605760f7dcca7e85e59896"
   }
 }

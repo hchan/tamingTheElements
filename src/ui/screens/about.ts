@@ -27,7 +27,8 @@ export function aboutModel(env: Readonly<Record<string, unknown>>): AboutModel {
       'Feel free to send me any suggestions or comments via the project page on GitHub. I hope you enjoyed playing this game!',
     contactUrl: REPO_URL,
     version: versionStamp(env),
-    credits: ['Game design and code: Henry Chan', 'Built with Phaser, TypeScript and Vite'],
+    credits: ['Game design and code: Henry Chan', 'Built with Phaser, TypeScript and Vite',
+      'Bristle Stomp icon glyph "Deer Track" by Delapouite, game-icons.net, CC BY 3.0'],
   };
 }
 

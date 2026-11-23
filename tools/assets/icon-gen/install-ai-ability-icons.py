@@ -21,6 +21,8 @@ SLOTS = ["ember_bite", "gale_talon", "tide_surge", "hurl_rock", "lure_orb",
 THIRD_PARTY = {
     "talon_rake": "Talon Rake: glyph \"Triple scratches\" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), "
                   "rasterised, tinted and embossed on a procedural medallion.",
+    "bristle_stomp": "Bristle Stomp: glyph \"Deer Track\" by Delapouite (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), "
+                     "rasterised, regraded and lit on a procedural earth plate (tools/assets/icon-gen/bristle-stomp-hoof.py).",
 }
 SIDE = 128
 BACKDROP = (22, 20, 19)  # the dark ground the earlier icons sit on
