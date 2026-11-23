@@ -58,6 +58,20 @@
    "rig.json": "9d23f7546a2335804fbd8d008443c16de9d1e1afc05ac564de2fc285f7f28ac4"
   }
  },
+ "glimmaw": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "e1a530e75e48f9c596742463c59dd59b26cfbf3a4d2f36fbe10277b96fe71a48",
+   "anim": "30eeda206fcd6d9d3ffd687741b0a17b5d1a31cd4e0e77f390ca2c4ca2dfdead",
+   "portrait": "dac21b886faeb399774066b0dc008e354fa15cced6ae15ab5f6a6e448fb14d6f"
+  },
+  "outputs": {
+   "parts/body.png": "9d28419762c2a831b66bde2800166d00ba0404da1a5035cb46e5a18e2b55e521",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "bf2991732d48cacb679db604da510c13fc5be6c06f4943e391dabfcbb6c1dd93",
+   "rig.json": "351f203a9afef66a0b62245841ae2107016703662f4caad28b5a6dd311186b37"
+  }
+ },
  "ishimi": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
