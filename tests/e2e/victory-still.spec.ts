@@ -9,7 +9,7 @@ const SUPER = 1 << 13;
 const SHOT_DIR = process.env['SHOT_DIR'];
 const ROUND = 90 + 30 + 120 + 60 + 71;
 
-for (const hero of ['glimmaw', 'kindrel']) test(`${hero} wins the match: the victory still replaces the portrait on the results screen`, async ({ page }) => {
+for (const hero of ['glimmaw', 'kindrel', 'umbrel']) test(`${hero} wins the match: the victory still replaces the portrait on the results screen`, async ({ page }) => {
   const errors = collectErrors(page);
   const stillRequests: string[] = [];
   page.on('request', (r) => { if (r.url().includes('/assets/img/victory/')) stillRequests.push(r.url()); });

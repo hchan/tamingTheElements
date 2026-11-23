@@ -59,5 +59,32 @@
   "beats_shipped": true,
   "source": "r978-zephra-win2_97810_d0.2.png",
   "facing": "left"
+ },
+ "ouroth_victory": {
+  "approved": "out/r821-ouroth-vic_59822_d0.45.png",
+  "reviewer": "art-director",
+  "date": "2026-11-21",
+  "beats_shipped": true,
+  "source": "r821-ouroth-vic_59822_d0.45.png",
+  "facing": "right",
+  "note": "f542/approval.json vic_ouroth: approved the d0.45 variant (head raised, lava glow); d0.4 not chosen. Enclosed coil pockets keyed with POCKET_TOL 12"
+ },
+ "umbrel_victory": {
+  "approved": "out/r805-umbrel-victory_58210_d0.5.png",
+  "reviewer": "art-director",
+  "date": "2026-11-21",
+  "beats_shipped": true,
+  "source": "r805-umbrel-victory_58210_d0.5.png",
+  "facing": "left",
+  "note": "f527/approval.json umbrel_victory: approved d0.5"
+ },
+ "abyssor_victory": {
+  "approved": ".scratch/f564/out/r842-abyssor-vic_61100_d0.4.png",
+  "reviewer": "art-director",
+  "date": "2026-11-21",
+  "beats_shipped": true,
+  "source": "r842-abyssor-vic_61100_d0.4.png",
+  "facing": "front",
+  "note": "f563-565-approval.json abyssor_victory: approved d0.4 (not f542, whose abyssor r821 was a REJECT: crab/fish redesign)"
  }
 }

@@ -15,6 +15,9 @@ const STILLS: Record<string, { src: string; srcSha: string; outSha: string; faci
   zephra: { src: 'r978-zephra-win2_97810_d0.2.png', srcSha: 'e8f5a76cb7d448f31e9bb92a17b0c8654372f9e7c55eeb8cdcfb8f33b84a4024', outSha: 'a59005a1d99fb488ace7428731fe98bf410a974dc651fcb783ac0d62106ad9da', facing: 'left' },
   nykra: { src: 'nykra_win.png', srcSha: '3cd745f9da07648e9792ae5c0909e19e3af89cdfdc271340192790625f8d9126', outSha: 'e1576f2c957aeddde4b6bf03cd78576692a0a5583ec8624eee96a92b0e6623ad', facing: 'left' },
   hyalia: { src: 'hyalia_win.png', srcSha: 'bf17fb0d096b25b42aa0c1d8d252363ae2c55bbec7cec2d057c0b078d335d832', outSha: 'd42bf064e099e9cb25e70057d677875844499ac1e38bf90ff33350c4889d61cc', facing: 'right' },
+  ouroth: { src: 'r821-ouroth-vic_59822_d0.45.png', srcSha: '28803d26e279b9c20900240f54c170fbf8ce3dd712a4a6fee2194cea13eb3e91', outSha: '42cc1f988592e4c6d33f9217c9d6d111d2c4cc28dcf477256481a1d66b93d584', facing: 'right' },
+  umbrel: { src: 'r805-umbrel-victory_58210_d0.5.png', srcSha: '0e96f965b6989867f4ec9e7105e704a2e2e0216aa69e734ac1e08c2a58aa47d0', outSha: 'fdd3b5f819a90770012068c142f72dd0d0ef3727bc9f68c473fd4a714babe0d4', facing: 'left' },
+  abyssor: { src: 'r842-abyssor-vic_61100_d0.4.png', srcSha: '065281af8b8142323d19d64c50f52f634adc78cf390f1e07475624965ad3856e', outSha: 'bb9d4bf9fc0c98689617269010f50cf010e017e3b3d8a42bb90443d469163731', facing: 'front' },
 };
 
 describe('victory frames (tools/assets/victory-gen/victory-key.py)', () => {
