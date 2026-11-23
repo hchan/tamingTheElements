@@ -8,7 +8,7 @@ import argparse
 from PIL import Image
 
 RES = 2
-SIZES = {"hyalia": (250, 400), "ouroth": (340, 320)}
+SIZES = {"ouroth": (340, 320)}  # Hyalia (96433 wyvern, wide) uses the default 400x400 canvas
 
 ap = argparse.ArgumentParser()
 ap.add_argument("hero"); ap.add_argument("src"); ap.add_argument("out")
