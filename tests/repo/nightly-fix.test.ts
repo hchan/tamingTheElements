@@ -317,7 +317,7 @@ describe('nightly-fix command (fake runner)', () => {
   const status = (): { state: string; pushed: boolean; blockers: string[]; results: { outcome: string; reason: string }[] } =>
     JSON.parse(readFileSync(join(dir, 'gate', 'nightly-fix-status.json'), 'utf8')) as ReturnType<typeof status>;
   const lockSeen: boolean[] = [];
-  const pushes = (): string[] => calls.filter((c) => /^git .*push/.test(c));
+  const pushes = (): string[] => calls.filter((c) => /^git (?:-C \S+ )?push( |$)/.test(c));
   const claudeCalls = (): string[] => calls.filter((c) => c.startsWith('claude '));
 
   const deps = (sc: Scenario = {}): FixDeps => {
