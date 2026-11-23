@@ -92,7 +92,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   morblass: 865, // 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
   pax: 675, // 660 before SIM_VERSION 100
   rokcore: 740, // 670 before SIM_VERSION 69 (roster WP 0.4)
-  sindarosa: 830, // 800 before SIM_VERSION 101
+  sindarosa: 785, // 830 before SIM_VERSION 106; 800 before SIM_VERSION 101
   treenoc: 785, // 695 before SIM_VERSION 101; 714 before SIM_VERSION 86
   wispera: 710, // 690 before SIM_VERSION 101; 650 before SIM_VERSION 100; 632 before SIM_VERSION 86
   hyalia: 650,
@@ -104,7 +104,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   durrok: 625, // 590 before SIM_VERSION 102
   zephra: 830, // 760 before SIM_VERSION 102
   ouroth: 590,
-  abyssor: 550, // 475 before SIM_VERSION 103; 430 before 102
+  abyssor: 590, // 550 before SIM_VERSION 106; 475 before SIM_VERSION 103; 430 before 102
   vortigal: 650, // 740 before SIM_VERSION 102; 665 before SIM_VERSION 94 (41.6% in 2v2)
   umbrel: 660,
 };

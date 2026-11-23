@@ -374,5 +374,7 @@
  *    Re-record reason: every Arcade stun chain is shorter, so Arcade goldens and both Arcade balance baselines change.
  * 105: Arcade only (Classic hashes unchanged); AI only (precedent 55, 97): Easy waits ARCADE_AI_EASY_READY_DELAY (55) wanting ticks, counted after the opening grace, before pressing a primary or secondary slot. New agent memory slots want0/want1. Normal and Hard commands unchanged.
  *    Re-record reason: Easy AI commands change (Easy mirror per-side damage by tick 400 56.9 -> 22.8, measurement); recorded goldens change only the simVersion header (they run Normal or no scripted Arcade Easy); balance baselines (aiLevel 3) do not move.
+ * 106: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Data-only `ARCADE_2V2_LIFE_PM` retune from the full-roster random-partner pass (`snag-trap-teams.mts partners 2 16 --roster full`): sindarosa 830 -> 785 (62.2 -> 56.3 percent), abyssor 550 -> 590 (44.5 -> 52.7 percent); measurements, docs/BALANCE.md.
+ *    Re-record reason: Arcade 2v2 goldens and the Arcade 2v2 balance baseline change (sindarosa, abyssor life); other goldens change only the simVersion header.
  */
-export const SIM_VERSION = 105;
+export const SIM_VERSION = 106;
