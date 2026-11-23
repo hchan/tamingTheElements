@@ -50,6 +50,7 @@
     "help-controls.spec.ts": "P1",
     "key-bindings-top.spec.ts": "P1",
     "hero-portrait-shot.spec.ts": "P2",
+    "cutin.spec.ts": "P2",
     "hero-scale.spec.ts": "P2",
     "hero-unselect.spec.ts": "P1",
     "hit-feel-capture.spec.ts": "P2",

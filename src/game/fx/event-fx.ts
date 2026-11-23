@@ -13,7 +13,7 @@ import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
 import { createShockLayer } from './shock-view';
 import { koPunch } from './arena-pan';
-import { shouldCutin } from './cutin-gate';
+import { superCutFx } from './super-cut';
 import { arcadeHeroScale } from '../views/hero-scale';
 
 /**
@@ -520,16 +520,8 @@ export function createPhaserFxSink(
       if (p && numberAt) numberAt(p.x, headTop(p), amount, scaled, counter);
     },
     superCut(caster, fromTick, untilTick, reduced, superId): void {
-      // The first-run card (app/first-run-hint.ts, SUPER_CUT_EVENT) leaves before the cut-in band; a literal keeps it out of this chunk.
-      const host = globalThis as { dispatchEvent?: (e: unknown) => boolean; Event?: new (t: string) => unknown };
-      if (host.dispatchEvent && host.Event) host.dispatchEvent(new host.Event('tte:super-cut'));
       const v = viewOf(caster);
-      if (v) void import('./super-view').then((m) => { m.superCut(scene, v, fromTick, untilTick, reduced, viewTick, paused, superId); });
-      const hero = heroOf(caster);
-      if (v && hero && shouldCutin(hero, (globalThis as { location?: { search: string } }).location?.search ?? '',import.meta.env.DEV || import.meta.env.MODE === 'test')) {
-        const side = (centre(caster)?.x ?? 640) < 640 ? -1 : 1;
-        void import('./cutin-view').then((m) => { m.showCutin(scene, hero, fromTick, reduced, side, viewTick, paused, import.meta.env.BASE_URL); });
-      }
+      superCutFx(scene, v, heroOf(caster), centre(caster)?.x, fromTick, untilTick, reduced, viewTick, paused, superId);
     },
   };
 }

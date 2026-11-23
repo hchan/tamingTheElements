@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
-import { waitForArena } from './support/wait';
+import { waitFor, waitForArena } from './support/wait';
 
 // Roster24 super cut-in composite (src/game/fx/cutin-gate.ts, cutin-view.ts) behind ?ff=roster24: a super lazy-loads
 // public/assets/img/cutin/<hero>.png once and holds it on the view tick. SHOT_DIR=<dir> saves a headless screenshot.
@@ -18,12 +18,12 @@ test('glimmaw super: the cut-in composite loads on first use and shows mid-freez
   await page.getByLabel('AI race').selectOption('fiara');
   await page.getByRole('button', { name: 'Fight!' }).click();
   await waitForArena(page);
-  await page.waitForFunction(ARENA_READY);
+  await waitFor(page, 'arena views ready', ARENA_READY);
   const card = page.getByRole('button', { name: 'Got it' });
   if (await card.isVisible()) await card.click();
   expect(cutinRequests).toEqual([]); // nothing preloaded
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(91); const [m, f] = a.characters(); a.place(m.id, 400, 360, 0); a.place(f.id, 900, 360, 4); a.setMeter(0, 1000); a.step(1, [${String(SUPER)}, 0]); })()`);
-  await expect.poll(() => cutinRequests.length).toBe(1);
+  await expect(() => { expect(cutinRequests.length, 'cut-in composite requested once').toBe(1); }).toPass();
   await frames();
   await frames();
   await page.evaluate(`window.__TTE__.arena.step(15)`);

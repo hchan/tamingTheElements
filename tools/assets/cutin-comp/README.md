@@ -8,5 +8,5 @@ method: `NOTES-source.md`. Approved by the art-director agent (`provenance/appro
 Installer: `python3 -I tools/assets/cutin-comp/install-cutins.py <r24-cutin-comp-dir>` copies the chosen files byte for byte to
 `public/assets/img/cutin/<hero>.png` (1344x768) and verifies `provenance/pins.json` (sha256; `tests/repo/cutin-backdrops.test.ts`
 pins the installed files to the same hashes). These replace the earlier 1344x168 backdrop bands (`../cutin-gen/`), which the
-composites cannot be cropped to (the hero spans the full height). Nothing in `src/` draws them yet; heroes stay behind `?ff=roster24`.
+composites cannot be cropped to (the hero spans the full height). `src/game/fx/cutin-view.ts` draws them on a super; heroes stay behind `?ff=roster24`.
 No third-party artwork; SDXL terms as in `../cutin-gen/license.txt`.

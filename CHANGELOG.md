@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Roster24 super cut-in composites show for about 0.6 s on a hero's super (`?ff=roster24`, lazy-loaded, fade only under reduced motion). Render only; no sim change.
+
 - Art: Glimmaw victory still (turtle, art-director approved 4/5, 2026-11-23) installed as `public/assets/img/victory/glimmaw_victory.png` by `tools/assets/victory-gen/victory-key.py`; install-only, not drawn yet, Glimmaw stays behind `?ff=roster24`. No sim change.
 
 - Art: 12 roster24 super cut-in composites (1344x768, art-director approved 2026-11-23) replace the 1344x168 backdrop bands; installer and sha256 pins in `tools/assets/cutin-comp/`; not drawn yet. No sim change.
