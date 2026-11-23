@@ -1,0 +1,3 @@
+Glimmaw victory still: generated image-to-image by the project's own GPU job r971 (seed 60160, denoise 0.35; prompt and settings in tools/assets/victory-gen/provenance/r971-meta.jsonl),
+keyed to transparent by tools/assets/victory-gen/victory-key.py. No third-party art, no attribution required.
+Approved by the art-director agent, see tools/assets/victory-gen/provenance/approval.json. Install-only: nothing in src/ draws it yet (Glimmaw stays behind ?ff=roster24).
