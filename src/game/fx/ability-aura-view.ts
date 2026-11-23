@@ -8,6 +8,7 @@ import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } fr
 import { viewHeight, viewWidth } from '../boot/viewport';
 import { GORE_COLOR, GORE_POP, GORE_SPRITE, GORE_TICKS, HIDE_COLOR, HIDE_POP, HIDE_SPRITE, HIDE_TICKS, forgeGore, moltenHide } from './brazgor-fx';
 import { BITE_COLOR, BITE_POP, BITE_SPRITE, BITE_TICKS, SPRAY_COLOR, SPRAY_POP, SPRAY_SPRITE, SPRAY_TICKS, cinderSpray, emberBite } from './kindrel-fx';
+import { HURL_FLIGHT, HURL_HIT_TICKS, ROLL_FLIGHT, ROLL_HIT_TICKS, hurlImpact, paintRockHit, rollImpact } from './quarrak-hit-fx';
 import { HURL_POP, HURL_SPRITE, HURL_TICKS, ROLL_POP, ROLL_SPRITE, ROLL_TICKS, boulderRoll, hurlRock, paintRock } from './quarrak-fx';
 import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL_BOX, COIL_COLOR, COIL_POP, COIL_SPRITE, COIL_TICKS, meleeBox, scorchBreath, wyrmCoil, type Box } from './ouroth-fx';
 import { SKITTER_COLOR, SKITTER_POP, SKITTER_SPRITE, SKITTER_TICKS, skitterHop } from './zephra-fx';
@@ -61,7 +62,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'coil' | 'breath' | 'skitter'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   /** Each fighter's sim box (top-left, size), for FX drawn to a melee hitbox. */
@@ -156,8 +157,8 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       { sprite: HURL_SPRITE, kind: 'hurl' as const, word: HURL_POP, base: 12 },
       { sprite: ROLL_SPRITE, kind: 'roll' as const, word: ROLL_POP, base: 14 },
       // Ouroth (roster24): Wyrm Coil and Scorch Breath, drawn to the sim's melee hitbox.
-      { sprite: COIL_SPRITE, kind: 'coil' as const, word: COIL_POP, base: 12 },
-      { sprite: BREATH_SPRITE, kind: 'breath' as const, word: BREATH_POP, base: 14 },
+      { sprite: COIL_SPRITE, kind: 'coil' as const, word: COIL_POP, base: 18 },
+      { sprite: BREATH_SPRITE, kind: 'breath' as const, word: BREATH_POP, base: 20 },
       // Zephra (roster24): Skitter's hop streaks and landing puff.
       { sprite: SKITTER_SPRITE, kind: 'skitter' as const, word: SKITTER_POP, base: 16 },
     ];
@@ -174,6 +175,8 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         const size = k.kind === 'coil' ? COIL_BOX : BREATH_BOX;
         const box = me && (k.kind === 'coil' || k.kind === 'breath') ? meleeBox(at.dir, me.x, me.y, me.w, me.h, size.w, size.h) : undefined;
         kfx.push({ kind: k.kind, ...at, born: now, box });
+        // Quarrak's rock bursts where its flight ends: born in the future, drawn from then (age < 0 holds below).
+        if (k.kind === 'hurl' || k.kind === 'roll') kfx.push({ kind: k.kind === 'hurl' ? 'hurlhit' : 'rollhit', ...at, born: now + (k.kind === 'hurl' ? HURL_FLIGHT : ROLL_FLIGHT) });
         if (k.kind !== 'bite' && k.kind !== 'hurl' && k.kind !== 'roll') {
           const py = anchor.get(team)?.y ?? at.y - 8;
           pops.push({ id: ++popId, word: k.word, team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
@@ -182,6 +185,13 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     }
     kfx = kfx.filter((f) => {
       const age = now - f.born;
+      if (age < 0) return true;
+      if (f.kind === 'hurlhit' || f.kind === 'rollhit') {
+        const h = f.kind === 'hurlhit' ? hurlImpact(f.x, f.y, f.dir, age, reduced) : rollImpact(f.x, f.y, f.dir, age, reduced);
+        if (!h) return false;
+        paintRockHit(gfx, glow, h);
+        return age <= (f.kind === 'hurlhit' ? HURL_HIT_TICKS : ROLL_HIT_TICKS);
+      }
       if (f.kind === 'bite') {
         const b = emberBite(f.x, f.y, f.dir, age, reduced);
         if (!b) return false;
