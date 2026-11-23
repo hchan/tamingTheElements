@@ -9,6 +9,7 @@ import { EntityFlag } from '../../sim/state';
 import {
   stateRecord, type AgentState, type ArcadeView, type FighterView, type ObservationView, type RockView,
 } from '../agent';
+import { footsieStep } from './arcade-footsies';
 import { AgentRng } from '../agent-rng';
 import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_FATIGUE_REFLEX_MAX, ARCADE_AI_FATIGUE_RESET_TICKS, ARCADE_AI_FATIGUE_WINDOW, ARCADE_AI_GUARD_AT, ARCADE_AI_KIT_CORNER_FOE_PX, ARCADE_AI_KIT_CORNER_PX, ARCADE_AI_KIT_HEAL_BELOW_PM, ARCADE_AI_KIT_HIDE_PX, ARCADE_AI_KIT_HOP_PX, ARCADE_AI_KIT_OMNI_PX, ARCADE_AI_KNOBS,
@@ -335,7 +336,7 @@ export class ArcadeTactics {
     else if (view.self !== undefined && view.self.hp < this.mem[Mem.lastHp]) this.mem[Mem.openAt] = -1000;
     const cmd = this.avoidTraps(view, a, this.kitUse(view, a, this.decide(view, a, base, shot)));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
-    const zoned = this.hazard(view, a, this.runStep(view, a, this.wallHoldStep(view, a, this.zone(view, a, out))));
+    const zoned = this.hazard(view, a, this.runStep(view, a, this.wallHoldStep(view, a, this.footsies(view, a, this.zone(view, a, out)))));
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
     const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
@@ -420,6 +421,22 @@ export class ArcadeTactics {
     if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
     if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.run)) !== 0) return cmd;
     return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);
+  }
+
+  /**
+   * Footsies (SIM_VERSION 107, Hard only; `footsieStep` in arcade-footsies.ts): committed steps, a whiff punish and a ranged close-in.
+   * Same gates as `zone` (fight, free, not stale); no draw and no memory.
+   */
+  private footsies(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    const opp = view.opponent;
+    if (self === undefined || opp === undefined || this.level < AI_HARD || a.phase !== RoundPhase.fight) return cmd;
+    if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
+    if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS) return cmd;
+    const ranged = a.chargeIn === -1;
+    if (ranged && a.partnerPm >= 0) return cmd;
+    const punishable = (opp.flags & EntityFlag.frozen) !== 0 && a.oppStun === 0 && a.oppRooted === 0 && a.combo === 0 && a.oppCombo === 0;
+    return footsieStep(self, opp, cmd, { tick: view.tick, prevCmd: a.prevCmd, ranged, punishable });
   }
 
   /**
