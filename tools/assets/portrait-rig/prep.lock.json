@@ -4,10 +4,10 @@
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
    "spec": "e6fa47e63ca2dd380e2150a2f36e0c0b35ac4656c58df93252a6c07eb75b56c7",
    "anim": "afc56545e57c5b264cf5717c8a054427f5a87f0f567d4abaaa743828440d8783",
-   "portrait": "770d725367747545a4cfde47a285caebe336d1801e19f5f3392b5cb02023a62c"
+   "portrait": "36d0cd0105d4e7c343058bc422cba41474c348870ddd3712cd7163d5be155eb0"
   },
   "outputs": {
-   "parts/body.png": "65bd8e1c1bca21935a0cc18586152954e3192be6c16169d88cd95e3beed79989",
+   "parts/body.png": "7e1ec485e45e5095b9a76a606c3c8d33a396625f23c73c5792bea4713209e9c6",
    "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
    "parts/eye.png": "1d1e566410f11df7b5690504e6a45031f4e9a2f30245c701320dc80755ad1402",
    "rig.json": "44183a97014982e995b6a27ad411bc470ba5ea07f7685b0033ca77c61d36c985"
@@ -126,6 +126,20 @@
    "parts/body.png": "0b2c634a3f1654b0f6dad6100cf1c8dc03e3a23053b68bb5e6a50b4f99e0ce72",
    "parts/shadow.png": "383176939c12b83c48bed1a85da6df8ee17cbdea40cea0e3df726366d537139d",
    "rig.json": "b413a7f8a15b8ecf566309457f4bd3bba6fed573229dbdf12ad962488e751e7e"
+  }
+ },
+ "nykra": {
+  "inputs": {
+   "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
+   "spec": "d64f6c813ed792cbd47f739f092b1919e625098aca337a7cbb83e5849ab23b6d",
+   "anim": "880bbf628b5ca19d09265251038d4c06567bfc077cc65d66b95645baffb5d347",
+   "portrait": "e9c846daca76f138320e5a0ec95a72adff849c5323c6ca95bd7e45329f5e422b"
+  },
+  "outputs": {
+   "parts/body.png": "71d377b53391eb24a0cbf9d503eabc4bce367bb6dbc12fdc5fe5804bdfe5f41b",
+   "parts/shadow.png": "93ba8379886731c2b4608691b26a7d4584385aaece03a3a5693901ae39b86520",
+   "parts/eye.png": "289da5081e72f84ef28d894391cc517c18c7c8ba2af2f06e68b80acc491d00ce",
+   "rig.json": "8420c37fdaedb45b4392993e4f8f48e0e120dbd1fe4a49bb5943c1ad5f6661a1"
   }
  },
  "ouroth": {
