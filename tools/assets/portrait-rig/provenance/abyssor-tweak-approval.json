@@ -1,0 +1,22 @@
+{
+ "abyssor_rim": {
+  "approved": null,
+  "verdict": "REVISE",
+  "overall": 3,
+  "beats_before": true,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": false,
+  "note": "rim too faint to fix dark-floor read; widen 3-4 px, brighter desaturated teal (about #4fb8a8), outer edge only on the upper and left side, keep alpha edge clean"
+ },
+ "abyssor_rim_r2": {
+  "approved": "abyssor rim r2 (after panel)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "beats_before": true,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "note": "rim reads on upper/left edges, crisp, no halo; faint teal on lower-left tentacle undersides is acceptable; roster24 stays hidden until audit gate; composite on the real lava floor before shipping"
+ }
+}

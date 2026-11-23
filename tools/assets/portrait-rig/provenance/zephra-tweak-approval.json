@@ -1,0 +1,12 @@
+{
+ "zephra_scale": {
+  "approved": "zephra scaled +9% on 1152 canvas (after panel)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "beats_before": true,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "note": "roster24 stays hidden until the audit gate passes; wing tip margin is tight, do not scale further"
+ }
+}

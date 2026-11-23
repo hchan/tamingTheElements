@@ -1,4 +1,3 @@
 Rig parts for abyssor: the painting is generated with Stable Diffusion XL (stabilityai/stable-diffusion-xl-base-1.0; sd-turbo/SDXL-Turbo for
 refinements) under the CreativeML Open RAIL++-M licence, which permits commercial use of the outputs with its use-based restrictions;
 the repository owner holds the outputs. Cut, matted and animated by tools/assets/portrait-rig (prep.py, body_plans); numpy/PIL only.
-Matte keyed and graded by tools/assets/roster24-art/r24-key-grade.py (art-director approval: tools/assets/portrait-rig/provenance/abyssor-zephra-keyed-approval.json).
