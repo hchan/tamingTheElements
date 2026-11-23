@@ -152,9 +152,9 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
 
 /**
  * Applies `base` ticks of hit-stun to `victim` (FUN-DESIGN 2.3). A hit on a free victim starts a combo (juggle 0, stun
- * budget and wall bounce reset); a hit while stunned raises `juggle` and stuns `base - 2 * juggle`, never under 6.
+ * budget and wall bounce reset); a hit while stunned raises `juggle` and stuns `base - JUGGLE_STUN_STEP * juggle`, never under MIN_HIT_STUN_TICKS.
  * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is exactly
- * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= 5`, or one that would push the chain past 150 ticks, ends
+ * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= 5`, or one that would push the chain past COMBO_STUN_CAP_TICKS, ends
  * the stun with `recovered` (reason 1 or 2) and 20 ticks of invulnerability instead. Either way it ends the victim's
  * dash (its DASH_RECOVERY_TICKS still follow) or charge (`chargeEnded`, reason interrupted).
  */

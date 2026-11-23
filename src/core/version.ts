@@ -370,5 +370,7 @@
  *    Re-record reason: roster-24 2v2 life retune from the v101 full-roster tournament (only the arcade-roster24 goldens change hash).
  * 103: Arcade only (Classic hashes unchanged). Data-only third hidden-hero 2v2 life retune from the v102 random-partner pass (`snag-trap-teams.mts partners 2 16 --roster full`): kindrel 755->710, abyssor 475->550.
  *    Re-record reason: roster-24 2v2 life retune round 3 (only arcade goldens that field kindrel or abyssor change hash).
+ * 104: Arcade only (Classic hashes unchanged). Data-only shorter juggle stun (qa-r109 #2): JUGGLE_STUN_STEP 2->6, COMBO_STUN_CAP_TICKS 150->120 (first-hit stun unchanged).
+ *    Re-record reason: every Arcade stun chain is shorter, so Arcade goldens and both Arcade balance baselines change.
  */
-export const SIM_VERSION = 103;
+export const SIM_VERSION = 104;

@@ -16,6 +16,8 @@ Build main a25cc33f. Headless Chromium, 1280x720, 390x844 and 844x390. Ordered b
 
 In every 1v1 and 2v2 run the player got a STUN chip soon after the first exchange; while stunned the Tag box reads "STUN", a pressed Tag is refused ("Can't swap: stunned") and a ready Super (3 pips) cannot fire (`22-2v2-tag-150.png`, `24-super-400.png`). In SF a stunned fighter can mash out; a visible struggle (mash to shorten) or a shorter stun, plus a stun timer on the chip, would keep it fair and readable.
 
+**Progress (SIM_VERSION 104):** Arcade `JUGGLE_STUN_STEP` 2 -> 6 and `COMBO_STUN_CAP_TICKS` 150 -> 120 shorten juggle and combo stun; sweep in docs/BALANCE.md. Phase 1 only.
+
 ## 3. Run has no home outside Help and the Controls row (medium)
 
 Help Controls now lists Run Away / Run Towards for P1 (backquote or Tab) and P2 (slash). Gaps: the "How to fight" numbered list and its action-bar key grid have no Run step; the tour stage card CONTROLS block (Move, Strike, Special, Snag, Dash, Guard, Super, Tag) has no Run; the Gamepad and Touch tables have no Run row. Add a line to each, or say it is keyboard only.

@@ -162,7 +162,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 ### 2.3 Hit-stun, knockback and juggle limits (sim)
 
 - On a hit: `stunUntil = gameTick + stun`, with stun by strength light 32, medium 38, heavy 44, super 48 (12, 16, 22, 26 before WP 24, section 2.13), minus
-  `2 * juggle`, but never under 6. A stunned character cannot move or cast. `juggle` counts the hits taken while
+  `6 * juggle` (`JUGGLE_STUN_STEP`, 2 before SIM_VERSION 104), but never under 6. A stunned character cannot move or cast. `juggle` counts the hits taken while
   already stunned.
 - Knockback is set in Q4 along the projectile's dir8, or for melee the sign of the attacker-to-victim centre delta:
   light 96 (6 px per tick), medium 144, heavy 224, super 256. Movement (Arcade branch) applies `x += kbVx / 16` and
@@ -170,7 +170,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   105 for heavy. Arena walls are clamped on both axes (bounds-y fixed). The first wall contact in a combo bounces the
   victim at half speed (a wall splat that extends the combo); later contacts stop it.
 - **Juggle limit.** At `juggle >= 5` the next hit still deals damage but no stun, and gives `recovered` (reason 1) with
-  20 ticks of invulnerability. A hard cap applies too: when `comboStunTotal` exceeds 150 ticks (3 s) the stun ends with
+  20 ticks of invulnerability. A hard cap applies too: when `comboStunTotal` exceeds 120 ticks (2.4 s; 150 before SIM_VERSION 104) the stun ends with
   `recovered` (reason 2). Together they rule out infinites; a property test proves it.
 - Classic freezes inside Arcade: Tornado and Entangling Vines freeze for 60 ticks instead of 150 and count as heavy stun
   (they obey the juggle and stun caps). Ground Shock's self-freeze becomes recovery that a confirmed hit can cancel.
@@ -178,7 +178,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   sets knockback and stun after the hit-stop. Stun only extends (`stunUntil` never moves back) and `comboStunTotal`
   sums the extensions, so a stun chain is exactly `comboStunTotal` game ticks; a hit on a free victim starts a new combo
   (juggle, budget and wall bounce reset). Both caps end the stun with `recovered` (after the `hitStop`) and the same 20
-  ticks of invulnerability, so a capped combo cannot restart on the next tick; the hit that would pass 150 ticks is the
+  ticks of invulnerability, so a capped combo cannot restart on the next tick; the hit that would pass 120 ticks is the
   one that ends it. Invulnerable characters let projectiles through and are not touched by melee. Knockback replaces
   any left, moves the victim even while stunned, uses `DIR8_X/Y` (diagonals are +-speed on both axes), and the bounce
   halves both axes (truncated) and reverses the wall's axis. The new `wallBounced` entity int marks the bounce. `canAct`
@@ -573,7 +573,7 @@ balance baseline moved +0.0 pp on every race):
 
 - **Hit-stun** 32 / 38 / 44 / 48 by strength (was 12 / 16 / 22 / 26, `HIT_STUN_TICKS`): the projectile cooldowns are 15-30
   game ticks, so a shorter stun ended before a follow-up could land and the median combo was 1 hit. The juggle and stun
-  caps (section 2.3) still bound every chain.
+  caps (section 2.3) still bound every chain. SIM_VERSION 104 then shortened chains (juggle step 6, combo cap 120) because stun lasted too long for the victim.
 - **Guard drain** 8000 pm (was 2000, `GUARD_DRAIN_PM`): the drain is a share of the guard's max HP, which is now about 4x
   the damage that hits it, so 4 x 2000 keeps the number of blocked hits that breaks a guard.
 - **Two cooldown overrides** (`ARCADE_COOLDOWN_TICKS`, `cooldownTicksFor`; projectile slots): Fireball 26 (Classic 30) and
@@ -1542,7 +1542,7 @@ that uses them, and measurable by `fun:report`.
 |---|---|---|---|---|---|
 | 1 | `WP-arcade-flag` (done) | sim | `rulesetArcade` in `flags.ts`; `SimState.arcade` (length 0 when off) in `state.ts` and `createMatch`; `isArcade`, `now(s)` clock helper replacing `W.tick` reads in every system; freeze gate in `step.ts`; `inputMaskFor(flags)` in `commands.ts`, `net/session.ts`, `replay/validate.ts`; `src/core/data/arcade.ts` skeleton | Classic goldens: hashes identical; new `classic-hash-pins` test; flag-bit order test (old names keep their bits); arcade state length 0 when off; snapshot round trip with the flag on | The `now()` refactor touches every system: it must be mechanical, proven by the goldens and the balance baseline (0 delta) |
 | 2 | `WP-arcade-hitstop` (done) | sim | `systems/arcade/hit.ts` (strength, hit-stop, `hitConfirmed`, Arcade `damage`); Arcade branches in `projectile.ts` and `melee.ts`; `arcadeInput` clock | Freeze length per strength; events keep unique ids while frozen; cooldowns do not elapse while frozen; Classic untouched | Melee hits and DoT also need the hit path; Hurricane multi-hit |
-| 3 | `WP-arcade-stun-knockback` (done) | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 150 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
+| 3 | `WP-arcade-stun-knockback` (done) | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 120 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
 | 4 | `WP-arcade-combo` (done) | sim | combo counter, scaling, counter hits, `comboEnded`, `recovered` | Scaling table, reset rules, combo end tick | None big |
 | 5 | `WP-arcade-tooling` (done: report-only gate plus super and combo coverage from WP 10; `--ai-level` picks the AI level since WP 23, `fun:compare` and `--replay` are later) | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |
 | 6 | `WP-arcade-juice-hits` (done) | view | `RenderView.arcade()`; `event-fx.ts` strength-scaled sparks, working flash (V6), jitter, shake; damage numbers and combo UI in `src/game/hud/` + `Hud.ts` | Fake-sink tests: feedback coverage 100%, reduced motion drops motion only | V6 cause is not known yet (budget a spike) |
