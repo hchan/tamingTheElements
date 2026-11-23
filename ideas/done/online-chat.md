@@ -1,5 +1,8 @@
 # Online free-text chat (MUST, owner 2026-11-21)
 
+status: done
+added: 2026-11-21
+
 Owner requirement, not optional: free-text chat between the two players of an online match, available in the match and on the result screen, in a minimizable window (WoW style).
 
 - Design: Opus plan in `.scratch/plans/chat.md` (worktree mp-chat), then Sonnet builds.
