@@ -73,6 +73,50 @@ describe('nightly-e2e submit', () => {
   });
 });
 
+describe('nightly-e2e submit precheck (gate:commit at 23:00)', () => {
+  const gateRun = (gateCode: number, thrown = false) => (cmd: string, args: readonly string[]): RunResult => {
+    if (cmd === 'corepack' && args.includes('gate:commit')) {
+      if (thrown) throw new Error('spawn blew up');
+      return { code: gateCode, stdout: `${Array.from({ length: 50 }, (_, i) => `line ${String(i)}`).join('\n')}\n`, stderr: 'lint error\n' };
+    }
+    return submitRun()(cmd, args);
+  };
+  const order = (): string[] => calls.filter((c) => c.cmd === 'corepack').map((c) => (c.args.includes('gate:commit') ? 'gate' : c.args.includes('install') ? 'install' : 'router'));
+  it('runs gate:commit after the e2e is queued, without credentials, and records pass', () => {
+    expect(submit(deps(gateRun(0), { GITHUB_TOKEN: 'x', PATH: '/bin' }))).toBe(0);
+    expect(order()).toEqual(['router', 'install', 'gate']);
+    const g = calls.find((c) => c.args.includes('gate:commit'));
+    expect(g?.env['GITHUB_TOKEN']).toBeUndefined();
+    expect(g?.env['GIT_CONFIG_KEY_0']).toBe('remote.origin.pushurl');
+    const p = JSON.parse(readFileSync(join(dir, 'gate', 'nightly-precheck.json'), 'utf8')) as Record<string, unknown>;
+    expect(p).toMatchObject({ pass: true, sha: SHA });
+    expect(p['tail']).toBeUndefined();
+    expect(readStatus(join(dir, 'gate'))?.state).toBe('pending');
+    status(deps(() => ok()));
+    expect(out).toContain('precheck gate:commit at bbbbbbb: pass');
+  });
+  it('a red gate still exits 0, keeps the queued status and records the last 30 lines', () => {
+    expect(submit(deps(gateRun(1)))).toBe(0);
+    expect(readStatus(join(dir, 'gate'))?.state).toBe('pending');
+    const p = JSON.parse(readFileSync(join(dir, 'gate', 'nightly-precheck.json'), 'utf8')) as { pass: boolean; tail: string[] };
+    expect(p.pass).toBe(false);
+    expect(p.tail).toHaveLength(30);
+    expect(p.tail.at(-1)).toBe('lint error');
+    out = '';
+    status(deps(() => ok()));
+    expect(out).toContain('precheck gate:commit at bbbbbbb: FAIL');
+    expect(out).toContain('| lint error');
+  });
+  it('a thrown gate run does not fail the submit', () => {
+    expect(submit(deps(gateRun(0, true)))).toBe(0);
+    expect(err).toContain('precheck');
+  });
+  it('runs no gate when the e2e could not be queued', () => {
+    expect(submit(deps(submitRun(94)))).toBe(0);
+    expect(order()).toEqual(['router']);
+  });
+});
+
 describe('nightly-e2e collect', () => {
   const seedPending = (): void => {
     submit(deps(submitRun()));
