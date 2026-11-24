@@ -12,22 +12,23 @@
     "ruleset": "arcade",
     "aiLevel": 3
   },
-  "matches": 1056,
+  "matches": 1248,
   "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.455,
-    "cyclonius": 0.489,
-    "echo": 0.545,
-    "fiara": 0.472,
-    "ishimi": 0.545,
-    "lavax": 0.517,
-    "morblass": 0.528,
-    "pax": 0.528,
-    "rokcore": 0.494,
-    "sindarosa": 0.489,
-    "treenoc": 0.455,
-    "wispera": 0.483
+    "curomo": 0.427,
+    "cyclonius": 0.516,
+    "echo": 0.547,
+    "fiara": 0.516,
+    "ishimi": 0.563,
+    "lavax": 0.557,
+    "morblass": 0.563,
+    "pax": 0.51,
+    "rokcore": 0.458,
+    "sindarosa": 0.531,
+    "treenoc": 0.417,
+    "wispera": 0.448,
+    "zephra": 0.448
   },
   "styleSummary": {
     "styles": [
@@ -41,61 +42,61 @@
           "winRate": 0.5
         },
         {
-          "games": 560,
-          "winRate": 0.489
+          "games": 640,
+          "winRate": 0.455
         }
       ],
       [
         {
-          "games": 560,
-          "winRate": 0.511
+          "games": 640,
+          "winRate": 0.545
         },
         {
-          "games": 672,
+          "games": 896,
           "winRate": 0.5
         }
       ]
     ],
     "crossMeleeVsRanged": {
-      "games": 560,
-      "winRate": 0.489,
-      "stdErr": 0.021
+      "games": 640,
+      "winRate": 0.455,
+      "stdErr": 0.02
     },
     "meanWinRate": {
-      "melee": 0.493,
-      "ranged": 0.505
+      "melee": 0.47,
+      "ranged": 0.519
     },
     "heroCount": {
       "melee": 5,
-      "ranged": 7
+      "ranged": 8
     },
     "byElement": {
       "air": {
-        "melee": 0.514,
-        "ranged": 0.489,
-        "gap": 0.025
+        "melee": 0.498,
+        "ranged": 0.482,
+        "gap": 0.016
       },
       "earth": {
-        "melee": 0.492,
-        "ranged": 0.494,
-        "gap": -0.002
+        "melee": 0.464,
+        "ranged": 0.458,
+        "gap": 0.006
       },
       "fire": {
-        "ranged": 0.493
+        "ranged": 0.535
       },
       "water": {
-        "melee": 0.455,
-        "ranged": 0.537,
-        "gap": -0.082
+        "melee": 0.427,
+        "ranged": 0.563,
+        "gap": -0.136
       }
     },
     "top6": {
-      "melee": 2,
-      "ranged": 4
+      "melee": 1,
+      "ranged": 5
     },
     "bottom6": {
-      "melee": 3,
-      "ranged": 3
+      "melee": 4,
+      "ranged": 2
     }
   }
 }
