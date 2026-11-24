@@ -55,12 +55,13 @@
   "note": "CPU warp vortigal3.py + lcc.py (cpu-warp/); art-director 2026-11-23 sheet_cpu2.png (score 4.5 per coordinator); replaces r979 i2i, kept as history"
  },
  "zephra_victory": {
-  "approved": "out/r978-zephra-win2_97810_d0.2.png",
+  "approved": "zephra_win.png",
   "reviewer": "art-director",
   "date": "2026-11-23",
   "beats_shipped": true,
-  "source": "r978-zephra-win2_97810_d0.2.png",
-  "facing": "left"
+  "source": "zephra_win.png",
+  "facing": "left",
+  "note": "CPU-warp still, art-director APPROVE overall 4 (tools/assets/victory-warp/approval.json, sha256 6c1604d9...4c93, copied from victory-warp/approved/zephra_win.png); replaces the r978 i2i still, which stays here as the warp base"
  },
  "ouroth_victory": {
   "approved": "out/r821-ouroth-vic_59822_d0.45.png",

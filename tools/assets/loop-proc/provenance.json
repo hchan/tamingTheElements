@@ -1,0 +1,35 @@
+{
+ "note": "Procedural in-project art (gen.py), art-director approved 2026-11-23; no third-party licence.",
+ "loops": {
+  "cinderSpray": {
+   "strip": "tools/assets/loop-proc/strips/cinderSpray.png",
+   "stripSha256": "66b3f24407cf16a160261f6c96df7938f43bfc303c01acc595976e822f621d49",
+   "output": "public/assets/img/fx/loop/cinderSprayLoop.png",
+   "outputSha256": "3a06dab392eb179906da8cfbac4e753190507658e955cb14835a7fbf9ff9f4a9"
+  },
+  "sporeBurst": {
+   "strip": "tools/assets/loop-proc/strips/sporeBurst.png",
+   "stripSha256": "a59d4229033155caddb25fe05f9ff515a951fcbb8bd015906d201885209b4767",
+   "output": "public/assets/img/fx/loop/sporeBurstLoop.png",
+   "outputSha256": "d94e1b1ab3de23984602826e1ae7215f1259063d1a46644cc40d229ed94cfb68"
+  },
+  "stingingFilament": {
+   "strip": "tools/assets/loop-proc/strips/stingingFilament.png",
+   "stripSha256": "a1541b9db8712cb978c7d4c875aa429c6a15063b4a7a4bd0b5f5215a901b52df",
+   "output": "public/assets/img/fx/loop/stingingFilamentLoop.png",
+   "outputSha256": "fb0a8fda21ec69b49f616b0345740d53c92ee08df659697c8d1bcb42b24fe556"
+  },
+  "boulderRoll": {
+   "strip": "tools/assets/loop-proc/strips/boulderRoll.png",
+   "stripSha256": "1f39a5d5a0a6c30d32e80b2c9b534b6f9d06e89b76246e4aa639e6c09308720e",
+   "output": "public/assets/img/fx/loop/boulderRollLoop.png",
+   "outputSha256": "34e0433313add05d8eb293832e683953e9d2a5a7de920b1a813d128dd642eee8"
+  },
+  "abyssalPull": {
+   "strip": "tools/assets/loop-proc/strips/abyssalPull.png",
+   "stripSha256": "de5ba8bb38cad34cc0757af7eb653cfc5d0c31fa946560c589d0764614767927",
+   "output": "public/assets/img/fx/loop/abyssalPullLoop.png",
+   "outputSha256": "db0de574f54894b2595b389248cf9f171d5825438bb00a257ee8f2a5d582b78c"
+  }
+ }
+}
