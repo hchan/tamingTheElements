@@ -1,3 +1,5 @@
+import { isReleased, characterId } from '@core/index';
+
 /**
  * The roster24 super cut-in composites (public/assets/img/cutin/<hero>.png, 1344x768; tools/assets/cutin-comp/README): the pure
  * part, no Phaser. `event-fx.ts` imports it (small, static); the drawing is `cutin-view.ts`, loaded on the first cut-in only.
@@ -11,9 +13,12 @@ export const CUTIN_HEROES: ReadonlySet<string> = new Set(['abyssor', 'brazgor', 
 export const cutinFlagOn = (search: string, devBuild: boolean): boolean =>
   devBuild && (new URLSearchParams(search).get('ff') ?? '').split(',').map((f) => f.trim()).includes('roster24');
 
+/** True when `hero` (a sprite name = slug) is in RELEASED_ROSTER24: its composite and victory still show without the flag; unreleased heroes stay flag-gated. */
+export const heroReleased = (hero: string): boolean => isReleased(characterId(hero));
+
 /** Whether a super by `hero` (its sprite name) shows a composite on this page. */
 export const shouldCutin = (hero: string | undefined, search: string, devBuild: boolean): boolean =>
-  hero !== undefined && CUTIN_HEROES.has(hero) && cutinFlagOn(search, devBuild);
+  hero !== undefined && CUTIN_HEROES.has(hero) && (heroReleased(hero) || cutinFlagOn(search, devBuild));
 
 export const cutinKey = (hero: string): string => `cutin:${hero}`;
 export const cutinUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/cutin/${hero}.png`;

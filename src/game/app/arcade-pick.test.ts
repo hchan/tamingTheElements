@@ -124,8 +124,8 @@ describe('flagFallbackWarnings (qa-r28)', () => {
 
 describe('a saved pick holding a hidden roster24 id (roster24 WP-0b)', () => {
   const hidden = CHARACTERS.filter((c) => !isReleasedHero(c.id) && c.element !== 'void').map((c) => c.id);
-  it('there are hidden heroes while RELEASED_ROSTER24 is empty', () => {
-    expect(RELEASED_ROSTER24.size).toBe(0);
+  it('there are still hidden heroes while RELEASED_ROSTER24 is a partial release', () => {
+    expect(RELEASED_ROSTER24.size).toBeLessThan(12);
     expect(hidden.length).toBeGreaterThan(0);
   });
   it.each(hidden)('parsePick falls back to released heroes for %s in every slot', (id) => {

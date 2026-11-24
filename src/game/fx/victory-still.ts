@@ -1,19 +1,19 @@
 import { CHARACTERS, characterId, type Element } from '@core/index';
-import { cutinFlagOn } from './cutin-gate';
+import { cutinFlagOn, heroReleased } from './cutin-gate';
 import { ELEMENT_COLORS } from './element-colors';
 
 /**
  * The roster24 victory still (public/assets/img/victory/<hero>_victory.png, installed by tools/assets/victory-gen/victory-key.py) on
- * the Versus result screen when that hero wins. Render only, behind `?ff=roster24` in dev/test builds (the cut-in gate); the image
+ * the Versus result screen when that hero wins. Render only; released heroes (RELEASED_ROSTER24) always, the rest behind `?ff=roster24` in dev/test builds (the cut-in gate); the image
  * is fetched when the screen shows, never preloaded. Other heroes and every loss or draw keep the portrait card.
  */
 export const VICTORY_HEROES: ReadonlySet<string> = new Set(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok']);
 
 export const victoryStillUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/victory/${hero}_victory.png`;
 
-/** The still's URL when `hero` won (`won`) on a page where the flag is on, else null. */
+/** The still's URL when `hero` won (`won`) when released or the flag is on, else null. */
 export function victoryStillFor(hero: string, won: boolean, search: string, devBuild: boolean, base: string): string | null {
-  return won && VICTORY_HEROES.has(hero) && cutinFlagOn(search, devBuild) ? victoryStillUrl(base, hero) : null;
+  return won && VICTORY_HEROES.has(hero) && (heroReleased(hero) || cutinFlagOn(search, devBuild)) ? victoryStillUrl(base, hero) : null;
 }
 
 /** Swaps the winner card's face for the still once it has loaded (a failed load keeps the face). `root` is the results view. */
