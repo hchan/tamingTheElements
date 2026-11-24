@@ -34,3 +34,25 @@ for (const hero of ['glimmaw', 'kindrel', 'umbrel', 'durrok']) test(`${hero} win
   }
   expect(errors).toEqual([]);
 });
+
+// Quarrak has no still (three art rounds rejected): the winner portrait gets the flash and scale-pop fallback instead.
+// Long gate (no @smoke): same two-round fight as above.
+test('quarrak wins the match: no still is fetched and the portrait gets the win flash', async ({ page }) => {
+  const errors = collectErrors(page);
+  const stillRequests: string[] = [];
+  page.on('request', (r) => { if (r.url().includes('/assets/img/victory/')) stillRequests.push(r.url()); });
+  await page.goto(`${START}&ff=arcade,roster24#arcade`);
+  await page.getByLabel('Your race').selectOption('quarrak');
+  await page.getByLabel('AI race').selectOption('fiara');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await waitFor(page, 'arena ready', ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(91)`);
+  for (let round = 0; round < 2; round++) {
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 300, 360, 0); a.place(f.id, 540, 360, 4); a.setMeter(0, 1000); a.setHp(f.id, 1); a.step(1, [${String(SUPER)}, 0]); a.step(${String(ROUND)}); })()`);
+  }
+  await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
+  await expect(page.locator('#arcadeResults .matchEndMain .matchEndFace')).toHaveAttribute('data-victory-flash', 'quarrak');
+  await expect(page.locator('#arcadeResults .matchEndStill')).toHaveCount(0);
+  expect(stillRequests).toEqual([]);
+  expect(errors).toEqual([]);
+});
