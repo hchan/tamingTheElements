@@ -1,0 +1,11 @@
+{
+ "boulderRoll_loop": {
+  "approved": "boulder_roll_strip.png",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "overall": 4
+ },
+ "sha256": "8e772f41b796790d032a1f7e048a693b9e9a4616ded0b52a3bf4bfcaaf78f55f",
+ "generator": "tools/assets/roster24-art/boulder-roll-proc.py (seed 631)"
+}
