@@ -125,6 +125,11 @@ const HEAL_BELOW = 0.6;
 /** Vertical offset (px) that keeps a melee chaser clear of bullets and the shooter's alignment test. */
 const OFFSET_DY = 52;
 const OFFSET_SLACK = 6;
+/** Partner offsets into a roster of `n` heroes for a team of `teamSize`: n/2, or n/3 and 2n/3, rounded down (identical to the exact split at 12 and 24, and never 0 or n for n >= 3, so no hero partners itself). */
+export function partnerOffsets(n: number, teamSize: number): number[] {
+  return teamSize === 3 ? [Math.floor(n / 3), Math.floor((2 * n) / 3)] : teamSize === 2 ? [Math.floor(n / 2)] : [];
+}
+
 /** Horizontal distance (px) under which the legacy melee range test passes (it compares dx with half a body), and where the dash starts. */
 const MELEE_DX = 36;
 const DASH_DX = 160;
@@ -368,7 +373,7 @@ export function runMatch(o: MatchOptions): MatchResult {
   // repeat a race of the other side (a mirror of identical bots stands on one spot and its shots cancel forever).
   // 3v3 (WP-arcade-3v3): the two partners are a third and two thirds of the list on, on the same reasoning.
   const list = o.races ?? RACES;
-  const offsets = o.teamSize === 3 ? [list.length / 3, (2 * list.length) / 3] : o.teamSize === 2 ? [list.length / 2] : [];
+  const offsets = partnerOffsets(list.length, o.teamSize ?? 1);
   const roster = (race: string): { character: ReturnType<typeof characterId>; xp: number }[] =>
     [race, ...offsets.map((k) => list[(list.indexOf(race) + k) % list.length] ?? race)].map((r) => ({
       character: characterId(r),
@@ -668,7 +673,7 @@ export function runTournament(
   const teamSize = o.teamSize ?? 1;
   const teamOf = (race: string): readonly string[] => {
     const n = teamSize;
-    const offs = n === 3 ? [races.length / 3, (2 * races.length) / 3] : n === 2 ? [races.length / 2] : [];
+    const offs = partnerOffsets(races.length, n);
     return [race, ...offs.map((k) => races[(races.indexOf(race) + k) % races.length] ?? race)];
   };
   return {
