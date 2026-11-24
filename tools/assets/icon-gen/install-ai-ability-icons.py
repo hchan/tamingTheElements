@@ -16,7 +16,7 @@ SLOTS = ["ember_bite", "gale_talon", "tide_surge", "hurl_rock", "lure_orb",
          "mycelium_mend", "stinging_filament", "stoop", "forge_gore", "tusk_gore", "boulder_roll",
          "kelp_lash", "molten_hide", "whirlpool", "bell_pulse", "heal_spring", "scorch_breath", "wyrm_coil", "spore_burst",
          "cinder_spray", "static_mote", "quake", "mist_veil", "kelp_whip", "gust", "bristle_stomp",
-         "wind_wall", "talon_rake", "skitter"]
+         "wind_wall", "talon_rake", "skitter", "abyssal_pull"]
 # Slots whose art carries a third-party credit (written to CREDITS.txt and the icon's index entry).
 THIRD_PARTY = {
     "talon_rake": "Talon Rake: glyph \"Triple scratches\" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), "
@@ -34,6 +34,8 @@ BELL_POLY = [(240, 72), (272, 72), (284, 90), (283, 125), (330, 138), (365, 175)
              (458, 385), (440, 415), (390, 432), (256, 436), (130, 432), (75, 415), (55, 385), (55, 350), (88, 318), (112, 290),
              (125, 230), (146, 175), (180, 138), (228, 125), (228, 90)]
 KEYS = {
+    # abyssal_pull: own procedural work (tools/assets/ability-icons-procedural/gen.py abyssal_pull), RGBA on transparent; composited onto BACKDROP by its alpha
+    "abyssal_pull": {"alpha": True},
     "kelp_lash": {"bgkey": (28, 30), "radial": (0.48, 4, 0.08)},
     "molten_hide": {"radial": (0.305, 12, 0.02)},
     "whirlpool": {"radial": (0.50, 2, 0.06)},
@@ -43,6 +45,7 @@ KEYS = {
     "spore_burst": {"radial": (0.425, 2, 0.012)},
     "scorch_breath": {"crop": (0.05, 0.03, 0.97, 0.735), "bgkey": (22, 26), "radial": (0.5, 4, 0.08)},
 }
+#   alpha: use the source PNG alpha as the matte (procedural RGBA icons);
 #   tint: map luminance to a deep teal/blue ramp; rim: darken the edge (strength); erode: shrink the matte N px (despill);
 #   rowbg: bgkey against a per-row border colour (gradient backdrop); contrast: autocontrast before tint;
 #   greykey: key out the low-saturation light backdrop (min value, max saturation, softness; all 0..1);
@@ -123,6 +126,7 @@ def keep_border_connected(alpha):
 
 def key_onto_backdrop(im, cfg):
     """Composites im over BACKDROP through the slot's keys (see KEYS)."""
+    mask = im.getchannel("A") if cfg.get("alpha") and "A" in im.getbands() else None
     im = im.convert("RGB")
     if "crop" in cfg:
         w, h = im.size
@@ -142,7 +146,7 @@ def key_onto_backdrop(im, cfg):
     if cfg.get("tint"):
         im = teal_tint(ImageOps.autocontrast(im.convert("L"), cutoff=2) if cfg.get("contrast") else im)
     n = im.size[0]
-    alpha = Image.new("L", im.size, 255)
+    alpha = mask if mask is not None else Image.new("L", im.size, 255)
     if "poly" in cfg:
         alpha = Image.new("L", im.size, 0)
         ImageDraw.Draw(alpha).polygon([(x * n / 512, y * n / 512) for x, y in cfg["poly"]], fill=255)

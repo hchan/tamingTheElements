@@ -408,6 +408,20 @@
         "beats_shipped": true,
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
+    },
+    "abyssal_pull": {
+      "url": "img/hud/ability-icons-ai/abyssal_pull.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "902a082b95fdf7ce53d0431210df9604e8bb368378574df7b55673f05a24a537",
+      "source": "abyssal_pull.png",
+      "approval": {
+        "approved": "abyssal_pull.png",
+        "reviewer": "art-director",
+        "date": "2026-11-23",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
     }
   }
 }
