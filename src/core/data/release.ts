@@ -6,7 +6,7 @@ import { characterId, type CharacterId } from './ids';
  * appended heroes stay behind `?ff=roster24`. Menu, picker, asset-build and balance-tool code reads it; the sim and the agents never do
  * (a test pins that), so a release cannot change a replay hash. Never reorder or re-add heroes: character indices are hashed.
  */
-export const RELEASED_ROSTER24: ReadonlySet<CharacterId> = new Set<CharacterId>([characterId('zephra'), characterId('vortigal'), characterId('durrok')]);
+export const RELEASED_ROSTER24: ReadonlySet<CharacterId> = new Set<CharacterId>([characterId('zephra'), characterId('vortigal'), characterId('durrok'), characterId('glimmaw')]);
 
 /** True when `id` is a released appended (roster-24) hero. The legacy heroes are not in the set: they are released by being legacy. */
 export function isReleased(id: CharacterId): boolean {
