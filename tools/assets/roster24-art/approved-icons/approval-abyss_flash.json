@@ -1,0 +1,14 @@
+{
+ "abyss_flash": {
+  "verdict": "APPROVE",
+  "overall": 4,
+  "beats_shipped": true,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "notes": "Painterly teal-black radial burst with a bright pale core; no people, text or cropping. Reads as a flash at 32 px thanks to the single bright centre and strong dark-to-light contrast. Deep-sea teal separates it from fire and earth. Slightly softer and more airbrushed than the impasto frost_shard, and the anglerfish lure is implied rather than shown. Optional polish: add 10-15 percent sharpening or local contrast on the rays. No shipped abyss_flash icon found under public/assets/img/icons, so it beats a placeholder.",
+  "sha256": "e8610068526c297f538c9c060467f2e7473a9db566bf128b5e1048f9db705f22",
+  "source": "abyss_flash-source-r877-114634.png",
+  "source_sha256": "7775c0bd4760ba7859c4c14996273bab377e9e886488ad2ad07226aa58d43117",
+  "generator": "tools/assets/roster24-art/stage-icons.py (slot abyss_flash: circle-crop of GPU job r877 output)"
+ }
+}
