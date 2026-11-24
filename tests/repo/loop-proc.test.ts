@@ -17,7 +17,7 @@ describe('procedural roster24 loop strips (tools/assets/loop-proc/install.py)', 
     const a = approval[`loop_${name}`];
     expect(a?.reviewer).toBe('art-director');
     expect(a?.beats_shipped).toBe(true);
-    expect(r.strip).toBe(`tools/assets/loop-proc/strips/${a?.approved}`);
+    expect(r.strip).toBe(`tools/assets/loop-proc/strips/${a?.approved ?? ''}`);
     expect(sha(r.strip)).toBe(r.stripSha256);
     expect(sha(r.output)).toBe(r.outputSha256);
     const b = readFileSync(resolve(ROOT, r.output));
