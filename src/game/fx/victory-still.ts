@@ -30,8 +30,37 @@ export function applyVictoryStill(root: HTMLElement, hero: string, url: string):
   img.src = url;
 }
 
+/** Heroes with a cut-in but no approved victory still (Quarrak: three art rounds rejected): they get a win flash and a scale-pop on the portrait instead. */
+export const FLASH_HEROES: ReadonlySet<string> = new Set(['quarrak']);
+
+export const FLASH_MS = 700;
+export const POP_SCALE = 1.06;
+
+/** Whether `hero` gets the flash fallback: a win, no still for the hero, the flag on, and motion allowed (reduced motion keeps the plain portrait). */
+export function victoryFlashFor(hero: string, won: boolean, search: string, devBuild: boolean, reducedMotion: boolean): boolean {
+  return won && !reducedMotion && FLASH_HEROES.has(hero) && !VICTORY_HEROES.has(hero) && cutinFlagOn(search, devBuild);
+}
+
+/** Keyframes for the winner portrait: a brief white-gold glow that fades while the card pops to POP_SCALE and settles. */
+export function victoryFlashFrames(): Keyframe[] {
+  return [
+    { transform: 'scale(1)', filter: 'brightness(2.2) drop-shadow(0 0 18px #fff6c0)', offset: 0 },
+    { transform: `scale(${String(POP_SCALE)})`, filter: 'brightness(1.4) drop-shadow(0 0 12px #ffe600)', offset: 0.35 },
+    { transform: 'scale(1)', filter: 'brightness(1) drop-shadow(0 0 0 transparent)', offset: 1 },
+  ];
+}
+
+/** Plays the flash on the winner card's portrait (`.matchEndFace`). */
+export function applyVictoryFlash(root: HTMLElement, hero: string): void {
+  const face = root.querySelector<HTMLElement>('.matchEndMain .matchEndFace');
+  if (!face || typeof face.animate !== 'function') return;
+  face.dataset['victoryFlash'] = hero;
+  face.animate(victoryFlashFrames(), { duration: FLASH_MS, easing: 'ease-out' });
+}
+
 /** Entry for the result screen: does nothing unless the gate passes. */
 export function showVictoryStill(root: HTMLElement, hero: string, won: boolean, search: string, devBuild: boolean, base: string): void {
   const url = victoryStillFor(hero, won, search, devBuild, base);
   if (url) applyVictoryStill(root, hero, url);
+  else if (victoryFlashFor(hero, won, search, devBuild, window.matchMedia('(prefers-reduced-motion: reduce)').matches)) applyVictoryFlash(root, hero);
 }
