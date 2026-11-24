@@ -16,14 +16,15 @@ describe('super cut-in gate', () => {
   });
 
   it('shows only for a roster24 hero', () => {
-    expect(shouldCutin('glimmaw', '?ff=roster24', true)).toBe(true);
+    expect(shouldCutin('kindrel', '?ff=roster24', true)).toBe(true);
     expect(shouldCutin('curomo', '?ff=roster24', true)).toBe(false);
     expect(shouldCutin(undefined, '?ff=roster24', true)).toBe(false);
-    expect(shouldCutin('glimmaw', '', true)).toBe(false);
+    expect(shouldCutin('kindrel', '', true)).toBe(false);
     expect(shouldCutin('zephra', '', false)).toBe(true); // released: no flag needed
     expect(shouldCutin('vortigal', '', false)).toBe(true);
     expect(shouldCutin('durrok', '', false)).toBe(true);
-    expect(shouldCutin('glimmaw', '?ff=roster24', false)).toBe(false);
+    expect(shouldCutin('glimmaw', '', false)).toBe(true);
+    expect(shouldCutin('kindrel', '?ff=roster24', false)).toBe(false);
   });
 
   it('builds the texture key and url', () => {
