@@ -61,6 +61,43 @@ export function victoryFlashFrames(element: Element = 'void'): Keyframe[] {
   ];
 }
 
+export const CHIP_COUNT = 12;
+export const CHIP_MS = 800;
+const CHIP_COLORS: readonly string[] = ['#8a6a3a', '#b08a50', '#5e4a2c', '#cdb27a'];
+
+/** Burst vectors (fixed, so the look is the same every time): chips fan out and up from the portrait centre, then fall back under gravity. */
+export function chipVectors(count: number = CHIP_COUNT): { dx: number; dy: number; size: number; color: string }[] {
+  return Array.from({ length: count }, (_, i) => {
+    const a = Math.PI * (1.1 + (0.8 * (i + 0.5)) / count); // upper half-circle, screen coords (y down)
+    const r = 60 + (i % 3) * 22;
+    return { dx: Math.round(Math.cos(a) * r), dy: Math.round(Math.sin(a) * r), size: 5 + (i % 4) * 2, color: CHIP_COLORS[i % CHIP_COLORS.length] ?? '#8a6a3a' };
+  });
+}
+
+/** A short rock-chip and dust burst around the portrait (earth heroes). Chips are removed when done. */
+export function applyChipBurst(face: HTMLElement): void {
+  const host = face.parentElement;
+  if (!host || typeof face.animate !== 'function') return;
+  if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+  const layer = document.createElement('div');
+  layer.className = 'victoryChips';
+  layer.setAttribute('aria-hidden', 'true');
+  layer.style.cssText = `position:absolute;left:${String(face.offsetLeft + face.offsetWidth / 2)}px;top:${String(face.offsetTop + face.offsetHeight / 2)}px;width:0;height:0;pointer-events:none;z-index:2`;
+  for (const v of chipVectors()) {
+    const chip = document.createElement('span');
+    chip.className = 'victoryChip';
+    chip.style.cssText = `position:absolute;left:0;top:0;width:${String(v.size)}px;height:${String(v.size - 1)}px;background:${v.color};border-radius:2px 1px 3px 1px;box-shadow:0 0 6px rgba(120,90,50,0.6)`;
+    layer.append(chip);
+    chip.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1, offset: 0 },
+      { transform: `translate(${String(v.dx)}px,${String(v.dy)}px) rotate(200deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${String(v.dx * 1.2)}px,${String(v.dy + 70)}px) rotate(360deg)`, opacity: 0, offset: 1 },
+    ], { duration: CHIP_MS, easing: 'ease-out', fill: 'forwards' });
+  }
+  host.append(layer);
+  window.setTimeout(() => { layer.remove(); }, CHIP_MS + 100);
+}
+
 /** Plays the flash on the winner card's portrait (`.matchEndFace`), tinted by the hero's element. */
 export function applyVictoryFlash(root: HTMLElement, hero: string): void {
   const face = root.querySelector<HTMLElement>('.matchEndMain .matchEndFace');
@@ -69,6 +106,7 @@ export function applyVictoryFlash(root: HTMLElement, hero: string): void {
   face.dataset['victoryFlash'] = hero;
   face.dataset['victoryFlashElement'] = element;
   face.animate(victoryFlashFrames(element), { duration: FLASH_MS, easing: 'ease-out' });
+  if (element === 'earth') applyChipBurst(face);
 }
 
 /** Entry for the result screen: does nothing unless the gate passes. */
