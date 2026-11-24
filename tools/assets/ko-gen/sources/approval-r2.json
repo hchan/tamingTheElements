@@ -1,0 +1,10 @@
+{"ko-cutouts-r2": {
+ "reviewer": "art-director", "date": "2026-11-23",
+ "umbrel-96104": {"verdict": "APPROVE", "overall": 4, "approved": "umbrel-96104-cut2.png", "beats_shipped": true,
+  "fixed": ["grey patches between legs", "jagged fringe mostly", "leg gaps now open"],
+  "remaining_minor": ["faint grey-green ground smear under left foot and centre claws: erode alpha 4-6 px in the bottom 8% band, or kill low-saturation grey pixels (S<0.15) below y=930"]},
+ "nykra-94301": {"verdict": "REVISE", "overall": 3, "approved": null,
+  "fixed": ["grey slabs behind mane/tail", "grey patch between hind legs", "hoof halo"],
+  "remaining_defects": ["magenta/pink colour spill on mane edge, rump (approx x440 y340, x470 y290) and tail base/tail tip", "mane and tail edge is slightly smoky"],
+  "fix": "Decontaminate RGB: for pixels with alpha<255 or within 6 px of the edge, desaturate/replace magenta hue (H 290-340 deg) with the nearest interior teal (or blue-grey in tail) colour; then despill by clamping R to <= max(G,B)*0.8. Rerun chk on purple and a dark grey bg."}
+}}
