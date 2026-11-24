@@ -12,7 +12,7 @@ soft ground shadow. Output canvas is padded so the whole body keeps a margin.
 """
 import sys
 from pathlib import Path
-from PIL import Image, ImageEnhance, ImageFilter, ImageDraw
+from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "public/assets/img/map"
@@ -22,12 +22,28 @@ ANGLE, SQUASH, DESAT, DARK, MARGIN = -78, 0.9, 0.25, 0.15, 24
 PORTRAIT_SRC = ROOT / "imgWorkArea/portrait-src"
 # glimmaw: the approved turtle cutout, flipped onto its shell and leaned +18 so the shell rests on the shadow (lean -7 left it floating).
 R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip", "hyalia": "flip", "nykra": "tip", "zephra": "tip", "abyssor": "tip",
-            "quarrak": "flip", "umbrel": "tip", "glimmaw": "flip"}
+            "quarrak": "flip", "umbrel": "tip", "glimmaw": "flip", "ouroth": "flip", "vortigal": "flip"}
+# Umbrel/Ouroth/Vortigal (cut3 and the two ko cutouts, flat #808080, keyed by key_gray) are KO candidates, not shipped: umbrel tip -100 sink 8 puts the cap rim and a foot on the shadow; ouroth and vortigal flip (default lean).
 # Heroes whose source is an art-director-approved rig-matching RGBA cutout (committed under sources/, provenance in sources/approval*.json).
 SOURCES = Path(__file__).resolve().parent / "sources"
-TIP_PARAMS = {"nykra": (-100, 0.85, 2), "umbrel": (-90, 0.8, 4)}  # angle, y-squash, sink
+TIP_PARAMS = {"nykra": (-100, 0.85, 2), "umbrel": (-100, 0.8, 8)}  # angle, y-squash, sink
 FLIP_LEAN = {"glimmaw": 18}  # degrees; default -7
-CUTOUTS = {"quarrak": "quarrak-96214-cut.png", "umbrel": "umbrel-96104-cut2.png", "nykra": "nykra-94301-cut5.png", "glimmaw": "glimmaw-96303-cut.png"}
+CUTOUTS = {"quarrak": "quarrak-96214-cut.png", "umbrel": "umbrel-96104-cut3.png", "nykra": "nykra-94301-cut5.png", "glimmaw": "glimmaw-96303-cut.png",
+            "ouroth": "ouroth-ko-cut.png", "vortigal": "vortigal-ko-cut.png"}
+
+
+def key_gray(im: Image.Image, bg: int = 128, lo: int = 8, hi: int = 26) -> Image.Image:
+    """Key a flat #808080 background (sources without alpha): soft ramp on max channel distance (lo..hi), including enclosed gaps. Sources that already have alpha pass through."""
+    im = im.convert("RGBA")
+    if im.getchannel("A").getextrema()[0] < 255:
+        return im
+    rgb = im.convert("RGB")
+    chans = [ImageChops.difference(c, Image.new("L", im.size, bg)) for c in rgb.split()]
+    d = ImageChops.lighter(ImageChops.lighter(chans[0], chans[1]), chans[2])
+    alpha = d.point(lambda v: max(0, min(255, round((v - lo) * 255 / (hi - lo)))))  # global key: enclosed gaps between legs/coils are background too
+    alpha = alpha.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))  # drop 1 px specks
+    im.putalpha(alpha)
+    return im
 
 
 def stage(body: Image.Image, sink: int = 2, scorch: bool = False) -> Image.Image:
@@ -185,6 +201,7 @@ def main() -> None:
     d = ImageDraw.Draw(sheet)
     for i, h in enumerate(heroes):
         src = Image.open(SOURCES / CUTOUTS[h] if h in CUTOUTS else PORTRAIT_SRC / f"{h}.png" if h in R24_MODE else SRC / f"{h}Large.png")
+        src = key_gray(src) if h in CUTOUTS else src
         ko = ko_frame(src, h)
         ko.save(out / f"{h}_ko.png")
         for j, im in enumerate((src.convert("RGBA"), ko)):
