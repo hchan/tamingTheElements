@@ -330,7 +330,15 @@ test('chat: lines both ways, unread badge, rate note, counts-only events, and ch
   // Three lines so far from a, spaced out by the round trips, so the relay never rate-limited them.
   expect(rig.events.filter((e) => e.kind === 'chat' && e.outcome === 'rate')).toHaveLength(0);
   // A quick burst of four more: the client bucket (3 per burst, 1/s refill) refuses one with a "Wait" note.
-  for (const t of ['q1', 'q2', 'q3', 'q4']) await say(a, t);
+  // One synchronous page task: a loaded runner that spends over a second between two say() calls refills a token, a later sent line clears the note and the check flakes.
+  await a.evaluate(`(() => {
+    for (const t of ['q1', 'q2', 'q3', 'q4']) {
+      const input = document.getElementById('chatInput');
+      input.value = t;
+      input.dispatchEvent(new Event('input', { bubbles: true })); // enables Send, as typing does
+      document.getElementById('chatSend').click();
+    }
+  })()`);
   await expect.poll(() => a.locator('#chatNote').textContent(), { timeout: 10_000, message: 'rate note on a' }).toMatch(/Wait|too fast/);
 
   // Counts only: the relay's events never hold a line's text.
