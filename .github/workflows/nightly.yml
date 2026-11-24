@@ -33,6 +33,10 @@ jobs:
       - name: Arcade balance compare (report only)
         continue-on-error: true
         run: corepack pnpm balance:compare --ruleset arcade --out out/arcade-balance-report.json
+      # Report only: all 24 heroes (hidden ones included) against the full-roster baseline.
+      - name: Arcade full-roster balance compare (report only)
+        continue-on-error: true
+        run: corepack pnpm balance:compare --ruleset arcade --roster full --out out/arcade-full-balance-report.json
       - name: Arcade fun report (report only)
         continue-on-error: true
         run: corepack pnpm fun:report --ruleset arcade --all --seeds 8
@@ -48,5 +52,6 @@ jobs:
           path: |
             out/balance-report.json
             out/arcade-balance-report.json
+            out/arcade-full-balance-report.json
             out/fun-report.json
           if-no-files-found: ignore

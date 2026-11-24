@@ -1,5 +1,5 @@
 // Nightly fun gates (ideas/done/nightly-fun-gates.md, FUN-DESIGN WP 25 WP-arcade-gates-tight). Headless only.
-//   tsx tools/ci/fun-gates.ts [--seeds 8] [--seed 1] [--team-sizes 1,2] [--out out/fun-gates.json] [--no-fail]
+//   tsx tools/ci/fun-gates.ts [--seeds 8] [--seed 1] [--team-sizes 1,2] [--out out/fun-gates.json] [--no-fail] [--roster legacy|released|full]
 // Plays the Arcade fun report over ALL pairings per team size, judges it against TIGHT bands (stricter than the
 // report-only bands of tools/sim/fun-report.ts) and exits 1 on any miss. Latency marks (wall ms per sim second) are
 // reported and judged against a generous ceiling, as a catch for accidental perf cliffs; the sim itself stays untouched.
@@ -8,7 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { type FunReport, funReport, raceWinRates } from '../sim/fun-report';
+import { type FunReport, type RosterName, funReport, parseRoster, raceWinRates } from '../sim/fun-report';
 
 export interface Gate {
   readonly metric: string;
@@ -82,9 +82,9 @@ export interface GateRun {
   readonly latencyOk: boolean;
 }
 
-export function runGates(teamSize: 1 | 2 | 3, seeds: number, seed: number): GateRun {
+export function runGates(teamSize: 1 | 2 | 3, seeds: number, seed: number, roster?: RosterName): GateRun {
   const t0 = performance.now();
-  const report = funReport({ ruleset: 'arcade', teamSize, aiLevel: 3, seeds, seed, level: 1, all: true });
+  const report = funReport({ ruleset: 'arcade', teamSize, aiLevel: 3, seeds, seed, level: 1, all: true, ...(roster === undefined ? {} : { roster }) });
   const wall = performance.now() - t0;
   const simSeconds = report.overall.matches * report.overall.medianSeconds;
   const ms = latencyMark(wall, simSeconds);
@@ -105,9 +105,10 @@ export function main(argv: readonly string[]): number {
   try {
     const { values } = parseArgs({
       args: [...argv],
-      options: { seeds: { type: 'string' }, seed: { type: 'string' }, 'team-sizes': { type: 'string' }, out: { type: 'string' }, 'no-fail': { type: 'boolean' } },
+      options: { seeds: { type: 'string' }, seed: { type: 'string' }, 'team-sizes': { type: 'string' }, out: { type: 'string' }, 'no-fail': { type: 'boolean' }, roster: { type: 'string' } },
     });
-    const runs = parseTeamSizes(values['team-sizes'] ?? '1,2').map((t) => runGates(t, Number(values.seeds ?? 8), Number(values.seed ?? 1)));
+    const roster = parseRoster(values.roster);
+    const runs = parseTeamSizes(values['team-sizes'] ?? '1,2').map((t) => runGates(t, Number(values.seeds ?? 8), Number(values.seed ?? 1), roster));
     for (const r of runs) {
       console.log(formatGates(`arcade ${String(r.teamSize)}v${String(r.teamSize)}`, r.results));
       console.log(`  ${r.latencyOk ? 'ok ' : 'OUT'} latency ${r.msPerSimSecond.toFixed(2)} ms per sim second (ceiling ${String(LATENCY_CEILING_MS_PER_SIM_SECOND)})`);

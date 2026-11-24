@@ -1,0 +1,116 @@
+{
+  "params": {
+    "agents": [
+      "scripted",
+      "scripted"
+    ],
+    "seeds": 16,
+    "seed": 1,
+    "level": 1,
+    "difficulty": 1,
+    "maxTicks": 18000,
+    "ruleset": "arcade",
+    "aiLevel": 3,
+    "roster": "full"
+  },
+  "matches": 4416,
+  "stalemates": 2,
+  "timeouts": 0,
+  "winRates": {
+    "abyssor": 0.516,
+    "brazgor": 0.579,
+    "curomo": 0.342,
+    "cyclonius": 0.568,
+    "durrok": 0.429,
+    "echo": 0.38,
+    "fiara": 0.601,
+    "glimmaw": 0.55,
+    "hyalia": 0.514,
+    "ishimi": 0.476,
+    "kindrel": 0.457,
+    "lavax": 0.563,
+    "morblass": 0.573,
+    "nykra": 0.503,
+    "ouroth": 0.541,
+    "pax": 0.361,
+    "quarrak": 0.421,
+    "rokcore": 0.505,
+    "sindarosa": 0.628,
+    "treenoc": 0.405,
+    "umbrel": 0.541,
+    "vortigal": 0.554,
+    "wispera": 0.421,
+    "zephra": 0.572
+  },
+  "styleSummary": {
+    "styles": [
+      "melee",
+      "ranged"
+    ],
+    "cells": [
+      [
+        {
+          "games": 2112,
+          "winRate": 0.5
+        },
+        {
+          "games": 2304,
+          "winRate": 0.418
+        }
+      ],
+      [
+        {
+          "games": 2304,
+          "winRate": 0.582
+        },
+        {
+          "games": 2112,
+          "winRate": 0.5
+        }
+      ]
+    ],
+    "crossMeleeVsRanged": {
+      "games": 2304,
+      "winRate": 0.418,
+      "stdErr": 0.01
+    },
+    "meanWinRate": {
+      "melee": 0.457,
+      "ranged": 0.543
+    },
+    "heroCount": {
+      "melee": 12,
+      "ranged": 12
+    },
+    "byElement": {
+      "air": {
+        "melee": 0.452,
+        "ranged": 0.551,
+        "gap": -0.099
+      },
+      "earth": {
+        "melee": 0.398,
+        "ranged": 0.489,
+        "gap": -0.091
+      },
+      "fire": {
+        "melee": 0.526,
+        "ranged": 0.597,
+        "gap": -0.071
+      },
+      "water": {
+        "melee": 0.454,
+        "ranged": 0.533,
+        "gap": -0.079
+      }
+    },
+    "top6": {
+      "melee": 1,
+      "ranged": 5
+    },
+    "bottom6": {
+      "melee": 5,
+      "ranged": 1
+    }
+  }
+}
