@@ -15,8 +15,8 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
   - **Super** TUSKQUAKE: quake, scale 1150 pm, +2 speed for 120 ticks (`src/core/data/arcade-supers.ts`).
 - **Kit line (plan):** Tusk Gore keeps the ground lunge + Bristle Stomp; Mudslick (slide) later.
 - **2v2 win rate** (docs/BALANCE.md:307, SIM_VERSION 78): 50.3. Re-measure at the current SIM_VERSION before acting.
-- **Art status:** base rejected twice by the art-director (rule 13 ladder: free asset + regrade, then i2i/ControlNet, then procedural; no more t2i seeds). Art comes from session tte-art-gpu-server; the art-director `approval.json` is the gate (`.claude/rules/art-autonomy.md`). `public/assets` holds the 2026-11-16 art (sheet, map strips; scrapped by the owner, still in the manifest); no sheet-level approval exists for any roster24 hero, and the WP-0c audit gate is not defined yet.
-- **Release blockers:** WP-0; art ladder (no approved base); AI rule (none). Every flip also needs WP-0 and the WP-0c audit gate.
+- **Art status:** base approved by the art-director 2026-11-23 (seed 120651, regrade 3, overall 4.0, beats shipped) and the baked sheets and map strip approved the same day (APPROVE 4.0; `tools/assets/portrait-rig/provenance/durrok-approval.json`). Art comes from session tte-art-gpu-server; the art-director `approval.json` is the gate (`.claude/rules/art-autonomy.md`). `public/assets` holds the 2026-11-16 art (sheet, map strips; scrapped by the owner, still in the manifest); the WP-0c audit gate is not defined yet.
+- **Release blockers:** WP-0; AI rule (none); art approved (base and bake). Every flip also needs WP-0 and the WP-0c audit gate.
 
 ## WP checklist
 

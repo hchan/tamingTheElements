@@ -15,8 +15,8 @@ Part of [roster-24-heroes](roster-24-heroes.md). Plan: `.scratch/plans/roster24-
   - **Super** STORM BLOOM: vortex, 25 ticks of root (`src/core/data/arcade-supers.ts`).
 - **Kit line (plan):** Stinging Filament (venom) + Bell Pulse (AI omni rule exists); Drifting Polyp (silence) later. Kit steps 1-5 of the plan can run now although art is blocked.
 - **2v2 win rate** (docs/BALANCE.md:307, SIM_VERSION 78): 50.1. Re-measure at the current SIM_VERSION before acting.
-- **Art status:** base rejected twice by the art-director (rule 13 ladder); box is non-square 100x160. Art comes from session tte-art-gpu-server; the art-director `approval.json` is the gate (`.claude/rules/art-autonomy.md`). `public/assets` holds the 2026-11-16 art (sheet, map strips; scrapped by the owner, still in the manifest); no sheet-level approval exists for any roster24 hero, and the WP-0c audit gate is not defined yet.
-- **Release blockers:** WP-0; art ladder (no approved base). Every flip also needs WP-0 and the WP-0c audit gate.
+- **Art status:** matte hyalia-96433 approved by the art-director 2026-11-20 (provenance/hyalia-approval.json); baked-sheet verdict still open (that file says NOT YET REVIEWED; hyalia-bake-approval.json holds a rig approval of contact.png with no overall score); box is non-square 100x160. Art comes from session tte-art-gpu-server; the art-director `approval.json` is the gate (`.claude/rules/art-autonomy.md`). `public/assets` holds the 2026-11-16 art (sheet, map strips; scrapped by the owner, still in the manifest); no sheet-level approval exists for any roster24 hero, and the WP-0c audit gate is not defined yet.
+- **Release blockers:** WP-0; baked-sheet verdict with an overall score. Every flip also needs WP-0 and the WP-0c audit gate.
 
 ## WP checklist
 
