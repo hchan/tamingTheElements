@@ -21,6 +21,7 @@ describe('super cut-in gate', () => {
     expect(shouldCutin(undefined, '?ff=roster24', true)).toBe(false);
     expect(shouldCutin('glimmaw', '', true)).toBe(false);
     expect(shouldCutin('zephra', '', false)).toBe(true); // released: no flag needed
+    expect(shouldCutin('vortigal', '', false)).toBe(true);
     expect(shouldCutin('glimmaw', '?ff=roster24', false)).toBe(false);
   });
 
