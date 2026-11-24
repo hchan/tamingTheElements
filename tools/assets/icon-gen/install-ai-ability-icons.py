@@ -16,7 +16,7 @@ SLOTS = ["ember_bite", "gale_talon", "tide_surge", "hurl_rock", "lure_orb",
          "mycelium_mend", "stinging_filament", "stoop", "forge_gore", "tusk_gore", "boulder_roll",
          "kelp_lash", "molten_hide", "whirlpool", "bell_pulse", "heal_spring", "scorch_breath", "wyrm_coil", "spore_burst",
          "cinder_spray", "static_mote", "quake", "mist_veil", "kelp_whip", "gust", "bristle_stomp",
-         "wind_wall", "talon_rake", "skitter", "abyssal_pull"]
+         "wind_wall", "talon_rake", "skitter", "abyssal_pull", "abyss_flash"]
 # Slots whose art carries a third-party credit (written to CREDITS.txt and the icon's index entry).
 THIRD_PARTY = {
     "talon_rake": "Talon Rake: glyph \"Triple scratches\" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), "
