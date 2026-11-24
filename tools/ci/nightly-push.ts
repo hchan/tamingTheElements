@@ -75,8 +75,13 @@ export interface PushStatus {
   readonly blockers: readonly string[];
   /** Commits on main after the tested sha that stayed local (untested); 0 when main is the tested sha. */
   readonly untestedLocal?: number;
+  /** Last lines of the failed `gate:commit` output (what went red), so a blocked night explains itself. */
+  readonly gateTail?: readonly string[];
   readonly finishedAt: string;
 }
+
+/** Lines of a failed gate:commit kept in the push status. */
+export const GATE_TAIL_LINES = 15;
 
 export const pushStatusPath = (dir: string): string => join(dir, 'nightly-push-status.json');
 
@@ -84,7 +89,8 @@ export function describePush(s: PushStatus | undefined): string[] {
   if (!s) return [];
   const head = `nightly clean push (${s.finishedAt}): ${s.verdict} run at ${s.sha.slice(0, 7)}`;
   const kept = s.untestedLocal ? [`  - ${s.untestedLocal} untested commit(s) on main stayed local`] : [];
-  return s.pushed ? [`${head}: pushed main to origin/main (tested commit)`, ...kept] : [`${head}: not pushed`, ...s.blockers.map((b) => `  - ${b}`), ...kept];
+  const tail = (s.gateTail ?? []).map((l) => `    | ${l}`);
+  return s.pushed ? [`${head}: pushed main to origin/main (tested commit)`, ...kept] : [`${head}: not pushed`, ...s.blockers.map((b) => `  - ${b}`), ...tail, ...kept];
 }
 
 export function readPushStatus(dir: string): PushStatus | undefined {
@@ -104,8 +110,10 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
   const git = (...a: string[]): { code: number; stdout: string } => d.run('git', a, d.repo, d.env);
   const verdict = nightVerdict(st);
   let untested = 0;
+  let gateTail: string[] = [];
+  const tailOf = (r: { stdout: string; stderr: string }): string[] => `${r.stdout}\n${r.stderr}`.split('\n').filter((l) => l.trim() !== '').slice(-GATE_TAIL_LINES);
   const finish = (pushed: boolean, blockers: string[]): number => {
-    const s: PushStatus = { schema: 1, verdict, sha: st.sha, pushed, blockers, untestedLocal: untested, finishedAt: d.now().toISOString() };
+    const s: PushStatus = { schema: 1, verdict, sha: st.sha, pushed, blockers, untestedLocal: untested, ...(gateTail.length ? { gateTail } : {}), finishedAt: d.now().toISOString() };
     mkdirSync(d.statusDir, { recursive: true });
     writeFileSync(pushStatusPath(d.statusDir), `${JSON.stringify(s, null, 2)}\n`);
     for (const l of describePush(s)) d.out(`${l}\n`);
@@ -139,16 +147,19 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
   const gateEnv = noPushEnv(d.env);
   let gateOk: boolean;
   if (head() === tested) {
-    gateOk = d.run('corepack', ['pnpm', 'gate:commit'], d.repo, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0;
+    const g = d.run('corepack', ['pnpm', 'gate:commit'], d.repo, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now()));
+    gateOk = g.code === 0;
+    if (!gateOk) gateTail = tailOf(g);
   } else {
     // Main moved on: gate the tested tree in a throwaway detached worktree, so the live checkout is never touched.
     const wt = join(d.repo, '.scratch', `nightly-push-gate-${tested.slice(0, 12)}`);
     mkdirSync(join(d.repo, '.scratch'), { recursive: true });
     try {
-      gateOk =
-        d.run('git', ['worktree', 'add', '--detach', wt, tested], d.repo, d.env).code === 0 &&
-        d.run('corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0 &&
-        d.run('corepack', ['pnpm', 'gate:commit'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0;
+      const add = d.run('git', ['worktree', 'add', '--detach', wt, tested], d.repo, d.env);
+      const inst = add.code === 0 ? d.run('corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())) : add;
+      const g = inst.code === 0 ? d.run('corepack', ['pnpm', 'gate:commit'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())) : inst;
+      gateOk = g.code === 0;
+      if (!gateOk) gateTail = tailOf(g);
     } finally {
       d.run('git', ['worktree', 'remove', '--force', wt], d.repo, d.env);
     }

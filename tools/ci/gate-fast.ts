@@ -1,6 +1,6 @@
 /**
  * `pnpm gate:fast [--base <ref>]`: the per-merge check (owner, 2026-11-21). Lint of the changed files, typecheck, depcruise,
- * the dom project and the core/repo tests affected by the change (`vitest --changed <base>`, default HEAD~1). It writes no
+ * the dom project and the core tests affected by the change (`vitest --changed <base>`, default HEAD~1) and, when any changed path is outside src/, the whole repo project (pin tests read files by path). It writes no
  * stamp: the full `gate:commit` (all tests, legacy, build, size) runs nightly before the 02:00 push job, which keeps its own
  * `gate:commit` on main. Docs/TESTING.md "Fast gate".
  */
@@ -13,6 +13,11 @@ const LINTABLE = /\.(ts|tsx|mts|cjs|js|mjs)$/;
 export function fastLintFiles(changed: readonly string[], exists: (p: string) => boolean): string[] | undefined {
   if (changed.some((p) => /^(eslint\.config|tsconfig|package\.json|pnpm-lock)/.test(p))) return undefined;
   return changed.filter((p) => LINTABLE.test(p) && exists(p));
+}
+
+/** The repo project holds pin tests that read files by path (docs, tools, assets, fixtures), which `--changed` cannot trace, so any change outside src/ runs it in full (owner, 2026-11-24). */
+export function repoNeedsFull(changed: readonly string[]): boolean {
+  return changed.some((p) => !p.startsWith('src/'));
 }
 
 export function parseBase(argv: readonly string[]): string {
@@ -39,7 +44,12 @@ async function main(): Promise<number> {
     run('typecheck', ['typecheck']),
     run('depcruise', ['depcruise']),
     run('test:dom', ['exec', 'vitest', 'run', '--project', 'dom']),
-    run('test:changed', ['exec', 'vitest', 'run', '--project', 'core', '--project', 'repo', '--changed', base, '--passWithNoTests']),
+    repoNeedsFull(changed)
+      ? Promise.all([
+          run('test:core', ['exec', 'vitest', 'run', '--project', 'core', '--changed', base, '--passWithNoTests']),
+          run('test:repo', ['exec', 'vitest', 'run', '--project', 'repo']),
+        ]).then(([a, b]) => ({ name: 'test', code: a.code || b.code, sec: Math.max(a.sec, b.sec), out: a.out + b.out }))
+      : run('test:changed', ['exec', 'vitest', 'run', '--project', 'core', '--project', 'repo', '--changed', base, '--passWithNoTests']),
   ];
   const results = await Promise.all(steps);
   let bad = 0;

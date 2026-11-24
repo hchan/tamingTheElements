@@ -117,7 +117,7 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
         if (line.startsWith('git worktree')) return ok();
         if (line === 'corepack pnpm gate:commit') {
           expect(env['GIT_CONFIG_VALUE_0']).toBe('disabled:');
-          return ok('', n.gate ?? 0);
+          return { code: n.gate ?? 0, stdout: n.gate ? 'x\nFAIL tests/repo/pin.test.ts\n' : '', stderr: '' };
         }
         if (cmd === 'claude') throw new Error('no fix round expected');
         return ok();
@@ -136,6 +136,11 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     expect(pushStatus()).toMatchObject({ verdict: 'green', pushed: true, blockers: [] });
     expect(out).toContain('pushed main to origin/main');
     expect(calls.filter((c) => c.startsWith('gh '))).toEqual(['gh workflow run ci.yml --ref main']);
+  });
+  it('a red gate:commit keeps the output tail in the status and the report', () => {
+    main(['collect-and-fix'], deps({ gate: 1 }));
+    expect(pushStatus().gateTail).toContain('FAIL tests/repo/pin.test.ts');
+    expect(out).toContain('| FAIL tests/repo/pin.test.ts');
   });
   it('a blocked night dispatches no Pages build', () => {
     expect(main(['collect-and-fix'], deps({ ahead: '0' }))).toBe(0);
