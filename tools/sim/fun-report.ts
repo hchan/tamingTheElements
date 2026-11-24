@@ -1,11 +1,11 @@
 // `pnpm fun:report`: plays AI-vs-AI matches and prints the fun metrics of docs/FUN-DESIGN.md section 4.
-//   pnpm fun:report [--ruleset arcade] [--team-size 1|2] [--seeds 2] [--seed 1] [--level 1] [--all] [--json]
+//   pnpm fun:report [--ruleset arcade] [--team-size 1|2] [--seeds 2] [--seed 1] [--level 1] [--roster legacy|released|full] [--all] [--json]
 // By default a sample of RACES.length pairings (each race against the next); --all plays all 66. Writes out/fun-report.json.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { type FunSummary, summarizeFun } from './fun-metrics';
-import { RACES, type Ruleset, parseRuleOptions, runPairing } from './run-match';
+import { FULL_RACES, RACES, RELEASED_RACES, type Ruleset, parseRuleOptions, runPairing } from './run-match';
 
 export interface FunReportOptions {
   readonly ruleset: Ruleset;
@@ -15,6 +15,20 @@ export interface FunReportOptions {
   readonly seed: number;
   readonly level: number;
   readonly all: boolean;
+  /** Hero set the pairings and 2v2/3v3 partners run over; absent = legacy 12 (the fun-gates.json bands are calibrated to it). */
+  readonly roster?: RosterName;
+}
+
+export type RosterName = 'legacy' | 'released' | 'full';
+
+export function rosterRaces(roster: RosterName | undefined): readonly string[] {
+  return roster === 'full' ? FULL_RACES : roster === 'released' ? RELEASED_RACES : RACES;
+}
+
+export function parseRoster(s: string | undefined): RosterName | undefined {
+  if (s === undefined) return undefined;
+  if (s !== 'legacy' && s !== 'released' && s !== 'full') throw new Error(`--roster must be legacy|released|full, got "${s}"`);
+  return s;
 }
 
 export interface FunReport {
@@ -26,16 +40,17 @@ export interface FunReport {
 /** Scripted vs scripted; every pairing alternates sides on odd seeds (see run-match). Classic matches carry no fun metrics. */
 export function funReport(o: FunReportOptions): FunReport {
   const pairs: [string, string][] = [];
-  RACES.forEach((a, i) => {
-    if (o.all) RACES.slice(i + 1).forEach((b) => pairs.push([a, b]));
-    else pairs.push([a, RACES[(i + 1) % RACES.length] ?? a]);
+  const races = rosterRaces(o.roster);
+  races.forEach((a, i) => {
+    if (o.all) races.slice(i + 1).forEach((b) => pairs.push([a, b]));
+    else pairs.push([a, races[(i + 1) % races.length] ?? a]);
   });
   const all = [];
   const rows = [];
   for (const [a, b] of pairs) {
     const { summary, results } = runPairing({
       a, b, agents: ['scripted', 'scripted'], seeds: o.seeds, seed: o.seed, level: o.level, difficulty: 1,
-      ruleset: o.ruleset, teamSize: o.teamSize, aiLevel: o.aiLevel,
+      ruleset: o.ruleset, teamSize: o.teamSize, aiLevel: o.aiLevel, ...(o.roster === undefined ? {} : { races }),
     });
     const fun = results.flatMap((r) => (r.fun === undefined ? [] : [r.fun]));
     all.push(...fun);
@@ -55,7 +70,7 @@ export function raceWinRates(r: FunReport): Record<string, number> {
     }
   }
   return Object.fromEntries(
-    RACES.flatMap((race) => {
+    rosterRaces(r.options.roster).flatMap((race) => {
       const row = score.get(race);
       return row === undefined || row[1] === 0 ? [] : [[race, Math.round((row[0] / row[1]) * 1000) / 1000]];
     }),
@@ -123,13 +138,14 @@ export function main(argv: readonly string[]): number {
       args: [...argv],
       options: {
         ruleset: { type: 'string' }, 'team-size': { type: 'string' }, 'ai-level': { type: 'string' },
-        seeds: { type: 'string' }, seed: { type: 'string' }, level: { type: 'string' },
+        roster: { type: 'string' }, seeds: { type: 'string' }, seed: { type: 'string' }, level: { type: 'string' },
         all: { type: 'boolean' }, json: { type: 'boolean' },
       },
     });
     const rules = parseRuleOptions(values.ruleset ?? 'arcade', values['team-size'], values['ai-level']);
     const report = funReport({
       ...rules, seeds: Number(values.seeds ?? 2), seed: Number(values.seed ?? 1), level: Number(values.level ?? 1), all: values.all === true,
+      ...(values.roster === undefined ? {} : { roster: parseRoster(values.roster) }),
     });
     mkdirSync('out', { recursive: true });
     writeFileSync('out/fun-report.json', JSON.stringify(report, null, 2));

@@ -5,7 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, RACES, RELEASED_RACES, runTournament, type TournamentSummary } from './run-match';
+import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, FULL_RACES, RACES, RELEASED_RACES, runTournament, type TournamentSummary } from './run-match';
 import { formatStyleDeltas, type StyleSummary, styleGateFindings } from './style-summary';
 
 /** Parameters of the full tournament recorded in the baseline. Changing them means re-recording the baseline. */
@@ -30,7 +30,13 @@ export const ARCADE_PARAMS = { ...FULL_PARAMS, maxTicks: ARCADE_MAX_TICKS, rules
  */
 export const ARCADE_2V2_PARAMS = { ...ARCADE_PARAMS, seeds: 8, maxTicks: ARCADE_MAX_TICKS * 2, teamSize: 2 } as const;
 
-export type BalanceParams = typeof FULL_PARAMS | typeof ARCADE_PARAMS | typeof ARCADE_2V2_PARAMS;
+/**
+ * The report-only full-roster Arcade 1v1 tournament (`--roster full`): all 24 non-void heroes, hidden ones included. A separate
+ * object so the three released-set params above (serialized and pinned by tests) stay as they are.
+ */
+export const ARCADE_FULL_PARAMS = { ...ARCADE_PARAMS, roster: 'full' } as const;
+
+export type BalanceParams = typeof FULL_PARAMS | typeof ARCADE_PARAMS | typeof ARCADE_2V2_PARAMS | typeof ARCADE_FULL_PARAMS;
 
 /** A race may move by at most this much (absolute, 0.05 = 5 percentage points) before the compare fails. */
 export const DEFAULT_TOLERANCE = 0.05;
@@ -39,6 +45,8 @@ export const BASELINE_PATH = 'tests/fixtures/balance/baseline.json';
 export const ARCADE_BASELINE_PATH = 'tests/fixtures/balance/arcade-baseline.json';
 
 export const ARCADE_2V2_BASELINE_PATH = 'tests/fixtures/balance/arcade-2v2-baseline.json';
+
+export const ARCADE_FULL_BASELINE_PATH = 'tests/fixtures/balance/arcade-full-baseline.json';
 
 export interface BalanceReport {
   readonly params: BalanceParams;
@@ -107,7 +115,7 @@ export function main(argv: readonly string[]): number {
       args: [...argv],
       options: {
         record: { type: 'boolean' }, out: { type: 'string' }, baseline: { type: 'string' }, tolerance: { type: 'string' },
-        ruleset: { type: 'string' }, 'team-size': { type: 'string' },
+        ruleset: { type: 'string' }, 'team-size': { type: 'string' }, roster: { type: 'string' },
       },
     });
     if (values.ruleset !== undefined && values.ruleset !== 'classic' && values.ruleset !== 'arcade') {
@@ -117,12 +125,18 @@ export function main(argv: readonly string[]): number {
     const teamSize = values['team-size'] ?? '1';
     if (teamSize !== '1' && teamSize !== '2') throw new Error('--team-size must be 1 or 2');
     if (teamSize === '2' && !arcade) throw new Error('--team-size 2 needs --ruleset arcade');
+    if (values.roster !== undefined && values.roster !== 'default' && values.roster !== 'full') {
+      throw new Error(`--roster must be default|full, got "${values.roster}"`);
+    }
+    const full = values.roster === 'full';
+    if (full && (!arcade || teamSize !== '1')) throw new Error('--roster full needs --ruleset arcade and team size 1');
     const tag = arcade && teamSize === '2';
-    const params = tag ? ARCADE_2V2_PARAMS : arcade ? ARCADE_PARAMS : FULL_PARAMS;
-    const baselinePath = values.baseline ?? (tag ? ARCADE_2V2_BASELINE_PATH : arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
+    const params = full ? ARCADE_FULL_PARAMS : tag ? ARCADE_2V2_PARAMS : arcade ? ARCADE_PARAMS : FULL_PARAMS;
+    const baselinePath =
+      values.baseline ?? (full ? ARCADE_FULL_BASELINE_PATH : tag ? ARCADE_2V2_BASELINE_PATH : arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
     const tolerance = values.tolerance === undefined ? DEFAULT_TOLERANCE : Number(values.tolerance);
     if (!Number.isFinite(tolerance) || tolerance < 0) throw new Error('--tolerance must be a non-negative number');
-    const current = toReport(runTournament(params, arcade ? RELEASED_RACES : RACES, true), params);
+    const current = toReport(runTournament(params, full ? FULL_RACES : arcade ? RELEASED_RACES : RACES, true), params);
     if (values.record === true) {
       mkdirSync(dirname(baselinePath), { recursive: true });
       writeFileSync(baselinePath, `${JSON.stringify(current, null, 2)}\n`);
@@ -145,13 +159,13 @@ export function main(argv: readonly string[]): number {
       writeFileSync(values.out, `${JSON.stringify({ tolerance, failed, baseline: base, current, deltas: rows }, null, 2)}\n`);
     }
     if (failed) {
-      const record = `pnpm balance:record${tag ? ' --ruleset arcade --team-size 2' : arcade ? ' --ruleset arcade' : ''}`;
+      const record = `pnpm balance:record${full ? ' --ruleset arcade --roster full' : tag ? ' --ruleset arcade --team-size 2' : arcade ? ' --ruleset arcade' : ''}`;
       console.error(`Balance moved beyond tolerance. If intended, run \`${record}\` and say why in the commit.`);
     }
     return failed ? 1 : 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm balance:compare [--ruleset classic|arcade] [--team-size 1|2] [--out report.json] [--tolerance 0.05] | pnpm balance:record [--ruleset classic|arcade] [--team-size 1|2]');
+    console.error('usage: pnpm balance:compare [--ruleset classic|arcade] [--team-size 1|2] [--roster default|full] [--out report.json] [--tolerance 0.05] | pnpm balance:record [--ruleset classic|arcade] [--team-size 1|2]');
     return 2;
   }
 }
