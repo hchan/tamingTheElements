@@ -84,6 +84,17 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
   });
 });
 
+describe('SIM_VERSION 113 1v1 life cut keeps team life', () => {
+  it('brazgor and ouroth 1v1 life dropped while 2v2/3v3 team life is the v112 value', () => {
+    expect(arcadeLifePm(arcadeRaceNumbers('brazgor')[0], 1, 'brazgor')).toBe(4030);
+    expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 1, 'ouroth')).toBe(6031);
+    expect(arcadeLifePm(arcadeRaceNumbers('brazgor')[0], 3, 'brazgor')).toBe(2297);
+    expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 3, 'ouroth')).toBe(3787);
+    expect(arcadeLifePm(arcadeRaceNumbers('brazgor')[0], 2, 'brazgor')).toBe(2986);
+    expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 2, 'ouroth')).toBe(4923);
+  });
+});
+
 describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
   it('leaves a 1v1 life alone and scales a two-hero roster by the per-race table, within sane bounds', () => {
     for (const race of PLAYABLE) {

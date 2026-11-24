@@ -17,6 +17,8 @@ describe('victory still gate', () => {
     expect(victoryStillFor('durrok', true, '', false, '/')).toBe('/assets/img/victory/durrok_victory.png');
     expect(victoryStillFor('glimmaw', true, '', false, '/')).toBe('/assets/img/victory/glimmaw_victory.png');
     expect(victoryStillFor('hyalia', true, '', false, '/')).toBe('/assets/img/victory/hyalia_victory.png');
+    expect(victoryStillFor('brazgor', true, '', false, '/')).toBe('/assets/img/victory/brazgor_victory.png');
+    expect(victoryStillFor('ouroth', true, '', false, '/')).toBe('/assets/img/victory/ouroth_victory.png');
     expect(victoryStillFor('fiara', true, '?ff=roster24', true, '/')).toBeNull();
   });
   it('honours a base path', () => {
