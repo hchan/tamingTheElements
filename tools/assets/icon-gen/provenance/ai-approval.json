@@ -178,5 +178,11 @@
     "reviewer": "art-director",
     "date": "2026-11-23",
     "beats_shipped": true
+  },
+  "abyss_flash": {
+    "approved": "abyss_flash.png",
+    "reviewer": "art-director",
+    "date": "2026-11-23",
+    "beats_shipped": true
   }
 }

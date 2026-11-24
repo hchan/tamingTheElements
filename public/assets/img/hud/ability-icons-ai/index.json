@@ -422,6 +422,20 @@
         "beats_shipped": true,
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
+    },
+    "abyss_flash": {
+      "url": "img/hud/ability-icons-ai/abyss_flash.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "be854a39d640db927c99d544a59d0f2dd5097b6e959ee5733658db657625831a",
+      "source": "abyss_flash.png",
+      "approval": {
+        "approved": "abyss_flash.png",
+        "reviewer": "art-director",
+        "date": "2026-11-23",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
     }
   }
 }
