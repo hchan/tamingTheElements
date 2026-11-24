@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { POP_SCALE, VICTORY_HEROES, victoryFlashFor, victoryFlashFrames, victoryStillFor, victoryStillUrl } from './victory-still';
+import { ELEMENT_COLORS } from './element-colors';
+import { POP_SCALE, flashElementOf, VICTORY_HEROES, victoryFlashFor, victoryFlashFrames, victoryStillFor, victoryStillUrl } from './victory-still';
 
 describe('victory still gate', () => {
   it('covers the eleven approved roster24 heroes', () => {
@@ -32,5 +33,15 @@ describe('victory flash fallback (no still)', () => {
     const f = victoryFlashFrames();
     expect(POP_SCALE).toBeCloseTo(1.06);
     expect(f.map((k) => k.transform)).toEqual(['scale(1)', 'scale(1.06)', 'scale(1)']);
+  });
+  it('tints the flash by the hero element: Quarrak is earth, so the earth colour and not the old gold', () => {
+    expect(flashElementOf('quarrak')).toBe('earth');
+    const earth = `#${ELEMENT_COLORS.earth.toString(16)}`;
+    const f = victoryFlashFrames(flashElementOf('quarrak'));
+    for (const k of [f[0], f[1]]) {
+      expect(String(k?.['filter'])).toContain(earth);
+      expect(String(k?.['filter'])).not.toContain('#ffe600');
+    }
+    expect(String(victoryFlashFrames('water')[0]?.['filter'])).not.toContain(earth);
   });
 });

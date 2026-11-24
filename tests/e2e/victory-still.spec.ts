@@ -52,6 +52,11 @@ test('quarrak wins the match: no still is fetched and the portrait gets the win 
   }
   await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
   await expect(page.locator('#arcadeResults .matchEndMain .matchEndFace')).toHaveAttribute('data-victory-flash', 'quarrak');
+  await expect(page.locator('#arcadeResults .matchEndMain .matchEndFace')).toHaveAttribute('data-victory-flash-element', 'earth');
+  if (SHOT_DIR) {
+    mkdirSync(SHOT_DIR, { recursive: true });
+    await page.screenshot({ path: `${SHOT_DIR}/quarrak-flash.png` });
+  }
   await expect(page.locator('#arcadeResults .matchEndStill')).toHaveCount(0);
   expect(stillRequests).toEqual([]);
   expect(errors).toEqual([]);

@@ -1,4 +1,6 @@
+import { CHARACTERS, characterId, type Element } from '@core/index';
 import { cutinFlagOn } from './cutin-gate';
+import { ELEMENT_COLORS } from './element-colors';
 
 /**
  * The roster24 victory still (public/assets/img/victory/<hero>_victory.png, installed by tools/assets/victory-gen/victory-key.py) on
@@ -41,21 +43,32 @@ export function victoryFlashFor(hero: string, won: boolean, search: string, devB
   return won && !reducedMotion && FLASH_HEROES.has(hero) && !VICTORY_HEROES.has(hero) && cutinFlagOn(search, devBuild);
 }
 
-/** Keyframes for the winner portrait: a brief white-gold glow that fades while the card pops to POP_SCALE and settles. */
-export function victoryFlashFrames(): Keyframe[] {
+/** The hero's element (Quarrak is earth); void for an unknown slug. */
+export function flashElementOf(hero: string): Element {
+  const id = characterId(hero);
+  return CHARACTERS.find((c) => c.id === id)?.element ?? 'void';
+}
+
+const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
+
+/** Keyframes for the winner portrait: a brief glow in the hero's element colour (ELEMENT_COLORS) that fades while the card pops to POP_SCALE and settles. */
+export function victoryFlashFrames(element: Element = 'void'): Keyframe[] {
+  const c = css(ELEMENT_COLORS[element]);
   return [
-    { transform: 'scale(1)', filter: 'brightness(2.2) drop-shadow(0 0 18px #fff6c0)', offset: 0 },
-    { transform: `scale(${String(POP_SCALE)})`, filter: 'brightness(1.4) drop-shadow(0 0 12px #ffe600)', offset: 0.35 },
+    { transform: 'scale(1)', filter: `brightness(1.9) drop-shadow(0 0 18px ${c})`, offset: 0 },
+    { transform: `scale(${String(POP_SCALE)})`, filter: `brightness(1.35) drop-shadow(0 0 12px ${c})`, offset: 0.35 },
     { transform: 'scale(1)', filter: 'brightness(1) drop-shadow(0 0 0 transparent)', offset: 1 },
   ];
 }
 
-/** Plays the flash on the winner card's portrait (`.matchEndFace`). */
+/** Plays the flash on the winner card's portrait (`.matchEndFace`), tinted by the hero's element. */
 export function applyVictoryFlash(root: HTMLElement, hero: string): void {
   const face = root.querySelector<HTMLElement>('.matchEndMain .matchEndFace');
   if (!face || typeof face.animate !== 'function') return;
+  const element = flashElementOf(hero);
   face.dataset['victoryFlash'] = hero;
-  face.animate(victoryFlashFrames(), { duration: FLASH_MS, easing: 'ease-out' });
+  face.dataset['victoryFlashElement'] = element;
+  face.animate(victoryFlashFrames(element), { duration: FLASH_MS, easing: 'ease-out' });
 }
 
 /** Entry for the result screen: does nothing unless the gate passes. */
