@@ -45,12 +45,14 @@
   "facing": "right"
  },
  "vortigal_victory": {
-  "approved": "out/r979-vortigal-win_97903_d0.35.png",
+  "approved": "vortigal_win.png (sheet_cpu2.png)",
+  "verdict": "APPROVE",
   "reviewer": "art-director",
   "date": "2026-11-23",
   "beats_shipped": true,
-  "source": "r979-vortigal-win_97903_d0.35.png",
-  "facing": "right"
+  "source": "vortigal_win.png",
+  "facing": "right",
+  "note": "CPU warp vortigal3.py + lcc.py (cpu-warp/); art-director 2026-11-23 sheet_cpu2.png (score 4.5 per coordinator); replaces r979 i2i, kept as history"
  },
  "zephra_victory": {
   "approved": "out/r978-zephra-win2_97810_d0.2.png",
@@ -88,13 +90,13 @@
   "note": "f563-565-approval.json abyssor_victory: approved d0.4 (not f542, whose abyssor r821 was a REJECT: crab/fish redesign)"
  },
  "durrok_victory": {
-  "approved": "out/durrok_vic_i2i_r992_99200_d0.2.png",
+  "approved": "durrok_win.png (sheet_cpu2.png)",
   "verdict": "APPROVE",
   "reviewer": "art-director",
   "date": "2026-11-23",
   "beats_shipped": true,
-  "source": "r992-durrok-vic_99200_d0.2.png",
+  "source": "durrok_win.png",
   "facing": "right",
-  "note": "r992 approval.json durrok_victory (overall 4.2). i2i d0.2 seed 99200 from the CPU warp durrok_win3.png (durrok-120651-rg3.png, trunk raised, one forefoot lifted); chest-notch clone-out not applied"
+  "note": "CPU warp durrok3.py + lcc.py (cpu-warp/); art-director 2026-11-23 sheet_cpu2.png (score 4 per coordinator); replaces r992 i2i, kept as history"
  }
 }

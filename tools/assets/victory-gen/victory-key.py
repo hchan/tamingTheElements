@@ -3,7 +3,7 @@
 Usage: python -I tools/assets/victory-gen/victory-key.py [outdir]   (default public/assets/img/victory)
 Reads each source named in HEROES from tools/assets/victory-gen/provenance/ (approval and facing in provenance/approval.json, sha256 pinned in
 tests/repo/victory-frames.test.ts), writes <outdir>/<hero>_victory.png. Sources are 1024x1024 on flat grey, except kindrel's, which is already a
-transparent cut-out (only cropped and scaled). brazgor/nykra/hyalia come from the wave-B warps (wb.py, then fix.py cleaned backdrop residue; both
+transparent cut-out (only cropped and scaled). durrok and vortigal are CPU warps (cpu-warp/, not rerun here). brazgor/nykra/hyalia come from the wave-B warps (wb.py, then fix.py cleaned backdrop residue; both
 kept here as the record, they need the private warp workspace and are not rerun by the installer).
 Steps: flood-fill the grey background from the four corners (tolerance 14), erode the matte 1 px and feather it 1 px, crop to the
 body plus a 12 px margin, scale to fit the 320x314 map-portrait box (same scale class as map/glimmawLarge.png and the KO frame).
@@ -21,14 +21,14 @@ HEROES = {
     "glimmaw": "r971-glimmaw-vic_60160_d0.35.png",
     "brazgor": "brazgor_win.png",
     "kindrel": "kindrel_win.png",
-    "vortigal": "r979-vortigal-win_97903_d0.35.png",
+    "vortigal": "vortigal_win.png",
     "zephra": "r978-zephra-win2_97810_d0.2.png",
     "nykra": "nykra_win.png",
     "hyalia": "hyalia_win.png",
     "ouroth": "r821-ouroth-vic_59822_d0.45.png",
     "umbrel": "r805-umbrel-victory_58210_d0.5.png",
     "abyssor": "r842-abyssor-vic_61100_d0.4.png",
-    "durrok": "r992-durrok-vic_99200_d0.2.png",
+    "durrok": "durrok_win.png",
 }
 TOL, MARGIN, BOX = 14, 12, (320, 314)
 KEY = (255, 0, 255)
