@@ -6,7 +6,7 @@ Reads public/assets/img/map/<hero>Large.png (read-only), writes
 Per-hero KO (art-director verdict 2026-11-20): fiara = flame-collapse (y 0.35,
 ember red, faded tongues, sparks, scorch decal); treenoc = topple about the root
 base (-80 deg then +4 settle, no squash); pax = same rotate, dropped to touch the
-shadow; glimmaw unchanged. Every hero anchors at floor contact.
+shadow; glimmaw = approved turtle cutout flipped (see R24_MODE). Every hero anchors at floor contact.
 Base recipe: rotate -78 deg, y-squash 0.9, desaturate 25%, darken 15%,
 soft ground shadow. Output canvas is padded so the whole body keeps a margin.
 """
@@ -20,13 +20,14 @@ HEROES = ["glimmaw", "treenoc", "pax", "brazgor", "kindrel", "durrok", "hyalia",
 ANGLE, SQUASH, DESAT, DARK, MARGIN = -78, 0.9, 0.25, 0.15, 24
 # Roster24 stills start from the rig's own source painting (the map/*Large.png of some of them is an older design): hero -> mode.
 PORTRAIT_SRC = ROOT / "imgWorkArea/portrait-src"
-# umbrel is parked (art-director 2026-11-23: its cutout has a torn cap rim and gill holes; needs a cleaned source, not a warp).
+# glimmaw: the approved turtle cutout, flipped onto its shell and leaned +18 so the shell rests on the shadow (lean -7 left it floating).
 R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip", "hyalia": "flip", "nykra": "tip", "zephra": "tip", "abyssor": "tip",
-            "quarrak": "flip", "umbrel": "tip"}
+            "quarrak": "flip", "umbrel": "tip", "glimmaw": "flip"}
 # Heroes whose source is an art-director-approved rig-matching RGBA cutout (committed under sources/, provenance in sources/approval*.json).
 SOURCES = Path(__file__).resolve().parent / "sources"
-TIP_PARAMS = {"nykra": (-145, 0.7, 2), "umbrel": (-85, 0.85, 6)}  # angle, y-squash, sink
-CUTOUTS = {"quarrak": "quarrak-96214-cut.png", "umbrel": "umbrel-96104-cut2.png", "nykra": "nykra-94301-cut5.png"}
+TIP_PARAMS = {"nykra": (-100, 0.85, 2), "umbrel": (-90, 0.8, 4)}  # angle, y-squash, sink
+FLIP_LEAN = {"glimmaw": 18}  # degrees; default -7
+CUTOUTS = {"quarrak": "quarrak-96214-cut.png", "umbrel": "umbrel-96104-cut2.png", "nykra": "nykra-94301-cut5.png", "glimmaw": "glimmaw-96303-cut.png"}
 
 
 def stage(body: Image.Image, sink: int = 2, scorch: bool = False) -> Image.Image:
@@ -100,14 +101,14 @@ def ko_treenoc(src: Image.Image, angle: int = -80) -> Image.Image:
     return stage(rot, sink=2)
 
 
-def ko_flip(src: Image.Image, sink: int = 2) -> Image.Image:
+def ko_flip(src: Image.Image, sink: int = 2, lean: int = -7) -> Image.Image:
     """Quadruped KO: rolled onto its back, legs in the air (a vertical flip about the floor line, small lean, y-squash), tinted."""
     im = src.convert("RGBA")
     im = im.crop(im.getbbox())
     flipped = im.transpose(Image.FLIP_TOP_BOTTOM)
     pad = Image.new("RGBA", (flipped.width + 120, flipped.height + 120))
     pad.paste(flipped, (60, 60))
-    rot = pad.rotate(-7, resample=Image.BICUBIC, expand=True)
+    rot = pad.rotate(lean, resample=Image.BICUBIC, expand=True)
     rot = rot.crop(rot.getbbox())
     rot = rot.resize((rot.width, round(rot.height * 0.82)), Image.LANCZOS)
     return stage(tint(rot, 0.22, 0.14), sink=sink)
@@ -140,7 +141,7 @@ def ko_tip(src: Image.Image, angle: int = -75, sy: float = 0.85, sink: int = 2) 
 
 def ko_frame(src: Image.Image, hero: str = "") -> Image.Image:
     if R24_MODE.get(hero) == "flip":
-        return ko_flip(src, 2)
+        return ko_flip(src, 2, FLIP_LEAN.get(hero, -7))
     if R24_MODE.get(hero) == "tip":
         return ko_tip(src, *TIP_PARAMS.get(hero, ()))
     if R24_MODE.get(hero) == "side":

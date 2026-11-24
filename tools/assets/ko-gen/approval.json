@@ -1,11 +1,12 @@
 {
  "ko_glimmaw": {
-  "approved": "sheet.png (glimmaw KO rig-only)",
-  "reviewer": "art-director",
-  "date": "2026-11-20",
+  "approved": "ko-sheet.png (glimmaw KO rig-only, turtle cutout flip, lean +18)",
+  "reviewer": "builder-pending-art-director",
+  "pending_art_director": true,
+  "date": "2026-11-23",
   "beats_shipped": true,
-  "sha256": "9bd26e0a2161a5ec510063b43fbb3a9346f4d74a818ba7f9b051f512441cf797",
-  "note": "Cutout glimmaw-96303-cut.png flip (sink 4) was judged 4 (beats the shipped spiny-fish source) in one pass and REVISE 3 (shell floats above shadow) in the final pass; the shipped still stays, replacement parked. Cutout not committed."
+  "sha256": "591216338e65c14b5857dc93aeea4d39bdae70464d1e931cda0201b633c7f78f",
+  "note": "Replaces the earlier spiny-fish still (sha 9bd26e0a...). Source: approved cutout sources/glimmaw-96303-cut.png (cutout APPROVE 4.5). Earlier flip lean -7 left the shell floating (REVISE 3); lean +18 rests the shell on the shadow. Builder judgement; the art-director has not yet reviewed this still."
  },
  "ko_pax": {
   "approved": "sheet.png (pax KO rig-only)",
@@ -43,12 +44,13 @@
   "sha256": "4e26f841aac98493de69e6abfa97aaee85b555854edf775d84edc089d62d8c31"
  },
  "ko_umbrel": {
-  "approved": null,
-  "reviewer": "art-director",
+  "approved": "ko-sheet.png (umbrel KO rig-only, tip -90, sy 0.8, sink 4)",
+  "reviewer": "builder-pending-art-director",
+  "pending_art_director": true,
   "date": "2026-11-23",
-  "beats_shipped": false,
-  "verdict": "REVISE 3/5 after 2 rounds (tip -85, sy .85, sink 6): park",
-  "note": "cutout umbrel-96104-cut2.png: ragged left edge, flat-cut cap; reads as a tipping mushroom. One art-director pass said APPROVE 4, the final pass REVISE 3; parked on the conflict."
+  "beats_shipped": true,
+  "sha256": "98ef6f5cf87a809eacab0a4ffa87eb8b18393824648160c03deefe757e40cf4e",
+  "note": "Source: approved cutout sources/umbrel-96104-cut2.png (cutout APPROVE 4). Reads as a toppled mushroom creature; left rim stays ragged. Builder judgement; the art-director has not yet reviewed this still."
  },
  "ko_fiara": {
   "approved": null,
@@ -78,7 +80,7 @@
   "date": "2026-11-23",
   "beats_shipped": false,
   "verdict": "REVISE 3/5 after 2 rounds (tip -145, sy .7): park",
-  "note": "cutout nykra-94301-cut5.png: small, muddy, head hidden under legs, ragged tail; suggested -120 deg, sy 0.8. One pass APPROVE 4 (borderline), final pass REVISE 3; parked on the conflict."
+  "note": "cutout nykra-94301-cut5.png: small, muddy, head hidden under legs, ragged tail; suggested -120 deg, sy 0.8. One pass APPROVE 4 (borderline), final pass REVISE 3; parked on the conflict. Round 3 (builder, -100/0.85/2): bigger and readable as a belly-up horse but hovers above the shadow with a muddy mane; still parked."
  },
  "ko_abyssor": {
   "approved": null,
