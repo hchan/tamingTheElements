@@ -56,5 +56,35 @@
   "beats_shipped": false,
   "verdict": "REJECT round 3: park Fiara KO",
   "note": "unreadable fragmented wing pieces, white holes, jagged cut edges, no body; hard reject (not a full-body hero)"
+ },
+ "ko_hyalia": {
+  "approved": "ko-sheet.png (hyalia KO rig-only, flip, round 1)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "sha256": "3e74a618c4ac78f5eff64bc250e037af2e41224df876efea531e2061615f29da"
+ },
+ "ko_zephra": {
+  "approved": "ko-sheet.png (zephra KO rig-only, tip, round 2 after REVISE)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "sha256": "d05144e9ce60952de2f038c395953e0845cd8a6287b8787103d267eb5d4414e0"
+ },
+ "ko_nykra": {
+  "approved": null,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": false,
+  "verdict": "REVISE: parked",
+  "note": "source cutout has a grey hole-fill patch between the legs; redo from nykra-94301-cut5.png in a follow-up"
+ },
+ "ko_abyssor": {
+  "approved": null,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": false,
+  "verdict": "REJECT 3/5 after 2 rounds: park",
+  "note": "reads as a tumbling upright octopus, not a KO; needs ~85-90 deg tip about the mantle base and tentacles curled down"
  }
 }

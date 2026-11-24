@@ -16,12 +16,12 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "public/assets/img/map"
-HEROES = ["glimmaw", "treenoc", "pax"]  # shipped set; fiara is parked (art-director REJECT) and must be named explicitly
+HEROES = ["glimmaw", "treenoc", "pax", "brazgor", "kindrel", "durrok", "hyalia", "zephra"]  # shipped set; fiara, umbrel, nykra, abyssor are parked and must be named explicitly
 ANGLE, SQUASH, DESAT, DARK, MARGIN = -78, 0.9, 0.25, 0.15, 24
 # Roster24 stills start from the rig's own source painting (the map/*Large.png of some of them is an older design): hero -> mode.
 PORTRAIT_SRC = ROOT / "imgWorkArea/portrait-src"
 # umbrel is parked (art-director 2026-11-23: its cutout has a torn cap rim and gill holes; needs a cleaned source, not a warp).
-R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip"}
+R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip", "hyalia": "flip", "nykra": "tip", "zephra": "tip", "abyssor": "tip"}
 
 
 def stage(body: Image.Image, sink: int = 2, scorch: bool = False) -> Image.Image:
@@ -121,9 +121,23 @@ def ko_side(src: Image.Image) -> Image.Image:
     return stage(tint(rot, 0.22, 0.14), sink=2)
 
 
+def ko_tip(src: Image.Image, angle: int = -75, sy: float = 0.85) -> Image.Image:
+    """Tipped over onto its side (rotate, no flip) so the head stays visible; wings/limbs droop to the floor."""
+    im = src.convert("RGBA")
+    im = im.crop(im.getbbox())
+    pad = Image.new("RGBA", (im.width + 160, im.height + 160))
+    pad.paste(im, (80, 80))
+    rot = pad.rotate(angle, resample=Image.BICUBIC, expand=True)
+    rot = rot.crop(rot.getbbox())
+    rot = rot.resize((rot.width, round(rot.height * sy)), Image.LANCZOS)
+    return stage(tint(rot, 0.22, 0.14), sink=2)
+
+
 def ko_frame(src: Image.Image, hero: str = "") -> Image.Image:
     if R24_MODE.get(hero) == "flip":
         return ko_flip(src)
+    if R24_MODE.get(hero) == "tip":
+        return ko_tip(src)
     if R24_MODE.get(hero) == "side":
         return ko_side(src)
     if hero == "fiara":
