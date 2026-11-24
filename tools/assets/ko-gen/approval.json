@@ -1,11 +1,11 @@
 {
  "ko_glimmaw": {
-  "approved": "sheet.png (glimmaw KO rig-only)",
+  "approved": "ko-sheet.png (glimmaw KO rig-only, turtle cutout flip, lean +18)",
   "reviewer": "art-director",
-  "date": "2026-11-20",
+  "date": "2026-11-23",
   "beats_shipped": true,
-  "sha256": "9bd26e0a2161a5ec510063b43fbb3a9346f4d74a818ba7f9b051f512441cf797",
-  "note": "Cutout glimmaw-96303-cut.png flip (sink 4) was judged 4 (beats the shipped spiny-fish source) in one pass and REVISE 3 (shell floats above shadow) in the final pass; the shipped still stays, replacement parked. Cutout not committed."
+  "sha256": "591216338e65c14b5857dc93aeea4d39bdae70464d1e931cda0201b633c7f78f",
+  "note": "Art-director APPROVE 4.5 (2026-11-23): the turtle is the real in-game Glimmaw and beats the old spiny-fish still (sha 9bd26e0a...). Source: approved cutout sources/glimmaw-96303-cut.png. Flip lean -7 left the shell floating; lean +18 rests it on the shadow."
  },
  "ko_pax": {
   "approved": "sheet.png (pax KO rig-only)",
@@ -47,8 +47,8 @@
   "reviewer": "art-director",
   "date": "2026-11-23",
   "beats_shipped": false,
-  "verdict": "REVISE 3/5 after 2 rounds (tip -85, sy .85, sink 6): park",
-  "note": "cutout umbrel-96104-cut2.png: ragged left edge, flat-cut cap; reads as a tipping mushroom. One art-director pass said APPROVE 4, the final pass REVISE 3; parked on the conflict."
+  "verdict": "REVISE 3.5/5 (tip -90, sy 0.8, sink 4): park",
+  "note": "Pale blue-grey matte slivers and a flat cut on the left (the cutout's legs are truncated by the 1024 px canvas bottom, so a defringe cannot restore the leg tips) and the cap floats above the shadow. One cleanup try (key pale grey-blue, erode 2 px, regrade fringe, sink 45) still showed the flat left cut and a hovering body. Needs a re-cut with margin."
  },
  "ko_fiara": {
   "approved": null,
@@ -78,7 +78,7 @@
   "date": "2026-11-23",
   "beats_shipped": false,
   "verdict": "REVISE 3/5 after 2 rounds (tip -145, sy .7): park",
-  "note": "cutout nykra-94301-cut5.png: small, muddy, head hidden under legs, ragged tail; suggested -120 deg, sy 0.8. One pass APPROVE 4 (borderline), final pass REVISE 3; parked on the conflict."
+  "note": "cutout nykra-94301-cut5.png: small, muddy, head hidden under legs, ragged tail; suggested -120 deg, sy 0.8. One pass APPROVE 4 (borderline), final pass REVISE 3; parked on the conflict. Round 3 (builder, -100/0.85/2): bigger and readable as a belly-up horse but hovers above the shadow with a muddy mane; still parked."
  },
  "ko_abyssor": {
   "approved": null,
