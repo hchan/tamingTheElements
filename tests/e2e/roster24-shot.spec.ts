@@ -58,6 +58,10 @@ const CASTS = [
   { hero: 'umbrel', name: 'mycelium-mend', cmd: 32, gap: 300 },
   // Glimmaw Lure Orb (src/game/fx/glimmaw-fx.ts); long gate, per-hero visual.
   { hero: 'glimmaw', name: 'lure-orb', cmd: 16, gap: 300 },
+  // Hyalia, Zephra, Abyssor (src/game/fx/hyalia-zephra-abyssor-fx.ts).
+  { hero: 'hyalia', name: 'bell-pulse', cmd: 32, gap: 300 },
+  { hero: 'zephra', name: 'static-mote-fx', cmd: 16, gap: 300 },
+  { hero: 'abyssor', name: 'abyssal-pull', cmd: 32, gap: 300 },
 ] as const;
 
 for (const c of CASTS) {

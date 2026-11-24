@@ -14,6 +14,7 @@ import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL
 import { SKITTER_COLOR, SKITTER_POP, SKITTER_SPRITE, SKITTER_TICKS, skitterHop } from './zephra-fx';
 import { MEND_COLOR, MEND_POP, MEND_SPRITE, MEND_TICKS, SPORE_COLOR, SPORE_DARK, SPORE_SPRITE, SPORE_TICKS, myceliumMend, sporeBurst } from './umbrel-fx';
 import { LURE_COLOR, LURE_CORE, LURE_POP, LURE_SPRITE, LURE_TICKS, lureOrb } from './glimmaw-fx';
+import { BELL_POP, BELL_SPRITE, BELL_TICKS, MOTE_SPRITE, MOTE_TICKS, PULL_POP, PULL_SPRITE, PULL_TICKS, abyssalPull, bellPulse, paintBell, paintMote, paintPull, staticMote } from './hyalia-zephra-abyssor-fx';
 import { mountStingFx } from './sting-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
@@ -64,7 +65,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
   let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
-  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter' | 'spore' | 'mend' | 'lure'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
+  let kfx: { kind: 'bite' | 'spray' | 'gore' | 'hide' | 'hurl' | 'roll' | 'hurlhit' | 'rollhit' | 'coil' | 'breath' | 'skitter' | 'spore' | 'mend' | 'lure' | 'bellp' | 'mote' | 'pull'; x: number; y: number; dir: number; born: number; box?: Box }[] = [];
   let lashDrawn: { team: number; age: number }[] = [];
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   /** Each fighter's sim box (top-left, size), for FX drawn to a melee hitbox. */
@@ -168,6 +169,10 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       { sprite: MEND_SPRITE, kind: 'mend' as const, word: MEND_POP, base: 24 },
       // Glimmaw (roster24): Lure Orb anglerfish lure (next free base is 28).
       { sprite: LURE_SPRITE, kind: 'lure' as const, word: LURE_POP, base: 26 },
+      // Hyalia Bell Pulse, Zephra Static Mote (no word: the bolt is the cue), Abyssor Abyssal Pull (hyalia-zephra-abyssor-fx.ts).
+      { sprite: BELL_SPRITE, kind: 'bellp' as const, word: BELL_POP, base: 28 },
+      { sprite: MOTE_SPRITE, kind: 'mote' as const, word: '', base: 30 },
+      { sprite: PULL_SPRITE, kind: 'pull' as const, word: PULL_POP, base: 32 },
     ];
     for (const team of [0, 1]) {
       for (const k of kindrelCasts) {
@@ -184,7 +189,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         kfx.push({ kind: k.kind, ...at, born: now, box });
         // Quarrak's rock bursts where its flight ends: born in the future, drawn from then (age < 0 holds below).
         if (k.kind === 'hurl' || k.kind === 'roll') kfx.push({ kind: k.kind === 'hurl' ? 'hurlhit' : 'rollhit', ...at, born: now + (k.kind === 'hurl' ? HURL_FLIGHT : ROLL_FLIGHT) });
-        if (k.kind !== 'bite' && k.kind !== 'hurl' && k.kind !== 'roll' && k.kind !== 'spore') {
+        if (k.kind !== 'bite' && k.kind !== 'hurl' && k.kind !== 'roll' && k.kind !== 'spore' && k.kind !== 'mote') {
           const py = anchor.get(team)?.y ?? at.y - 8;
           pops.push({ id: ++popId, word: k.word, team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
         }
@@ -296,6 +301,24 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         paintEmbers(glow, g.sparks.map((sp) => ({ x: sp.x, y: sp.y, r: sp.r, a: g.alpha })), GORE_COLOR, 0.9);
         return age <= GORE_TICKS;
       }
+      if (f.kind === 'bellp') {
+        const b = bellPulse(f.x, f.y, age, reduced);
+        if (!b) return false;
+        paintBell(gfx, glow, b);
+        return age <= BELL_TICKS;
+      }
+      if (f.kind === 'mote') {
+        const m = staticMote(f.x, f.y, f.dir, age, reduced);
+        if (!m) return false;
+        paintMote(gfx, glow, m);
+        return age <= MOTE_TICKS;
+      }
+      if (f.kind === 'pull') {
+        const p = abyssalPull(f.x, f.y, f.dir, age, reduced);
+        if (!p) return false;
+        paintPull(gfx, glow, p);
+        return age <= PULL_TICKS;
+      }
       if (f.kind === 'lure') {
         const l = lureOrb(f.x, f.y, f.dir, age, reduced);
         if (!l) return false;
@@ -361,7 +384,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const look = popLook(age, reduced);
       // SNAG is a pale parchment with a thick dark outline (it was a dim tan that read grey over the lava floor, QA r77).
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : p.word === MEND_POP ? '#c8c48a' : p.word === LURE_POP ? '#9fd8cf' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : p.word === SPRAY_POP || p.word === GORE_POP || p.word === HIDE_POP || p.word === COIL_POP || p.word === BREATH_POP ? '#f0b070' : p.word === SKITTER_POP ? '#c4cdc8' : p.word === MEND_POP ? '#c8c48a' : p.word === LURE_POP || p.word === PULL_POP ? '#9fd8cf' : p.word === BELL_POP ? '#c4cdc8' : '#f4e6c0', stroke: '#0a0806', strokeThickness: p.word === 'HEAL' ? 3 : 6 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);
