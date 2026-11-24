@@ -53,6 +53,7 @@ test('quarrak wins the match: no still is fetched and the portrait gets the win 
   await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
   await expect(page.locator('#arcadeResults .matchEndMain .matchEndFace')).toHaveAttribute('data-victory-flash', 'quarrak');
   await expect(page.locator('#arcadeResults .matchEndMain .matchEndFace')).toHaveAttribute('data-victory-flash-element', 'earth');
+  await expect(page.locator('#arcadeResults .victoryChip').first()).toBeAttached();
   if (SHOT_DIR) {
     mkdirSync(SHOT_DIR, { recursive: true });
     await page.screenshot({ path: `${SHOT_DIR}/quarrak-flash.png` });
