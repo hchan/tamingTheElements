@@ -1,2 +1,2 @@
-KO frames: derived from the game's own map portraits public/assets/img/map/<hero>Large.png (rotate, squash, tint, shadow) by tools/assets/ko-gen/ko-rigonly.py. No third-party art, no attribution required.
-Approved by the art-director agent, see tools/assets/ko-gen/approval.json (Fiara parked, not shipped).
+KO frames: derived from the game's own map portraits public/assets/img/map/<hero>Large.png (glimmaw, pax, treenoc) and the roster24 rig source paintings imgWorkArea/portrait-src/<hero>.png (brazgor, kindrel, durrok) (rotate or flip, squash, tint, shadow) by tools/assets/ko-gen/ko-rigonly.py. No third-party art, no attribution required.
+Approved by the art-director agent, see tools/assets/ko-gen/approval.json (Fiara and Umbrel parked, not shipped).

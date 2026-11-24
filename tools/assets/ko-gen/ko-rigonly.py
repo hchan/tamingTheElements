@@ -18,6 +18,10 @@ ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "public/assets/img/map"
 HEROES = ["glimmaw", "treenoc", "pax"]  # shipped set; fiara is parked (art-director REJECT) and must be named explicitly
 ANGLE, SQUASH, DESAT, DARK, MARGIN = -78, 0.9, 0.25, 0.15, 24
+# Roster24 stills start from the rig's own source painting (the map/*Large.png of some of them is an older design): hero -> mode.
+PORTRAIT_SRC = ROOT / "imgWorkArea/portrait-src"
+# umbrel is parked (art-director 2026-11-23: its cutout has a torn cap rim and gill holes; needs a cleaned source, not a warp).
+R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip"}
 
 
 def stage(body: Image.Image, sink: int = 2, scorch: bool = False) -> Image.Image:
@@ -79,19 +83,49 @@ def ko_fiara(src: Image.Image) -> Image.Image:
     return stage(b2, sink=2)
 
 
-def ko_treenoc(src: Image.Image) -> Image.Image:
+def ko_treenoc(src: Image.Image, angle: int = -80) -> Image.Image:
     im = src.convert("RGBA")
     box = im.getbbox()
     big = Image.new("RGBA", (1400, 1400))
     ox, oy = 500, 500
     big.paste(im, (ox, oy))
     pivot = (ox + (box[0] + box[2]) / 2, oy + box[3] - 6)  # root base, bottom centre
-    rot = big.rotate(-80 + 4, resample=Image.BICUBIC, center=pivot)  # topple, small settle back
+    rot = big.rotate(angle + 4, resample=Image.BICUBIC, center=pivot)  # topple, small settle back
     rot = tint(rot.crop(rot.getbbox()), 0.20, 0.12)
     return stage(rot, sink=2)
 
 
+def ko_flip(src: Image.Image) -> Image.Image:
+    """Quadruped KO: rolled onto its back, legs in the air (a vertical flip about the floor line, small lean, y-squash), tinted."""
+    im = src.convert("RGBA")
+    im = im.crop(im.getbbox())
+    flipped = im.transpose(Image.FLIP_TOP_BOTTOM)
+    pad = Image.new("RGBA", (flipped.width + 120, flipped.height + 120))
+    pad.paste(flipped, (60, 60))
+    rot = pad.rotate(-7, resample=Image.BICUBIC, expand=True)
+    rot = rot.crop(rot.getbbox())
+    rot = rot.resize((rot.width, round(rot.height * 0.82)), Image.LANCZOS)
+    return stage(tint(rot, 0.22, 0.14), sink=2)
+
+
+def ko_side(src: Image.Image) -> Image.Image:
+    """Quadruped KO, low variant for tall poses (kindrel): flipped, small lean, flattened to y 0.6 so the head rests on the floor."""
+    im = src.convert("RGBA")
+    im = im.crop(im.getbbox())
+    im = im.transpose(Image.FLIP_TOP_BOTTOM)  # on its side/back: legs up and out, flattened low so the head rests on the floor
+    pad = Image.new("RGBA", (im.width + 160, im.height + 160))
+    pad.paste(im, (80, 80))
+    rot = pad.rotate(-3, resample=Image.BICUBIC, expand=True)
+    rot = rot.crop(rot.getbbox())
+    rot = rot.resize((round(rot.width * 1.05), round(rot.height * 0.6)), Image.LANCZOS)
+    return stage(tint(rot, 0.22, 0.14), sink=2)
+
+
 def ko_frame(src: Image.Image, hero: str = "") -> Image.Image:
+    if R24_MODE.get(hero) == "flip":
+        return ko_flip(src)
+    if R24_MODE.get(hero) == "side":
+        return ko_side(src)
     if hero == "fiara":
         return ko_fiara(src)
     if hero == "treenoc":
@@ -130,7 +164,7 @@ def main() -> None:
     sheet = Image.new("RGBA", (cell * 2, cell * len(heroes)), (58, 62, 70, 255))
     d = ImageDraw.Draw(sheet)
     for i, h in enumerate(heroes):
-        src = Image.open(SRC / f"{h}Large.png")
+        src = Image.open(PORTRAIT_SRC / f"{h}.png" if h in R24_MODE else SRC / f"{h}Large.png")
         ko = ko_frame(src, h)
         ko.save(out / f"{h}_ko.png")
         for j, im in enumerate((src.convert("RGBA"), ko)):
