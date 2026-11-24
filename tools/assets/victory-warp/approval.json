@@ -1,1 +1,21 @@
-{"zephra_win": {"approved": "approved/zephra_win.png", "sha256": "6c1604d95f2a63070d7d253277fae4450f9c7037629de20944b30a4fe37a4c93", "reviewer": "art-director", "date": "2026-11-23", "overall": 4, "beats_shipped": true, "note": "APPROVE; grey sliver and two feather flecks removed after the verdict (largest-region mask clean, 747 px). Source .scratch/matte/zephra-120803.png, generator zephra.py."}}
+{
+ "zephra_win": {
+  "approved": "approved/zephra_win.png",
+  "sha256": "6c1604d95f2a63070d7d253277fae4450f9c7037629de20944b30a4fe37a4c93",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "overall": 4,
+  "beats_shipped": true,
+  "note": "APPROVE; grey sliver and two feather flecks removed after the verdict (largest-region mask clean, 747 px). Source .scratch/matte/zephra-120803.png, generator zephra.py."
+ },
+ "vortigal_win": {
+  "approved": "vortigal_win.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "beats_shipped": true,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "notes": "Same eagle and design as the approved matte. Head thrown back, wings raised: reads as a triumphant screech and rise. Full body with margin, clean grey, no tears or residue, no people or text. Minor: neck is a little long and the eye is lost in the tilt; acceptable and on par with the Zephra still.",
+  "sha256": "ac71f89b859aee9ae7984fd60768bcf8563f43f16f0f7386fcb52e0f069991d0"
+ }
+}
