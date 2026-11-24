@@ -121,6 +121,7 @@
     "versus-hero-pick.spec.ts": "P0",
     "versus-stage-pick.spec.ts": "P1",
     "victory-still.spec.ts": "P2",
+    "roster24-pick.spec.ts": "P2",
     "weather-particles.spec.ts": "P2"
   },
   "overrides": [

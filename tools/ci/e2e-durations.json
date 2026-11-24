@@ -86,6 +86,7 @@
     "pseudo3d-rope.spec.ts": { "sec": 30, "tests": 3 },
     "replay-input-display.spec.ts": { "sec": 16, "tests": 1 },
     "responsive.spec.ts": { "sec": 139, "tests": 18 },
+    "roster24-pick.spec.ts": { "sec": 45, "tests": 12 },
     "round-end-panel.spec.ts": { "sec": 19, "tests": 2 },
     "round-result-real-fight.spec.ts": { "sec": 9, "tests": 1 },
     "round-result.spec.ts": { "sec": 18, "tests": 2 },
