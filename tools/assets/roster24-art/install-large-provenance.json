@@ -1,0 +1,230 @@
+{
+ "vortigal": {
+  "source": "approved-large/vortigalLarge.png",
+  "source_sha256": "1c872c0b7b01a1c26d4cba758e56ef76ace7f1de820190cab615b58d703072b0",
+  "source_size": [
+   400,
+   238
+  ],
+  "sha256": "1c872c0b7b01a1c26d4cba758e56ef76ace7f1de820190cab615b58d703072b0",
+  "size": [
+   400,
+   238
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "kindrel": {
+  "source": "approved-large/kindrelLarge.png",
+  "source_sha256": "0e68a3bdf660ab05a81b94c6f62b2bdbe20159075d00662dcd12a5655903bb94",
+  "source_size": [
+   300,
+   291
+  ],
+  "sha256": "0e68a3bdf660ab05a81b94c6f62b2bdbe20159075d00662dcd12a5655903bb94",
+  "size": [
+   300,
+   291
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "nykra": {
+  "source": "approved-large/nykraLarge.png",
+  "source_sha256": "57200a72d39c3f06a0564d8d617f98fd1528c3ce91000c93a3eb7926ad4809ae",
+  "source_size": [
+   360,
+   299
+  ],
+  "sha256": "57200a72d39c3f06a0564d8d617f98fd1528c3ce91000c93a3eb7926ad4809ae",
+  "size": [
+   360,
+   299
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "ouroth": {
+  "source": "approved-large/ourothLarge.png",
+  "source_sha256": "ae937e373a2497d57f56576b007b2839c8901563e17984738b2f18cecc309dc1",
+  "source_size": [
+   357,
+   370
+  ],
+  "sha256": "ae937e373a2497d57f56576b007b2839c8901563e17984738b2f18cecc309dc1",
+  "size": [
+   357,
+   370
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "brazgor": {
+  "source": "approved-large/brazgorLarge.png",
+  "source_sha256": "4f7872676263a5b1c565f22f4a29964290326a30196af5952dc6b8c94bef7ba8",
+  "source_size": [
+   400,
+   314
+  ],
+  "sha256": "4f7872676263a5b1c565f22f4a29964290326a30196af5952dc6b8c94bef7ba8",
+  "size": [
+   400,
+   314
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "umbrel": {
+  "source": "approved-large/umbrelLarge-r2.png",
+  "source_sha256": "5d5b18d80e09feef19dda40dc9ecf057d3ad93386b7a624fc4b6d137f182f089",
+  "source_size": [
+   319,
+   360
+  ],
+  "sha256": "5d5b18d80e09feef19dda40dc9ecf057d3ad93386b7a624fc4b6d137f182f089",
+  "size": [
+   319,
+   360
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "hyalia": {
+  "source": "approved-large/hyaliaLarge.png",
+  "source_sha256": "ee4ed5168cace11fa32fc3beb19b154f3d1f26ce1a5b565c66175762af9a25d9",
+  "source_size": [
+   286,
+   290
+  ],
+  "sha256": "ee4ed5168cace11fa32fc3beb19b154f3d1f26ce1a5b565c66175762af9a25d9",
+  "size": [
+   286,
+   290
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "quarrak": {
+  "source": "approved-large/quarrakLarge.png",
+  "source_sha256": "26799903f51831bc0f7d87d85e99d8007b9d3ecaeca7a308cedbe1a42b93c6fe",
+  "source_size": [
+   410,
+   412
+  ],
+  "sha256": "26799903f51831bc0f7d87d85e99d8007b9d3ecaeca7a308cedbe1a42b93c6fe",
+  "size": [
+   410,
+   412
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "glimmaw": {
+  "source": "approved-large/glimmawLarge.png",
+  "source_sha256": "075dfc4cfe5ebdb26ad03b6155509684f3c75b5c72dc6eab0dc49b22286a7a72",
+  "source_size": [
+   317,
+   320
+  ],
+  "sha256": "075dfc4cfe5ebdb26ad03b6155509684f3c75b5c72dc6eab0dc49b22286a7a72",
+  "size": [
+   317,
+   320
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "zephra": {
+  "source": "approved-large/zephraLarge.png",
+  "source_sha256": "5e83b6c059d56120a1a85cad726a89cff0ca52a9d1f59dde36b7a6c3e21ed65a",
+  "source_size": [
+   335,
+   340
+  ],
+  "sha256": "5e83b6c059d56120a1a85cad726a89cff0ca52a9d1f59dde36b7a6c3e21ed65a",
+  "size": [
+   335,
+   340
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "abyssor": {
+  "source": "approved-large/abyssorLarge.png",
+  "source_sha256": "dea85fc8157d6f8efe58eca27356df59482c33a71fc379a7245492e70a5146a3",
+  "source_size": [
+   410,
+   404
+  ],
+  "sha256": "6dafc20d82d909b8ec8ff9f582feb2dba704dba57416a0ffb78edcdc56994c33",
+  "size": [
+   410,
+   404
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ },
+ "durrok": {
+  "source": "approved-large/durrokLarge.png",
+  "source_sha256": "2fb26ff0e1dcb3aafaacb807364795e989b3f4f02d751c699073696e68ae972b",
+  "source_size": [
+   420,
+   376
+  ],
+  "sha256": "2fb26ff0e1dcb3aafaacb807364795e989b3f4f02d751c699073696e68ae972b",
+  "size": [
+   420,
+   376
+  ],
+  "approval": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "reviewer": "art-director",
+   "date": "2026-11-23"
+  }
+ }
+}
