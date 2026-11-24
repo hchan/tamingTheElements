@@ -103,7 +103,16 @@ for (const reduced of [false, true]) {
     await page.evaluate(`window.__TTE__.arena.step(5)`);
     await frames(page);
     const noise = await pixelDiff(page, none.get(right) ?? Buffer.alloc(0), await shot(page, `none-later-${mode}`, right));
-    test.info().annotations.push({ type: 'idle-noise-px', description: String(noise) });
+    // The sprite's own idle animation is not part of the ring, and one 5-tick window can land on a still stretch of it (idle-noise 0 on the PC in reduced motion) while the tide window lands on a frame change. So the reduced-motion bound uses the worst 5-tick window over a short sweep.
+    const sweep: Buffer[] = [];
+    for (let k = 0; k < 10; k++) {
+      await page.evaluate(`window.__TTE__.arena.step(1)`);
+      await frames(page);
+      sweep.push(await shot(page, `none-sweep${String(k)}-${mode}`, right));
+    }
+    let worstNoise = noise;
+    for (let k = 5; k < sweep.length; k++) worstNoise = Math.max(worstNoise, await pixelDiff(page, sweep[k - 5] ?? Buffer.alloc(0), sweep[k] ?? Buffer.alloc(0)));
+    test.info().annotations.push({ type: 'idle-noise-px', description: `${String(noise)} (worst ${String(worstNoise)})` });
     // One tile per status (a tight crop on the hero) plus a no-ring control.
     for (const [id, status, name] of [[left, 5, 'freeze'], [left, 6, 'slow'], [right, 7, 'speed'], [right, 9, 'tide'], [left, 10, 'daze']] as const) {
       await grant(page, id, status, 100);
@@ -123,7 +132,7 @@ for (const reduced of [false, true]) {
         await frames(page);
         const moved = await pixelDiff(page, settled, await shot(page, `${name}-later-${mode}`, id));
         test.info().annotations.push({ type: 'tide-motion-px', description: String(moved) });
-        if (reduced) expect(moved, 'reduced motion: the tide ring holds still').toBeLessThanOrEqual(noise + 600);
+        if (reduced) expect(moved, 'reduced motion: the tide ring holds still').toBeLessThanOrEqual(worstNoise + 600);
         else expect(moved, 'tide ripples move between ticks').toBeGreaterThan(noise + 3000);
       }
       await page.evaluate(`window.__TTE__.arena.step(110)`);
