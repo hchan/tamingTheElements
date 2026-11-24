@@ -8,6 +8,7 @@ const PROV = resolve(ROOT, 'tools/assets/fx-gen/provenance/real-loops.json');
 
 interface Loop { source: string; sourceSha256: string; output: string; outputSha256: string; frames: number; frame: number; frameSha256: string[] }
 const prov = JSON.parse(readFileSync(PROV, 'utf8')) as { note: string; loops: Record<string, Loop> };
+const superseded = (JSON.parse(readFileSync(resolve(ROOT, 'tools/assets/loop-proc/provenance.json'), 'utf8')) as { loops: Record<string, unknown> }).loops; // installed over by loop-proc/install.py (pinned in loop-proc.test.ts)
 const sha = (p: string): string => createHash('sha256').update(readFileSync(resolve(ROOT, p))).digest('hex');
 
 describe('real roster24 loop strips (batch-m-real-loops.py)', () => {
@@ -16,10 +17,10 @@ describe('real roster24 loop strips (batch-m-real-loops.py)', () => {
     expect(prov.note).toMatch(/AI-generated in-project.*no third-party licence/);
   });
 
-  it.each(Object.entries(prov.loops))('%s strip and source still match the pin', (_name, l) => {
+  it.each(Object.entries(prov.loops))('%s strip and source still match the pin', (name, l) => {
     expect(existsSync(resolve(ROOT, l.source))).toBe(true);
     expect(sha(l.source)).toBe(l.sourceSha256);
-    expect(sha(l.output)).toBe(l.outputSha256);
+    if (!(name in superseded)) expect(sha(l.output)).toBe(l.outputSha256);
     const b = readFileSync(resolve(ROOT, l.output));
     expect([b.readUInt32BE(16), b.readUInt32BE(20)]).toEqual([l.frame * l.frames, l.frame]);
   });

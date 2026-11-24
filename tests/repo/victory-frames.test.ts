@@ -12,7 +12,7 @@ const STILLS: Record<string, { src: string; srcSha: string; outSha: string; faci
   brazgor: { src: 'brazgor_win.png', srcSha: 'a308a1880391d951e6417f0e9fc93f20e434be6d28e6053bad93d5f01bd047cd', outSha: 'd1073fe8920618c0b124cdbb424415acb2a5c764e4e000efb027570e27993a13', facing: 'left' },
   kindrel: { src: 'kindrel_win.png', srcSha: 'dc168f538eb3443d0e8bda371794b15e92e746915f69875a4934c07522cef236', outSha: '20050092e3be3c14347a320b7c34ebe88aff7e3ae3c2b13ccdee612fbce44041', facing: 'right' },
   vortigal: { src: 'vortigal_win.png', srcSha: 'ac71f89b859aee9ae7984fd60768bcf8563f43f16f0f7386fcb52e0f069991d0', outSha: '14638ea39dd9703a22b31b7b59e321b2b21f1e58b5946abe52b31a9971ef144d', facing: 'right' },
-  zephra: { src: 'r978-zephra-win2_97810_d0.2.png', srcSha: 'e8f5a76cb7d448f31e9bb92a17b0c8654372f9e7c55eeb8cdcfb8f33b84a4024', outSha: 'a59005a1d99fb488ace7428731fe98bf410a974dc651fcb783ac0d62106ad9da', facing: 'left' },
+  zephra: { src: 'zephra_win.png', srcSha: '6c1604d95f2a63070d7d253277fae4450f9c7037629de20944b30a4fe37a4c93', outSha: '3a6c94de8523c4e45cc92b1b3134561ce1a9bcaaf7c8f74a7057fd5de9c3e13b', facing: 'left' },
   nykra: { src: 'nykra_win.png', srcSha: '3cd745f9da07648e9792ae5c0909e19e3af89cdfdc271340192790625f8d9126', outSha: 'e1576f2c957aeddde4b6bf03cd78576692a0a5583ec8624eee96a92b0e6623ad', facing: 'left' },
   hyalia: { src: 'hyalia_win.png', srcSha: 'bf17fb0d096b25b42aa0c1d8d252363ae2c55bbec7cec2d057c0b078d335d832', outSha: 'd42bf064e099e9cb25e70057d677875844499ac1e38bf90ff33350c4889d61cc', facing: 'right' },
   ouroth: { src: 'r821-ouroth-vic_59822_d0.45.png', srcSha: '28803d26e279b9c20900240f54c170fbf8ce3dd712a4a6fee2194cea13eb3e91', outSha: '42cc1f988592e4c6d33f9217c9d6d111d2c4cc28dcf477256481a1d66b93d584', facing: 'right' },
