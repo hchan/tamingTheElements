@@ -590,9 +590,68 @@ def shift_down(a, n):
     return np.roll(a, n, 0)
 
 
+# ------------------------------------------------------------- abyssal_pull
+def abyssal_pull(rng):
+    """Two tentacles spiralling inward to a dark maw: a drag toward the centre."""
+    img = np.zeros((S, S, 3), np.float32)
+    cx = cy = 256.0
+    nn = fnoise(rng, (3, 9, 30))
+    # swirl streaks (water drawn inward) behind the arms
+    ang = np.arctan2(yy() * S - cy, xx() * S - cx)
+    dist = np.hypot(xx() * S - cx, yy() * S - cy)
+    sw = 0.5 + 0.5 * np.sin(3 * ang + dist * 0.045)
+    ring = np.clip(1 - dist / 236.0, 0, 1) ** 0.8
+    img = add(img, sw * ring * (0.5 + 0.5 * nn), (20, 58, 62), 0.7)
+    # the maw: a dark core with a faint cold rim
+    core = np.clip(1 - dist / 46.0, 0, 1)
+    img = img * (1 - 0.85 * core)[..., None]
+    img = add(img, np.clip(1 - np.abs(dist - 50) / 7.0, 0, 1) * 0.5, (70, 120, 112), 0.6)
+    allbody = np.zeros((S, S), np.float32)
+    for k, a0 in enumerate((0.15, 0.15 + np.pi * 1.05)):
+        ts = np.linspace(0, 1, 9)
+        pts = [(cx + (222 - 170 * t ** 0.9) * np.cos(a0 + 1.9 * np.pi * t ** 0.85),
+                cy + (222 - 170 * t ** 0.9) * np.sin(a0 + 1.9 * np.pi * t ** 0.85)) for t in ts]
+        c = catmull(pts, 22)
+        wf = lambda t: (3.5 + 30 * (1 - t) ** 1.1) * min(1.0, 0.25 + t * 9.0) ** 0.6
+        poly, cen, nrm = ribbon(c, wf)
+        body = poly_mask(poly)
+        allbody = np.maximum(allbody, body)
+        img = add(img, blur(body, 20), (8, 40, 34), 0.5)
+        skin = np.stack([22 + 26 * nn, 56 + 34 * nn, 50 + 26 * nn], 2)
+        img = over(img, body, skin)
+        for off, w, col, bl in ((0.30, 0.62, (40, 88, 76), 2.0), (0.42, 0.32, (62, 116, 100), 1.8)):
+            pl, _, _ = ribbon(c, lambda t, w=w: wf(t) * w, off)
+            img = over(img, blur(poly_mask(pl), bl) * 0.8, col)
+        pl, _, _ = ribbon(c, lambda t: wf(t) * 0.4, -0.78)
+        img = over(img, blur(poly_mask(pl), 2.5) * 0.6, (8, 22, 22))
+        n = len(cen)
+        tt = np.linspace(0, 1, n)
+        step = np.linalg.norm(cen[1] - cen[0]) + 1e-6
+        for row, off in enumerate((-0.3, -0.64)):
+            i = 16 + 6 * row
+            while i < n - 6:
+                w = wf(tt[i])
+                if w < 6:
+                    break
+                r = max(w * 0.2, 1.6)
+                px, py = cen[i] + nrm[i] * w * off
+                img = over(img, circle_mask(px, py, r), (170, 160, 128))
+                img = over(img, circle_mask(px, py, r * 0.62), (26, 40, 36))
+                img = add(img, blur(circle_mask(px - r * 0.3, py - r * 0.3, r * 0.18), 0.8), (200, 200, 170), 0.5)
+                i += max(int(2.1 * r / step + 1), 4)
+        pl, hc, _ = ribbon(c, lambda t: wf(t) * 0.07, 0.52)
+        img = add(img, blur(poly_mask(pl), 1.3) * 0.8, (150, 200, 185), 0.8)
+        for i in range(25, n, 45):
+            img = add(img, blur(circle_mask(*hc[i], max(3.4 - i / 90, 1.5)), 1.4), (225, 240, 230), 0.9)
+    sp = (rng.random((S, S)) > 0.985).astype(np.float32)
+    img = over(img, blur(sp, 0.8) * allbody * 0.5, (12, 26, 24))
+    return img
+
+
 ICONS = {"ember_bite": ember_bite, "kelp_lash": kelp_lash, "talon_rake": talon_rake,
-         "tentacle_lash": tentacle_lash, "spore_burst": spore_burst, "bristle_stomp": bristle_stomp}
-RGBA_ICONS = {"tentacle_lash", "spore_burst"}
+         "tentacle_lash": tentacle_lash, "spore_burst": spore_burst, "bristle_stomp": bristle_stomp,
+         "abyssal_pull": abyssal_pull}
+RGBA_ICONS = {"tentacle_lash", "spore_burst", "abyssal_pull"}
 
 
 def main():
