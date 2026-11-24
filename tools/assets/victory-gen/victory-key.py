@@ -3,7 +3,7 @@
 Usage: python -I tools/assets/victory-gen/victory-key.py [outdir]   (default public/assets/img/victory)
 Reads each source named in HEROES from tools/assets/victory-gen/provenance/ (approval and facing in provenance/approval.json, sha256 pinned in
 tests/repo/victory-frames.test.ts), writes <outdir>/<hero>_victory.png. Sources are 1024x1024 on flat grey, except kindrel's, which is already a
-transparent cut-out (only cropped and scaled). zephra is the CPU-warp still tools/assets/victory-warp/approved/zephra_win.png (zephra.py; sha256 in victory-warp/approval.json, copied here byte for byte). durrok and vortigal are CPU warps (cpu-warp/, not rerun here). brazgor/nykra/hyalia come from the wave-B warps (wb.py, then fix.py cleaned backdrop residue; both
+transparent cut-out (only cropped and scaled). zephra is the CPU-warp still tools/assets/victory-warp/approved/zephra_win.png (zephra.py; sha256 in victory-warp/approval.json, copied here byte for byte). vortigal and durrok are CPU-warp stills copied byte for byte from tools/assets/victory-warp/approved/ (sha256 in victory-warp/approval.json; vortigal3.py, durrok5.py + durrok_cleanup.py). brazgor/nykra/hyalia come from the wave-B warps (wb.py, then fix.py cleaned backdrop residue; both
 kept here as the record, they need the private warp workspace and are not rerun by the installer).
 Steps: flood-fill the grey background from the four corners (tolerance 14), erode the matte 1 px and feather it 1 px, crop to the
 body plus a 12 px margin, scale to fit the 320x314 map-portrait box (same scale class as map/glimmawLarge.png and the KO frame).

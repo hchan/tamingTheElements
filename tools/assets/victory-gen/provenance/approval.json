@@ -91,13 +91,13 @@
   "note": "f563-565-approval.json abyssor_victory: approved d0.4 (not f542, whose abyssor r821 was a REJECT: crab/fish redesign)"
  },
  "durrok_victory": {
-  "approved": "durrok_win.png (sheet_cpu2.png)",
+  "approved": "durrok_win.png",
   "verdict": "APPROVE",
   "reviewer": "art-director",
   "date": "2026-11-23",
   "beats_shipped": true,
   "source": "durrok_win.png",
   "facing": "right",
-  "note": "CPU warp durrok3.py + lcc.py (cpu-warp/); art-director 2026-11-23 sheet_cpu2.png (score 4 per coordinator); replaces r992 i2i, kept as history"
+  "note": "CPU-warp still, trunk-only raised pose (durrok5.py) plus alpha-only cleanup (durrok_cleanup.py); art-director APPROVE overall 4 (tools/assets/victory-warp/approval.json, sha256 4d328ce5...e135d, copied from victory-warp/approved/durrok_win.png); replaces the earlier durrok3 warp and the r992 i2i still"
  }
 }

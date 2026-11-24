@@ -41,7 +41,7 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
     expect(aiIconKeyOfSprite('stoop')).toBe('hud:ability:stoop');
     expect(aiIconKeyOfSprite('myceliumMend')).toBe('hud:ability:mycelium_mend');
     expect(aiIconKeyOfSprite('boulderRoll')).toBe('hud:ability:boulder_roll');
-    expect(aiIconKeyOfSprite('abyssalPull')).toBeUndefined(); // REVISEd twice: reads as a twin of whirlpool, not installed
+    expect(aiIconKeyOfSprite('abyssalPull')).toBe('hud:ability:abyssal_pull'); // procedural redraw, art-director APPROVE overall 4 (2026-11-23)
     expect(aiIconKeyOfSprite('kelpLash')).toBe('hud:ability:kelp_lash');
     expect(aiIconKeyOfSprite('moltenHide')).toBe('hud:ability:molten_hide');
     expect(aiIconKeyOfSprite('bellPulse')).toBe('hud:ability:bell_pulse');

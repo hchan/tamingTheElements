@@ -14,7 +14,7 @@ export const AI_ICON_SLOTS = [
   'kelp_lash', 'molten_hide', 'whirlpool',
   'bell_pulse', 'heal_spring', 'scorch_breath', 'wyrm_coil', 'spore_burst',
   'cinder_spray', 'static_mote', 'quake', 'mist_veil', 'kelp_whip', 'gust', 'bristle_stomp',
-  'wind_wall', 'talon_rake', 'skitter',
+  'wind_wall', 'talon_rake', 'skitter', 'abyssal_pull',
 ] as const;
 export type AiIconSlot = (typeof AI_ICON_SLOTS)[number];
 
@@ -40,6 +40,7 @@ const BY_SPRITE: Readonly<Record<string, AiIconSlot>> = {
   cinderSpray: 'cinder_spray',
   staticMote: 'static_mote',
   bristleStomp: 'bristle_stomp',
+  abyssalPull: 'abyssal_pull',
 };
 
 /** Phaser texture key of an icon slot. */

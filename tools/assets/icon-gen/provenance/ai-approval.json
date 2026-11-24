@@ -172,5 +172,11 @@
     "reviewer": "art-director",
     "date": "2026-11-22",
     "beats_shipped": true
+  },
+  "abyssal_pull": {
+    "approved": "abyssal_pull.png",
+    "reviewer": "art-director",
+    "date": "2026-11-23",
+    "beats_shipped": true
   }
 }
