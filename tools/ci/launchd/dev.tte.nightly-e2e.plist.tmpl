@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Template: tools/ci/nightly-install.ts fills the double-brace placeholders at install time. Never commit a rendered copy. -->
+<!-- Template: tools/ci/nightly-install.ts fills the double-brace placeholders at install time. Never commit a rendered copy. The 23:00 submit job queues the e2e first, then runs gate:commit on the tip (up to 90 min, no launchd timeout is set; result in tte-gate/nightly-precheck.json). -->
 <plist version="1.0">
 <dict>
   <key>Label</key>

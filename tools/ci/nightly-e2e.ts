@@ -5,6 +5,7 @@
  *   collect  follow the pending job (`--pc-attach`), read its results.json and record pass | red | not-run.
  *   status   print the recorded status (exit 0 always: stale or not-run only warns).
  * Status: `<git common dir>/tte-gate/nightly-status.json` (+ nightly-history.jsonl). The PC is never bypassed: no Mac fallback.
+ * After queuing, submit also runs `gate:commit` on that tip (nightly-precheck.ts; result in tte-gate/nightly-precheck.json, shown by status; never affects the exit code).
  * launchd runs submit at 23:00 and collect at 02:00 (tools/ci/nightly-install.ts). Pure logic: nightly-status.ts.
  */
 import { spawnSync } from 'node:child_process';
@@ -12,6 +13,8 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileS
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { describePush, readPushStatus } from './nightly-push';
+import { describePrecheck, makePrecheck, PRECHECK_TIMEOUT_MS, readPrecheck, writePrecheck } from './nightly-precheck';
+import { noPushEnv } from './nightly-fix-logic';
 import { describeFix, type FixStatus } from './nightly-fix-logic';
 import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, prevTotalFromHistory, validateStatus, type NightlyStatus } from './nightly-status';
 
@@ -28,7 +31,7 @@ export interface Deps {
   /** Directory holding nightly-status.json (the shared tte-gate dir). */
   statusDir: string;
   now: () => Date;
-  run: (cmd: string, args: readonly string[], cwd: string, env: Env) => RunResult;
+  run: (cmd: string, args: readonly string[], cwd: string, env: Env, timeoutMs?: number) => RunResult;
   out: (s: string) => void;
   err: (s: string) => void;
 }
@@ -91,7 +94,22 @@ export function submit(d: Deps): number {
   if (r.code !== 0 || !rawId) return fail(sha, r.code === 0 ? null : r.code, rawId ? 'submit failed' : 'no job id from the router');
   writeStatus(d.statusDir, pendingStatus(sha, rawId, started));
   d.out(`nightly: submitted ${rawId} for ${sha.slice(0, 7)}\n`);
+  precheck(d, wt, sha);
   return 0;
+}
+
+/** After the e2e is queued: gate:commit on the checked-out tip (no credentials, pushes disabled); the result goes to nightly-precheck.json. Never throws, never changes the submit exit code. */
+export function precheck(d: Deps, wt: string, sha: string): void {
+  try {
+    const env = noPushEnv(d.env);
+    const inst = d.run('corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], wt, env, PRECHECK_TIMEOUT_MS);
+    const g = inst.code === 0 ? d.run('corepack', ['pnpm', 'gate:commit'], wt, env, PRECHECK_TIMEOUT_MS) : inst;
+    const s = makePrecheck(sha, g.code === 0, d.now().toISOString(), g);
+    writePrecheck(d.statusDir, s);
+    for (const l of describePrecheck(s).slice(0, 1)) d.out(`nightly: ${l}\n`);
+  } catch (e) {
+    d.err(`nightly: precheck gate:commit not recorded (${e instanceof Error ? e.message : String(e)})\n`);
+  }
 }
 
 export function collect(d: Deps): number {
@@ -128,6 +146,7 @@ export function status(d: Deps): number {
   } catch {
     /* no fix report yet */
   }
+  for (const l of describePrecheck(readPrecheck(d.statusDir))) d.out(`${l}\n`);
   // Blocker reasons and the gate:commit tail of the latest push attempt (empty when none was recorded).
   for (const l of describePush(readPushStatus(d.statusDir))) d.out(`${l}\n`);
   return 0;
@@ -144,8 +163,8 @@ export function main(argv: readonly string[], d: Deps): number {
 
 function realDeps(): Deps {
   const repo = resolve(import.meta.dirname, '../..');
-  const run = (cmd: string, args: readonly string[], cwd: string, env: Env): RunResult => {
-    const r = spawnSync(cmd, [...args], { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const run = (cmd: string, args: readonly string[], cwd: string, env: Env, timeoutMs?: number): RunResult => {
+    const r = spawnSync(cmd, [...args], { cwd, env: env as NodeJS.ProcessEnv, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...(timeoutMs ? { timeout: timeoutMs, killSignal: 'SIGKILL' as const } : {}) });
     return { code: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
   };
   const common = run('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], repo, process.env).stdout.trim();

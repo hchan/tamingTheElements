@@ -336,7 +336,7 @@ python3) and `tests/repo/gpu-jobs-cli.test.ts` (fake ssh in `tests/repo/fixtures
 
 `tools/ci/nightly-e2e.ts` runs the full e2e suite on the PC every night, in two phases so a sleeping Mac cannot lose a run.
 `pnpm nightly:submit` (23:00) fetches `origin`, checks out the tip of local `main` (pushed or not; the router bundles unpushed commits, so the safety net covers what is merged even while a push is gated) in the detached worktree `.scratch/nightly-wt` and queues the full
-suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full --pc-detach`), recording `pending` with the raw job id.
+suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full --pc-detach`), recording `pending` with the raw job id. Only after the job is queued (the e2e submit is never delayed or blocked), it runs the precheck: `pnpm install --frozen-lockfile` and `gate:commit` on that tip in the same worktree (no credentials, pushes disabled, 90 min cap, up to ~90 min after 23:00 on the launchd job, which has no timeout), so a red gate is known at 23:00 and not first at 02:00. Result: `tte-gate/nightly-precheck.json` (pass, sha, finishedAt, last 30 output lines on fail); `pnpm nightly:status` prints `precheck gate:commit at <sha7>: pass|FAIL` plus the tail. It never changes the submit exit code (`tools/ci/nightly-precheck.ts`).
 `pnpm nightly:collect` (02:00 via the fix loop job) follows that job (`--pc-attach raw-<id>`), reads `results.json` and records `pass`, `red` or `not-run`.
 `pnpm nightly:status` prints the result. It refuses to run with `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` set and never falls back to the Mac.
 
