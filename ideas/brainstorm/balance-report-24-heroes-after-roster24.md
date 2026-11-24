@@ -17,3 +17,7 @@ Why: the baseline only covers the original 12 ([balance-outliers](balance-outlie
 ## Progress note (2026-11-24, balance-24 round R3, SIM_VERSION 111)
 
 Legacy ranged damagePm -2.5% (morblass 1120 -> 1092, cyclonius 1100 -> 1072, lavax 870 -> 848), Arcade numbers only; Classic baseline.json delta 0.0. Measurements (aiLevel 3, 16 seeds), seed 1 = fixtures, seed 41 = `sim:match --tournament --seed 41`: see docs/BALANCE.md "Arcade legacy ranged damage re-fit (SIM_VERSION 111)". Plan: `.scratch/plans/balance-24-tuning.md`. Next: R2/R4 per the plan, one sim agent at a time.
+
+## Progress note (2026-11-24, balance-24 round R4, SIM_VERSION 112)
+
+Legacy melee 1v1 life about +3% (wispera 6833 -> 7041, echo 7250 -> 7464, pax 4540 -> 4677) with 2v2 offsets keeping team life (689, 680, 628); Arcade numbers only; Classic baseline.json and arcade-2v2-baseline.json delta 0.0. Measurements seed 1 / 41 (12 roster, full roster): wispera .460->.483 / .483->.500, .418->.451 / .435->.465; echo .506->.545 / .477->.528, .399->.424 / .399->.429; pax .511->.528 / .528->.511, .370->.408 / .389->.394. See docs/BALANCE.md "Arcade legacy melee life re-fit".
