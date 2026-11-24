@@ -81,7 +81,7 @@ export interface PushStatus {
 }
 
 /** Lines of a failed gate:commit kept in the push status. */
-export const GATE_TAIL_LINES = 15;
+export const GATE_TAIL_LINES = 40;
 
 export const pushStatusPath = (dir: string): string => join(dir, 'nightly-push-status.json');
 
@@ -89,7 +89,8 @@ export function describePush(s: PushStatus | undefined): string[] {
   if (!s) return [];
   const head = `nightly clean push (${s.finishedAt}): ${s.verdict} run at ${s.sha.slice(0, 7)}`;
   const kept = s.untestedLocal ? [`  - ${s.untestedLocal} untested commit(s) on main stayed local`] : [];
-  const tail = (s.gateTail ?? []).map((l) => `    | ${l}`);
+  const gt = s.gateTail ?? [];
+  const tail = gt.length ? [`  gate:commit failed on the tested commit; last ${String(gt.length)} output lines:`, ...gt.map((l) => `    | ${l}`)] : [];
   return s.pushed ? [`${head}: pushed main to origin/main (tested commit)`, ...kept] : [`${head}: not pushed`, ...s.blockers.map((b) => `  - ${b}`), ...tail, ...kept];
 }
 

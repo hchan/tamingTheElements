@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
+import { describePush, readPushStatus } from './nightly-push';
 import { describeFix, type FixStatus } from './nightly-fix-logic';
 import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, prevTotalFromHistory, validateStatus, type NightlyStatus } from './nightly-status';
 
@@ -127,6 +128,8 @@ export function status(d: Deps): number {
   } catch {
     /* no fix report yet */
   }
+  // Blocker reasons and the gate:commit tail of the latest push attempt (empty when none was recorded).
+  for (const l of describePush(readPushStatus(d.statusDir))) d.out(`${l}\n`);
   return 0;
 }
 
