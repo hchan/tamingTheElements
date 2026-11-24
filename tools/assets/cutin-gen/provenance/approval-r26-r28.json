@@ -1,0 +1,6 @@
+{
+"cutin_r24_brazgor": {"approved": "fetch-2995/out/cutin_r26_brazgor_50121_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true, "source": "ideas/brainstorm/hero-special-move-presentation-art.md 2026-11-19 r26/r27 line; backfilled 2026-11-23, no original json found"},
+"cutin_r24_hyalia": {"approved": "fetch-2995/out/cutin_r26_hyalia_50132_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true, "source": "same; backfilled 2026-11-23"},
+"cutin_r24_nykra": {"approved": "fetch-2995/out/cutin_r26_nykra_50140_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true, "source": "same; backfilled 2026-11-23"},
+"cutin_r24_ouroth": {"approved": "fetch-649e/out/cutin_r28_ouroth_50172_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true, "source": "copy of fetch-649e/approval.json (r28, not r26/r27; r26/r27 ouroth were rejected)"}
+}
