@@ -1,12 +1,11 @@
 {
  "ko_glimmaw": {
   "approved": "ko-sheet.png (glimmaw KO rig-only, turtle cutout flip, lean +18)",
-  "reviewer": "builder-pending-art-director",
-  "pending_art_director": true,
+  "reviewer": "art-director",
   "date": "2026-11-23",
   "beats_shipped": true,
   "sha256": "591216338e65c14b5857dc93aeea4d39bdae70464d1e931cda0201b633c7f78f",
-  "note": "Replaces the earlier spiny-fish still (sha 9bd26e0a...). Source: approved cutout sources/glimmaw-96303-cut.png (cutout APPROVE 4.5). Earlier flip lean -7 left the shell floating (REVISE 3); lean +18 rests the shell on the shadow. Builder judgement; the art-director has not yet reviewed this still."
+  "note": "Art-director APPROVE 4.5 (2026-11-23): the turtle is the real in-game Glimmaw and beats the old spiny-fish still (sha 9bd26e0a...). Source: approved cutout sources/glimmaw-96303-cut.png. Flip lean -7 left the shell floating; lean +18 rests it on the shadow."
  },
  "ko_pax": {
   "approved": "sheet.png (pax KO rig-only)",
@@ -44,13 +43,12 @@
   "sha256": "4e26f841aac98493de69e6abfa97aaee85b555854edf775d84edc089d62d8c31"
  },
  "ko_umbrel": {
-  "approved": "ko-sheet.png (umbrel KO rig-only, tip -90, sy 0.8, sink 4)",
-  "reviewer": "builder-pending-art-director",
-  "pending_art_director": true,
+  "approved": null,
+  "reviewer": "art-director",
   "date": "2026-11-23",
-  "beats_shipped": true,
-  "sha256": "98ef6f5cf87a809eacab0a4ffa87eb8b18393824648160c03deefe757e40cf4e",
-  "note": "Source: approved cutout sources/umbrel-96104-cut2.png (cutout APPROVE 4). Reads as a toppled mushroom creature; left rim stays ragged. Builder judgement; the art-director has not yet reviewed this still."
+  "beats_shipped": false,
+  "verdict": "REVISE 3.5/5 (tip -90, sy 0.8, sink 4): park",
+  "note": "Pale blue-grey matte slivers and a flat cut on the left (the cutout's legs are truncated by the 1024 px canvas bottom, so a defringe cannot restore the leg tips) and the cap floats above the shadow. One cleanup try (key pale grey-blue, erode 2 px, regrade fringe, sink 45) still showed the flat left cut and a hovering body. Needs a re-cut with margin."
  },
  "ko_fiara": {
   "approved": null,
