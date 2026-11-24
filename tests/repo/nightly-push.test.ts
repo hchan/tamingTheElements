@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { main, type FixDeps } from '../../tools/ci/nightly-fix';
 import { cleanPushBlockers, describePush, nightVerdict, type CleanPushInput, type PushStatus } from '../../tools/ci/nightly-push';
+import { status as nightlyStatus, type Deps as E2eDeps } from '../../tools/ci/nightly-e2e';
+import { GATE_TAIL_LINES } from '../../tools/ci/nightly-push';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
 
 const SHA = 'c'.repeat(40);
@@ -56,6 +58,8 @@ interface Night {
   diverged?: boolean;
   dirty?: boolean;
   gate?: number;
+  /** Output of a failing gate:commit (default: a short two-line tail). */
+  gateOut?: string;
   head?: string;
   /** HEAD is 3 commits past the tested sha (tested is an ancestor of HEAD). */
   moved?: boolean;
@@ -117,7 +121,7 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
         if (line.startsWith('git worktree')) return ok();
         if (line === 'corepack pnpm gate:commit') {
           expect(env['GIT_CONFIG_VALUE_0']).toBe('disabled:');
-          return { code: n.gate ?? 0, stdout: n.gate ? 'x\nFAIL tests/repo/pin.test.ts\n' : '', stderr: '' };
+          return { code: n.gate ?? 0, stdout: n.gate ? (n.gateOut ?? 'x\nFAIL tests/repo/pin.test.ts\n') : '', stderr: '' };
         }
         if (cmd === 'claude') throw new Error('no fix round expected');
         return ok();
@@ -141,6 +145,23 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     main(['collect-and-fix'], deps({ gate: 1 }));
     expect(pushStatus().gateTail).toContain('FAIL tests/repo/pin.test.ts');
     expect(out).toContain('| FAIL tests/repo/pin.test.ts');
+  });
+  it('a red gate:commit keeps the last 40 lines, not fewer', () => {
+    expect(GATE_TAIL_LINES).toBe(40);
+    main(['collect-and-fix'], deps({ gate: 1, gateOut: Array.from({ length: 60 }, (_, i) => `line ${String(i + 1)}`).join('\n') }));
+    const t = pushStatus().gateTail ?? [];
+    expect(t).toHaveLength(40);
+    expect(t[0]).toBe('line 21');
+    expect(t[39]).toBe('line 60');
+  });
+  it('nightly:status prints the blocker and the gate tail of the latest skipped push', () => {
+    main(['collect-and-fix'], deps({ gate: 1 }));
+    const lines: string[] = [];
+    nightlyStatus({ statusDir: join(dir, 'gate'), now: () => new Date(2026, 10, 20, 3, 0, 0), out: (t: string) => lines.push(t) } as unknown as E2eDeps);
+    const text = lines.join('');
+    expect(text).toContain('not pushed');
+    expect(text).toContain('gate:commit failed on the tested commit');
+    expect(text).toContain('| FAIL tests/repo/pin.test.ts');
   });
   it('a blocked night dispatches no Pages build', () => {
     expect(main(['collect-and-fix'], deps({ ahead: '0' }))).toBe(0);
