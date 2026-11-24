@@ -54,12 +54,12 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Roster-24 batch 1 (SIM_VERSION 72), fitted with tools/sim/low-races/mat.sh.
   kindrel: [6120, 1537],
   nykra: [5435, 1215],
-  quarrak: [3365, 760],
+  quarrak: [3515, 760], // Re-fit in SIM_VERSION 110 (was [3365, 760]; team life 2271 -> 2372 with 2v2 675 kept)
   hyalia: [7600, 2108],
   // Roster-24 batch 2 (SIM_VERSION 73), provisional until fitted with tools/sim/low-races/mat.sh.
-  brazgor: [4688, 727],
+  brazgor: [4478, 727], // Re-fit in SIM_VERSION 110 (was [4688, 727]; 2v2 490 -> 513 keeps team life)
   glimmaw: [7531, 2027],
-  durrok: [4689, 1058],
+  durrok: [4892, 1058], // Re-fit in SIM_VERSION 110 (was [4689, 1058]; 2v2 675 -> 647 keeps team life)
   zephra: [6745, 2423],
   // Roster-24 batch 3 (SIM_VERSION 74), provisional until fitted with tools/sim/low-races/mat.sh.
   ouroth: [6419, 1264],
@@ -99,9 +99,9 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   quarrak: 675, // 725 before SIM_VERSION 102
   kindrel: 710, // 755 before SIM_VERSION 103; 725 before 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
   nykra: 692, // 655 before SIM_VERSION 109; 740 before SIM_VERSION 102
-  brazgor: 490, // 460 before SIM_VERSION 102
+  brazgor: 513, // 490 before SIM_VERSION 110; 460 before SIM_VERSION 102
   glimmaw: 670,
-  durrok: 675, // 625 before SIM_VERSION 109; 590 before SIM_VERSION 102
+  durrok: 647, // 675 before SIM_VERSION 110; 625 before SIM_VERSION 109; 590 before SIM_VERSION 102
   zephra: 830, // 760 before SIM_VERSION 102
   ouroth: 590,
   abyssor: 590, // 550 before SIM_VERSION 106; 475 before SIM_VERSION 103; 430 before 102
