@@ -25,6 +25,8 @@ describe('super cut-in gate', () => {
     expect(shouldCutin('durrok', '', false)).toBe(true);
     expect(shouldCutin('glimmaw', '', false)).toBe(true);
     expect(shouldCutin('hyalia', '', false)).toBe(true);
+    expect(shouldCutin('brazgor', '', false)).toBe(true);
+    expect(shouldCutin('ouroth', '', false)).toBe(true);
     expect(shouldCutin('kindrel', '?ff=roster24', false)).toBe(false);
   });
 
