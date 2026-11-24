@@ -184,5 +184,11 @@
     "reviewer": "art-director",
     "date": "2026-11-23",
     "beats_shipped": true
+  },
+  "tentacle_lash": {
+    "approved": "tentacle_lash.png",
+    "reviewer": "art-director",
+    "date": "2026-11-23",
+    "beats_shipped": true
   }
 }

@@ -16,7 +16,7 @@ SLOTS = ["ember_bite", "gale_talon", "tide_surge", "hurl_rock", "lure_orb",
          "mycelium_mend", "stinging_filament", "stoop", "forge_gore", "tusk_gore", "boulder_roll",
          "kelp_lash", "molten_hide", "whirlpool", "bell_pulse", "heal_spring", "scorch_breath", "wyrm_coil", "spore_burst",
          "cinder_spray", "static_mote", "quake", "mist_veil", "kelp_whip", "gust", "bristle_stomp",
-         "wind_wall", "talon_rake", "skitter", "abyssal_pull", "abyss_flash"]
+         "wind_wall", "talon_rake", "skitter", "abyssal_pull", "abyss_flash", "tentacle_lash"]
 # Slots whose art carries a third-party credit (written to CREDITS.txt and the icon's index entry).
 THIRD_PARTY = {
     "talon_rake": "Talon Rake: glyph \"Triple scratches\" by Lorc (game-icons.net), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), "
@@ -36,6 +36,8 @@ BELL_POLY = [(240, 72), (272, 72), (284, 90), (283, 125), (330, 138), (365, 175)
 KEYS = {
     # abyssal_pull: own procedural work (tools/assets/ability-icons-procedural/gen.py abyssal_pull), RGBA on transparent; composited onto BACKDROP by its alpha
     "abyssal_pull": {"alpha": True},
+    # tentacle_lash: own procedural work (tools/assets/ability-icons-procedural/gen.py tentacle_lash), RGBA on transparent, same matte as abyssal_pull
+    "tentacle_lash": {"alpha": True},
     "kelp_lash": {"bgkey": (28, 30), "radial": (0.48, 4, 0.08)},
     "molten_hide": {"radial": (0.305, 12, 0.02)},
     "whirlpool": {"radial": (0.50, 2, 0.06)},

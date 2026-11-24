@@ -436,6 +436,20 @@
         "beats_shipped": true,
         "file": "tools/assets/icon-gen/provenance/ai-approval.json"
       }
+    },
+    "tentacle_lash": {
+      "url": "img/hud/ability-icons-ai/tentacle_lash.png",
+      "w": 128,
+      "h": 128,
+      "sha256": "1025c8e341e5199d7187af60903c8521d4b744fa3a688307344803b763c4eae1",
+      "source": "tentacle_lash.png",
+      "approval": {
+        "approved": "tentacle_lash.png",
+        "reviewer": "art-director",
+        "date": "2026-11-23",
+        "beats_shipped": true,
+        "file": "tools/assets/icon-gen/provenance/ai-approval.json"
+      }
     }
   }
 }
