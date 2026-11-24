@@ -16,7 +16,7 @@ from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "public/assets/img/map"
-HEROES = ["glimmaw", "treenoc", "pax", "brazgor", "kindrel", "durrok", "hyalia", "zephra", "quarrak"]  # shipped set; fiara, umbrel, nykra, abyssor are parked and must be named explicitly
+HEROES = ["glimmaw", "treenoc", "pax", "brazgor", "kindrel", "durrok", "hyalia", "zephra", "quarrak", "ouroth", "vortigal"]  # shipped set; fiara, umbrel, nykra, abyssor are parked and must be named explicitly
 ANGLE, SQUASH, DESAT, DARK, MARGIN = -78, 0.9, 0.25, 0.15, 24
 # Roster24 stills start from the rig's own source painting (the map/*Large.png of some of them is an older design): hero -> mode.
 PORTRAIT_SRC = ROOT / "imgWorkArea/portrait-src"
@@ -26,7 +26,7 @@ R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip", "hyalia": "f
 # Umbrel/Ouroth/Vortigal (cut3 and the two ko cutouts, flat #808080, keyed by key_gray) are KO candidates, not shipped: umbrel tip -100 sink 8 puts the cap rim and a foot on the shadow; ouroth and vortigal flip (default lean).
 # Heroes whose source is an art-director-approved rig-matching RGBA cutout (committed under sources/, provenance in sources/approval*.json).
 SOURCES = Path(__file__).resolve().parent / "sources"
-TIP_PARAMS = {"nykra": (-100, 0.85, 2), "umbrel": (-100, 0.8, 8)}  # angle, y-squash, sink
+TIP_PARAMS = {"nykra": (-100, 0.85, 2), "umbrel": (-75, 0.85, 6)}  # angle, y-squash, sink
 FLIP_LEAN = {"glimmaw": 18}  # degrees; default -7
 CUTOUTS = {"quarrak": "quarrak-96214-cut.png", "umbrel": "umbrel-96104-cut3.png", "nykra": "nykra-94301-cut5.png", "glimmaw": "glimmaw-96303-cut.png",
             "ouroth": "ouroth-ko-cut.png", "vortigal": "vortigal-ko-cut.png"}
@@ -46,19 +46,43 @@ def key_gray(im: Image.Image, bg: int = 128, lo: int = 8, hi: int = 26) -> Image
     return im
 
 
-def stage(body: Image.Image, sink: int = 2, scorch: bool = False) -> Image.Image:
+# New-hero cleanup only (shipped stills must stay byte-identical): per-hero source matte tweaks, applied after keying.
+KEY_PARAMS = {"umbrel": (16, 40)}   # wider key (lo, hi): drops the grey ground haze round the feet
+ERODE = {"ouroth": 1, "umbrel": 1}  # px alpha erode (MinFilter) to lose the grey fringe
+CLOSE = {"umbrel": 6}               # px morphological close of the alpha: fills interior pinholes
+FEATHER = {"umbrel": 0.5}           # px blur of the final alpha edge
+TOP_PAD = {"vortigal": 8}           # extra canvas px above the body (talon tips)
+NO_SHADOW = {"vortigal"}            # no baked ground shadow
+
+
+def clean_matte(im: Image.Image, hero: str) -> Image.Image:
+    a = im.getchannel("A")
+    r = CLOSE.get(hero, 0)
+    if r:
+        a = ImageChops.lighter(a.filter(ImageFilter.MaxFilter(2 * r + 1)).filter(ImageFilter.MinFilter(2 * r + 1)), a)
+    for _ in range(ERODE.get(hero, 0)):
+        a = a.filter(ImageFilter.MinFilter(3))
+    if FEATHER.get(hero):
+        a = a.filter(ImageFilter.GaussianBlur(FEATHER[hero]))
+    out = im.copy()
+    out.putalpha(a)
+    return out
+
+
+def stage(body: Image.Image, sink: int = 2, scorch: bool = False, top_pad: int = 0, shadow: bool = True) -> Image.Image:
     """Put body on a canvas with a floor shadow; body bottom sinks `sink` px below floor line."""
     w, h = body.size
-    cw, ch = w + 2 * MARGIN + 40, h + 2 * MARGIN + 20
+    cw, ch = w + 2 * MARGIN + 40, h + 2 * MARGIN + 20 + top_pad
     floor = ch - MARGIN - 6
     canvas = Image.new("RGBA", (cw, ch))
     if scorch:
         sc = Image.new("RGBA", (cw, ch))
         ImageDraw.Draw(sc).ellipse([MARGIN - 8, floor - 14, cw - MARGIN + 8, floor + 12], fill=(12, 6, 4, 235))
         canvas = Image.alpha_composite(canvas, sc.filter(ImageFilter.GaussianBlur(7)))
-    sh = Image.new("RGBA", (cw, ch))
-    ImageDraw.Draw(sh).ellipse([(cw - w) // 2 - 6, floor - h * 0.08, (cw + w) // 2 + 6, floor + 10], fill=(0, 0, 0, 150))
-    canvas = Image.alpha_composite(canvas, sh.filter(ImageFilter.GaussianBlur(8)))
+    if shadow:
+        sh = Image.new("RGBA", (cw, ch))
+        ImageDraw.Draw(sh).ellipse([(cw - w) // 2 - 6, floor - h * 0.08, (cw + w) // 2 + 6, floor + 10], fill=(0, 0, 0, 150))
+        canvas = Image.alpha_composite(canvas, sh.filter(ImageFilter.GaussianBlur(8)))
     canvas.alpha_composite(body, ((cw - w) // 2, floor + sink - h))
     return canvas
 
@@ -117,7 +141,7 @@ def ko_treenoc(src: Image.Image, angle: int = -80) -> Image.Image:
     return stage(rot, sink=2)
 
 
-def ko_flip(src: Image.Image, sink: int = 2, lean: int = -7) -> Image.Image:
+def ko_flip(src: Image.Image, sink: int = 2, lean: int = -7, hero: str = "") -> Image.Image:
     """Quadruped KO: rolled onto its back, legs in the air (a vertical flip about the floor line, small lean, y-squash), tinted."""
     im = src.convert("RGBA")
     im = im.crop(im.getbbox())
@@ -127,7 +151,7 @@ def ko_flip(src: Image.Image, sink: int = 2, lean: int = -7) -> Image.Image:
     rot = pad.rotate(lean, resample=Image.BICUBIC, expand=True)
     rot = rot.crop(rot.getbbox())
     rot = rot.resize((rot.width, round(rot.height * 0.82)), Image.LANCZOS)
-    return stage(tint(rot, 0.22, 0.14), sink=sink)
+    return stage(tint(rot, 0.22, 0.14), sink=sink, top_pad=TOP_PAD.get(hero, 0), shadow=hero not in NO_SHADOW)
 
 
 def ko_side(src: Image.Image) -> Image.Image:
@@ -157,7 +181,7 @@ def ko_tip(src: Image.Image, angle: int = -75, sy: float = 0.85, sink: int = 2) 
 
 def ko_frame(src: Image.Image, hero: str = "") -> Image.Image:
     if R24_MODE.get(hero) == "flip":
-        return ko_flip(src, 2, FLIP_LEAN.get(hero, -7))
+        return ko_flip(src, 2, FLIP_LEAN.get(hero, -7), hero)
     if R24_MODE.get(hero) == "tip":
         return ko_tip(src, *TIP_PARAMS.get(hero, ()))
     if R24_MODE.get(hero) == "side":
@@ -201,7 +225,7 @@ def main() -> None:
     d = ImageDraw.Draw(sheet)
     for i, h in enumerate(heroes):
         src = Image.open(SOURCES / CUTOUTS[h] if h in CUTOUTS else PORTRAIT_SRC / f"{h}.png" if h in R24_MODE else SRC / f"{h}Large.png")
-        src = key_gray(src) if h in CUTOUTS else src
+        src = clean_matte(key_gray(src, **dict(zip(("lo", "hi"), KEY_PARAMS.get(h, ())))), h) if h in CUTOUTS else src
         ko = ko_frame(src, h)
         ko.save(out / f"{h}_ko.png")
         for j, im in enumerate((src.convert("RGBA"), ko)):

@@ -48,7 +48,7 @@
   "date": "2026-11-23",
   "beats_shipped": false,
   "verdict": "REVISE 3.5/5 (tip -90, sy 0.8, sink 4): park",
-  "note": "Pale blue-grey matte slivers and a flat cut on the left (the cutout's legs are truncated by the 1024 px canvas bottom, so a defringe cannot restore the leg tips) and the cap floats above the shadow. One cleanup try (key pale grey-blue, erode 2 px, regrade fringe, sink 45) still showed the flat left cut and a hovering body. Needs a re-cut with margin."
+  "note": "Pale blue-grey matte slivers and a flat cut on the left (the cutout's legs are truncated by the 1024 px canvas bottom, so a defringe cannot restore the leg tips) and the cap floats above the shadow. One cleanup try (key pale grey-blue, erode 2 px, regrade fringe, sink 45) still showed the flat left cut and a hovering body. Needs a re-cut with margin. Round 3 (builder, cut3, key 16/40, close 6, erode 1, feather .5, tip -75 sy .85 sink 6): candidate only, awaiting art-director review; not shipped."
  },
  "ko_fiara": {
   "approved": null,
@@ -94,5 +94,23 @@
   "date": "2026-11-23",
   "beats_shipped": true,
   "sha256": "250952246f26a07ab955df26a44ade56b8ade534aa2125ea033f881f16c681ea"
+ },
+ "ko_ouroth": {
+  "approved": "candidates-sheet2.png (ouroth KO rig-only, flip, 1 px alpha erode)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "score": 4,
+  "sha256": "3fddc746bcb5619eb08b0af1718da8cc23b674f7b8e9d9243833bab671b8eb8c",
+  "note": "Source: approved cutout sources/ouroth-ko-cut.png (sources/approval-wave2.json)."
+ },
+ "ko_vortigal": {
+  "approved": "candidates-sheet2.png (vortigal KO rig-only, flip, no baked shadow, 8 px top pad)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "score": 4,
+  "sha256": "1e404ac7a91929f44a068cb2e51731fc87bcceba5ed2a73000ace1771abc91b0",
+  "note": "Source: approved cutout sources/vortigal-ko-cut.png (sources/approval-wave2.json)."
  }
 }
