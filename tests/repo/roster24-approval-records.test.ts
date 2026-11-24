@@ -27,12 +27,12 @@ describe('roster24 approval records', () => {
     expect(idea('durrok')).not.toMatch(/rejected twice|no approved base/);
   });
 
-  it('Hyalia matte is approved, so its idea file does not call the base rejected; the bake verdict stays open until scored', () => {
+  it('Hyalia matte is approved, so its idea file does not call the base rejected; the bake is APPROVE 4 (2026-11-24)', () => {
     const h = read('hyalia-approval.json');
     expect(h['hyalia_matte']?.beats_shipped).toBe(true);
     expect(idea('hyalia')).not.toMatch(/rejected twice|no approved base/);
-    expect(h['hyalia_p1_bake']?.verdict).toBe('NOT YET REVIEWED');
-    expect(h['hyalia_p1_bake']?.overall).toBeUndefined();
+    expect(h['hyalia_p1_bake']?.verdict).toBe('APPROVE');
+    expect(h['hyalia_p1_bake']?.overall).toBe(4);
   });
 });
 

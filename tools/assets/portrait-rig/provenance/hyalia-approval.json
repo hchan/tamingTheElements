@@ -1,2 +1,19 @@
-{"hyalia_matte": {"approved": "hyalia-96433.png (out/r190-hyalia-wyvern_96433.png)", "reviewer": "art-director", "date": "2026-11-20", "beats_shipped": true, "notes": "Matte approval copied from gpu-job-server .scratch/fetch-hy/approval.json. Source chain: key-flat-bg.py, clear-grey-pockets.py (3 enclosed grey pockets), make-rig-source.py (400x400 canvas), r24/hyalia.landmarks.json (quadruped, east-facing), gen-r24.py --promote, r24-ko-keys.py."},
- "hyalia_p1_bake": {"approved": "pending", "verdict": "NOT YET REVIEWED", "reviewer": "art-director", "date": "2026-11-23", "notes": "Baked sheets and map strip need the art-director's sheet verdict; contact sheet in the builder worktree .scratch/hy/contact.png."}}
+{
+ "hyalia_matte": {
+  "approved": "hyalia-96433.png (out/r190-hyalia-wyvern_96433.png)",
+  "reviewer": "art-director",
+  "date": "2026-11-20",
+  "beats_shipped": true,
+  "notes": "Matte approval copied from gpu-job-server .scratch/fetch-hy/approval.json. Source chain: key-flat-bg.py, clear-grey-pockets.py (3 enclosed grey pockets), make-rig-source.py (400x400 canvas), r24/hyalia.landmarks.json (quadruped, east-facing), gen-r24.py --promote, r24-ko-keys.py."
+ },
+ "hyalia_p1_bake": {
+  "approved": "public/assets/img/sheets/hyalia.png + public/assets/img/map/hyalia.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-24",
+  "hard_rejects": [],
+  "beats_shipped": true,
+  "notes": "Art-director APPROVE 4/5 via tte-art-gpu-server (one head, matches matte 96433, scale/facing stable, map strip readable). beats_shipped is vs the placeholder as described; the director did not open the shipped hyalia.png/hyaliaLarge.png. Coordinator check 2026-11-24: 155 non-empty 240px cells in sheets/hyalia.png, none has alpha on its edge rows/columns (no clipped wing tip). Shadow under feet faint."
+ }
+}
