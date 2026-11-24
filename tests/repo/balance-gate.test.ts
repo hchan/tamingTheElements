@@ -10,7 +10,7 @@ import { createMatch } from '../../src/core/sim/match';
 import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { ARCADE_2V2_BASELINE_PATH, ARCADE_2V2_PARAMS, ARCADE_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
-import { DEFAULT_MAX_TICKS, RACES, makeAgent, runPairing, runTournament } from '../../tools/sim/run-match';
+import { DEFAULT_MAX_TICKS, RACES, RELEASED_RACES, makeAgent, partnerOffsets, runPairing, runTournament } from '../../tools/sim/run-match';
 import { styleGateFindings } from '../../tools/sim/style-summary';
 
 /** PR sample: every pairing, 2 seeds (one per side assignment), level 1, scripted vs scripted. */
@@ -112,8 +112,8 @@ describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report o
 
   it('is the Arcade round robin over every race, with its own parameters', () => {
     expect(arcade.params).toEqual(ARCADE_PARAMS);
-    expect(Object.keys(arcade.winRates).sort()).toEqual([...RACES].sort());
-    expect(arcade.matches).toBe((RACES.length * (RACES.length - 1) * ARCADE_PARAMS.seeds) / 2);
+    expect(Object.keys(arcade.winRates).sort()).toEqual([...RELEASED_RACES].sort());
+    expect(arcade.matches).toBe((RELEASED_RACES.length * (RELEASED_RACES.length - 1) * ARCADE_PARAMS.seeds) / 2);
   });
 
   it('leaves the Classic parameters alone (Classic stays bit-identical)', () => {
@@ -128,8 +128,26 @@ describe('Arcade 2v2 balance baseline (WP-arcade-2v2-tune; compared nightly, rep
 
   it('is the Arcade tag-team round robin over every race, with its own parameters', () => {
     expect(tag.params).toEqual(ARCADE_2V2_PARAMS);
-    expect(Object.keys(tag.winRates).sort()).toEqual([...RACES].sort());
-    expect(tag.matches).toBe((RACES.length * (RACES.length - 1) * ARCADE_2V2_PARAMS.seeds) / 2);
+    expect(Object.keys(tag.winRates).sort()).toEqual([...RELEASED_RACES].sort());
+    expect(tag.matches).toBe((RELEASED_RACES.length * (RELEASED_RACES.length - 1) * ARCADE_2V2_PARAMS.seeds) / 2);
+  });
+});
+
+describe('partnerOffsets (odd roster sizes)', () => {
+  it('matches the exact split at 12 and 24', () => {
+    expect(partnerOffsets(12, 2)).toEqual([6]);
+    expect(partnerOffsets(12, 3)).toEqual([4, 8]);
+    expect(partnerOffsets(24, 2)).toEqual([12]);
+    expect(partnerOffsets(24, 3)).toEqual([8, 16]);
+    expect(partnerOffsets(12, 1)).toEqual([]);
+  });
+
+  it('never lets a hero partner itself or another partner in a 13-hero list', () => {
+    for (const size of [2, 3]) {
+      const offs = partnerOffsets(13, size);
+      expect(offs.every((k) => Number.isInteger(k) && k > 0 && k < 13)).toBe(true);
+      for (let i = 0; i < 13; i++) expect(new Set([i, ...offs.map((k) => (i + k) % 13)]).size).toBe(size);
+    }
   });
 });
 
