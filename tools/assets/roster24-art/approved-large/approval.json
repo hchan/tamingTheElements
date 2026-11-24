@@ -1,0 +1,101 @@
+{
+ "r24-large": {
+  "vortigal": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Clean key, full body, wings inside frame. Small on canvas but fine."
+  },
+  "kindrel": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Strong fox, ember markings read fire, tail tip has margin, no halo."
+  },
+  "nykra": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Clean mane and tail edges, full body."
+  },
+  "ouroth": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Dark ember serpent, clean edges, full coil."
+  },
+  "brazgor": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Reads fire, distinct from earth; clean fringe."
+  },
+  "umbrel": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "file": "umbrelLarge-r2.png",
+   "notes": "R2: no halo on light bg, base now fades into a soft ground contact, full body with margin, painterly mushroom-root reads earth. Minor pale slivers at the left and right feet on dark bg; acceptable at game scale."
+  },
+  "hyalia": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Full body, clean wing membrane edges, no halo."
+  },
+  "quarrak": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Painterly shell, clean key, full body."
+  },
+  "glimmaw": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Teal shell and skin read water, clean edges."
+  },
+  "zephra": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Wing tip near left edge but not cropped; keep at least 6px margin on final canvas. Clean key, feather edges soft and acceptable."
+  },
+  "abyssor": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Smudge not visible at sheet scale; clean tentacles, full body. Optionally zero alpha under 8 to kill faint grey."
+  },
+  "durrok": {
+   "verdict": "APPROVE",
+   "overall": 4,
+   "beats_shipped": true,
+   "reviewer": "art-director",
+   "date": "2026-11-23",
+   "notes": "Moss-stone elephant, full body, trunk inside frame, clean edges."
+  }
+ }
+}
