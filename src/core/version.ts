@@ -383,5 +383,7 @@
  *    Re-record reason: goldens with a moved race in a 2- or 3-hero Arcade roster and arcade-2v2-baseline.json change content; every other golden changes only the simVersion header.
  * 110: Arcade only (Classic hashes unchanged). Data-only 1v1 life re-fit of three hidden roster-24 heroes from the full-roster pass at 109 (seeds 1 and 41): ARCADE_RACE_NUMBERS hpPm brazgor 4688 -> 4478, durrok 4689 -> 4892, quarrak 3365 -> 3515; ARCADE_2V2_LIFE_PM brazgor 490 -> 513, durrok 675 -> 647 (team life kept); quarrak 2v2 675 kept, so its 2v2/3v3 team life rises 2271 -> 2372 (the BALANCE.md pre-checked 675 -> 705 row); measurements, docs/BALANCE.md.
  *    Re-record reason: Arcade goldens with brazgor, durrok or quarrak change content (arcade-roster24-b1 and any 1v1/2v2 using them) and arcade-full-baseline.json (plus arcade-2v2-baseline.json if quarrak is in it); every other golden changes only the simVersion header.
+ * 111: Arcade only (Classic hashes unchanged). Data-only damage re-fit of three legacy ranged heroes (balance-24 round R3): ARCADE_RACE_NUMBERS damagePm morblass 1120 -> 1092, cyclonius 1100 -> 1072, lavax 870 -> 848 (-2.5 percent each; hpPm and 2v2 life untouched); measurements, docs/BALANCE.md.
+ *    Re-record reason: every Arcade golden with morblass, cyclonius or lavax changes content (arcade-1v1 lavax v pax, arcade-run) plus arcade-baseline.json, arcade-2v2-baseline.json and arcade-full-baseline.json; Classic goldens and baseline.json change only the header.
  */
-export const SIM_VERSION = 110;
+export const SIM_VERSION = 111;

@@ -545,3 +545,17 @@ Round 1 met the acceptance bar, so round 2 was not run. All five moved races are
 Open: quarrak (.433) and curomo (.449) sit at the band edge; pre-checked next rows are quarrak 675 -> 705 and curomo 700 -> 720. Pax note: the v108 "team life unchanged" is off by 1 pm for pax (4351 x 675 -> team 2936, 4540 x 647 -> 2937; 2v2 3816 -> 3818): same HP at max health 100, +1 HP at e.g. 120; no integer factor gives 2936, so it is left as is.
 
 Re-record: `golden:record --ruleset arcade` and `golden:record` (Classic header only), `balance:record --ruleset arcade --team-size 2` (fixed-partner fixture, regression only); `arcade-baseline.json` and `baseline.json` (1v1) untouched.
+
+## Arcade legacy ranged damage re-fit (SIM_VERSION 111)
+
+Plan round R3 (balance-24): the three legacy ranged heroes that led both rosters had `damagePm` cut 2.5%: morblass 1120 -> 1092, cyclonius 1100 -> 1072, lavax 870 -> 848 (`ARCADE_RACE_NUMBERS`; `hpPm` and `ARCADE_2V2_LIFE_PM` untouched; Classic never reads the table). All numbers are measurements (aiLevel 3, 16 seeds per pairing; seed 1 = fixtures before and after, seed 41 = `sim:match --tournament --seed 41`; SE about 2.6 pp per hero in the full roster, about 3.8 pp in the 12 roster).
+
+| hero | 12 roster seed 1 | 12 roster seed 41 | full roster seed 1 | full roster seed 41 |
+|---|---|---|---|---|
+| morblass | .540 -> .528 | .534 -> .551 | .579 -> .560 | .546 -> .543 |
+| cyclonius | .534 -> .506 | .557 -> .540 | .571 -> .560 | .573 -> .576 |
+| lavax | .540 -> .511 | .494 -> .489 | .560 -> .524 | .497 -> .476 |
+
+12 roster seed 1: all twelve heroes .460-.545 (before .460-.540; ishimi .545 is now the top). Seed 41 12 roster: the spread is .42-.55 (before .42-.568), sindarosa .42 and fiara .438 unchanged. The seed-41 morblass move (+1.7 pp) is inside noise; the effect of -2.5% damage is about 1 pp per hero, smaller than the SE, so only the seed-1 columns (the three heroes together -1.2 to -3.6 pp) are suggestive. Melee vs ranged (12 roster, seed 1): .476/.517 -> .485/.510. Full roster seed 1: melee .457 -> .461, ranged .544 -> .539. 2v2 fixed-partner fixture moved with noise only (SE about 7 pp).
+
+Re-record: `golden:record` (Classic, header only) and `golden:record --ruleset arcade` (all Arcade goldens change hash), `balance:record --ruleset arcade [--roster full | --team-size 2]`; `baseline.json` (Classic) untouched, `balance:compare` Classic shows 0.0 pp everywhere.

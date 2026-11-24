@@ -30,7 +30,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Ice Shock melee plus a 10 s fan: has to close in through fire. Re-fit in SIM_VERSION 27 (Snag replaced Shards of Ice; was [6140, 1420]) and in 30 (was [6300, 1560]: 86-88% Arcade win rate, now 60%; 6000/1250 -> 5800/1200 in 31).
   curomo: [5420, 1243],
   // Tornado stun into Wind Cone is the natural combo; near the legacy power. Re-fit in SIM_VERSION 31 (was [4490, 1010]); life 4800 -> 5000 in 37.
-  cyclonius: [5600, 1100],
+  cyclonius: [5600, 1072], // Re-fit in SIM_VERSION 111 (was [5600, 1100]; damage -2.5%)
   // Hurricane halves each hit and Fade only defends: one of the weakest kits (24% before). Snag replaced Fade; re-fit in SIM_VERSION 27 (was [6360, 1840]). Re-fit in SIM_VERSION 31 (was [5300, 1530]).
   echo: [7250, 1600], // Re-fit in SIM_VERSION 108 (was [6750, 1600]; v104 stun shift)
   // Fireball starts at 0.25x and Fire Heal is a 40 s heal. Damage 1750 -> 1450 in SIM_VERSION 27 (the Snag heroes' lines fed her wins). Re-fit in SIM_VERSION 31 (was [5140, 1450]). Ranged since SIM_VERSION 69 (roster WP 0.4: no Charge, weather charge by casting): 50.0%, numbers kept. Re-fit in SIM_VERSION 99 (was [4210, 1373]; stun-immunity retune after v98).
@@ -38,9 +38,9 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Slime Blast 10 per 1.5 s, the lowest sustained damage in data.json. Life 6180 -> 6400 in SIM_VERSION 27. Re-fit in SIM_VERSION 69 (was [5000, 1420]: 38.6% once four heroes changed style in roster WP 0.4).
   ishimi: [5400, 1535], // a 1.5x mid-size (data/size.ts) adds x1.225 life and x1.06 damage on top: 6400 / 1550 before size (5400 / 1480 was 62.5% in the Arcade tournament)
   // Crimson Fire is fast and wide: strong. Life 3320 -> 3500 in SIM_VERSION 27, 3500 -> 3900 in 36, 3900 -> 4000 in 37.
-  lavax: [3680, 870], // Re-fit in SIM_VERSION 108 (was [4000, 870]; v104 stun shift)
+  lavax: [3680, 848], // Re-fit in SIM_VERSION 108 (was [4000, 870]; v104 stun shift); damage 870 -> 848 in SIM_VERSION 111
   // Icicles every 15 ticks plus the Ice Blast slow: strong. Re-fit in SIM_VERSION 31 (was [3370, 930]). Ranged since SIM_VERSION 69 (roster WP 0.4): 50.0%, numbers kept.
-  morblass: [4080, 1120],
+  morblass: [4080, 1092], // Re-fit in SIM_VERSION 111 (was [4080, 1120]; damage -2.5%)
   // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27. Re-fit in SIM_VERSION 99 (was [4600, 1442]; stun-immunity retune after v98).
   pax: [4540, 1364], // Re-fit in SIM_VERSION 108 (was [4351, 1364]; v104 stun shift)
   // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37. Ranged since SIM_VERSION 69 (roster WP 0.4): 51.7%, numbers kept. Re-fit in SIM_VERSION 99 (was [1850, 640]; stun-immunity retune after v98).
