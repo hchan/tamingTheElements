@@ -20,6 +20,35 @@
   "beats_shipped": true,
   "sha256": "3b863a1ad789b3b5a9c5e7946bee59819ec32c70905a8104404a316f879a8a36"
  },
+ "ko_brazgor": {
+  "approved": "ko-sheet.png (brazgor KO rig-only, flip)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "sha256": "75553537007e7c4a18e0798a9b3027d4303f44f40415b74c19460d1c4e8d9f92"
+ },
+ "ko_kindrel": {
+  "approved": "ko-sheet.png (kindrel KO rig-only, low flip; round 2 after REVISE)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "sha256": "823722b8376837b00a22d5d15da8bfc76705eb874d0eb1cbce0503e1d08a2ef4"
+ },
+ "ko_durrok": {
+  "approved": "ko-sheet.png (durrok KO rig-only, flip)",
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": true,
+  "sha256": "4e26f841aac98493de69e6abfa97aaee85b555854edf775d84edc089d62d8c31"
+ },
+ "ko_umbrel": {
+  "approved": null,
+  "reviewer": "art-director",
+  "date": "2026-11-23",
+  "beats_shipped": false,
+  "verdict": "REVISE: park until the source cutout is cleaned",
+  "note": "portrait-src cutout has a torn cap rim and gill holes; a topple warp fragments it (like Fiara). Needs a cleaned source, not a warp."
+ },
  "ko_fiara": {
   "approved": null,
   "reviewer": "art-director",
