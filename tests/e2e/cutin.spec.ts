@@ -36,3 +36,24 @@ test('glimmaw super: the cut-in composite loads on first use and shows mid-freez
   }
   expect(errors).toEqual([]);
 });
+
+// Pilot release (RELEASED_ROSTER24 = zephra; long gate: per-hero check, about 10 s, no @smoke tag): zephra is pickable and its super
+// cut-in loads with NO roster24 flag, while an unreleased hero stays out of the picker. Proves the production path of the one-hero release.
+test('zephra is released: picker lists it and the cut-in shows without ?ff=roster24', async ({ page }) => {
+  const errors = collectErrors(page);
+  const cutinRequests: string[] = [];
+  page.on('request', (r) => { if (r.url().includes('/assets/img/cutin/')) cutinRequests.push(r.url()); });
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await expect(page.getByLabel('Your race').locator('option[value="glimmaw"]')).toHaveCount(0);
+  await page.getByLabel('Your race').selectOption('zephra');
+  await page.getByLabel('AI race').selectOption('fiara');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await waitForArena(page);
+  await waitFor(page, 'arena views ready', ARENA_READY);
+  const card = page.getByRole('button', { name: 'Got it' });
+  if (await card.isVisible()) await card.click();
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(91); const [m, f] = a.characters(); a.place(m.id, 400, 360, 0); a.place(f.id, 900, 360, 4); a.setMeter(0, 1000); a.step(1, [${String(SUPER)}, 0]); })()`);
+  await expect(() => { expect(cutinRequests.length, 'zephra cut-in requested').toBe(1); }).toPass();
+  expect(cutinRequests[0]).toContain('zephra.png');
+  expect(errors).toEqual([]);
+});
