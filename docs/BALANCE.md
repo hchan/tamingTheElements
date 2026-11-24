@@ -559,3 +559,17 @@ Plan round R3 (balance-24): the three legacy ranged heroes that led both rosters
 12 roster seed 1: all twelve heroes .460-.545 (before .460-.540; ishimi .545 is now the top). Seed 41 12 roster: the spread is .42-.55 (before .42-.568), sindarosa .42 and fiara .438 unchanged. The seed-41 morblass move (+1.7 pp) is inside noise; the effect of -2.5% damage is about 1 pp per hero, smaller than the SE, so only the seed-1 columns (the three heroes together -1.2 to -3.6 pp) are suggestive. Melee vs ranged (12 roster, seed 1): .476/.517 -> .485/.510. Full roster seed 1: melee .457 -> .461, ranged .544 -> .539. 2v2 fixed-partner fixture moved with noise only (SE about 7 pp).
 
 Re-record: `golden:record` (Classic, header only) and `golden:record --ruleset arcade` (all Arcade goldens change hash), `balance:record --ruleset arcade [--roster full | --team-size 2]`; `baseline.json` (Classic) untouched, `balance:compare` Classic shows 0.0 pp everywhere.
+
+## Arcade legacy melee life re-fit (SIM_VERSION 112)
+
+Plan round R4 (balance-24): three legacy melee heroes got about +3% 1v1 life with exact 2v2 offsets so 2v2/3v3 team life is bit-identical (v86 method): wispera `hpPm` 6833 -> 7041 (+3.04%; no integer factor gives exactly +3%, the pair 7041 x 689 gives floor 4851 = floor(6833 x 710)), 2v2 710 -> 689; echo 7250 -> 7464, 2v2 700 -> 680 (team 5075); pax 4540 -> 4677, 2v2 647 -> 628 (team 2937). `damagePm` untouched; Classic never reads the table. All numbers are measurements (aiLevel 3, 16 seeds per pairing; seed 1 = fixtures before and after, seed 41 = `sim:match --tournament --seed 41`; SE about 2.6 pp per hero in the full roster, about 3.8 pp in the 12 roster).
+
+| hero | 12 roster seed 1 | 12 roster seed 41 | full roster seed 1 | full roster seed 41 |
+|---|---|---|---|---|
+| wispera | .460 -> .483 | .483 -> .500 | .418 -> .451 | .435 -> .465 |
+| echo | .506 -> .545 | .477 -> .528 | .399 -> .424 | .399 -> .429 |
+| pax | .511 -> .528 | .528 -> .511 | .370 -> .408 | .389 -> .394 |
+
+12 roster seed 1: all twelve heroes .455-.545 (before .460-.545). Seed 41: .443-.551 (before .420-.551). Full roster: the three gain +0.5 to +3.8 pp in all but pax seed 41 (+0.5, noise-level) and wispera lands near .45-.47 as planned; the legacy melee five remain below .45 in the full roster (the polarization against the hidden 12 is a mechanic question, not a row one). `arcade-2v2-baseline.json` and Classic `baseline.json` compare at 0.0 pp everywhere (team life unchanged).
+
+Re-record: `golden:record` (Classic, header only) and `golden:record --ruleset arcade` (Arcade goldens with wispera, echo or pax change content), `balance:record --ruleset arcade` and `--roster full`.

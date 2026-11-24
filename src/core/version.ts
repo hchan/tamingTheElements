@@ -385,5 +385,7 @@
  *    Re-record reason: Arcade goldens with brazgor, durrok or quarrak change content (arcade-roster24-b1 and any 1v1/2v2 using them) and arcade-full-baseline.json (plus arcade-2v2-baseline.json if quarrak is in it); every other golden changes only the simVersion header.
  * 111: Arcade only (Classic hashes unchanged). Data-only damage re-fit of three legacy ranged heroes (balance-24 round R3): ARCADE_RACE_NUMBERS damagePm morblass 1120 -> 1092, cyclonius 1100 -> 1072, lavax 870 -> 848 (-2.5 percent each; hpPm and 2v2 life untouched); measurements, docs/BALANCE.md.
  *    Re-record reason: every Arcade golden with morblass, cyclonius or lavax changes content (arcade-1v1 lavax v pax, arcade-run) plus arcade-baseline.json, arcade-2v2-baseline.json and arcade-full-baseline.json; Classic goldens and baseline.json change only the header.
+ * 112: Arcade only (Classic hashes unchanged). Data-only 1v1 life re-fit of three legacy melee heroes (balance-24 round R4): ARCADE_RACE_NUMBERS hpPm wispera 6833 -> 7041 (+3.04 percent, the closest integer pair to +3 percent), echo 7250 -> 7464, pax 4540 -> 4677 (+3 percent each); ARCADE_2V2_LIFE_PM compensated (wispera 710 -> 689, echo 700 -> 680, pax 647 -> 628) so 2v2/3v3 team life is bit-identical (v86 method); measurements, docs/BALANCE.md.
+ *    Re-record reason: Arcade 1v1 goldens with wispera, echo or pax change content (arcade-1v1 lavax v pax, arcade-run) plus arcade-baseline.json and arcade-full-baseline.json; arcade-2v2-baseline.json and baseline.json do not move; other goldens change only the simVersion header.
  */
-export const SIM_VERSION = 111;
+export const SIM_VERSION = 112;
