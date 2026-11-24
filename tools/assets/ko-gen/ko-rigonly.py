@@ -16,12 +16,17 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "public/assets/img/map"
-HEROES = ["glimmaw", "treenoc", "pax", "brazgor", "kindrel", "durrok", "hyalia", "zephra"]  # shipped set; fiara, umbrel, nykra, abyssor are parked and must be named explicitly
+HEROES = ["glimmaw", "treenoc", "pax", "brazgor", "kindrel", "durrok", "hyalia", "zephra", "quarrak"]  # shipped set; fiara, umbrel, nykra, abyssor are parked and must be named explicitly
 ANGLE, SQUASH, DESAT, DARK, MARGIN = -78, 0.9, 0.25, 0.15, 24
 # Roster24 stills start from the rig's own source painting (the map/*Large.png of some of them is an older design): hero -> mode.
 PORTRAIT_SRC = ROOT / "imgWorkArea/portrait-src"
 # umbrel is parked (art-director 2026-11-23: its cutout has a torn cap rim and gill holes; needs a cleaned source, not a warp).
-R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip", "hyalia": "flip", "nykra": "tip", "zephra": "tip", "abyssor": "tip"}
+R24_MODE = {"brazgor": "flip", "kindrel": "side", "durrok": "flip", "hyalia": "flip", "nykra": "tip", "zephra": "tip", "abyssor": "tip",
+            "quarrak": "flip", "umbrel": "tip"}
+# Heroes whose source is an art-director-approved rig-matching RGBA cutout (committed under sources/, provenance in sources/approval*.json).
+SOURCES = Path(__file__).resolve().parent / "sources"
+TIP_PARAMS = {"nykra": (-145, 0.7, 2), "umbrel": (-85, 0.85, 6)}  # angle, y-squash, sink
+CUTOUTS = {"quarrak": "quarrak-96214-cut.png", "umbrel": "umbrel-96104-cut2.png", "nykra": "nykra-94301-cut5.png"}
 
 
 def stage(body: Image.Image, sink: int = 2, scorch: bool = False) -> Image.Image:
@@ -95,7 +100,7 @@ def ko_treenoc(src: Image.Image, angle: int = -80) -> Image.Image:
     return stage(rot, sink=2)
 
 
-def ko_flip(src: Image.Image) -> Image.Image:
+def ko_flip(src: Image.Image, sink: int = 2) -> Image.Image:
     """Quadruped KO: rolled onto its back, legs in the air (a vertical flip about the floor line, small lean, y-squash), tinted."""
     im = src.convert("RGBA")
     im = im.crop(im.getbbox())
@@ -105,7 +110,7 @@ def ko_flip(src: Image.Image) -> Image.Image:
     rot = pad.rotate(-7, resample=Image.BICUBIC, expand=True)
     rot = rot.crop(rot.getbbox())
     rot = rot.resize((rot.width, round(rot.height * 0.82)), Image.LANCZOS)
-    return stage(tint(rot, 0.22, 0.14), sink=2)
+    return stage(tint(rot, 0.22, 0.14), sink=sink)
 
 
 def ko_side(src: Image.Image) -> Image.Image:
@@ -121,7 +126,7 @@ def ko_side(src: Image.Image) -> Image.Image:
     return stage(tint(rot, 0.22, 0.14), sink=2)
 
 
-def ko_tip(src: Image.Image, angle: int = -75, sy: float = 0.85) -> Image.Image:
+def ko_tip(src: Image.Image, angle: int = -75, sy: float = 0.85, sink: int = 2) -> Image.Image:
     """Tipped over onto its side (rotate, no flip) so the head stays visible; wings/limbs droop to the floor."""
     im = src.convert("RGBA")
     im = im.crop(im.getbbox())
@@ -130,14 +135,14 @@ def ko_tip(src: Image.Image, angle: int = -75, sy: float = 0.85) -> Image.Image:
     rot = pad.rotate(angle, resample=Image.BICUBIC, expand=True)
     rot = rot.crop(rot.getbbox())
     rot = rot.resize((rot.width, round(rot.height * sy)), Image.LANCZOS)
-    return stage(tint(rot, 0.22, 0.14), sink=2)
+    return stage(tint(rot, 0.22, 0.14), sink=sink)
 
 
 def ko_frame(src: Image.Image, hero: str = "") -> Image.Image:
     if R24_MODE.get(hero) == "flip":
-        return ko_flip(src)
+        return ko_flip(src, 2)
     if R24_MODE.get(hero) == "tip":
-        return ko_tip(src)
+        return ko_tip(src, *TIP_PARAMS.get(hero, ()))
     if R24_MODE.get(hero) == "side":
         return ko_side(src)
     if hero == "fiara":
@@ -178,7 +183,7 @@ def main() -> None:
     sheet = Image.new("RGBA", (cell * 2, cell * len(heroes)), (58, 62, 70, 255))
     d = ImageDraw.Draw(sheet)
     for i, h in enumerate(heroes):
-        src = Image.open(PORTRAIT_SRC / f"{h}.png" if h in R24_MODE else SRC / f"{h}Large.png")
+        src = Image.open(SOURCES / CUTOUTS[h] if h in CUTOUTS else PORTRAIT_SRC / f"{h}.png" if h in R24_MODE else SRC / f"{h}Large.png")
         ko = ko_frame(src, h)
         ko.save(out / f"{h}_ko.png")
         for j, im in enumerate((src.convert("RGBA"), ko)):
