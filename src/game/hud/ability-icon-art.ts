@@ -14,7 +14,7 @@ export const AI_ICON_SLOTS = [
   'kelp_lash', 'molten_hide', 'whirlpool',
   'bell_pulse', 'heal_spring', 'scorch_breath', 'wyrm_coil', 'spore_burst',
   'cinder_spray', 'static_mote', 'quake', 'mist_veil', 'kelp_whip', 'gust', 'bristle_stomp',
-  'wind_wall', 'talon_rake', 'skitter', 'abyssal_pull', 'abyss_flash',
+  'wind_wall', 'talon_rake', 'skitter', 'abyssal_pull', 'abyss_flash', 'tentacle_lash',
 ] as const;
 export type AiIconSlot = (typeof AI_ICON_SLOTS)[number];
 
@@ -41,6 +41,7 @@ const BY_SPRITE: Readonly<Record<string, AiIconSlot>> = {
   staticMote: 'static_mote',
   bristleStomp: 'bristle_stomp',
   abyssalPull: 'abyssal_pull',
+  tentacleLash: 'tentacle_lash',
   abyssFlash: 'abyss_flash',
 };
 

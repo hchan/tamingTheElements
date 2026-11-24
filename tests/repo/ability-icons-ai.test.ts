@@ -43,6 +43,7 @@ describe('AI ability icons (tools/assets/icon-gen/install-ai-ability-icons.py)',
     expect(aiIconKeyOfSprite('boulderRoll')).toBe('hud:ability:boulder_roll');
     expect(aiIconKeyOfSprite('abyssalPull')).toBe('hud:ability:abyssal_pull'); // procedural redraw, art-director APPROVE overall 4 (2026-11-23)
     expect(aiIconKeyOfSprite('abyssFlash')).toBe('hud:ability:abyss_flash'); // roster24, art-director APPROVE overall 4 (2026-11-23)
+    expect(aiIconKeyOfSprite('tentacleLash')).toBe('hud:ability:tentacle_lash'); // procedural, art-director APPROVE overall 4 (2026-11-23)
     expect(aiIconKeyOfSprite('kelpLash')).toBe('hud:ability:kelp_lash');
     expect(aiIconKeyOfSprite('moltenHide')).toBe('hud:ability:molten_hide');
     expect(aiIconKeyOfSprite('bellPulse')).toBe('hud:ability:bell_pulse');
