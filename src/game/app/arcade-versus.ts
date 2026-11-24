@@ -169,6 +169,14 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       const hero = heroesOf(r).winner.id;
       void import('../fx/victory-still').then((m) => { m.showVictoryStill(root, hero, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test', import.meta.env.BASE_URL); });
     }
+    // Roster24 heroes with no KO art: the loser's card slumps and greys (render only, gated inside fx/ko-fallback).
+    if (view && (r.outcome === 'win' || r.outcome === 'lose')) {
+      const root = view;
+      const win = r.outcome === 'win';
+      const loser = win ? r.pick.enemy : r.pick.player;
+      const side = !win && !r.pick.local ? 'main' : 'side';
+      void import('../fx/ko-fallback').then((m) => { m.showKoFallback(root, loser, side, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test'); });
+    }
     // The primary action takes focus (not the heading), and a held Enter or Space must not auto-repeat into Rematch.
     view?.querySelector<HTMLElement>('#arcadeRematch')?.focus({ preventScroll: true });
     listenEscape((e) => {
