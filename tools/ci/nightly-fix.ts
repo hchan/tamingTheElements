@@ -6,12 +6,12 @@
  * Per failure: a sandboxed headless `claude -p` round (file tools only, no user/project settings, see nightly-fix-logic.ts) in a
  * fresh worktree from origin/main (.scratch/nightly-fix-wt), then a re-run of that spec only via the router (`--pc`: PC only, never
  * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). At most 3 rounds, at most 3 failures, one run at a time (lock file).
- * Cycle: collect -> fix -> if a fix was applied, merge --no-ff in a second worktree and run a FULL e2e of that tree via the router
- * (PC only) -> judge -> fix reds that were fixed but still fail -> at most 2 full re-runs. Hard stop 07:00 for a night run (22:00 by day, 6 h max):
- * no round or full run starts that cannot finish. Flaky and known-red specs are reported, never chased. A new red in a re-run (collateral)
- * means no push: needs-human, the fixes kept on the local branch nightly-fix-kept/<date>. Outcomes: fixed (commit), flaky, needs-human.
- * Push only if every precondition in nightly-fix-logic.ts `pushBlockers` holds (latest FULL run on the pushed tree has no new reds, conflict-marker
- * grep, gate:push, origin unmoved); plain `git push origin HEAD:main`, never forced. Report: tte-gate/nightly-fix-*.
+ * Verify loop (WP3e/3f): collect -> fix -> merge --no-ff of the fix branch F onto the tested sha T in a detached worktree (M) -> re-run the fixed
+ * specs on M (PC only) -> gate:commit -> a FULL e2e of M when the diff leaves those specs; up to 3 rounds (a red round goes back to a fix pass).
+ * Hard stop 07:00 for a night run (22:00 by day, 6 h max): nothing starts that cannot finish. Flaky and known-red specs are reported, never chased.
+ * Then integrateMain(M) into local main and pushMerged (plain `git push origin M:main`, never forced) when `landBlockers` is empty; a partial
+ * night or a visual change is merged locally but not pushed; a red gate or a collateral red is needs-human; unverified fixes stay on
+ * nightly-fix-kept/<date>, a verified M on nightly-fix-merged/<date>. Outcomes: fixed (commit), flaky, needs-human. Report: tte-gate/nightly-fix-*.
  * A night with no new reds (green, or known-red only) skips the fix loop: collect-and-fix pushes local main itself when the
  * nightly-push.ts preconditions hold (origin/main an ancestor, main is the tested commit, clean tree, gate:commit). Report: tte-gate/nightly-push-status.json.
  */
@@ -21,12 +21,13 @@ import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, LOCK_STALE_MS, MAX_FULL_CYCLES, MAX_REAL_REDS, mergeSubject, morningReport, noPushEnv, parseNulList, parseTriage, pushBlockers, PUSH_ARGS,
-  redsVerdict, retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage,
-  type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type PushInput, type RetryOutcome,
+  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, canStartVerify, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, MAX_REAL_REDS, MAX_VERIFY_ROUNDS, mergeSubject, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
+  redsVerdict, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage, verifyVerdict,
+  type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type LandInput, type RetryOutcome, type VerifyRound,
 } from './nightly-fix-logic';
-import { nightVerdict, pushCleanNight, readPushStatus } from './nightly-push';
+import { integrateMain, keepMerged, pushMerged } from './nightly-fix-land';
+import { GATE_TAIL_LINES, nightVerdict, pushCleanNight, readPushStatus } from './nightly-push';
 import { tierOf } from './test-tiers';
 import { describeStatus, parseRawId, parseResults, pendingStatus, unrecordedFailures, type Results } from './nightly-status';
 import { redact } from './redact';
@@ -84,11 +85,12 @@ export function readFixStatus(dir: string): FixStatus | undefined {
 const errTails = new Map<string, string[]>();
 let keptName = '';
 
-function writeFixStatus(d: FixDeps, sha: string, results: FailureResult[], pushed: boolean, blockers: string[], force?: FixState): FixStatus {
+function writeFixStatus(d: FixDeps, sha: string, results: FailureResult[], pushed: boolean, blockers: string[], force?: FixState, extra: Partial<FixStatus> = {}): FixStatus {
   const rich = results.map((r) => ({ ...r, tier: tierOf(r.file, r.title), errorTail: errTails.get(`${r.file}\0${r.title}`) ?? [] }));
   const s: FixStatus = {
     schema: 1, state: force ?? finalState(results, pushed), sha, finishedAt: d.now().toISOString(), pushed, results: rich, blockers,
-    ...(!pushed && keptName && results.some((r) => r.outcome === 'fixed') ? { keptBranch: keptName } : {}),
+    ...(!pushed && !extra.integrated && !extra.mergedBranch && keptName && results.some((r) => r.outcome === 'fixed') ? { keptBranch: keptName } : {}),
+    ...extra,
   };
   mkdirSync(d.statusDir, { recursive: true });
   writeFileSync(fixStatusPath(d.statusDir), `${JSON.stringify(s, null, 2)}\n`);
@@ -134,7 +136,6 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
   } finally {
     if (life.mergePrepared) {
       d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, MERGE_WT)], d.repo, d.env);
-      if (life.branch) d.run('git', ['branch', '-D', `${life.branch}-merge`], d.repo, d.env);
     }
     if (life.prepared) {
       d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, FIX_WT)], d.repo, d.env);
@@ -184,8 +185,8 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   errTails.clear();
   for (const f of failures) errTails.set(`${f.file}\0${f.title}`, errorTail(f.message));
   const startMs = opts.startMs ?? d.now().getTime();
-  const done = (pushed: boolean, blockers: string[], force?: FixState): number => {
-    writeFixStatus(d, st.sha, results, pushed, blockers, force);
+  const done = (pushed: boolean, blockers: string[], force?: FixState, extra?: Partial<FixStatus>): number => {
+    writeFixStatus(d, st.sha, results, pushed, blockers, force, extra);
     return 0;
   };
   if (dry) {
@@ -195,7 +196,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     for (const f of failures) {
       d.out(`--- ${f.file}: ${f.title}\n  claude ${claudeArgs('<prompt>').slice(2).join(' ')}\n  re-run: corepack ${rerunArgs(f.file).join(' ')} (PC only)\n${buildPrompt(f, 1, '')}\n`);
     }
-    d.out(`  push: merge --no-ff ${branch} in ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, then a FULL e2e of the merged tree via the router (PC only; max ${String(MAX_FULL_CYCLES)} cycles, none after the 07:00 hard stop), corepack pnpm gate:push, git push origin HEAD:main (no force), only if the latest full run has no new reds\n`);
+    d.out(`  verify: per round merge --no-ff ${branch} onto the tested commit in a detached ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, the fixed specs re-run on the merged commit (--pc, PC only), corepack pnpm gate:commit, and a FULL e2e of the merged tree when the diff leaves those specs (max ${String(MAX_VERIFY_ROUNDS)} rounds, none after the 07:00 hard stop); then merge into local main and, only if everything is green and the night is complete, git push origin <merged sha>:main (no force)\n`);
     return 0;
   }
   const sh = (cwd: string, cmd: string, args: string[], timeout?: number, env: Env = d.env): FixRun => d.run(cmd, args, cwd, env, timeout);
@@ -386,137 +387,158 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     return stopped;
   };
 
-  // Cycles: fix -> (fixes applied) full e2e on the merged tree via the router (PC only) -> judge -> fix what did not hold. Max MAX_FULL_CYCLES.
+  // Verify loop (WP3e): each round = fix pass -> merge --no-ff F onto T in a detached worktree (M) -> same-spec run on M -> gate:commit ->
+  // a full run when the diff leaves the re-run specs. Max MAX_VERIFY_ROUNDS rounds; then integrate M into local main and push exactly M.
   const known = loadKnownRed(fixWt);
   const blockers: string[] = [];
+  const rounds: VerifyRound[] = [];
   let forced: FixState | undefined;
-  const warn: string[] = []; // survive a successful push
-  let verified = false; // the latest full run was on the current merge tree and has no new reds
-  let verifiedAhead = 0; // commits on the branch when that merge tree was built
-  let verifiedResults: FailureResult[] = [];
+  let gateTail: string[] = [];
+  let verified: { M: string; changed: string[] } | undefined;
   let queue: readonly Failure[] = todo;
-  for (let cycle = 1; cycle <= MAX_FULL_CYCLES && queue.length > 0; cycle++) {
+  let lastStopped = '';
+  for (let round = 1; round <= MAX_VERIFY_ROUNDS && queue.length > 0; round++) {
     const before = ahead();
     const stopped = fixPass(queue);
-    const thisQueue = queue;
-    queue = [];
+    lastStopped = stopped;
     if (ahead() === before) {
-      if (stopped) {
-        blockers.push(stopped);
-        warn.push(stopped);
-      }
+      if (stopped) blockers.push(stopped);
       break; // nothing new to verify
     }
-    if (!canStartFullRun(startMs, d.now())) {
-      const m = 'not enough time before the hard stop for a full re-run of the fixed tree; fixes kept on a local branch';
-      blockers.push(m);
-      if (verified) {
-        // The merge tree of the earlier cycle was verified; this cycle's commits are not in it and are not pushed.
-        results.splice(0, results.length, ...verifiedResults);
-        for (const t of thisQueue) {
-          const i = results.findIndex((r) => r.file === t.file && r.title === t.title);
-          const r = results[i];
-          if (r) results[i] = { ...r, reason: `${r.reason}; cycle ${String(cycle)} fix not pushed (no time for a full re-run), kept on nightly-fix-kept/${stamp}`.slice(0, 300) };
-        }
-        warn.push(m);
-      }
+    if (!canStartVerify(startMs, d.now())) {
+      blockers.push('not enough time before the hard stop to verify the fixed tree; fixes kept on a local branch');
       break;
     }
+    // M: merge --no-ff of the fix branch onto the tested commit T, in a detached worktree.
+    git(d.repo, 'worktree', 'remove', '--force', mergeWt);
+    rmSync(mergeWt, { recursive: true, force: true });
+    git(d.repo, 'worktree', 'prune');
     life.mergePrepared = true;
-    const m = buildMerge(d, { branch, mergeWt, base, tip: st.sha, shaOnOrigin, results }, prep, git);
-    if (m.length) {
-      blockers.push(...m);
-      verified = false;
+    if (git(d.repo, 'worktree', 'add', '--detach', mergeWt, st.sha).code !== 0 || sh(mergeWt, 'corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline']).code !== 0) {
+      blockers.push('could not prepare the merge worktree');
       break;
     }
-    const fr = fullRun(mergeWt);
-    if (!fr.results) {
-      blockers.push(`the full re-run did not finish (${fr.why}); nothing pushed`);
-      verified = false;
+    const fixed = results.filter((r) => r.outcome === 'fixed');
+    const what = fixed.map((r) => slug(r.title)).join(', ').slice(0, 80);
+    if (git(mergeWt, 'merge', '--no-ff', branch, '-m', mergeSubject(what)).code !== 0) {
+      git(mergeWt, 'merge', '--abort');
+      blockers.push(...landBlockers({ ...NO_BLOCK, mergeOk: false }));
       break;
     }
-    const incomplete = fullRunIncomplete(fr.json, fr.results, json);
-    if (incomplete) {
-      blockers.push(`the full re-run ${String(cycle)} is incomplete (${incomplete}); not verified, nothing pushed, the fixes stay on a local branch`);
-      verified = false;
+    const M = git(mergeWt, 'rev-parse', 'HEAD').stdout.trim();
+    const changed = parseNulList(git(mergeWt, 'diff', '--name-only', '--no-renames', '-z', `${st.sha}..HEAD`).stdout);
+    const forbidden = forbiddenTouched(changed);
+    if (forbidden.length || git(mergeWt, 'grep', '-nE', '^(<<<<<<<|>>>>>>>) ').code !== 1) {
+      blockers.push(forbidden.length ? `the merged diff touches forbidden paths: ${forbidden.join(', ')}` : 'conflict markers in the merged tree; not pushed');
+      break;
+    }
+    // Same-spec run on M: every fixed spec, one router call; green = each fixed title passed and no new red.
+    const targets = todo.filter((f) => fixed.some((r) => r.file === f.file && r.title === f.title));
+    const specList = [...new Set(targets.map((f) => specPath(f.file)))];
+    const vJson = join(d.statusDir, `nightly-fix-verify-${String(round)}.json`);
+    rmSync(vJson, { force: true });
+    const vr = sh(mergeWt, 'corepack', ['pnpm', 'exec', 'tsx', 'tools/ci/e2e-route.ts', 'run', '--pc', '--', ...specList], capTimeout(RERUN_TIMEOUT_MS, startMs, d.now()), { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: vJson });
+    let vj: unknown;
+    try {
+      vj = JSON.parse(readFileSync(vJson, 'utf8')) as unknown;
+    } catch {
+      vj = undefined;
+    }
+    const vv = verifyVerdict({ child: vr, json: vj, todo: targets, baseline: st.failed, known });
+    const entry = (gate: VerifyRound['gate']): VerifyRound => ({ round, sha: M, green: vv.greenCount, total: targets.length, newReds: vv.newReds.length, gate });
+    if (!vv.ran) {
+      rounds.push(entry('skipped'));
+      blockers.push(`the same-spec run on the merged commit could not complete (router exit ${String(vr.code)}); nothing pushed`);
+      break;
+    }
+    if (vv.newReds.length > 0) {
+      rounds.push(entry('skipped'));
+      for (const t of vv.newReds) results.push({ file: t.file, title: t.title, outcome: 'needs-human', rounds: 0, reason: `new red in the same-spec run on the merged commit (collateral of a fix): round ${String(round)}` });
+      blockers.push(...landBlockers({ ...NO_BLOCK, collateralOk: false }));
+      break;
+    }
+    if (!vv.green) {
+      rounds.push(entry('skipped'));
+      queue = targets.filter((f) => !titlePassed(vj, f));
+      d.out(`nightly:fix: verify round ${String(round)}: ${String(vv.greenCount)}/${String(targets.length)} green on the merged commit\n`);
+      if (round === MAX_VERIFY_ROUNDS) blockers.push(`verify red after ${String(MAX_VERIFY_ROUNDS)} rounds; nothing pushed, the fixes stay on a local branch`);
+      continue;
+    }
+    // gate:commit on M (never gate:push), then a collateral full run if the diff leaves the re-run specs.
+    const g = sh(mergeWt, 'corepack', ['pnpm', 'gate:commit'], capTimeout(GATE_TIMEOUT_MS, startMs, d.now()), noPushEnv(d.env));
+    if (g.code !== 0) {
+      rounds.push(entry('red'));
+      gateTail = redact(`${g.stdout}\n${g.stderr}`).split('\n').filter((l) => l.trim() !== '').slice(-GATE_TAIL_LINES);
+      blockers.push(...landBlockers({ ...NO_BLOCK, gateCommitOk: false }));
       forced = 'needs-human';
       break;
     }
-    const v = judgeFullRun(fr.results, st.failed, known);
-    if (v.newReds.length > 0) {
-      for (const t of v.newReds) results.push({ file: t.file, title: t.title, outcome: 'needs-human', rounds: 0, reason: `new red in the full re-run of the fixed tree (collateral of a fix): cycle ${String(cycle)}` });
-      blockers.push('a full re-run of the fixed tree shows new reds; not pushed, the fixes stay on a local branch');
-      verified = false;
-      break;
-    }
-    verified = true;
-    verifiedAhead = ahead();
-    d.out(`nightly:fix: full re-run ${String(cycle)} has no new reds (${String(v.remaining.length)} still open)\n`);
-    queue = fr.json === undefined ? [] : extractFailures(fr.json, retargets(v, results));
-    // The last full run decides: a fix whose spec is still red there did not hold.
-    for (const t of v.remaining) {
-      const i = results.findIndex((r) => r.outcome === 'fixed' && r.file === t.file && r.title === t.title);
-      const r = results[i];
-      if (r) {
-        earlierFix.add(`${r.file}\0${r.title}`);
-        results[i] = { ...r, outcome: 'unfixed', reason: `still red in full re-run ${String(cycle)}; ${r.reason}`.slice(0, 300) };
+    rounds.push(entry('green'));
+    if (needsFullRun(changed, specList)) {
+      if (!canStartFullRun(startMs, d.now())) {
+        blockers.push('not enough time before the hard stop for the collateral full run on the merged commit; fixes kept on a local branch');
+        break;
       }
+      const fr = fullRun(mergeWt);
+      if (!fr.results) {
+        blockers.push(`the collateral full run did not finish (${fr.why}); nothing pushed`);
+        break;
+      }
+      const incomplete = fullRunIncomplete(fr.json, fr.results, json);
+      if (incomplete) {
+        blockers.push(`the collateral full run is incomplete (${incomplete}); not verified, nothing pushed, the fixes stay on a local branch`);
+        forced = 'needs-human';
+        break;
+      }
+      const v = judgeFullRun(fr.results, st.failed, known);
+      if (v.newReds.length > 0) {
+        for (const t of v.newReds) results.push({ file: t.file, title: t.title, outcome: 'needs-human', rounds: 0, reason: 'new red in the full run of the merged commit (collateral of a fix)' });
+        blockers.push(...landBlockers({ ...NO_BLOCK, collateralOk: false }));
+        break;
+      }
+      d.out(`nightly:fix: collateral full run has no new reds (${String(v.remaining.length)} still open)\n`);
     }
-    verifiedResults = results.map((r) => ({ ...r }));
-    if (stopped) {
-      blockers.push(stopped);
-      warn.push(stopped);
-      break;
-    }
+    verified = { M, changed };
+    break;
   }
 
-  const count = ahead();
-  life.keep = count > 0;
-  if (count === 0) return done(false, blockers.length ? blockers : ['no fix commits to push'], forced);
-  if (!verified) return done(false, blockers.length ? blockers : ['fixes were not verified by a full re-run; nothing pushed'], forced);
-  const fp = finalPush(d, { mergeWt, base, shaOnOrigin, startMs }, git, sh);
-  if (fp.length === 0 && git(mergeWt, ...PUSH_ARGS).code !== 0) fp.push('git push failed (not forced)');
-  // Commits made after the verified merge (an unverified cycle) were not pushed: keep the branch for them.
-  if (fp.length === 0) life.keep = count > verifiedAhead;
-  return done(fp.length === 0, [...warn, ...fp]);
-}
-
-/** Merge --no-ff into a fresh main-based worktree and check the merged diff and markers; empty = the tree is ready for a full run. */
-function buildMerge(
-  d: FixDeps,
-  o: { branch: string; mergeWt: string; base: string; tip: string; shaOnOrigin: boolean; results: FailureResult[] },
-  prep: (wt: string, br: string) => boolean,
-  git: (cwd: string, ...a: string[]) => FixRun,
-): string[] {
-  if (!prep(o.mergeWt, `${o.branch}-merge`)) return ['could not prepare the merge worktree'];
-  const what = o.results.filter((r) => r.outcome === 'fixed').map((r) => slug(r.title)).join(', ').slice(0, 80);
-  if (git(o.mergeWt, 'merge', '--no-ff', o.branch, '-m', mergeSubject(what)).code !== 0) {
-    git(o.mergeWt, 'merge', '--abort');
-    return pushBlockers(pushInput(d, o.shaOnOrigin, { mergeOk: false }));
+  life.keep = ahead() > 0;
+  const extra: Partial<FixStatus> = { ...(rounds.length ? { rounds } : {}), ...(gateTail.length ? { gateTail } : {}) };
+  if (!verified) {
+    if (!life.keep) return done(false, blockers.length ? blockers : ['no fix commits to push'], forced, extra);
+    for (const r of results) if (r.outcome === 'fixed') results[results.indexOf(r)] = { ...r, outcome: 'unfixed', reason: `not verified on the merged commit; ${r.reason}`.slice(0, 300) };
+    return done(false, blockers.length ? blockers : ['fixes were not verified on the merged commit; nothing pushed'], forced, extra);
   }
-  const forbidden = forbiddenTouched(parseNulList(git(o.mergeWt, 'diff', '--name-only', '--no-renames', '-z', `${o.tip}..HEAD`).stdout));
-  const markersClean = git(o.mergeWt, 'grep', '-nE', '^(<<<<<<<|>>>>>>>) ').code === 1;
-  return forbidden.length || !markersClean ? pushBlockers(pushInput(d, o.shaOnOrigin, { forbidden, markersClean })) : [];
+  const { M } = verified;
+  // Partial night: some real red is still unfixed (or a pass stopped early). Visual change: pushing needs a human look.
+  const partial = lastStopped !== '' || todo.some((f) => !results.some((r) => r.outcome === 'fixed' && r.file === f.file && r.title === f.title));
+  const visual = visualTouched(verified.changed);
+  // The merge and fix worktrees go before integration so the fix branch can be deleted once it is in M.
+  git(d.repo, 'worktree', 'remove', '--force', mergeWt);
+  git(d.repo, 'worktree', 'remove', '--force', fixWt);
+  const ig = integrateMain(d, M, st.sha, stamp, startMs);
+  const integrated = ig.how !== 'refused';
+  let pushed = false;
+  const notes: string[] = [...blockers];
+  if (integrated) {
+    notes.push(...ig.postFailures.map((p) => `post-integration check: ${p}`));
+    if (partial) notes.push('partial night (not every real red is fixed): merged into local main, not pushed');
+    else if (visual.length) notes.push(`visual change (${visual.slice(0, 3).join(', ')}): merged into local main, not pushed; a human looks first`);
+    else if (ig.postFailures.length === 0) {
+      const pr = pushMerged(d, M, startMs, { sameSpecsGreen: true, gateCommitOk: true, collateralOk: true, mergeOk: true });
+      pushed = pr.pushed;
+      if (!pr.pushed && !pr.alreadyOnOrigin) notes.push(...pr.blockers);
+    }
+  } else notes.push(...ig.refusals.map((r) => `integration refused: ${r}`));
+  const kept = keepMerged(d, M, st.sha, stamp, [branch]);
+  if (kept.error) notes.push(kept.error);
+  life.keep = kept.error !== undefined; // a failed keep leaves F in place: keep it on the kept branch too
+  return done(pushed, notes, forced, { ...extra, mergeSha: M, integrated, ...(pushed ? { pushedSha: M } : {}), ...(!integrated && kept.branch ? { mergedBranch: kept.branch } : {}) });
 }
 
-const pushInput = (d: FixDeps, shaOnOrigin: boolean, partial: Partial<PushInput>): PushInput => ({
-  hasCommits: true, shaOnOrigin, mergeOk: true, forbidden: [], markersClean: true, gatePushOk: true, rerunGreen: true, originUnmoved: true,
-  noEnvOverride: !BLOCKING_ENV.some((k) => d.env[k]), ...partial,
-});
-
-/** After a verified full run: the cheap-last preconditions (gate:push, origin unmoved, time left); empty = push. */
-function finalPush(
-  d: FixDeps,
-  o: { mergeWt: string; base: string; shaOnOrigin: boolean; startMs: number },
-  git: (cwd: string, ...a: string[]) => FixRun,
-  sh: (cwd: string, cmd: string, args: string[], timeout?: number, env?: Env) => FixRun,
-): string[] {
-  if (deadlineReached(o.startMs, d.now())) return ['hard stop reached before gate:push; nothing pushed'];
-  const gatePushOk = sh(o.mergeWt, 'corepack', ['pnpm', 'gate:push'], capTimeout(GATE_TIMEOUT_MS, o.startMs, d.now()), noPushEnv(d.env)).code === 0;
-  git(d.repo, 'fetch', 'origin', 'main');
-  const originUnmoved = git(d.repo, 'rev-parse', 'origin/main').stdout.trim() === o.base;
-  return pushBlockers(pushInput(d, o.shaOnOrigin, { gatePushOk, originUnmoved }));
-}
+/** Image, style or snapshot changes: landed locally, never pushed unseen. */
+const visualTouched = (files: readonly string[]): string[] => files.filter((f) => /\.(png|jpe?g|webp|gif|css)$|-snapshots\//.test(f));
+const NO_BLOCK: LandInput = { shaIsHex: true, noEnvOverride: true, beforeDeadline: true, sameSpecsGreen: true, gateCommitOk: true, collateralOk: true, mergeOk: true, integrated: true, originIsAncestor: true, hasCommits: true };
 
 /** Collect, waiting and retrying while the 23:00 full run is unfinished (PC busy/unreachable or still pending), until the 04:30 cutoff. */
 function collectWithRetry(d: FixDeps, start: Date): void {

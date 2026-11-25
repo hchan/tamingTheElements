@@ -289,6 +289,11 @@ describe('group-run helper', () => {
 const SHA = 'c'.repeat(40);
 const BASE = 'a'.repeat(40);
 const MOVED = 'd'.repeat(40);
+/** The merge commit M built in the detached merge worktree, and a tree id for the predicted/actual merge. */
+const MERGED = 'b'.repeat(40);
+const TREE = 'e'.repeat(40);
+/** A merged diff that leaves the re-run spec, so the collateral full run is needed. */
+const WIDE = 'tests/e2e/menu.spec.ts\0src/game/x.ts\0';
 const NOON = (): Date => new Date(2026, 10, 20, 12, 0, 0);
 
 interface Scenario {
@@ -303,6 +308,10 @@ interface Scenario {
   rerunRedFrom?: number;
   gate?: number;
   originMoves?: boolean;
+  /** Verify rounds (1-based) whose same-spec run on the merged commit is red. */
+  verifyRed?: number[];
+  /** The repo checkout has tracked changes: integrateMain refuses. */
+  dirtyMain?: boolean;
   headMoves?: boolean;
   commitCode?: number;
   failures?: number;
@@ -358,7 +367,7 @@ describe('nightly-fix command (fake runner)', () => {
     mkdirSync(join(dir, 'gate'), { recursive: true });
     writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(red));
   };
-  const status = (): { state: string; pushed: boolean; blockers: string[]; results: { outcome: string; reason: string }[] } =>
+  const status = (): { state: string; pushed: boolean; blockers: string[]; results: { outcome: string; reason: string }[]; integrated?: boolean; mergeSha?: string; pushedSha?: string; mergedBranch?: string } =>
     JSON.parse(readFileSync(join(dir, 'gate', 'nightly-fix-status.json'), 'utf8')) as ReturnType<typeof status>;
   const lockSeen: boolean[] = [];
   let classifies: string[] = [];
@@ -371,6 +380,7 @@ describe('nightly-fix command (fake runner)', () => {
     let commits = 0;
     let fullRuns = 0;
     let collects = 0;
+    let mainAt = BASE;
     return {
       env: sc.env ?? {},
       repo: join(dir, 'repo'),
@@ -380,7 +390,7 @@ describe('nightly-fix command (fake runner)', () => {
         sleeps.push(ms);
         clock = new Date(clock.getTime() + ms);
       },
-      run: (cmd, args, _cwd, env) => {
+      run: (cmd, args, cwd, env) => {
         const line = [cmd, ...args].join(' ');
         calls.push(line);
         const ok = (stdout = '', code = 0): FixRun => ({ code, stdout, stderr: '' });
@@ -420,24 +430,55 @@ describe('nightly-fix command (fake runner)', () => {
         if (cmd === 'corepack' && line.includes('e2e-route.ts')) {
           reruns++;
           envs['rerun'] = env;
-          const code = sc.rerunCode ?? (sc.rerunRedFrom !== undefined && reruns >= sc.rerunRedFrom ? 1 : 0);
+          const vm = /nightly-fix-verify-(\d+)\.json$/.exec(env['PLAYWRIGHT_JSON_OUTPUT_FILE'] ?? '');
+          const vRed = vm !== null && (sc.verifyRed ?? []).includes(Number(vm[1]));
+          const code = sc.rerunCode ?? (vRed || (sc.rerunRedFrom !== undefined && reruns >= sc.rerunRedFrom) ? 1 : 0);
+          if (vRed && env['PLAYWRIGHT_JSON_OUTPUT_FILE']) {
+            const specs = [{ title: 'opens', file: 'menu.spec.ts', tests: [{ status: 'unexpected', results: [{ status: 'failed' }] }] }];
+            writeFileSync(env['PLAYWRIGHT_JSON_OUTPUT_FILE'], JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs }] }));
+          }
           const to = env['PLAYWRIGHT_JSON_OUTPUT_FILE'];
           if (to && code === 0) {
-            const spec = { title: 'opens', file: 'menu.spec.ts', tests: [{ status: 'expected', results: [{ status: 'passed' }] }] };
-            writeFileSync(to, JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs: [spec] }] }));
+            const specs = Array.from({ length: sc.failures ?? 1 }, (_, i) => ({ title: i === 0 ? 'opens' : `opens ${String(i)}`, file: 'menu.spec.ts', tests: [{ status: 'expected', results: [{ status: 'passed' }] }] }));
+            writeFileSync(to, JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs }] }));
           }
           return ok('', code);
         }
-        if (cmd === 'corepack' && line.includes('gate:push')) {
+        if (cmd === 'corepack' && line.includes('gate:commit')) {
           envs['gate'] = env;
           return ok('', sc.gate ?? 0);
         }
         if (cmd === 'find') return ok(sc.written ?? '');
         if (cmd !== 'git') return ok();
-        switch (args[0]) {
+        const git = args[0] === '--no-optional-locks' ? args.slice(1) : args;
+        switch (git[0]) {
           case 'rev-parse':
-            if (args[1] === 'origin/main') return ok(`${++originCalls > 1 && sc.originMoves ? MOVED : BASE}\n`);
+            if (git[1] === '--git-path') return ok(`.git/${git[2] ?? ''}\n`);
+            if (git.some((a) => a.endsWith('^{tree}'))) return ok(`${TREE}\n`);
+            if (git.includes('refs/heads/main')) return ok(`${mainAt}\n`);
+            if (git.some((a) => a.startsWith('refs/heads/nightly-fix-merged/'))) return git.includes('-q') ? ok('', 1) : ok(`${MERGED}\n`);
+            if (git[1] === 'origin/main') return ok(`${++originCalls > 1 && sc.originMoves ? MOVED : BASE}\n`);
+            if (git[1] === 'HEAD' && cwd.includes('nightly-fix-merge')) return ok(`${MERGED}\n`);
             return ok(`${sc.headMoves && claudeCalls().length > 0 ? MOVED : BASE}\n`);
+          case 'symbolic-ref':
+            return ok('refs/heads/main\n');
+          case 'worktree':
+            return git[1] === 'list' ? ok(`worktree ${join(dir, 'repo')}\nHEAD ${BASE}\nbranch refs/heads/main\n`) : ok();
+          case 'status':
+            return ok(sc.dirtyMain ? ' M src/x.ts\n' : '');
+          case 'merge-tree':
+            return ok(`${TREE}\n`);
+          case 'merge-base':
+            // M is not yet in main or origin; main is in M; origin/main is in M unless it moved.
+            if (git[2] === MERGED && git[3] === BASE) return ok('', 1);
+            if (git[2] === MERGED && git[3] === 'refs/remotes/origin/main') return ok('', 1);
+            if (git[2] === 'refs/remotes/origin/main' && git[3] === MERGED && sc.originMoves) return ok('', 1);
+            return ok();
+          case 'merge':
+            if (git.includes('--ff-only')) mainAt = MERGED;
+            return ok();
+          case 'push':
+            return ok();
           case 'diff':
             if (args.includes('--cached') && args.includes('--name-only')) return ok(sc.names ?? 'tests/e2e/menu.spec.ts\0');
             if (args.includes('--cached')) return ok(sc.diff ?? '+  await page.waitForSelector("#menu");\n');
@@ -509,21 +550,26 @@ describe('nightly-fix command (fake runner)', () => {
     expect(status().state).toBe('red-unfixed');
   });
 
-  it('everything green: exactly one plain push of HEAD to main, a sandboxed claude, a merge worktree cleanup', () => {
+  it('a verified fix lands: merge built on the tested sha, one plain push of M, F deleted, local main advanced', () => {
     expect(go({ env: { SSH_AUTH_SOCK: '/s', PATH: '/bin', GITHUB_TOKEN: 't' } })).toBe(0);
-    expect(pushes()).toEqual(['git push origin HEAD:main']);
-    expect(pushes().some((c) => /--force|\s-f(\s|$)|\+HEAD|--force-with-lease/.test(c))).toBe(false);
-    expect(status()).toMatchObject({ state: 'fixed-pushed', pushed: true });
+    expect(pushes()).toEqual([`git push origin ${MERGED}:main`]);
+    expect(pushes().some((c) => /--force|\s-f(\s|$)|\+|--force-with-lease/.test(c))).toBe(false);
+    expect(status()).toMatchObject({ state: 'fixed-pushed', pushed: true, integrated: true, mergeSha: MERGED, pushedSha: MERGED });
     expect(claudeCalls()).toHaveLength(1);
     expect(envs['claude']).not.toHaveProperty('SSH_AUTH_SOCK');
     expect(envs['claude']).toMatchObject({ GIT_CONFIG_KEY_0: 'remote.origin.pushurl', GIT_CONFIG_VALUE_0: 'disabled:' });
     const commit = calls.find((c) => c.startsWith('git commit')) ?? '';
     expect(commit).toContain('Co-Authored-By: Claude Sonnet 5.5');
     expect(commit).toContain('nightly-fix: opens');
-    expect(calls.some((c) => c.startsWith('git branch -D'))).toBe(true);
+    expect(calls.some((c) => c.includes('worktree add --detach') && c.endsWith(` ${SHA}`))).toBe(true);
+    expect(calls.some((c) => c.includes('merge --no-ff nightly-fix/2026-11-20'))).toBe(true);
+    expect(calls.some((c) => c.includes('merge --ff-only'))).toBe(true);
+    expect(calls.some((c) => c.startsWith('git branch -D nightly-fix/2026-11-20'))).toBe(true);
+    expect(kept()).toBe(false);
+    expect(calls.some((c) => c.includes('gate:push'))).toBe(false);
     expect(existsSync(join(dir, 'gate', 'nightly-fix.lock'))).toBe(false);
   });
-  it('re-run and gate:push run without credentials and with pushes disabled', () => {
+  it('the re-run, gate:commit and full run use no credentials and disabled pushes', () => {
     go({ env: { SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't' } });
     for (const k of ['rerun', 'gate']) {
       expect(envs[k]).not.toHaveProperty('SSH_AUTH_SOCK');
@@ -543,28 +589,31 @@ describe('nightly-fix command (fake runner)', () => {
     expect(calls.filter((c) => c.startsWith('git worktree remove')).length).toBeGreaterThan(1);
     expect(calls.some((c) => c.startsWith('git branch -D nightly-fix/2026-11-20'))).toBe(true);
   });
-  it('gate:push red keeps the fixes on the kept branch too', () => {
-    go({ gate: 1 });
-    expect(kept()).toBe(true);
-  });
-  it('gate:push red: no push', () => {
+  it('gate:commit red: no push, needs-human with a gate tail, the fixes stay on the kept branch', () => {
     go({ gate: 1 });
     expect(pushes()).toEqual([]);
-    expect(status().blockers.join(' ')).toContain('gate:push failed');
+    expect(kept()).toBe(true);
+    expect(status().state).toBe('needs-human');
+    expect(status().blockers.join(' ')).toContain('gate:commit failed');
+    expect(calls.some((c) => c.includes('gate:push'))).toBe(false);
   });
-  it('a green full run of the fixed tree: one full run, then gate:push and one plain push', () => {
+  it('a diff inside the re-run specs needs no collateral full run', () => {
     go();
+    expect(fullRunCalls()).toEqual([]);
+  });
+  it('a collateral full run is triggered when the merged diff leaves the re-run specs, green runs push M', () => {
+    go({ mergedNames: WIDE });
     expect(fullRunCalls()).toHaveLength(1);
     const full = calls.filter((c) => c.includes('e2e-route.ts'));
     expect(full.some((c) => c.includes('--full') && c.includes('--pc-detach'))).toBe(true);
     expect(full.some((c) => c.includes('--pc-attach raw-9'))).toBe(true);
     expect(full.every((c) => !/--local|--mac/.test(c))).toBe(true);
-    expect(calls.findIndex((c) => c.includes('--pc-attach raw-9'))).toBeLessThan(calls.findIndex((c) => c.includes('gate:push')));
-    expect(pushes()).toEqual(['git push origin HEAD:main']);
+    expect(calls.findIndex((c) => c.includes('gate:commit'))).toBeLessThan(calls.findIndex((c) => c.includes('--pc-attach raw-9')));
+    expect(pushes()).toEqual([`git push origin ${MERGED}:main`]);
     expect(kept()).toBe(false);
   });
   it('the full run goes through the queue without credentials, never forcing the Mac', () => {
-    go({ env: { SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't' } });
+    go({ mergedNames: WIDE, env: { SSH_AUTH_SOCK: '/s', GITHUB_TOKEN: 't' } });
     for (const k of ['detach', 'attach']) {
       expect(envs[k]).toBeDefined();
       for (const bad of ['SSH_AUTH_SOCK', 'GITHUB_TOKEN', 'TTE_ALLOW_MAC_E2E', 'TTE_E2E_LOCAL', 'CI']) expect(envs[k]).not.toHaveProperty(bad);
@@ -572,52 +621,29 @@ describe('nightly-fix command (fake runner)', () => {
     }
     expect(calls.filter((c) => c.includes('e2e-route.ts')).some((c) => c.includes('TTE_ALLOW_MAC_E2E'))).toBe(false);
   });
-  it('collateral: a new red in the full re-run means no push, needs-human, and the fixes stay on a kept local branch', () => {
-    go({ fullReds: [['collateral victim']] });
+  it('collateral: a new red in the full run means no push, needs-human, and the fixes stay on a kept local branch', () => {
+    go({ mergedNames: WIDE, fullReds: [['collateral victim']] });
     expect(pushes()).toEqual([]);
-    expect(calls.some((c) => c.includes('gate:push'))).toBe(false);
     expect(status().state).toBe('needs-human');
     expect(status().results.some((r) => r.outcome === 'needs-human' && r.reason.includes('collateral'))).toBe(true);
     expect(status().blockers.join(' ')).toContain('new reds');
     expect(kept()).toBe(true);
     expect(fullRunCalls()).toHaveLength(1);
   });
-  it('flaky specs in the full run do not block the push and are never chased', () => {
-    go({ fullFlaky: ['wobbly'] });
-    expect(pushes()).toEqual(['git push origin HEAD:main']);
+  it('flaky specs in the full run do not block the push', () => {
+    go({ mergedNames: WIDE, fullFlaky: ['wobbly'] });
+    expect(pushes()).toEqual([`git push origin ${MERGED}:main`]);
     expect(claudeCalls()).toHaveLength(1);
   });
-  it('a fix that did not hold is chased once more, then a second full run decides (max 2 full runs)', () => {
-    go({ fullReds: [['opens'], ['opens']] });
-    expect(claudeCalls()).toHaveLength(2);
-    expect(fullRunCalls()).toHaveLength(MAX_FULL_CYCLES);
-    expect(pushes()).toEqual(['git push origin HEAD:main']); // opens was already red before: not a new red
-    expect(status().state).toBe('red-unfixed'); // but it did not hold, so it is not reported as fixed
-    expect(status().results.some((r) => r.outcome === 'fixed')).toBe(false);
-    expect(status().results.find((r) => r.reason.includes('still red'))?.outcome).toBe('unfixed');
-  });
-  it('a second cycle that comes back green pushes the twice-fixed tree', () => {
-    go({ fullReds: [['opens'], []] });
-    expect(claudeCalls()).toHaveLength(2);
-    expect(fullRunCalls()).toHaveLength(2);
-    expect(pushes()).toEqual(['git push origin HEAD:main']);
-    expect(status().results.filter((r) => r.outcome === 'fixed')).toHaveLength(1);
-  });
-  it('a collateral red in the second full run also blocks the push', () => {
-    go({ fullReds: [['opens'], ['opens', 'collateral victim']] });
-    expect(fullRunCalls()).toHaveLength(2);
-    expect(pushes()).toEqual([]);
-    expect(kept()).toBe(true);
-  });
   it('the full run did not finish (attach exit 95): nothing pushed, the full job is cancelled, fixes kept', () => {
-    go({ fullAttach: 95 });
+    go({ mergedNames: WIDE, fullAttach: 95 });
     expect(pushes()).toEqual([]);
     expect(calls.some((c) => c.includes('--pc-cancel raw-9'))).toBe(true);
     expect(status().blockers.join(' ')).toContain('did not finish');
     expect(kept()).toBe(true);
   });
   it('no job id from the full submit: nothing pushed', () => {
-    go({ fullSubmit: 95 });
+    go({ mergedNames: WIDE, fullSubmit: 95 });
     expect(pushes()).toEqual([]);
     expect(status().blockers.join(' ')).toContain('did not finish');
   });
@@ -626,50 +652,68 @@ describe('nightly-fix command (fake runner)', () => {
     ['an interrupted run', { fullStats: { interrupted: 1 } }, 'interrupted'],
     ['a surge of skipped tests', { fullStats: { skipped: 40 } }, 'skipped'],
   ])('an incomplete full run (%s) is not verified: no push, needs-human, branch kept', (_n, sc, why) => {
-    go(sc);
+    go({ ...sc, mergedNames: WIDE });
     expect(pushes()).toEqual([]);
-    expect(calls.some((c) => c.includes('gate:push'))).toBe(false);
     expect(status().state).toBe('needs-human');
     expect(status().blockers.join(' ')).toContain(why);
     expect(kept()).toBe(true);
   });
-  it('a cycle-2 fix with no time for its full run stays on a kept branch and is reported as not pushed', () => {
-    go({ fullReds: [['opens']], jumpAfterFull: new Date(2026, 10, 20, 5, 20, 0) });
-    expect(claudeCalls()).toHaveLength(2);
-    expect(fullRunCalls()).toHaveLength(1);
-    expect(pushes()).toEqual(['git push origin HEAD:main']); // only the cycle-1 merge tree
+  it('verify red after 3 rounds: no push, F is kept, three claude rounds', () => {
+    go({ verifyRed: [1, 2, 3] });
+    expect(claudeCalls()).toHaveLength(3);
+    expect(pushes()).toEqual([]);
+    expect(status().blockers.join(' ')).toContain('verify red after 3 rounds');
     expect(kept()).toBe(true);
-    expect(status().blockers.join(' ')).toContain('not enough time');
-    expect(status().results.some((r) => r.reason.includes('not pushed'))).toBe(true);
+    expect(calls.some((c) => c.includes('gate:commit'))).toBe(false);
     expect(status().results.some((r) => r.outcome === 'fixed')).toBe(false);
   });
+  it('a round that turns green after a red verify still lands (round 2 pushes M)', () => {
+    go({ verifyRed: [1] });
+    expect(claudeCalls()).toHaveLength(2);
+    expect(pushes()).toEqual([`git push origin ${MERGED}:main`]);
+  });
+  it('integration refused (dirty main checkout): no push, the merge is kept on its own branch, F is not deleted blindly', () => {
+    go({ dirtyMain: true });
+    expect(pushes()).toEqual([]);
+    expect(calls.some((c) => c.includes('merge --ff-only') || c.includes('merge --no-ff') && c.includes('--no-edit'))).toBe(false);
+    expect(status().integrated).toBe(false);
+    expect(status().blockers.join(' ')).toContain('integration refused');
+    expect(status()).toMatchObject({ pushed: false, mergeSha: MERGED, mergedBranch: expect.stringContaining('nightly-fix-merged/') as string });
+    expect(calls.some((c) => c.startsWith(`git branch nightly-fix-merged/`) && c.endsWith(` ${MERGED}`))).toBe(true);
+  });
+  it('a visual change is merged into local main but never pushed', () => {
+    go({ mergedNames: 'tests/e2e/menu.spec.ts-snapshots/a.png\0' });
+    expect(pushes()).toEqual([]);
+    expect(status()).toMatchObject({ integrated: true, pushed: false });
+    expect(status().blockers.join(' ')).toContain('visual change');
+  });
   it('an existing kept branch is never overwritten', () => {
-    go({ fullReds: [['collateral victim']], keptExists: true });
+    go({ gate: 1, keptExists: true });
     expect(calls).toContain('git branch nightly-fix-kept/2026-11-20-2 nightly-fix/2026-11-20');
     expect(calls.some((c) => c === 'git branch nightly-fix-kept/2026-11-20 nightly-fix/2026-11-20')).toBe(false);
   });
-  it('the merge worktree and merge branch are removed on a non-push return', () => {
-    go({ fullReds: [['collateral victim']] });
+  it('the merge worktree is removed on a non-push return, and no per-round merge branch is created', () => {
+    go({ gate: 1 });
     expect(calls.some((c) => c.startsWith('git worktree remove --force') && c.includes('nightly-fix-merge'))).toBe(true);
-    expect(calls).toContain('git branch -D nightly-fix/2026-11-20-merge');
+    expect(calls.some((c) => c.includes('-merge') && c.startsWith('git branch'))).toBe(false);
   });
-  it('the merge worktree and merge branch are removed when a step throws, and a branch ahead of origin is kept', () => {
+  it('the merge worktree is removed when a step throws, and a branch ahead of origin is kept', () => {
     writeRed();
     const d = deps();
     const run: FixDeps['run'] = (cmd, args, cwd, env) => {
-      if (cmd === 'corepack' && args.join(' ').includes('--pc-detach')) throw new Error('boom');
+      if (cmd === 'corepack' && args.join(' ').includes('gate:commit')) throw new Error('boom');
       return d.run(cmd, args, cwd, env);
     };
     expect(fix({ ...d, run }, false)).toBe(1);
     expect(calls.some((c) => c.startsWith('git worktree remove --force') && c.includes('nightly-fix-merge'))).toBe(true);
-    expect(calls).toContain('git branch -D nightly-fix/2026-11-20-merge');
     expect(kept()).toBe(true);
   });
-  it('too little time before 07:00 for a full run: fixes are kept, no full run starts, no push', () => {
-    go({ clock: new Date(2026, 10, 20, 5, 45, 0) });
+  it('too little time before 07:00 to verify: fixes are kept, no verify run starts, no push', () => {
+    go({ clock: new Date(2026, 10, 20, 6, 10, 0) });
     expect(claudeCalls()).toHaveLength(1);
     expect(fullRunCalls()).toEqual([]);
     expect(pushes()).toEqual([]);
+    expect(calls.some((c) => c.includes('gate:commit'))).toBe(false);
     expect(status().blockers.join(' ')).toContain('not enough time');
     expect(kept()).toBe(true);
   });
@@ -687,10 +731,10 @@ describe('nightly-fix command (fake runner)', () => {
     expect(fix(deps(), false)).toBe(0);
     expect(calls).toEqual([]);
   });
-  it('origin moved during the run: no push', () => {
+  it('origin moved during the run: M is merged locally but not pushed', () => {
     go({ originMoves: true });
     expect(pushes()).toEqual([]);
-    expect(status().blockers.join(' ')).toContain('origin/main moved');
+    expect(status().blockers.join(' ')).toContain('origin/main');
   });
   it('a forbidden path in the diff: no commit, no re-run, needs-human', () => {
     go({ names: 'src/core/sim/step.ts\0' });
@@ -827,7 +871,7 @@ describe('nightly-fix command (fake runner)', () => {
       expect(sleeps).toEqual([20 * 60_000, 20 * 60_000]);
       expect(out).toContain('retrying in 20 min');
       expect(claudeCalls()).toHaveLength(1);
-      expect(fullRunCalls()).toHaveLength(1);
+      expect(fullRunCalls()).toEqual([]); // the diff stays inside the re-run spec
       expect(status().state).toBe('fixed-pushed');
     });
     it('keeps retrying until 04:30, then gives up without a fix round (no skip-the-night crash)', () => {
