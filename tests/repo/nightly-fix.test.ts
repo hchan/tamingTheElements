@@ -811,7 +811,7 @@ describe('nightly-fix command (fake runner)', () => {
     expect(existsSync(join(dir, 'gate', 'nightly-fix.lock'))).toBe(false);
   });
 
-  describe('collect-and-fix at 02:00', () => {
+  describe('collect-and-fix at 01:00', () => {
     const night = (): Date => new Date(2026, 10, 20, 2, 0, 0);
     const submitted = (): void => {
       mkdirSync(join(dir, 'gate'), { recursive: true });

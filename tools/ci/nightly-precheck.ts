@@ -1,7 +1,7 @@
 /**
  * 23:00 precheck: after the full e2e is queued, `nightly-e2e.ts submit` runs `gate:commit` on the tip sha it checked out in the
- * detached worktree (credentials stripped, pushes disabled, same caps as the 02:00 push), so a red gate is known at 23:00 and not
- * first at 02:00. Report: tte-gate/nightly-precheck.json, shown by `pnpm nightly:status`. It never changes the submit exit code.
+ * detached worktree (credentials stripped, pushes disabled, same caps as the 01:00 push), so a red gate is known at 23:00 and not
+ * first at 01:00. Report: tte-gate/nightly-precheck.json, shown by `pnpm nightly:status`. It never changes the submit exit code.
  * Pure logic and file helpers only; the runner lives in nightly-e2e.ts. Tests: tests/repo/nightly-e2e-cli.test.ts.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 /** Lines of a failed gate:commit kept in the precheck status. */
 export const PRECHECK_TAIL_LINES = 30;
-/** Cap for the precheck gate (the same as the 02:00 push gate, GATE_TIMEOUT_MS). */
+/** Cap for the precheck gate (the same as the 01:00 push gate, GATE_TIMEOUT_MS). */
 export const PRECHECK_TIMEOUT_MS = 90 * 60_000;
 
 export interface PrecheckStatus {

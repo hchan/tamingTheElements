@@ -24,7 +24,7 @@ export const FULL_RUN_MS = 90 * 60_000;
 /** Budget for gate:push after a full run (its hard cap is GATE_TIMEOUT_MS, but it normally takes far less). */
 export const GATE_PUSH_ESTIMATE_MS = 15 * 60_000;
 export const MIN_ROUND_MS = 20 * 60_000;
-/** Collect retry: the 02:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
+/** Collect retry: the 01:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
 export const RETRY_WAIT_MS = 20 * 60_000;
 export const RETRY_CUTOFF = { hour: 4, minute: 30 } as const;
 /** Router exits recorded by collect that mean the PC job is not finished or not reachable yet (94 unreachable, 95 busy). */
