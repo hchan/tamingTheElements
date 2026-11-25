@@ -59,8 +59,8 @@ describe('roster24 Large portraits (tools/assets/roster24-art/install-large.py)'
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(e?.sha256);
       const { w, h: ht, a } = alphaPlane(bytes);
       expect([w, ht]).toEqual(e?.size);
-      for (let x = 0; x < w; x++) expect([a[x], a[(ht - 1) * w + x]], `row edge x=${x}`).toEqual([0, 0]);
-      for (let y = 0; y < ht; y++) expect([a[y * w], a[y * w + w - 1]], `col edge y=${y}`).toEqual([0, 0]);
+      for (let x = 0; x < w; x++) expect([a[x], a[(ht - 1) * w + x]], `row edge x=${String(x)}`).toEqual([0, 0]);
+      for (let y = 0; y < ht; y++) expect([a[y * w], a[y * w + w - 1]], `col edge y=${String(y)}`).toEqual([0, 0]);
     });
   }
 
@@ -69,7 +69,7 @@ describe('roster24 Large portraits (tools/assets/roster24-art/install-large.py)'
     expect(aby.a.some((v) => v > 0 && v < 8)).toBe(false);
     const z = alphaPlane(readFileSync('public/assets/img/map/zephraLarge.png'));
     for (let y = 0; y < z.h; y++) for (let x = 0; x < z.w; x++) {
-      if (x < 6 || y < 6 || x >= z.w - 6 || y >= z.h - 6) expect(z.a[y * z.w + x], `${x},${y}`).toBe(0);
+      if (x < 6 || y < 6 || x >= z.w - 6 || y >= z.h - 6) expect(z.a[y * z.w + x], `${String(x)},${String(y)}`).toBe(0);
     }
   });
 });
