@@ -51,7 +51,7 @@ export function visualBox(x: number, y: number, w: number, h: number, k: number,
 }
 
 /**
- * Sheets with a frame larger than the body (the portrait rigs: 240 px frames with overscan for wings, tails and spell reach)
+ * Sheets with a frame larger than the body (the portrait rigs: frames padded with overscan for wings, tails and spell reach, so larger than the 80 px body)
  * carry a `box`: the frame-space rect that maps onto the visual box. It rides on the texture frame's `customData` (set where
  * the sheet frames are registered, copied to the graded texture), so every view that draws or copies a hero frame sizes it
  * the same way. Frames without one (legacy strips, 80 px sheets) fill the visual box, as before.

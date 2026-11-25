@@ -32,8 +32,8 @@ export function applyVictoryStill(root: HTMLElement, hero: string, url: string):
   img.src = url;
 }
 
-/** Heroes with a cut-in but no approved victory still get a win flash and a scale-pop on the portrait instead (none now: Quarrak's still shipped, and the VICTORY_HEROES guard in victoryFlashFor keeps the fallback off for it). */
-export const FLASH_HEROES: ReadonlySet<string> = new Set(['quarrak']);
+/** Heroes with a cut-in but no approved victory still get a win flash and a scale-pop on the portrait instead (none now: Quarrak's still shipped, so the set is empty; add a slug here only while a hero has no still, and the flash is tinted by that hero's element). */
+export const FLASH_HEROES: ReadonlySet<string> = new Set();
 
 export const FLASH_MS = 700;
 export const POP_SCALE = 1.06;
