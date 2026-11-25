@@ -131,9 +131,21 @@ for (const reduced of [false, true]) {
         await page.evaluate(`window.__TTE__.arena.step(5)`);
         await frames(page);
         const moved = await pixelDiff(page, settled, await shot(page, `${name}-later-${mode}`, id));
-        test.info().annotations.push({ type: 'tide-motion-px', description: String(moved) });
+        // One 5-tick window can land on a quiet ripple phase (bimodal: 5.4k vs 21k px), so with motion on take the largest of three consecutive windows.
+        let largest = moved;
+        if (!reduced) {
+          let prev = await shot(page, `${name}-w1-${mode}`, id);
+          for (let w = 2; w <= 3; w++) {
+            await page.evaluate(`window.__TTE__.arena.step(5)`);
+            await frames(page);
+            const next = await shot(page, `${name}-w${String(w)}-${mode}`, id);
+            largest = Math.max(largest, await pixelDiff(page, prev, next));
+            prev = next;
+          }
+        }
+        test.info().annotations.push({ type: 'tide-motion-px', description: `${String(moved)} (largest ${String(largest)})` });
         if (reduced) expect(moved, 'reduced motion: the tide ring holds still').toBeLessThanOrEqual(worstNoise + 600);
-        else expect(moved, 'tide ripples move between ticks').toBeGreaterThan(noise + 3000);
+        else expect(largest, 'tide ripples move between ticks').toBeGreaterThan(noise + 3000);
       }
       await page.evaluate(`window.__TTE__.arena.step(110)`);
       await frames(page);
