@@ -21,7 +21,9 @@ function setup(statuses: Record<number, number[]>, flags = 0) {
   const destroyed: number[] = [];
   const handlers = new Map<string, () => void>();
   const scene = {
-    add: { graphics: () => chain(depths, destroyed) },
+    add: { graphics: () => chain(depths, destroyed), image: () => chain(depths, destroyed) },
+    textures: { exists: () => false },
+    load: { on: () => scene.load, off: () => scene.load, once: () => scene.load, image: () => scene.load, isLoading: () => true, start: () => scene.load },
     events: {
       on: (n: string, f: () => void) => { handlers.set(n, f); return scene.events; },
       once: (n: string, f: () => void) => { handlers.set(n, f); return scene.events; },

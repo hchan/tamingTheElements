@@ -141,3 +141,26 @@ for (const reduced of [false, true]) {
     expect(errors).toEqual([]);
   });
 }
+
+// Long gate (no @smoke): real arena fight, about 20 s. The freeze and daze plates load lazily on first use, with no console errors.
+test('freeze and daze plates load lazily and the rings keep drawing', async ({ page }) => {
+  const errors = collectErrors(page);
+  const plateUrls: string[] = [];
+  page.on('response', (r) => {
+    if (r.url().includes('/assets/img/fx/status/') && r.status() === 200) plateUrls.push(r.url());
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const [left] = await start(page);
+  test.setTimeout(150_000);
+  expect(plateUrls, 'no plate is fetched before a ring needs it').toEqual([]);
+  await grant(page, left, 5, 120);
+  await grant(page, left, 10, 120);
+  await frames(page);
+  await page.evaluate(`window.__TTE__.arena.step(14)`);
+  await expect.poll(() => plateUrls.map((u) => /([a-z]+)\.png/.exec(u)?.[1]).sort(), { message: 'plates fetched' }).toEqual(['daze', 'freeze']);
+  await frames(page);
+  await frames(page);
+  expect((await rings(page))?.filter((r) => r.id === left).map((r) => r.status).sort((a, b) => a - b)).toEqual([5, 10]);
+  await shot(page, 'plates-freeze-daze', left);
+  expect(errors).toEqual([]);
+});

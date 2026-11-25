@@ -1,0 +1,15 @@
+{
+ "verdict": "art-director approve (regrade condition), see .scratch/status-ring/approval.json",
+ "slots": {
+  "freeze": {
+   "source": "fx_status_freeze_r4_45801.png",
+   "size": 128,
+   "regrade": "key-rings.py REGRADE"
+  },
+  "daze": {
+   "source": "fx_status_daze_r5_45901.png",
+   "size": 128,
+   "regrade": "key-rings.py REGRADE"
+  }
+ }
+}
