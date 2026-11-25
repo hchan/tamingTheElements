@@ -37,14 +37,14 @@ test('glimmaw super: the cut-in composite loads on first use and shows mid-freez
   expect(errors).toEqual([]);
 });
 
-// Pilot release (RELEASED_ROSTER24 = zephra; long gate: per-hero check, about 10 s, no @smoke tag): zephra is pickable and its super
+// Pilot release (zephra; all 12 are released now, umbrel last and in the picker; long gate: per-hero check, about 10 s, no @smoke tag): zephra is pickable and its super
 // cut-in loads with NO roster24 flag, while an unreleased hero stays out of the picker. Proves the production path of the one-hero release.
 test('zephra is released: picker lists it and the cut-in shows without ?ff=roster24', async ({ page }) => {
   const errors = collectErrors(page);
   const cutinRequests: string[] = [];
   page.on('request', (r) => { if (r.url().includes('/assets/img/cutin/')) cutinRequests.push(r.url()); });
   await page.goto(`${START}&ff=arcade#arcade`);
-  await expect(page.getByLabel('Your race').locator('option[value="umbrel"]')).toHaveCount(0);
+  await expect(page.getByLabel('Your race').locator('option[value="umbrel"]')).toHaveCount(1); // umbrel, the last roster24 hero, is released too: nobody is hidden any more
   await page.getByLabel('Your race').selectOption('zephra');
   await page.getByLabel('AI race').selectOption('fiara');
   await page.getByRole('button', { name: 'Fight!' }).click();

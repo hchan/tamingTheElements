@@ -9,8 +9,8 @@ describe('victory still gate', () => {
   it('needs a win, the hero, ?ff=roster24 and a dev or test build', () => {
     expect(victoryStillFor('umbrel', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/umbrel_victory.png');
     expect(victoryStillFor('umbrel', false, '?ff=roster24', true, '/')).toBeNull();
-    expect(victoryStillFor('umbrel', true, '', true, '/')).toBeNull();
-    expect(victoryStillFor('umbrel', true, '?ff=roster24', false, '/')).toBeNull();
+    expect(victoryStillFor('umbrel', true, '', false, '/')).toBe('/assets/img/victory/umbrel_victory.png'); // released
+    expect(victoryStillFor('umbrel', false, '', false, '/')).toBeNull();
     expect(victoryStillFor('zephra', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/zephra_victory.png');
     expect(victoryStillFor('zephra', true, '', false, '/')).toBe('/assets/img/victory/zephra_victory.png'); // released
     expect(victoryStillFor('vortigal', true, '', false, '/')).toBe('/assets/img/victory/vortigal_victory.png');

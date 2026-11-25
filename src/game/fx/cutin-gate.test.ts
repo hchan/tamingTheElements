@@ -19,7 +19,6 @@ describe('super cut-in gate', () => {
     expect(shouldCutin('umbrel', '?ff=roster24', true)).toBe(true);
     expect(shouldCutin('curomo', '?ff=roster24', true)).toBe(false);
     expect(shouldCutin(undefined, '?ff=roster24', true)).toBe(false);
-    expect(shouldCutin('umbrel', '', true)).toBe(false);
     expect(shouldCutin('zephra', '', false)).toBe(true); // released: no flag needed
     expect(shouldCutin('vortigal', '', false)).toBe(true);
     expect(shouldCutin('durrok', '', false)).toBe(true);
@@ -31,7 +30,9 @@ describe('super cut-in gate', () => {
     expect(shouldCutin('nykra', '', false)).toBe(true);
     expect(shouldCutin('abyssor', '', false)).toBe(true);
     expect(shouldCutin('quarrak', '', false)).toBe(true);
-    expect(shouldCutin('umbrel', '?ff=roster24', false)).toBe(false);
+    expect(shouldCutin('umbrel', '', false)).toBe(true);
+    expect(shouldCutin('fiara', '', false)).toBe(false); // not a roster24 hero: never, flag or not
+    expect(shouldCutin('curomo', '?ff=roster24', false)).toBe(false);
   });
 
   it('builds the texture key and url', () => {
