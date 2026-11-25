@@ -3,8 +3,8 @@ import { ELEMENT_COLORS } from './element-colors';
 import { POP_SCALE, flashElementOf, VICTORY_HEROES, victoryFlashFor, victoryFlashFrames, victoryStillFor, victoryStillUrl } from './victory-still';
 
 describe('victory still gate', () => {
-  it('covers the eleven approved roster24 heroes', () => {
-    expect([...VICTORY_HEROES]).toEqual(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok']);
+  it('covers the twelve approved roster24 heroes', () => {
+    expect([...VICTORY_HEROES]).toEqual(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok', 'quarrak']);
   });
   it('needs a win, the hero, ?ff=roster24 and a dev or test build', () => {
     expect(victoryStillFor('umbrel', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/umbrel_victory.png');
@@ -30,14 +30,11 @@ describe('victory still gate', () => {
 });
 
 describe('victory flash fallback (no still)', () => {
-  it('applies to quarrak (released) only on a win with motion allowed', () => {
-    expect(victoryFlashFor('quarrak', true, '?ff=roster24', true, false)).toBe(true);
-    expect(victoryFlashFor('quarrak', true, '?ff=roster24', true, true)).toBe(false);
-    expect(victoryFlashFor('quarrak', false, '?ff=roster24', true, false)).toBe(false);
-    expect(victoryFlashFor('quarrak', true, '', false, false)).toBe(true);
-    expect(victoryFlashFor('quarrak', true, '', false, true)).toBe(false);
+  it('is off for quarrak now that it has a still, and for every other hero with one', () => {
+    expect(victoryStillFor('quarrak', true, '', false, '/')).toBe('/assets/img/victory/quarrak_victory.png');
+    expect(victoryFlashFor('quarrak', true, '?ff=roster24', true, false)).toBe(false);
+    expect(victoryFlashFor('quarrak', true, '', false, false)).toBe(false);
     expect(victoryFlashFor('umbrel', true, '?ff=roster24', true, false)).toBe(false);
-    expect(victoryStillFor('quarrak', true, '?ff=roster24', true, '/')).toBeNull();
   });
   it('pops about 6% and settles back', () => {
     const f = victoryFlashFrames();

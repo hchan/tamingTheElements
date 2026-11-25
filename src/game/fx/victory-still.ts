@@ -7,7 +7,7 @@ import { ELEMENT_COLORS } from './element-colors';
  * the Versus result screen when that hero wins. Render only; released heroes (RELEASED_ROSTER24) always, the rest behind `?ff=roster24` in dev/test builds (the cut-in gate); the image
  * is fetched when the screen shows, never preloaded. Other heroes and every loss or draw keep the portrait card.
  */
-export const VICTORY_HEROES: ReadonlySet<string> = new Set(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok']);
+export const VICTORY_HEROES: ReadonlySet<string> = new Set(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok', 'quarrak']);
 
 export const victoryStillUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/victory/${hero}_victory.png`;
 
@@ -32,7 +32,7 @@ export function applyVictoryStill(root: HTMLElement, hero: string, url: string):
   img.src = url;
 }
 
-/** Heroes with a cut-in but no approved victory still (Quarrak: three art rounds rejected): they get a win flash and a scale-pop on the portrait instead. */
+/** Heroes with a cut-in but no approved victory still get a win flash and a scale-pop on the portrait instead (none now: Quarrak's still shipped, and the VICTORY_HEROES guard in victoryFlashFor keeps the fallback off for it). */
 export const FLASH_HEROES: ReadonlySet<string> = new Set(['quarrak']);
 
 export const FLASH_MS = 700;

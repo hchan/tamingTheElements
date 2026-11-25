@@ -1,4 +1,4 @@
-"""Install the art-director-approved roster24 victory stills (glimmaw, brazgor, kindrel, vortigal, zephra, nykra, hyalia, ouroth, umbrel, abyssor, durrok) as transparent full-body PNGs.
+"""Install the art-director-approved roster24 victory stills (glimmaw, brazgor, kindrel, vortigal, zephra, nykra, hyalia, ouroth, umbrel, abyssor, durrok, quarrak) as transparent full-body PNGs.
 
 Usage: python -I tools/assets/victory-gen/victory-key.py [outdir]   (default public/assets/img/victory)
 Reads each source named in HEROES from tools/assets/victory-gen/provenance/ (approval and facing in provenance/approval.json, sha256 pinned in
@@ -7,7 +7,7 @@ transparent cut-out (only cropped and scaled). zephra is the CPU-warp still tool
 kept here as the record, they need the private warp workspace and are not rerun by the installer).
 Steps: flood-fill the grey background from the four corners (tolerance 14), erode the matte 1 px and feather it 1 px, crop to the
 body plus a 12 px margin, scale to fit the 320x314 map-portrait box (same scale class as map/glimmawLarge.png and the KO frame).
-No flip (facings are in approval.json). Drawn only behind ?ff=roster24 (src/game/fx/victory-still.ts).
+quarrak's source is tools/assets/victory-poses/quarrak/quarrak_victory.png (GPU i2i; copied byte for byte to provenance/quarrak_win.png; minor swirl on the top shell plates accepted). No flip (facings are in approval.json). Drawn only behind ?ff=roster24 (src/game/fx/victory-still.ts).
 Pillow only.
 """
 import sys
@@ -29,19 +29,22 @@ HEROES = {
     "umbrel": "r805-umbrel-victory_58210_d0.5.png",
     "abyssor": "r842-abyssor-vic_61100_d0.4.png",
     "durrok": "durrok_win.png",
+    "quarrak": "quarrak_win.png",
 }
 TOL, MARGIN, BOX = 14, 12, (320, 314)
 KEY = (255, 0, 255)
 POCKETS = True
 # per-hero flatness tolerance for the enclosed-pocket seeds (default 3): hazy pockets (soft fog behind a coil) need more
 POCKET_TOL = {"ouroth": 12, "umbrel": 12, "abyssor": 12}
+# per-hero flood tolerance (default TOL): quarrak's grey ground-shadow haze and the grey sliver between the tail spikes need 30
+HERO_TOL = {"quarrak": 30}
 
 
-def key(src: Image.Image, pocket_tol: int = 3) -> Image.Image:
+def key(src: Image.Image, pocket_tol: int = 3, tol: int = TOL) -> Image.Image:
     rgb = src.convert("RGB")
     flood = rgb.copy()
     for xy in ((0, 0), (rgb.width - 1, 0), (0, rgb.height - 1), (rgb.width - 1, rgb.height - 1)):
-        ImageDraw.floodfill(flood, xy, KEY, thresh=TOL)
+        ImageDraw.floodfill(flood, xy, KEY, thresh=tol)
     # enclosed pockets (between legs, inside a tail loop) are unreachable from the corners: seed from perfectly flat patches
     # of the corner colour (painted subject areas are never that flat) on a coarse grid
     bg = rgb.getpixel((0, 0))
@@ -49,7 +52,7 @@ def key(src: Image.Image, pocket_tol: int = 3) -> Image.Image:
         for y in range(4, rgb.height - 4, 6):
             for x in range(4, rgb.width - 4, 6):
                 if flood.getpixel((x, y)) != KEY and all(max(abs(a - b) for a, b in zip(rgb.getpixel((x + dx, y + dy)), bg)) <= pocket_tol for dx, dy in ((-3, 0), (3, 0), (0, -3), (0, 3), (0, 0))):
-                    ImageDraw.floodfill(flood, (x, y), KEY, thresh=TOL)
+                    ImageDraw.floodfill(flood, (x, y), KEY, thresh=tol)
     # flooded background equals KEY (difference 0); everything else is body
     matte = ImageChops.difference(flood, Image.new("RGB", rgb.size, KEY)).convert("L").point(lambda v: 0 if v == 0 else 255)
     matte = matte.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.8))
@@ -60,7 +63,7 @@ def key(src: Image.Image, pocket_tol: int = 3) -> Image.Image:
 
 def install(hero: str, out_dir: Path) -> None:
     src = Image.open(PROV / HEROES[hero])
-    im = src.convert("RGBA") if "A" in src.getbands() else key(src, POCKET_TOL.get(hero, 3))
+    im = src.convert("RGBA") if "A" in src.getbands() else key(src, POCKET_TOL.get(hero, 3), HERO_TOL.get(hero, TOL))
     box = im.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
     if box is None:
         raise SystemExit(f"{hero}: empty matte")

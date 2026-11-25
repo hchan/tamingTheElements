@@ -1,0 +1,19 @@
+{
+ "style": "grim desaturated painted medieval dark fantasy, rough oil brushwork, flat neutral grey background",
+ "neg": "people, human, face, hands, rider, cropped, redesign, extra limbs, cartoon, anime, outline, vector, text, frame, floor, landscape, fog, lightning, cold blue, uniform brown, blurry",
+ "width": 1024,
+ "height": 1024,
+ "jobs": [
+  {
+   "name": "quarrak_vic_i2i_r1003",
+   "kind": "i2i",
+   "prompt": "full body armoured earth beast, same creature, shell and colours as the init, head raised high triumphant, chest lifted, same pose as the init, whole body in frame",
+   "init": "in/.scratch/init/quarrak-vic1003.png",
+   "strengths": [0.35, 0.45],
+   "seeds": [100300, 100301],
+   "cfg": 7.0,
+   "steps": 30,
+   "bulk": false
+  }
+ ]
+}
