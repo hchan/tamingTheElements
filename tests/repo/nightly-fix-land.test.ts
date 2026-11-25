@@ -44,7 +44,9 @@ let root = '';
 beforeEach(() => {
   root = mkdtempSync(join(resolve('.scratch'), 'land-'));
 });
-afterEach(() => rmSync(root, { recursive: true, force: true }));
+afterEach(() => {
+  rmSync(root, { recursive: true, force: true });
+});
 
 function world(over: Partial<World> = {}): World {
   mkdirSync(join(root, 'git'), { recursive: true });
@@ -70,7 +72,7 @@ function deps(w: World, env: Record<string, string | undefined> = {}, now: Date 
         if ((a.at(-1) ?? '').startsWith('refs/heads/nightly-fix-merged')) return w.branches?.has((a.at(-1) ?? '').slice('refs/heads/'.length)) ? ok(`${M}\n`) : ok('', 1);
         if (a[1]?.endsWith('^{tree}')) return ok(a[1].startsWith(N) || a[1].startsWith(P) ? 'tree1\n' : 'tree2\n');
         return ok();
-      case 'merge-base': return ok('', w.anc.has(`${a[2]}>${a[3]}`) ? 0 : 1);
+      case 'merge-base': return ok('', w.anc.has(`${a[2] ?? ''}>${a[3] ?? ''}`) ? 0 : 1);
       case 'merge-tree': return w.mergeTree ? ok(w.mergeTree.stdout, w.mergeTree.code) : ok(`${P}\n`);
       case 'grep': return ok('', a[3] === N || a[3] === P ? (w.grep ?? 1) : 1);
       case 'diff': return ok(w.diff ?? 'src/a.ts\0');
