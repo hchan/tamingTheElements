@@ -1,0 +1,27 @@
+{
+ "umbrel_ko.png": {
+  "source": ".scratch/ko-r24/umbrel_ko.png (tools/assets/ko-gen/ko-warp-r24.py umbrel)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-25",
+  "hard_rejects": []
+ },
+ "abyssor_ko.png": {
+  "source": "ko-warp-r24.py abyssor + eye darkened 40% (director's optional note, applied after review; eye not re-reviewed)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-25",
+  "hard_rejects": []
+ },
+ "nykra_ko.png": {
+  "source": ".scratch/ko-r2/nykra_ko_r3.png (warp, horse on its back)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-24",
+  "beats_shipped": true,
+  "note": "optional: darken pale specks near belly/mane tips. The 11-25 ko-r24 nykra v1 and piecewise v2 warps failed and are not shipped."
+ }
+}
