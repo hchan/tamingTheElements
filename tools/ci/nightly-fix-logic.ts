@@ -450,10 +450,13 @@ export interface IntegrationInput {
   readonly mergeTreeClean: boolean | undefined;
   readonly markersClean: boolean | undefined;
   readonly forbidden: readonly string[];
+  /** None of BLOCKING_ENV (CI, TTE_E2E_LOCAL, TTE_ALLOW_MAC_E2E) is set; only an explicit false refuses (callers must pass it). */
+  readonly noEnvOverride?: boolean;
 }
 /** Every reason not to touch the main checkout; empty means merge M into main. */
 export function integrationRefusals(i: IntegrationInput): string[] {
   const b: string[] = [];
+  if (i.noEnvOverride === false) b.push('CI, TTE_E2E_LOCAL or TTE_ALLOW_MAC_E2E is set; not integrating into main');
   if (i.msLeft < LAND_MARGIN_MS) b.push('not enough time left to integrate into main');
   if (!i.mainCheckedOutHere) b.push('main is not checked out exactly once, in the repo checkout');
   if (!i.headIsMain) b.push('the repo checkout is not on main');
