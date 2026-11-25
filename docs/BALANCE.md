@@ -573,3 +573,23 @@ Plan round R4 (balance-24): three legacy melee heroes got about +3% 1v1 life wit
 12 roster seed 1: all twelve heroes .455-.545 (before .460-.545). Seed 41: .443-.551 (before .420-.551). Full roster: the three gain +0.5 to +3.8 pp in all but pax seed 41 (+0.5, noise-level) and wispera lands near .45-.47 as planned; the legacy melee five remain below .45 in the full roster (the polarization against the hidden 12 is a mechanic question, not a row one). `arcade-2v2-baseline.json` and Classic `baseline.json` compare at 0.0 pp everywhere (team life unchanged).
 
 Re-record: `golden:record` (Classic, header only) and `golden:record --ruleset arcade` (Arcade goldens with wispera, echo or pax change content), `balance:record --ruleset arcade` and `--roster full`.
+
+## Arcade outlier re-fit (SIM_VERSION 114)
+
+Plan round R5 (balance-24): four heroes outside the 1v1 .40-.60 or 2v2 .35-.65 bounds in the 16-seed pass (released roster, aiLevel 3, 368 games per hero per mode) were re-fitted in one round, all in `src/core/sim/arcade-numbers.ts`: sindarosa `hpPm` 3001 -> 2806 (-6.5% at every size; 2v2 785 kept), fiara `hpPm` 4508 -> 4235 with `ARCADE_2V2_LIFE_PM` 682 -> 726 (1v1 life only; team life 3074 bit-identical, v86 method), curomo `hpPm` 5420 -> 5880 (+8.5% at every size; 2v2 700 kept), treenoc `damagePm` 1139 -> 1253 (+10%, supers unaffected). Classic never reads these tables.
+
+| hero, mode | before | after |
+|---|---|---|
+| sindarosa 1v1 | .630 | .579 |
+| fiara 1v1 | .611 | .573 |
+| treenoc 1v1 | .383 | .492 |
+| curomo 1v1 | .359 | .454 |
+| abyssor-led 2v2 (sindarosa partner) | .668 | .630 |
+| curomo-led 2v2 | .332 | .486 |
+| sindarosa-led 2v2 | .571 | .552 |
+| kindrel-led 2v2 (curomo partner) | .402 | .421 |
+| treenoc-led 2v2 | .508 | .571 |
+
+After round 1 every hero is inside both bounds: 1v1 .405 (brazgor, the lowest, 1 win above the limit) to .579; 2v2 .421 (kindrel) to .630 (abyssor). No round 2 was needed. Seed-41 hold-out, `--roster legacy` and 3v3 runs were not made.
+
+Re-record: `golden:record --ruleset arcade` (nine Arcade goldens change content: arcade-moves, -weather, -tag, -tag3, -traps, -elemental, -cc, -ot, -run; arcade-1v1 and arcade-roster24-b1/b2/b3 change only the simVersion header), `golden:record` (Classic goldens header only), `balance:record --ruleset arcade` with `--roster full` and `--team-size 2`; `baseline.json` (Classic) untouched.
