@@ -29,6 +29,7 @@ describe('super cut-in gate', () => {
     expect(shouldCutin('kindrel', '', false)).toBe(true);
     expect(shouldCutin('ouroth', '', false)).toBe(true);
     expect(shouldCutin('nykra', '', false)).toBe(true);
+    expect(shouldCutin('abyssor', '', false)).toBe(true);
     expect(shouldCutin('umbrel', '?ff=roster24', false)).toBe(false);
   });
 
