@@ -73,20 +73,20 @@
   "sha256": "d05144e9ce60952de2f038c395953e0845cd8a6287b8787103d267eb5d4414e0"
  },
  "ko_nykra": {
-  "approved": null,
+  "approved": "nykra_ko.png (ko-rigonly flip, then tools/assets/ko-r24-new/nykra-clean.py)",
   "reviewer": "art-director",
-  "date": "2026-11-23",
-  "beats_shipped": false,
-  "verdict": "REVISE 3/5 after 2 rounds (tip -145, sy .7): park",
-  "note": "cutout nykra-94301-cut5.png: small, muddy, head hidden under legs, ragged tail; suggested -120 deg, sy 0.8. One pass APPROVE 4 (borderline), final pass REVISE 3; parked on the conflict. Round 3 (builder, -100/0.85/2): bigger and readable as a belly-up horse but hovers above the shadow with a muddy mane; still parked."
+  "date": "2026-11-24",
+  "beats_shipped": true,
+  "sha256": "b4ef1edd548b2d789b4bb446307ac03ecb5623590e19798daf16dfa82726af09",
+  "note": "APPROVE 4; verdicts in tools/assets/ko-r24-new/approval-nykra.json"
  },
  "ko_abyssor": {
-  "approved": null,
+  "approved": "abyssor_ko.png (ko-rigonly tip)",
   "reviewer": "art-director",
-  "date": "2026-11-23",
-  "beats_shipped": false,
-  "verdict": "REJECT 3/5 after 2 rounds: park",
-  "note": "reads as a tumbling upright octopus, not a KO; needs ~85-90 deg tip about the mantle base and tentacles curled down"
+  "date": "2026-11-24",
+  "beats_shipped": true,
+  "sha256": "b8e58ca7f7fb746ad2e52a27116c886341cdd1c360bd73c9ae4165e9c80250a9",
+  "note": "APPROVE 4; verdict in tools/assets/ko-r24-new/approval-abyssor-r1.json"
  },
  "ko_quarrak": {
   "approved": "sheet-r2.png (quarrak KO rig-only, flip, from sources/quarrak-96214-cut.png)",
