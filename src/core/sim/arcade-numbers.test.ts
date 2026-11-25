@@ -95,6 +95,15 @@ describe('SIM_VERSION 113 1v1 life cut keeps team life', () => {
   });
 });
 
+describe('SIM_VERSION 114 outlier re-fit', () => {
+  it('sindarosa and curomo life move at every size; fiara 1v1 only (team life kept); treenoc damage', () => {
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('sindarosa')[0], n, 'sindarosa'))).toEqual([2806, 2202, 2862]);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('fiara')[0], n, 'fiara'))).toEqual([4235, 3074, 3996]);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('curomo')[0], n, 'curomo'))).toEqual([5880, 4116, 5350]);
+    expect(arcadeRaceNumbers('treenoc')[1]).toBe(1253);
+  });
+});
+
 describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
   it('leaves a 1v1 life alone and scales a two-hero roster by the per-race table, within sane bounds', () => {
     for (const race of PLAYABLE) {

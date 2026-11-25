@@ -28,13 +28,13 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // tools/sim/boss-probe.ts so Normal AI heroes win about 38% (Easy 48%, Hard 39%; 96 matches each) and no round times out.
   'eternal-void': [580, 1000],
   // Ice Shock melee plus a 10 s fan: has to close in through fire. Re-fit in SIM_VERSION 27 (Snag replaced Shards of Ice; was [6140, 1420]) and in 30 (was [6300, 1560]: 86-88% Arcade win rate, now 60%; 6000/1250 -> 5800/1200 in 31).
-  curomo: [5420, 1243],
+  curomo: [5880, 1243], // Re-fit in SIM_VERSION 114 (was [5420, 1243]; 35.9% 1v1, 33.2% 2v2: +8.5% life at every size)
   // Tornado stun into Wind Cone is the natural combo; near the legacy power. Re-fit in SIM_VERSION 31 (was [4490, 1010]); life 4800 -> 5000 in 37.
   cyclonius: [5600, 1072], // Re-fit in SIM_VERSION 111 (was [5600, 1100]; damage -2.5%)
   // Hurricane halves each hit and Fade only defends: one of the weakest kits (24% before). Snag replaced Fade; re-fit in SIM_VERSION 27 (was [6360, 1840]). Re-fit in SIM_VERSION 31 (was [5300, 1530]).
   echo: [7464, 1600], // Re-fit in SIM_VERSION 112 (was [7250, 1600]; life +3%, 2v2 700 -> 680 keeps team life); 108 (was [6750, 1600]; v104 stun shift)
   // Fireball starts at 0.25x and Fire Heal is a 40 s heal. Damage 1750 -> 1450 in SIM_VERSION 27 (the Snag heroes' lines fed her wins). Re-fit in SIM_VERSION 31 (was [5140, 1450]). Ranged since SIM_VERSION 69 (roster WP 0.4: no Charge, weather charge by casting): 50.0%, numbers kept. Re-fit in SIM_VERSION 99 (was [4210, 1373]; stun-immunity retune after v98).
-  fiara: [4508, 1470],
+  fiara: [4235, 1470], // Re-fit in SIM_VERSION 114 (was [4508, 1470]; 61.1% 1v1, -6.1% life, 2v2 682 -> 726 keeps team life)
   // Slime Blast 10 per 1.5 s, the lowest sustained damage in data.json. Life 6180 -> 6400 in SIM_VERSION 27. Re-fit in SIM_VERSION 69 (was [5000, 1420]: 38.6% once four heroes changed style in roster WP 0.4).
   ishimi: [5400, 1535], // a 1.5x mid-size (data/size.ts) adds x1.225 life and x1.06 damage on top: 6400 / 1550 before size (5400 / 1480 was 62.5% in the Arcade tournament)
   // Crimson Fire is fast and wide: strong. Life 3320 -> 3500 in SIM_VERSION 27, 3500 -> 3900 in 36, 3900 -> 4000 in 37.
@@ -46,9 +46,9 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37. Ranged since SIM_VERSION 69 (roster WP 0.4): 51.7%, numbers kept. Re-fit in SIM_VERSION 99 (was [1850, 640]; stun-immunity retune after v98).
   rokcore: [1949, 674], // a 2x giant (data/size.ts) adds x1.45 life and x1.12 damage on top: 2600 / 690 before giants
   // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong. Arcade falloff since SIM_VERSION 71 (FUN-DESIGN 2.27): full damage to about 257 px, 45% past about 600 px. Re-fit in SIM_VERSION 99 (was [2860, 724]; stun-immunity retune after v98).
-  sindarosa: [3001, 760],
+  sindarosa: [2806, 760], // Re-fit in SIM_VERSION 114 (was [3001, 760]; 63.0% 1v1, abyssor-led 2v2 66.8%: -6.5% life at every size)
   // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]). Life 6050 -> 6215 in SIM_VERSION 86 (2v2 factor 714 -> 695 keeps its 2v2 and 3v3 life bit-identical). Re-fit in SIM_VERSION 99 (was [6215, 1180]; stun-immunity retune after v98).
-  treenoc: [6540, 1139], // Re-fit in SIM_VERSION 108 (was [5998, 1139]; v104 stun shift)
+  treenoc: [6540, 1253], // Re-fit in SIM_VERSION 114 (was [6540, 1139]; 38.3% 1v1, +10% damage, not supers); SIM_VERSION 108 (was [5998, 1139]; v104 stun shift)
   // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27. Re-fit in SIM_VERSION 31 (was [7900, 1400]). Melee since SIM_VERSION 69 (roster WP 0.4: Charge, weather charge by walking): re-fit (was [7950, 1355], 57.4%). Life 7575 -> 7365 in SIM_VERSION 86 (2v2 factor 632 -> 650 keeps its 2v2 and 3v3 life bit-identical). Re-fit in SIM_VERSION 99 (was [7365, 1291]; stun-immunity retune after v98).
   wispera: [7041, 1198], // Re-fit in SIM_VERSION 112 (was [6833, 1198]; life +3.04%, 2v2 710 -> 689 keeps team life 4851)
   // Roster-24 batch 1 (SIM_VERSION 72), fitted with tools/sim/low-races/mat.sh.
@@ -86,7 +86,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   curomo: 700, // 740 before SIM_VERSION 101
   cyclonius: 810, // 770 before SIM_VERSION 86
   echo: 680, // 700 before SIM_VERSION 112 (1v1 life +3%, team life unchanged); 661 before SIM_VERSION 109; 710 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 680 before SIM_VERSION 101; 650 before SIM_VERSION 100
-  fiara: 682, // 730 before SIM_VERSION 109; 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
+  fiara: 726, // 682 before SIM_VERSION 114 (1v1 life cut, team life 3074 kept); 730 before SIM_VERSION 109; 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
   ishimi: 630, // 670 before SIM_VERSION 101; 720 before SIM_VERSION 86
   lavax: 874, // 804 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged)
   morblass: 810, // 865 before SIM_VERSION 109; 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86

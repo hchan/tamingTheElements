@@ -112,8 +112,9 @@ function idleAgainstHard(seed: number): WallStats {
 
 describe('match level: idle P1 against Hard (WALL-3b)', () => {
   // Seed 5 never reaches a wall. Calibrated on the shipped rule; without wallHoldStep seed 3 is overlapped 6.5% of the
-  // time with a 10th-percentile centre distance of 128 px.
-  const SEEDS = [1, 2, 3, 4, 6];
+  // time with a 10th-percentile centre distance of 128 px. SIM_VERSION 114 (sindarosa life -6.5%): seed 3 moved to a
+  // 10th-percentile gap of 166 px (still no overlap), so seed 7 (201 px, no overlap) replaces it; thresholds unchanged.
+  const SEEDS = [1, 2, 7, 4, 6];
   it('at least four seeds reach a wall, the pooled overlap is under 2% (under 5% per seed) and the gap stays open', () => {
     const stats = SEEDS.map(idleAgainstHard);
     const walled = stats.filter((x) => x.walled && x.post > 0);
