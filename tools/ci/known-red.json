@@ -8,6 +8,14 @@
       "firstSeen": "2026-11-20",
       "idea": "ideas/brainstorm/perf-spec-frame-time-flaky-under-load.md",
       "status": "open"
+    },
+    {
+      "file": "tests/e2e/status-ring.spec.ts",
+      "titleIncludes": "status rings draw, stack and clear (reduced motion)",
+      "tier": "P2",
+      "firstSeen": "2026-11-24",
+      "idea": "ideas/brainstorm/status-ring-reduced-motion-tide-flaky.md",
+      "status": "open"
     }
   ]
 }
