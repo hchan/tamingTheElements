@@ -442,6 +442,7 @@ describe('nightly-fix command (fake runner)', () => {
             if (args.includes('--cached')) return ok(sc.diff ?? '+  await page.waitForSelector("#menu");\n');
             return ok(sc.mergedNames ?? 'tests/e2e/menu.spec.ts\0');
           case 'rev-list':
+            if (args.some((a) => a === `origin/main..${SHA}`)) return ok('3\n'); // the tested commit is ahead of origin
             return ok(`${String(commits)}\n`);
           case 'branch':
             return ok(sc.keptExists && args[1] === '--list' && args[2] === 'nightly-fix-kept/2026-11-20' ? 'nightly-fix-kept/2026-11-20\n' : '');
@@ -772,7 +773,8 @@ describe('nightly-fix command (fake runner)', () => {
     expect(claudeCalls()).toEqual([]);
     expect(status().results.map((r) => r.outcome)).toEqual(['flaky', 'flaky']);
     expect(status().results[0]?.reason).toContain('titleIncludes');
-    expect(calls.some((c) => c.startsWith('git symbolic-ref'))).toBe(true); // the clean-night push preconditions were checked on the tested commit
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]); // the clean night pushes the tested sha once, plain
+    expect(pushes().some((c) => /--force|\s-f(\s|$)|\+/.test(c))).toBe(false);
   });
   it('builds the fix worktree on the tested sha, not origin/main', () => {
     go();
