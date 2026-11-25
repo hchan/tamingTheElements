@@ -247,16 +247,16 @@
  "sindarosa": {
   "inputs": {
    "prep.py": "8496bf12db44d4b4a4a5968b22c870a03f404a6da02bbbcef9c8330cf4b5994b",
-   "spec": "f94b52486e1a3e5749b778f9ba4cb6655b570a6f6ba85d1af483118bf3ddd9ec",
+   "spec": "82aa6b968076b00d1ad29f4eab3f487b0788335471d66a3da11f668ee5c910d7",
    "anim": "fc5a433fe340945e4810605786b6ed7689c1e389ec14b8e5231d701ce6f93b5a",
    "portrait": "291f54a691dd57b1d9cc69b466e950e1634cf66bfa7c7e377ea1bbac6bb55174"
   },
   "outputs": {
    "parts/body.png": "39f497115e44a8a2ec492027282df7bfa1333492150f7626473cbb5148048ace",
-   "parts/shadow.png": "643a4fadf63c14e446867732f5d4776d6a1c2b44f1a8fdeedc961e21e322b0cd",
+   "parts/shadow.png": "31771005e3b1cca53acc180ca86fb3faaa18db40ad395b60a78527ff0bcea122",
    "parts/eye.png": "0609999a7ff995dc9c6e6dec61fd74b638819c5c0ccdbfca9b196835a4400940",
    "parts/maw.png": "5d693381aa49fde276810b389952f3e5ab85abb895dc421a851c290e43b2d4ac",
-   "rig.json": "7d69e36aed2b20196b9fe0ad2b1e44a527e5b55a91de2d15f33c421bf29bc03f"
+   "rig.json": "7f710c1049031c9de31ade685031353abe4ef1eab0593ff7b027cffc2321f25e"
   }
  },
  "umbrel": {

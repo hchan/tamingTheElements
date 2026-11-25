@@ -135,17 +135,18 @@ const REQUIRED_ACTIONS = ACTIONS.filter(([a]) => a !== 'walkBack');
 describe('portrait rigs (ADR-0020): baked frame QA', () => {
   const manifest = JSON.parse(readFileSync(SHEETS_MANIFEST_PATH, 'utf8')) as SheetsManifest;
 
-  it.each(HEROES)('%s: every action in every baked direction, 240 px frames, a box, and all 8 directions resolve', (hero) => {
+  it.each(HEROES)('%s: every action in every baked direction, the spec frame size, a box, and all 8 directions resolve', (hero) => {
+    const frame = (readSpec(hero) as { frame?: number }).frame ?? HERO_FRAME;
     for (const [action] of REQUIRED_ACTIONS)
       for (const dir of BAKED)
         for (let i = 0; i < framesIn(action); i++) {
           const f = frameFile(hero, action, dir, i);
           expect(existsSync(f), f).toBe(true);
           const img = load(f);
-          expect([img.width, img.height]).toEqual([HERO_FRAME, HERO_FRAME]);
+          expect([img.width, img.height]).toEqual([frame, frame]);
         }
     const entry = manifest.sheets.find((s) => s.sprite === hero);
-    expect(entry?.frame).toBe(HERO_FRAME);
+    expect(entry?.frame).toBe(frame);
     expect(entry?.box).toEqual(readSpec(hero).box);
     for (const [action] of REQUIRED_ACTIONS)
       for (const dir of DIRS) {
@@ -153,6 +154,23 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
         expect(r.source, `${action}/${dir}`).not.toBe('legacy');
         if (dir === 'N' || dir === 'S') expect(r.source).toBe('own');
       }
+  });
+
+  // the same margin on the PACKED sheets (what the game draws and map-strips.py reads), so a longer tail or wing cannot be cut at the cell edge
+  it.each(HEROES)('%s: no packed sheet frame touches its cell edge (2 px)', (hero) => {
+    const entry = manifest.sheets.find((s) => s.sprite === hero);
+    const url = entry?.url;
+    if (!entry || !url) return;
+    const sheet = load(resolve(root, 'public/assets', url));
+    const frame = entry.frame ?? manifest.spec.frame;
+    for (const row of entry.rows)
+      row.frames.forEach(([fx, fy], i) => {
+        let min = frame;
+        for (let y = 0; y < frame; y++)
+          for (let x = 0; x < frame; x++)
+            if (alpha(sheet, fx + x, fy + y) >= 1) min = Math.min(min, x, y, frame - 1 - x, frame - 1 - y);
+        expect(min, `${row.key}#${String(i)} margin`).toBeGreaterThanOrEqual(2);
+      });
   });
 
   it.each(HEROES)('%s: no clipping (2 px margin), steady feet in idle and walk, no halo', (hero) => {
