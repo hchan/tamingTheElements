@@ -8,13 +8,14 @@ describe('ko fallback', () => {
     expect(KO_FALLBACK_MS).toBeLessThanOrEqual(900);
   });
 
-  it('needs a loss, an eligible hero and the roster24 flag in a dev/test build', () => {
+  it('needs a loss and an eligible hero (released, so no flag)', () => {
     expect(koFallbackFor('umbrel', true, '?ff=roster24', true)).toBe(true);
     expect(koFallbackFor('nykra', true, '?ff=play,roster24', true)).toBe(false);
     expect(koFallbackFor('umbrel', false, '?ff=roster24', true)).toBe(false);
     expect(koFallbackFor('glimmaw', true, '?ff=roster24', true)).toBe(false);
-    expect(koFallbackFor('umbrel', true, '', true)).toBe(false);
-    expect(koFallbackFor('umbrel', true, '?ff=roster24', false)).toBe(false);
+    expect(koFallbackFor('umbrel', true, '', true)).toBe(true); // released: no flag needed
+    expect(koFallbackFor('umbrel', true, '', false)).toBe(true);
+    expect(koFallbackFor('umbrel', false, '', false)).toBe(false);
   });
 
   it('slumps and greys out; reduced motion keeps colour only', () => {

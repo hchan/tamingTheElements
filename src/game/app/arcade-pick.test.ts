@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHARACTERS, RELEASED_ROSTER24, type CharacterId } from '@core/index';
+import { CHARACTERS, RELEASED_ROSTER24, characterId, type CharacterId } from '@core/index';
 import { ARCADE_RACES, isReleasedHero, DEFAULT_PICK, arcadeRacesFor, roster24On, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
 
 describe('roster24 gate', () => {
@@ -123,10 +123,11 @@ describe('flagFallbackWarnings (qa-r28)', () => {
 });
 
 describe('a saved pick holding a hidden roster24 id (roster24 WP-0b)', () => {
-  const hidden = CHARACTERS.filter((c) => !isReleasedHero(c.id) && c.element !== 'void').map((c) => c.id);
-  it('there are still hidden heroes while RELEASED_ROSTER24 is a partial release', () => {
-    expect(RELEASED_ROSTER24.size).toBeLessThan(12);
-    expect(hidden.length).toBeGreaterThan(0);
+  // All 12 roster24 heroes are released (umbrel last), so no hero is hidden any more: an unknown saved id stands in for a hidden one.
+  const hidden = [...CHARACTERS.filter((c) => !isReleasedHero(c.id) && c.element !== 'void').map((c) => c.id), characterId('not-a-hero')];
+  it('every roster24 hero is released: the hidden list holds only the unknown stand-in', () => {
+    expect(RELEASED_ROSTER24.size).toBe(12);
+    expect(hidden).toEqual([characterId('not-a-hero')]);
   });
   it.each(hidden)('parsePick falls back to released heroes for %s in every slot', (id) => {
     const p = parsePick({ player: id, enemy: id, level: 'normal', size: '3', partner: id, partner2: id, mode: 'local', enemyPartner: id, enemyPartner2: id });

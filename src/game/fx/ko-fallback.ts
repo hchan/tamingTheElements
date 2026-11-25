@@ -1,18 +1,18 @@
-import { cutinFlagOn } from './cutin-gate';
+import { cutinFlagOn, heroReleased } from './cutin-gate';
 
 /**
  * Procedural KO for roster24 heroes with no approved KO art (Umbrel, Nykra: the art session has no cutout pose; see
  * tools/assets/ko-gen/approval.json). In the arena the sprite already gets the generic `koFall` slump (pose-math); on the Versus
  * result screen the losing hero's portrait card slumps, desaturates and dims the same way. Render only (Web Animations on the
- * DOM, no sim state, no randomness), behind `?ff=roster24` in dev/test builds like the victory still. Other heroes keep the plain card.
+ * DOM, no sim state, no randomness), for released heroes always (Umbrel is released), else behind `?ff=roster24` in dev/test builds like the victory still. Other heroes keep the plain card.
  */
 export const KO_FALLBACK_HEROES: ReadonlySet<string> = new Set(['umbrel']);
 
 export const KO_FALLBACK_MS = 800;
 
-/** Whether `hero` (the loser) gets the fallback: it lost, has no KO art, and the flag is on. */
+/** Whether `hero` (the loser) gets the fallback: it lost, has no KO art, and it is released or the flag is on. */
 export const koFallbackFor = (hero: string, lost: boolean, search: string, devBuild: boolean): boolean =>
-  lost && KO_FALLBACK_HEROES.has(hero) && cutinFlagOn(search, devBuild);
+  lost && KO_FALLBACK_HEROES.has(hero) && (heroReleased(hero) || cutinFlagOn(search, devBuild));
 
 /** Keyframes: desaturate and dim, and (unless `reduced`) slump sideways and sink; the end state holds. Reduced motion changes colour only. */
 export function koFallbackFrames(reduced: boolean): Keyframe[] {
