@@ -2,20 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { KO_FALLBACK_HEROES, KO_FALLBACK_MS, koFallbackFor, koFallbackFrames } from './ko-fallback';
 
 describe('ko fallback', () => {
-  it('covers exactly the heroes with no KO art', () => {
-    expect([...KO_FALLBACK_HEROES]).toEqual(['umbrel']);
+  it('covers exactly the heroes with no KO art (none: every roster24 KO still is shipped)', () => {
+    expect([...KO_FALLBACK_HEROES]).toEqual([]);
     expect(KO_FALLBACK_MS).toBeGreaterThanOrEqual(600);
     expect(KO_FALLBACK_MS).toBeLessThanOrEqual(900);
   });
 
-  it('needs a loss and an eligible hero (released, so no flag)', () => {
-    expect(koFallbackFor('umbrel', true, '?ff=roster24', true)).toBe(true);
-    expect(koFallbackFor('nykra', true, '?ff=play,roster24', true)).toBe(false);
-    expect(koFallbackFor('umbrel', false, '?ff=roster24', true)).toBe(false);
-    expect(koFallbackFor('glimmaw', true, '?ff=roster24', true)).toBe(false);
-    expect(koFallbackFor('umbrel', true, '', true)).toBe(true); // released: no flag needed
-    expect(koFallbackFor('umbrel', true, '', false)).toBe(true);
-    expect(koFallbackFor('umbrel', false, '', false)).toBe(false);
+  it('needs a loss and an eligible hero (none now: Umbrel, Nykra and Abyssor show a KO still instead)', () => {
+    for (const h of ['umbrel', 'nykra', 'abyssor', 'glimmaw']) {
+      expect(koFallbackFor(h, true, '?ff=roster24', true), h).toBe(false);
+      expect(koFallbackFor(h, true, '', false), h).toBe(false);
+    }
   });
 
   it('slumps and greys out; reduced motion keeps colour only', () => {

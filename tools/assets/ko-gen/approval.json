@@ -43,12 +43,12 @@
   "sha256": "4e26f841aac98493de69e6abfa97aaee85b555854edf775d84edc089d62d8c31"
  },
  "ko_umbrel": {
-  "approved": null,
+  "approved": "approved/umbrel_ko.png (ko-warp-r24.py umbrel; install-r24-ko.py crops to bbox)",
   "reviewer": "art-director",
-  "date": "2026-11-23",
-  "beats_shipped": false,
-  "verdict": "REVISE 3.5/5 (tip -90, sy 0.8, sink 4): park",
-  "note": "Pale blue-grey matte slivers and a flat cut on the left (the cutout's legs are truncated by the 1024 px canvas bottom, so a defringe cannot restore the leg tips) and the cap floats above the shadow. One cleanup try (key pale grey-blue, erode 2 px, regrade fringe, sink 45) still showed the flat left cut and a hovering body. Needs a re-cut with margin. Round 3 (builder, cut3, key 16/40, close 6, erode 1, feather .5, tip -75 sy .85 sink 6): candidate only, awaiting art-director review; not shipped."
+  "date": "2026-11-25",
+  "beats_shipped": true,
+  "sha256": "f8f7ddd230dcbe48bee4335c0ef7c35f011b5b82d6a5996555b6ebba0c07d4b7",
+  "note": "APPROVE 4 (approved/approval.json). Replaces the parked rig-only rounds and the procedural fallback."
  },
  "ko_fiara": {
   "approved": null,
@@ -78,15 +78,15 @@
   "date": "2026-11-24",
   "beats_shipped": true,
   "sha256": "b4ef1edd548b2d789b4bb446307ac03ecb5623590e19798daf16dfa82726af09",
-  "note": "APPROVE 4; verdicts in tools/assets/ko-r24-new/approval-nykra.json"
+  "note": "APPROVE 4; verdicts in tools/assets/ko-r24-new/approval-nykra.json Same bytes as approved/nykra_ko.png (11-24 APPROVE 4); install-r24-ko.py copies it."
  },
  "ko_abyssor": {
-  "approved": "abyssor_ko.png (ko-rigonly tip)",
+  "approved": "approved/abyssor_ko.png (ko-warp-r24.py abyssor, eye darkened 40%; install-r24-ko.py crops to bbox)",
   "reviewer": "art-director",
-  "date": "2026-11-24",
+  "date": "2026-11-25",
   "beats_shipped": true,
-  "sha256": "b8e58ca7f7fb746ad2e52a27116c886341cdd1c360bd73c9ae4165e9c80250a9",
-  "note": "APPROVE 4; verdict in tools/assets/ko-r24-new/approval-abyssor-r1.json"
+  "sha256": "0bbd413156ed8346a0ee999c36feb9e684a9f4a80318c275daa2922d605b5f99",
+  "note": "APPROVE 4 (approved/approval.json); supersedes the 11-24 tip still (sha b8e58ca7...)."
  },
  "ko_quarrak": {
   "approved": "sheet-r2.png (quarrak KO rig-only, flip, from sources/quarrak-96214-cut.png)",
