@@ -11,7 +11,7 @@
     },
     {
       "file": "tests/e2e/status-ring.spec.ts",
-      "titleIncludes": "status rings draw, stack and clear (reduced motion)",
+      "titleIncludes": "status rings draw, stack and clear",
       "tier": "P2",
       "firstSeen": "2026-11-24",
       "idea": "ideas/brainstorm/status-ring-reduced-motion-tide-flaky.md",

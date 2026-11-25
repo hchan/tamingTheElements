@@ -21,12 +21,13 @@ import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, BLOCKING_ENV, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, deadlineReached, describeFix, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, LOCK_STALE_MS, MAX_FAILURES, MAX_FULL_CYCLES, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers, PUSH_ARGS,
-  retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, tooManyFailures, triage,
-  type Failure, type FailureResult, type FixState, type FixStatus, type PushInput,
+  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, extractFailures, finalState,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, LOCK_STALE_MS, MAX_FULL_CYCLES, MAX_REAL_REDS, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers, PUSH_ARGS,
+  redsVerdict, retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage,
+  type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type PushInput, type RetryOutcome,
 } from './nightly-fix-logic';
 import { describePush, nightVerdict, pushCleanNight, readPushStatus } from './nightly-push';
+import { tierOf } from './test-tiers';
 import { describeStatus, parseRawId, parseResults, pendingStatus, unrecordedFailures, type Results } from './nightly-status';
 import { redact } from './redact';
 
@@ -54,6 +55,8 @@ interface Life {
   keep: boolean;
   threw: boolean;
   branch: string;
+  /** The tested commit T: the fix and merge worktrees are built on it (it need not be on origin/main). */
+  tip: string;
 }
 interface Ref {
   file: string;
@@ -106,13 +109,13 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
       return 2;
     }
   }
-  if (dry) return fixInner(d, true, opts, [], { prepared: false, mergePrepared: false, keep: false, threw: false, branch: '' });
+  if (dry) return fixInner(d, true, opts, [], { prepared: false, mergePrepared: false, keep: false, threw: false, branch: '', tip: '' });
   if (!opts.lockHeld && !acquireLock(d)) {
     d.out('nightly:fix: another run holds the lock; nothing to do\n');
     return 0;
   }
   const results: FailureResult[] = [];
-  const life: Life = { prepared: false, mergePrepared: false, keep: false, threw: false, branch: '' };
+  const life: Life = { prepared: false, mergePrepared: false, keep: false, threw: false, branch: '', tip: '' };
   try {
     return fixInner(d, false, opts, results, life);
   } catch (e) {
@@ -128,8 +131,8 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
     if (life.prepared) {
       d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, FIX_WT)], d.repo, d.env);
       const br = life.branch;
-      // After an exception keep the branch whenever it is ahead of origin/main.
-      if (life.threw && Number(d.run('git', ['rev-list', '--count', `origin/main..${br}`], d.repo, d.env).stdout.trim() || '0') > 0) life.keep = true;
+      // After an exception keep the branch whenever it is ahead of the tested commit.
+      if (life.threw && Number(d.run('git', ['rev-list', '--count', `${life.tip || 'origin/main'}..${br}`], d.repo, d.env).stdout.trim() || '0') > 0) life.keep = true;
       // Unpushed fixes (collateral red, no time, gate failed) stay reachable on a local branch for the human; never overwrite an earlier kept branch.
       if (life.keep) {
         const base = `nightly-fix-kept/${br.slice('nightly-fix/'.length)}`;
@@ -163,7 +166,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   } catch {
     json = undefined;
   }
-  const failures = extractFailures(json, st.unrecorded);
+  const failures = extractFailures(json, dedupeRefs(st.unrecorded));
   const fixWt = resolve(d.repo, FIX_WT);
   const mergeWt = resolve(d.repo, MERGE_WT);
   const stamp = d.now().toISOString().slice(0, 10);
@@ -176,26 +179,21 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   if (dry) {
     d.out(`nightly:fix dry run for ${st.sha.slice(0, 7)}: ${String(failures.length)} failure(s); nothing is launched or pushed\n`);
-    if (tooManyFailures(failures.length)) d.out(`  more than ${String(MAX_FAILURES)} failures: the real run would report needs-human and run no rounds\n`);
-    d.out(`  worktree: git worktree add -B ${branch} ${fixWt} origin/main (then pnpm install --frozen-lockfile --prefer-offline)\n`);
+    d.out(`  first: ONE retry of all ${String(failures.length)} distinct red(s) via the router (--pc), then tier: flaky-on-retry and P2 reds never block (no real P0/P1 red = clean push); more than ${String(MAX_REAL_REDS)} real reds = broken night (needs-human, no rounds)\n`);
+    d.out(`  worktree: git worktree add -B ${branch} ${fixWt} ${st.sha.slice(0, 7)} (the tested commit; then pnpm install --frozen-lockfile --prefer-offline)\n`);
     for (const f of failures) {
       d.out(`--- ${f.file}: ${f.title}\n  claude ${claudeArgs('<prompt>').slice(2).join(' ')}\n  re-run: corepack ${rerunArgs(f.file).join(' ')} (PC only)\n${buildPrompt(f, 1, '')}\n`);
     }
     d.out(`  push: merge --no-ff ${branch} in ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, then a FULL e2e of the merged tree via the router (PC only; max ${String(MAX_FULL_CYCLES)} cycles, none after the 07:00 hard stop), corepack pnpm gate:push, git push origin HEAD:main (no force), only if the latest full run has no new reds\n`);
     return 0;
   }
-  if (tooManyFailures(failures.length)) {
-    for (const f of failures) results.push({ file: f.file, title: f.title, outcome: 'needs-human', rounds: 0, reason: `${String(failures.length)} unrecorded failures (more than ${String(MAX_FAILURES)}): a broken night, not a loop job` });
-    return done(false, ['too many failures; no rounds were run']);
-  }
-
   const sh = (cwd: string, cmd: string, args: string[], timeout?: number, env: Env = d.env): FixRun => d.run(cmd, args, cwd, env, timeout);
   const git = (cwd: string, ...a: string[]): FixRun => sh(cwd, 'git', a);
   const prep = (wt: string, br: string): boolean => {
     git(d.repo, 'worktree', 'remove', '--force', wt);
     rmSync(wt, { recursive: true, force: true });
     git(d.repo, 'worktree', 'prune');
-    if (git(d.repo, 'worktree', 'add', '-B', br, wt, 'origin/main').code !== 0) return false;
+    if (git(d.repo, 'worktree', 'add', '-B', br, wt, st.sha).code !== 0) return false;
     return sh(wt, 'corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline']).code === 0;
   };
   let seq = 0;
@@ -239,19 +237,54 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
 
   if (git(d.repo, 'fetch', 'origin', 'main').code !== 0) return done(false, ['git fetch failed']);
   const base = git(d.repo, 'rev-parse', 'origin/main').stdout.trim();
-  const shaOnOrigin = git(d.repo, 'merge-base', '--is-ancestor', st.sha, 'origin/main').code === 0;
-  if (!shaOnOrigin) return done(false, ['the nightly ran on commits that are not on origin/main; fix locally']);
+  // The tested commit T need not be on origin/main (main may be ahead of it locally); only a fast-forward T..M push is possible.
+  const shaOnOrigin = git(d.repo, 'merge-base', '--is-ancestor', 'origin/main', st.sha).code === 0;
+  if (!shaOnOrigin) return done(false, ['origin/main is not an ancestor of the tested commit (diverged); no fast-forward push, fix locally']);
+  life.tip = st.sha;
   life.prepared = true;
   if (!prep(fixWt, branch)) return done(false, ['could not prepare the fix worktree']);
   const active = unrecordedFailures(st.failed, loadKnownRed(fixWt));
-  const todo = failures.filter((f) => active.some((a) => a.file === f.file && a.title === f.title));
-  if (todo.length === 0) return done(false, ['every failure is already recorded in known-red.json on origin/main']);
+  const stillRed = failures.filter((f) => active.some((a) => a.file === f.file && a.title === f.title));
+  if (stillRed.length === 0) return done(false, ['every failure is already recorded in known-red.json on the tested commit']);
+
+  // Classify before fixing: one retry of all distinct unrecorded reds on the PC (never the Mac), then tier.
+  const retryJson = join(d.statusDir, 'nightly-fix-classify.json');
+  rmSync(retryJson, { force: true });
+  const specs = [...new Set(stillRed.map((f) => specPath(f.file)))];
+  const rr = sh(fixWt, 'corepack', ['pnpm', 'exec', 'tsx', 'tools/ci/e2e-route.ts', 'run', '--pc', '--', ...specs], capTimeout(RERUN_TIMEOUT_MS, startMs, d.now()), { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: retryJson });
+  let retry: RetryOutcome;
+  if (rerunStops(rr)) retry = { kind: 'stopped', reason: `router exit ${String(rr.code)}${rr.signal ? ` (${rr.signal})` : ''}${rr.timedOut ? ' (timed out)' : ''}: the retry could not run` };
+  else {
+    try {
+      retry = { kind: 'ran', json: JSON.parse(readFileSync(retryJson, 'utf8')) as unknown };
+    } catch {
+      retry = { kind: 'stopped', reason: 'the retry left no results.json' };
+    }
+  }
+  const classified = classifyReds(stillRed, retry, (t) => tierOf(t.file, t.title));
+  const firstSeen = stamp;
+  const record = (c: ClassifiedRed): void => {
+    const note = c.cls === 'real' ? c.reason : `${c.reason}; proposed: ${knownRedProposal(c, firstSeen)}`;
+    results.push({ file: c.file, title: c.title, outcome: c.cls === 'flaky-on-retry' ? 'flaky' : c.cls === 'p2-record' ? 'p2-record' : c.cls === 'real' ? 'unfixed' : 'needs-human', rounds: 0, reason: redact(note).slice(0, 300) });
+  };
+  for (const c of classified) if (c.cls !== 'real') record(c);
+  const verdict = redsVerdict(classified);
+  if (verdict === 'clean-push') {
+    // Nothing blocks: the clean-night push (WP1) on the tested commit, with the classified reds no longer counted as unrecorded.
+    const pushed = pushCleanNight(d, { ...st, unrecorded: [] }, startMs) === 0 && readPushStatus(d.statusDir)?.pushed === true;
+    return done(pushed, pushed ? [] : [...(readPushStatus(d.statusDir)?.blockers ?? ['clean-night push blocked'])]);
+  }
+  if (verdict === 'broken-night' || classified.some((c) => c.cls === 'unclassified')) {
+    for (const c of blockingReds(classified)) if (c.cls === 'real') record(c);
+    return done(false, [verdict === 'broken-night' ? `${String(blockingReds(classified).length)} real P0/P1 reds (more than ${String(MAX_REAL_REDS)}): a broken night, needs-human, no rounds` : 'the classification retry could not run; reds treated as real, nothing pushed, no rounds'], verdict === 'broken-night' ? 'needs-human' : undefined);
+  }
+  const todo = stillRed.filter((f) => classified.some((c) => c.cls === 'real' && c.file === f.file && c.title === f.title));
 
   const reset = (to: string): void => {
     git(fixWt, 'reset', '--hard', to);
     git(fixWt, 'clean', '-ffdx', '-e', 'node_modules'); // ignored files too (settings.local.json), never node_modules
   };
-  const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `origin/main..${branch}`).stdout.trim() || '0');
+  const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `${st.sha}..${branch}`).stdout.trim() || '0');
   /** One fix pass over `todo` (existing per-failure rounds); returns why it stopped early, or ''. A later result for a spec replaces its earlier one. */
   const earlierFix = new Set<string>();
   const fixPass = (todo: readonly Failure[]): string => {
@@ -379,7 +412,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       break;
     }
     life.mergePrepared = true;
-    const m = buildMerge(d, { branch, mergeWt, base, shaOnOrigin, results }, prep, git);
+    const m = buildMerge(d, { branch, mergeWt, base, tip: st.sha, shaOnOrigin, results }, prep, git);
     if (m.length) {
       blockers.push(...m);
       verified = false;
@@ -440,7 +473,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
 /** Merge --no-ff into a fresh main-based worktree and check the merged diff and markers; empty = the tree is ready for a full run. */
 function buildMerge(
   d: FixDeps,
-  o: { branch: string; mergeWt: string; base: string; shaOnOrigin: boolean; results: FailureResult[] },
+  o: { branch: string; mergeWt: string; base: string; tip: string; shaOnOrigin: boolean; results: FailureResult[] },
   prep: (wt: string, br: string) => boolean,
   git: (cwd: string, ...a: string[]) => FixRun,
 ): string[] {
@@ -450,7 +483,7 @@ function buildMerge(
     git(o.mergeWt, 'merge', '--abort');
     return pushBlockers(pushInput(d, o.shaOnOrigin, { mergeOk: false }));
   }
-  const forbidden = forbiddenTouched(parseNulList(git(o.mergeWt, 'diff', '--name-only', '--no-renames', '-z', `${o.base}..HEAD`).stdout));
+  const forbidden = forbiddenTouched(parseNulList(git(o.mergeWt, 'diff', '--name-only', '--no-renames', '-z', `${o.tip}..HEAD`).stdout));
   const markersClean = git(o.mergeWt, 'grep', '-nE', '^(<<<<<<<|>>>>>>>) ').code === 1;
   return forbidden.length || !markersClean ? pushBlockers(pushInput(d, o.shaOnOrigin, { forbidden, markersClean })) : [];
 }

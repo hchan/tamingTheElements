@@ -94,6 +94,12 @@ export function unrecordedFailures(failed: readonly TestRef[], known: readonly K
   return failed.filter((t) => !known.some((k) => same(t.file, k.file) && t.title.includes(k.titleIncludes)));
 }
 
+/** One entry per file+title (the same test under several viewport projects is one red); counts keep the raw totals. */
+export function dedupeByTitle<T extends TestRef>(refs: readonly T[]): T[] {
+  const seen = new Set<string>();
+  return refs.filter((t) => !seen.has(`${t.file}\0${t.title}`) && !!seen.add(`${t.file}\0${t.title}`));
+}
+
 /** Map a router exit code to a state. Only a completed run with results can be pass or red; everything else is not-run. */
 export function stateFromExit(code: number, hasResults: boolean): NightlyState {
   if (code === 0 && hasResults) return 'pass';
@@ -158,7 +164,8 @@ export function finishStatus(prev: NightlyStatus, exit: number, results: Results
   const ms = Date.parse(finishedAt) - Date.parse(prev.startedAt);
   const base = { ...prev, finishedAt, exit, ranOn, ...(Number.isFinite(ms) && ms >= 0 ? { durationMs: ms } : {}) };
   if (!results) return { ...base, state: 'not-run', failed: [], flaky: [], unrecorded: [], reason: exitReason(exit) };
-  const unrecorded = unrecordedFailures(results.failed, known);
+  const rawUnrecorded = unrecordedFailures(results.failed, known);
+  const unrecorded = dedupeByTitle(rawUnrecorded);
   const skipped = results.skipped ?? 0;
   const counts: Counts = {
     total: results.passed + results.failed.length + results.flaky.length + skipped,
@@ -166,11 +173,11 @@ export function finishStatus(prev: NightlyStatus, exit: number, results: Results
     failed: results.failed.length,
     flaky: results.flaky.length,
     skipped,
-    knownRed: results.failed.length - unrecorded.length,
+    knownRed: results.failed.length - rawUnrecorded.length,
   };
   const state = stateFromExit(exit, true);
   const reason = state === 'pass' ? '' : state === 'red' ? `${String(results.failed.length)} failed` : exitReason(exit);
-  return { ...base, state, failed: results.failed, flaky: results.flaky, unrecorded, reason, counts, ...(prevTotal !== undefined ? { prevTotal } : {}) };
+  return { ...base, state, failed: dedupeByTitle(results.failed), flaky: dedupeByTitle(results.flaky), unrecorded, reason, counts, ...(prevTotal !== undefined ? { prevTotal } : {}) };
 }
 
 /** `1h12m`, `45m`, `3m20s` style duration. */

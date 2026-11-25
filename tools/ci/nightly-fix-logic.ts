@@ -2,13 +2,14 @@
 // tools/ci/nightly-fix.ts does the I/O. Tests: tests/repo/nightly-fix.test.ts. Design: ideas/in-progress/nightly-fix-loop.md.
 import { isStale, parseResults, unrecordedFailures, type KnownRed, type NightlyStatus, type Results, type TestRef } from './nightly-status';
 import { redact } from './redact';
+import type { Tier } from './test-tiers';
 
 export const MAX_ROUNDS = 3;
 export const ROUND_TIMEOUT_MS = 25 * 60_000;
 export const RERUN_TIMEOUT_MS = 40 * 60_000;
 export const GATE_TIMEOUT_MS = 90 * 60_000;
-/** More unrecorded failures than this is a broken night, not something to fix by loop: report needs-human, no rounds. */
-export const MAX_FAILURES = 3;
+/** More real (P0/P1, or unclassified) distinct reds than this is a broken night, not something to fix by loop: report needs-human, no rounds. */
+export const MAX_REAL_REDS = 8;
 /** Absolute cap of one run; the real stop is `deadlineFor` (07:00 for a night run, 22:00 for a manual daytime run). */
 export const MAX_RUN_MS = 6 * 3600_000;
 export const STOP_HOUR = 22;
@@ -32,7 +33,7 @@ export const LOCK_STALE_MS = 12 * 3600_000;
 /** Router exits after which the loop stops and reports (89 no runner, 94 unreachable, 95 busy, 96 refused). */
 export const STOP_EXITS: readonly number[] = [89, 94, 95, 96];
 
-export type Outcome = 'fixed' | 'flaky' | 'needs-human' | 'unfixed';
+export type Outcome = 'fixed' | 'flaky' | 'p2-record' | 'needs-human' | 'unfixed';
 export type FixState = 'fixed-pushed' | 'needs-human' | 'red-unfixed';
 
 export interface Failure extends TestRef {
@@ -167,7 +168,41 @@ export function fullRunIncomplete(post: unknown, r: Results, pre: unknown): stri
 export function retargets(v: FullRunVerdict, results: readonly FailureResult[]): TestRef[] {
   return v.remaining.filter((t) => results.some((r) => r.outcome === 'fixed' && sameRef(r, t)));
 }
-export const tooManyFailures = (n: number): boolean => n > MAX_FAILURES;
+
+// ---- classify before fixing: dedupe, retry once, tier ----
+export type RedClass = 'flaky-on-retry' | 'real' | 'p2-record' | 'unclassified';
+export interface ClassifiedRed extends TestRef {
+  readonly tier: Tier;
+  readonly cls: RedClass;
+  readonly reason: string;
+}
+/** The one retry of the unrecorded reds on the PC: it ran (Playwright JSON of the retry), or the router stopped (89/94/95/96, signal, timeout, no results). */
+export type RetryOutcome = { readonly kind: 'ran'; readonly json: unknown } | { readonly kind: 'stopped'; readonly reason: string };
+const refKey = (t: TestRef): string => `${t.file.split('/').pop() ?? t.file}\0${t.title}`;
+/** One entry per file+title (the same test under several viewport projects is one red). */
+export function dedupeRefs<T extends TestRef>(refs: readonly T[]): T[] {
+  const seen = new Set<string>();
+  return refs.filter((t) => !seen.has(refKey(t)) && !!seen.add(refKey(t)));
+}
+/** Per distinct red: passed on the retry -> flaky-on-retry; failed -> real (P0/P1) or p2-record (P2, report only); retry did not run -> unclassified (blocks like real). */
+export function classifyReds(reds: readonly TestRef[], retry: RetryOutcome, tierFor: (t: TestRef) => Tier): ClassifiedRed[] {
+  return dedupeRefs(reds).map((t) => {
+    const tier = tierFor(t);
+    const ref = { file: t.file, title: t.title, tier };
+    if (retry.kind === 'stopped') return { ...ref, cls: 'unclassified', reason: `not classified, treated as real: ${retry.reason}` };
+    if (titlePassed(retry.json, t)) return { ...ref, cls: 'flaky-on-retry', reason: 'passed on the one retry (candidate known-red; log in the flake ledger)' };
+    return tier === 'P2' ? { ...ref, cls: 'p2-record', reason: 'P2 red, failed on retry: recorded, never blocks (propose a known-red entry)' } : { ...ref, cls: 'real', reason: `${tier} red, failed on retry` };
+  });
+}
+export const blockingReds = (c: readonly ClassifiedRed[]): ClassifiedRed[] => c.filter((r) => r.cls === 'real' || r.cls === 'unclassified');
+/** clean-push: nothing blocks (WP1 push); broken-night: more than MAX_REAL_REDS blocking reds (needs-human, no rounds); else fix the blocking reds only. */
+export function redsVerdict(c: readonly ClassifiedRed[]): 'clean-push' | 'fix' | 'broken-night' {
+  const n = blockingReds(c).length;
+  return n === 0 ? 'clean-push' : n > MAX_REAL_REDS ? 'broken-night' : 'fix';
+}
+/** Proposed known-red.json entry text for a flaky or P2 red (the report lists it; a human or the coordinator records it). */
+export const knownRedProposal = (c: ClassifiedRed, firstSeen: string): string =>
+  JSON.stringify({ file: specPath(c.file), titleIncludes: c.title, tier: c.tier, firstSeen, idea: '<ideas/brainstorm/...md>', status: 'open' });
 
 export interface ChildResult {
   readonly code: number;
@@ -334,6 +369,7 @@ export function triage(i: RoundInput): { outcome: Outcome | 'retry'; reason: str
 // ---- push ----
 export interface PushInput {
   readonly hasCommits: boolean;
+  /** origin/main (fetched) is an ancestor of the tested sha T, so T plus the fixes is a fast-forward (T need not be on origin/main). */
   readonly shaOnOrigin: boolean;
   readonly mergeOk: boolean;
   readonly forbidden: readonly string[];
@@ -349,7 +385,7 @@ export function pushBlockers(i: PushInput): string[] {
   const b: string[] = [];
   if (!i.hasCommits) b.push('nothing to push');
   if (!i.noEnvOverride) b.push('CI, TTE_E2E_LOCAL or TTE_ALLOW_MAC_E2E is set');
-  if (!i.shaOnOrigin) b.push('the nightly ran on commits that are not on origin/main');
+  if (!i.shaOnOrigin) b.push('origin/main is not an ancestor of the tested commit (diverged); no fast-forward push');
   if (!i.mergeOk) b.push('merge --no-ff into main failed');
   if (i.forbidden.length) b.push(`merged diff touches forbidden paths: ${i.forbidden.join(', ')}`);
   if (!i.markersClean) b.push('conflict markers found');
@@ -361,7 +397,7 @@ export function pushBlockers(i: PushInput): string[] {
 
 export function finalState(results: readonly FailureResult[], pushed: boolean): FixState {
   if (results.some((r) => r.outcome === 'needs-human')) return 'needs-human';
-  if (pushed && results.every((r) => r.outcome === 'fixed' || r.outcome === 'flaky')) return 'fixed-pushed';
+  if (pushed && results.every((r) => r.outcome === 'fixed' || r.outcome === 'flaky' || r.outcome === 'p2-record')) return 'fixed-pushed';
   return 'red-unfixed';
 }
 

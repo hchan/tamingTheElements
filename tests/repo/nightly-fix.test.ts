@@ -6,7 +6,7 @@ import { fix, main, report, type FixDeps, type FixRun } from '../../tools/ci/nig
 import {
   addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, collectUnfinished, deadlineFor, deadlineReached, DENIED_TOOLS, noPushEnv,
   extractFailures, finalState, forbiddenTouched, FULL_RUN_MS, isForbiddenPath, judgeFullRun, MAX_FULL_CYCLES, MAX_ROUNDS, parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops,
-  retargets, retryAllowed, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
+  retargets, retryAllowed, classifyReds, redsVerdict, dedupeRefs, blockingReds, MAX_REAL_REDS, knownRedProposal, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
   type PushInput,
 } from '../../tools/ci/nightly-fix-logic';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
@@ -136,6 +136,45 @@ describe('cycle timing: deadline, retry wait, round and full-run budgets', () =>
   });
   it('MAX_FULL_CYCLES is 2', () => {
     expect(MAX_FULL_CYCLES).toBe(2);
+  });
+});
+
+describe('classifyReds', () => {
+  const tierFor = (t: { file: string }): 'P0' | 'P1' | 'P2' => (t.file.startsWith('polish') ? 'P2' : t.file.startsWith('core') ? 'P0' : 'P1');
+  const ref = (file: string, title: string) => ({ file, title });
+  const pass = (t: { file: string; title: string }): unknown => ({ suites: [{ file: t.file, specs: [{ title: t.title, tests: [{ status: 'expected', results: [{ status: 'passed' }] }] }] }] });
+  const fail = (t: { file: string; title: string }): unknown => ({ suites: [{ file: t.file, specs: [{ title: t.title, tests: [{ status: 'unexpected', results: [{ status: 'failed' }] }] }] }] });
+  const both = (a: { file: string; title: string }, b: { file: string; title: string }): unknown => ({ suites: [...(pass(a) as { suites: unknown[] }).suites, ...(fail(b) as { suites: unknown[] }).suites] });
+  it.each([
+    ['passed on retry, P1', 'x.spec.ts', 'ran-pass', 'flaky-on-retry'],
+    ['passed on retry, P2', 'polish.spec.ts', 'ran-pass', 'flaky-on-retry'],
+    ['failed on retry, P1', 'x.spec.ts', 'ran-fail', 'real'],
+    ['failed on retry, P0', 'core.spec.ts', 'ran-fail', 'real'],
+    ['failed on retry, P2', 'polish.spec.ts', 'ran-fail', 'p2-record'],
+    ['router stopped, P1', 'x.spec.ts', 'stopped', 'unclassified'],
+    ['router stopped, P2', 'polish.spec.ts', 'stopped', 'unclassified'],
+  ])('%s', (_n, file, how, cls) => {
+    const t = ref(file, 't');
+    const retry = how === 'stopped' ? ({ kind: 'stopped', reason: 'router exit 94' } as const) : ({ kind: 'ran', json: how === 'ran-pass' ? pass(t) : fail(t) } as const);
+    expect(classifyReds([t], retry, tierFor)[0]).toMatchObject({ cls });
+  });
+  it('a title missing from the retry results is real, not flaky', () => {
+    expect(classifyReds([ref('x.spec.ts', 't')], { kind: 'ran', json: { suites: [] } }, tierFor)[0]?.cls).toBe('real');
+  });
+  it('6 entries -> 4 distinct -> 2 flaky + 2 P2 -> clean-push; a real P1 blocks; more than 8 real is a broken night', () => {
+    const six = [ref('a.spec.ts', 'a'), ref('a.spec.ts', 'a'), ref('b.spec.ts', 'b'), ref('b.spec.ts', 'b'), ref('polish.spec.ts', 'c'), ref('polish2.spec.ts', 'd')];
+    expect(dedupeRefs(six)).toHaveLength(4);
+    const json = { suites: [...(pass(ref('a.spec.ts', 'a')) as { suites: unknown[] }).suites, ...(pass(ref('b.spec.ts', 'b')) as { suites: unknown[] }).suites, ...(fail(ref('polish.spec.ts', 'c')) as { suites: unknown[] }).suites, ...(fail(ref('polish2.spec.ts', 'd')) as { suites: unknown[] }).suites] };
+    const c = classifyReds(six, { kind: 'ran', json }, tierFor);
+    expect(c.map((r) => r.cls)).toEqual(['flaky-on-retry', 'flaky-on-retry', 'p2-record', 'p2-record']);
+    expect(redsVerdict(c)).toBe('clean-push');
+    expect(blockingReds(c)).toEqual([]);
+    expect(knownRedProposal(c[2] as (typeof c)[number], '2026-11-25')).toContain('"titleIncludes":"c"');
+    const withReal = classifyReds([...six, ref('x.spec.ts', 'z')], { kind: 'ran', json: both(ref('a.spec.ts', 'a'), ref('x.spec.ts', 'z')) }, tierFor);
+    expect(redsVerdict(withReal)).toBe('fix');
+    const many = Array.from({ length: MAX_REAL_REDS + 1 }, (_, i) => ref('x.spec.ts', `t${String(i)}`));
+    expect(redsVerdict(classifyReds(many, { kind: 'ran', json: { suites: [] } }, tierFor))).toBe('broken-night');
+    expect(redsVerdict(classifyReds(many.slice(0, MAX_REAL_REDS), { kind: 'ran', json: { suites: [] } }, tierFor))).toBe('fix');
   });
 });
 
@@ -284,6 +323,9 @@ interface Scenario {
   fullStats?: Record<string, number>;
   /** The first kept-branch name already exists. */
   keptExists?: boolean;
+  /** The classify retry: titles that pass on it (default none: every red is real) and its router exit (default 0 when all pass, else 1). */
+  classifyPass?: string[];
+  classifyExit?: number;
   /** The clock jumps here once the first full run was attached. */
   jumpAfterFull?: Date;
 }
@@ -302,6 +344,7 @@ describe('nightly-fix command (fake runner)', () => {
     dir = mkdtempSync(join(resolve('.scratch'), 'nightly-fix-test-'));
     out = '';
     calls = [];
+    classifies = [];
     envs = {};
   });
   afterEach(() => {
@@ -317,6 +360,7 @@ describe('nightly-fix command (fake runner)', () => {
   const status = (): { state: string; pushed: boolean; blockers: string[]; results: { outcome: string; reason: string }[] } =>
     JSON.parse(readFileSync(join(dir, 'gate', 'nightly-fix-status.json'), 'utf8')) as ReturnType<typeof status>;
   const lockSeen: boolean[] = [];
+  let classifies: string[] = [];
   const pushes = (): string[] => calls.filter((c) => /^git (?:-C \S+ )?push( |$)/.test(c));
   const claudeCalls = (): string[] => calls.filter((c) => c.startsWith('claude '));
 
@@ -363,6 +407,14 @@ describe('nightly-fix command (fake runner)', () => {
           collects++;
           if (to && code === 1) writeFileSync(to, JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs: [spec('opens', 'unexpected', 'failed')] }] }));
           return ok('', code);
+        }
+        if (cmd === 'corepack' && line.includes('e2e-route.ts') && env['PLAYWRIGHT_JSON_OUTPUT_FILE']?.endsWith('nightly-fix-classify.json')) {
+          classifies.push(line);
+          const reds = Array.from({ length: sc.failures ?? 1 }, (_, i) => (i === 0 ? 'opens' : `opens ${String(i)}`));
+          const pass = sc.classifyPass ?? [];
+          const specs = reds.map((t) => ({ title: t, file: 'menu.spec.ts', tests: [{ status: pass.includes(t) ? 'expected' : 'unexpected', results: [{ status: pass.includes(t) ? 'passed' : 'failed' }] }] }));
+          writeFileSync(env['PLAYWRIGHT_JSON_OUTPUT_FILE'], JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs }] }));
+          return ok('', sc.classifyExit ?? (reds.every((t) => pass.includes(t)) ? 0 : 1));
         }
         if (cmd === 'corepack' && line.includes('e2e-route.ts')) {
           reruns++;
@@ -479,7 +531,7 @@ describe('nightly-fix command (fake runner)', () => {
   });
   it('an ignored file written outside the allowlist (settings.local.json): no commit, no re-run, needs-human', () => {
     go({ written: './.claude/settings.local.json\n' });
-    expect(calls.some((c) => c.startsWith('git commit') || c.includes('e2e-route.ts'))).toBe(false);
+    expect(calls.some((c) => c.startsWith('git commit') || (c.includes('e2e-route.ts') && !classifies.includes(c)))).toBe(false);
     expect(pushes()).toEqual([]);
     expect(status().state).toBe('needs-human');
   });
@@ -641,7 +693,7 @@ describe('nightly-fix command (fake runner)', () => {
   it('a forbidden path in the diff: no commit, no re-run, needs-human', () => {
     go({ names: 'src/core/sim/step.ts\0' });
     expect(calls.some((c) => c.startsWith('git commit'))).toBe(false);
-    expect(calls.some((c) => c.includes('e2e-route.ts'))).toBe(false);
+    expect(calls.some((c) => c.includes('e2e-route.ts') && !classifies.includes(c))).toBe(false);
     expect(pushes()).toEqual([]);
     expect(status().state).toBe('needs-human');
   });
@@ -670,7 +722,7 @@ describe('nightly-fix command (fake runner)', () => {
     go({ claude, failures: 2 });
     expect(claudeCalls()).toHaveLength(1);
     expect(status().results.map((r) => r.outcome)).toEqual(['unfixed', 'unfixed']);
-    expect(calls.some((c) => c.startsWith('git commit') || c.includes('e2e-route.ts'))).toBe(false);
+    expect(calls.some((c) => c.startsWith('git commit') || (c.includes('e2e-route.ts') && !classifies.includes(c)))).toBe(false);
     expect(pushes()).toEqual([]);
   });
   it('green with an empty diff is a flaky candidate in the report only: nothing committed or pushed', () => {
@@ -690,10 +742,42 @@ describe('nightly-fix command (fake runner)', () => {
     expect(status().results[0]).toMatchObject({ outcome: 'unfixed', reason: 'git commit failed' });
     expect(pushes()).toEqual([]);
   });
-  it('more than 3 failures: needs-human report, no rounds, nothing launched', () => {
-    go({ failures: 4 });
+  it('more than 8 real reds: a broken night, needs-human, one classify retry, no claude rounds', () => {
+    go({ failures: 9 });
     expect(status().state).toBe('needs-human');
-    expect(calls).toEqual([]);
+    expect(classifies).toHaveLength(1);
+    expect(claudeCalls()).toEqual([]);
+    expect(status().blockers.join(' ')).toContain('broken night');
+  });
+  it('8 real reds still get fix rounds', () => {
+    go({ failures: 8 });
+    expect(claudeCalls().length).toBeGreaterThan(0);
+  });
+  it('the classify retry is one router call on the PC with every red spec, never the Mac', () => {
+    go();
+    expect(classifies).toHaveLength(1);
+    expect(classifies[0]).toContain('e2e-route.ts run --pc -- tests/e2e/menu.spec.ts');
+    expect(classifies[0]).not.toMatch(/--local|--mac/);
+    expect(envs['classify']).toBeUndefined();
+  });
+  it('router exit 94 on the retry: unclassified, treated as real, no rounds, no push, reason recorded', () => {
+    go({ classifyExit: 94 });
+    expect(claudeCalls()).toEqual([]);
+    expect(pushes()).toEqual([]);
+    expect(status().results[0]).toMatchObject({ outcome: 'needs-human' });
+    expect(status().results[0]?.reason).toContain('router exit 94');
+  });
+  it('all reds pass on the retry: flaky-on-retry with a proposed known-red entry, clean-night push of the tested sha', () => {
+    go({ failures: 2, classifyPass: ['opens', 'opens 1'] });
+    expect(claudeCalls()).toEqual([]);
+    expect(status().results.map((r) => r.outcome)).toEqual(['flaky', 'flaky']);
+    expect(status().results[0]?.reason).toContain('titleIncludes');
+    expect(calls.some((c) => c.startsWith('git symbolic-ref'))).toBe(true); // the clean-night push preconditions were checked on the tested commit
+  });
+  it('builds the fix worktree on the tested sha, not origin/main', () => {
+    go();
+    expect(calls.some((c) => c.startsWith('git worktree add -B nightly-fix/2026-11-20') && c.endsWith(` ${SHA}`))).toBe(true);
+    expect(calls.some((c) => /worktree add .* origin\/main$/.test(c))).toBe(false);
   });
   it('skips a sha that was already handled', () => {
     writeRed();
