@@ -134,4 +134,6 @@ ADR index: [docs/adr/README.md](adr/README.md)
 
 `tools/ci/nightly-push.ts` (clean-night push of local main by the 01:00 job after a green or known-red-only full e2e; pure `nightVerdict`/`cleanPushBlockers`); see [TESTING.md](TESTING.md) "Nightly fix loop".
 
+`tools/ci/nightly-fix-land.ts` (landing of verified nightly fixes: `integrateMain` merges the verified merge commit into local main without touching a dirty tree, `pushMerged` pushes exactly that commit with a plain `git push origin <M>:main`, `keepMerged` keeps it on `nightly-fix-merged/<date>`; pure rules `integrationRefusals`/`landBlockers` in `nightly-fix-logic.ts`), tested by `tests/repo/nightly-fix-land.test.ts` (fake runner) and `tests/repo/nightly-fix-land-real-git.test.ts` (real git); see [TESTING.md](TESTING.md) "Nightly fix loop".
+
 `tools/ci/merge-queue.ts` (`pnpm merge:queue <branch> "<subject>"`: serial `--no-ff` merge that waits for a gate on main, auto-resolves additive REPO-MAP/core-index conflicts, runs `gate:fast`, never pushes; pure `gateOnMain`/`resolveAdditive`) and `tools/ci/load-check.ts` (`pnpm load:check [--cap N]`: 1-min load vs cap; pure `loadVerdict`), tested by `tests/repo/merge-queue.test.ts`.
