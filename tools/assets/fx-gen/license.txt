@@ -19,3 +19,4 @@ original: tools/assets/fx-gen/batch-k-roster24-b3.py (same helpers). Run: python
 Real looping bodies for boulderRoll, sporeBurst, cinderSpray and stingingFilament (public/assets/img/fx/loop/*Loop.png) are cut on the CPU from AI-generated
 stills made in this project and approved by the art-director (no third-party licence): tools/assets/fx-gen/batch-m-real-loops.py, pins in
 tools/assets/fx-gen/provenance/real-loops.json. Run: ~/claudetmp/venv/bin/python -I tools/assets/fx-gen/batch-m-real-loops.py
+Status-ring plates (freeze, daze; public/assets/img/fx/status/) are AI-generated own work, keyed and regraded by tools/assets/status-ring/ (see its README.md).

@@ -111,6 +111,8 @@ export interface RingArgs {
   readonly scale: number;
   readonly reduced: boolean;
   readonly highContrast: boolean;
+  /** A painted plate (status-ring-art.ts) is drawn for this ring: keep only the timer arc, skip the procedural rim and shapes. */
+  readonly plate?: boolean;
 }
 
 const isFar = (ang: number): boolean => Math.sin(ang) < 0;
@@ -156,11 +158,15 @@ export function ringFrame(a: RingArgs): RingFrame {
   const wob = status === 9 ? 2 / rx : 0;
   const kr = status === 6 && !reduced ? 1 - 0.08 * ((t * 0.01) % 1) : 1;
   const ph = t * 0.1;
-  add(arc(Math.PI, TAU, 24, kr, wob, ph), -1, rimC, o ? o.a : 0.8, o?.w ?? 3.5);
-  add(arc(0, Math.PI, 24, kr, wob, ph), 1, rimC, o ? o.a : 1, o?.w ?? 4);
-  if (a.highContrast) add(arc(0, Math.PI, 20, 0.97), 1, GLINT, 0.5, 1);
+  if (!a.plate) {
+    add(arc(Math.PI, TAU, 24, kr, wob, ph), -1, rimC, o ? o.a : 0.8, o?.w ?? 3.5);
+    add(arc(0, Math.PI, 24, kr, wob, ph), 1, rimC, o ? o.a : 1, o?.w ?? 4);
+  }
+  if (a.highContrast && !a.plate) add(arc(0, Math.PI, 20, 0.97), 1, GLINT, 0.5, 1);
   const f = Math.max(0, Math.min(1, a.fraction));
   if (f > 0) add(arc(-Math.PI / 2, -Math.PI / 2 + f * TAU, 24, 0.8), 1, glintC, status === 9 ? 0.3 : 0.7, 2.5);
+
+  if (a.plate) return { cx, cy, rx, ry, segs, motes };
 
   switch (status) {
     case 5: {

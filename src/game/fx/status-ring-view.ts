@@ -3,6 +3,7 @@ import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/in
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import { mute, toPts } from './grim-fx';
 import { StatusTracker, expireLook, loopAlpha, ringFraction } from './status-fx';
+import { RING_ART, createRingArt } from './status-ring-art';
 import { RING_STATUSES, ringFrame, stackRings, type RingArgs, type RingBody, type RingFrame } from './status-ring';
 
 /**
@@ -41,6 +42,9 @@ export function mountStatusRingView(arena: Phaser.Scene, view: RenderView, reduc
   const glow = arena.add.graphics().setDepth(FRONT_DEPTH + 0.05).setBlendMode(1);
   const tracker = new StatusTracker<Payload>();
   const lastScale = new Map<string, number>();
+  const art = createRingArt(arena, import.meta.env.BASE_URL);
+  const plates = new Map<string, Phaser.GameObjects.Image>();
+  const usedPlates = new Set<string>();
   const moteColor = mute(0xe8e4d8, 0.5, 1);
   let probe: StatusRingProbe = { rings: [] };
 
@@ -58,6 +62,19 @@ export function mountStatusRingView(arena: Phaser.Scene, view: RenderView, reduc
     for (const m of f.motes) glow.fillStyle(m.color ?? moteColor, m.a * 0.7).fillCircle(m.x, m.y, m.r);
   };
 
+  /** The painted plate for a ring (a flattened ellipse at the feet); the caller then draws only the timer arc. */
+  const plate = (key: string, status: number, f: RingFrame, alpha: number): void => {
+    const def = RING_ART[status];
+    if (!def) return;
+    let im = plates.get(key);
+    if (!im) {
+      im = arena.add.image(0, 0, def.key).setDepth(BACK_DEPTH + 0.05);
+      plates.set(key, im);
+    }
+    usedPlates.add(key);
+    im.setVisible(true).setPosition(f.cx, f.cy).setDisplaySize(f.rx * 2.5, f.ry * 2.5).setAlpha(Math.min(0.85, alpha));
+  };
+
   const draw = (): void => {
     const reduced = reduceMotion();
     const hc = highContrast();
@@ -65,6 +82,7 @@ export function mountStatusRingView(arena: Phaser.Scene, view: RenderView, reduc
     back.clear();
     front.clear();
     glow.clear();
+    usedPlates.clear();
     const current = new Map<string, { payload: Payload; start: number; expire: number }>();
     const heroStatuses = new Map<number, number[]>();
     view.forEachCharacter((c: RenderCharacter) => {
@@ -89,7 +107,11 @@ export function mountStatusRingView(arena: Phaser.Scene, view: RenderView, reduc
         rings.push({ id, status, scale });
         keys.add(`${String(id)}:${String(status)}`);
         lastScale.set(`${String(id)}:${String(status)}`, scale);
-        paint(ringFrame({ status, element: t.payload.element, id, body: t.payload, now, alpha, fraction: ringFraction(now, t.start, t.expire), scale, reduced, highContrast: hc }));
+        const key = `${String(id)}:${String(status)}`;
+        const textured = art.path(status) === 'texture';
+        const frame = ringFrame({ status, element: t.payload.element, id, body: t.payload, now, alpha, fraction: ringFraction(now, t.start, t.expire), scale, reduced, highContrast: hc, plate: textured });
+        if (textured) plate(key, status, frame, alpha);
+        paint(frame);
       }
     }
     // Expiry: the ring shrinks and thins for a moment (expireLook), as the body loops do.
@@ -103,9 +125,13 @@ export function mountStatusRingView(arena: Phaser.Scene, view: RenderView, reduc
       }
       const base = lastScale.get(key);
       if (base === undefined) continue;
-      const args: RingArgs = { status: p.status, element: p.element, id: p.id, body: p, now, alpha: fade.alpha, fraction: 0, scale: base * (1 - (reduced ? 0 : 0.25 * ((now - gone.at) / 20))), reduced, highContrast: hc };
-      paint(ringFrame(args));
+      const textured = art.path(p.status) === 'texture';
+      const args: RingArgs = { status: p.status, element: p.element, id: p.id, body: p, now, alpha: fade.alpha, fraction: 0, scale: base * (1 - (reduced ? 0 : 0.25 * ((now - gone.at) / 20))), reduced, highContrast: hc, plate: textured };
+      const frame = ringFrame(args);
+      if (textured) plate(key, p.status, frame, fade.alpha);
+      paint(frame);
     }
+    for (const [k, im] of plates) if (!usedPlates.has(k)) im.setVisible(false);
     probe = { rings };
     drawn.set(arena, keys);
   };
@@ -117,6 +143,9 @@ export function mountStatusRingView(arena: Phaser.Scene, view: RenderView, reduc
     back.destroy();
     front.destroy();
     glow.destroy();
+    for (const im of plates.values()) im.destroy();
+    plates.clear();
+    art.dispose();
     tracker.clear();
   };
   arena.events.on('postupdate', draw);
