@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, characters } from './parity/helpers';
+import { waitFor } from './support/wait';
 
 // The Versus match-end beat (QA r90 P2): winner portrait and name, the result word, the stat chip and the buttons, reachable at
 // desktop size (1280x720). Reaches the results with two forced super KOs (as arcade.spec does); `manual=1` holds the arena.
@@ -138,13 +139,17 @@ for (const size of SIZES) {
     await expectNamesAndTilesClean(page);
     const dir = process.env['SHOT_DIR'];
     if (dir) await page.screenshot({ path: `${dir}/match-end-win-${String(size.width)}.png` });
+    // Phaser's destroy completes a frame after the heading shows; until then the 720 px arena can still be in flow (Rematch bottom 1259 px, nightly flake).
+    await waitFor(page, 'Phaser teardown settled', 'window.__TTE__.settled()');
     for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
-      const box = await results.locator(sel).boundingBox();
-      expect(box, sel).not.toBeNull();
-      expect(box?.height ?? 0, sel).toBeGreaterThanOrEqual(44);
-      expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
-      // Desktop keeps the 12 px bottom padding (QA r120 N1).
-      if (size.width === 1280) expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} clears the bottom padding`).toBeLessThanOrEqual(size.height - 12);
+      await expect(async () => {
+        const box = await results.locator(sel).boundingBox();
+        expect(box, sel).not.toBeNull();
+        expect(box?.height ?? 0, sel).toBeGreaterThanOrEqual(44);
+        expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
+        // Desktop keeps the 12 px bottom padding (QA r120 N1).
+        if (size.width === 1280) expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} clears the bottom padding`).toBeLessThanOrEqual(size.height - 12);
+      }).toPass();
     }
   });
 }
