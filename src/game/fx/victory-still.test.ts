@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ELEMENT_COLORS } from './element-colors';
-import { POP_SCALE, flashElementOf, VICTORY_HEROES, victoryFlashFor, victoryFlashFrames, victoryStillFor, victoryStillUrl } from './victory-still';
+import { FLASH_HEROES, POP_SCALE, flashElementOf, VICTORY_HEROES, victoryFlashFor, victoryFlashFrames, victoryStillFor, victoryStillUrl } from './victory-still';
 
 describe('victory still gate', () => {
   it('covers the twelve approved roster24 heroes', () => {
@@ -35,6 +35,10 @@ describe('victory flash fallback (no still)', () => {
     expect(victoryFlashFor('quarrak', true, '?ff=roster24', true, false)).toBe(false);
     expect(victoryFlashFor('quarrak', true, '', false, false)).toBe(false);
     expect(victoryFlashFor('umbrel', true, '?ff=roster24', true, false)).toBe(false);
+  });
+  it('has no dead entries: no FLASH_HEROES slug also has a still', () => {
+    expect(FLASH_HEROES.has('quarrak')).toBe(false);
+    for (const h of FLASH_HEROES) expect(VICTORY_HEROES.has(h)).toBe(false);
   });
   it('pops about 6% and settles back', () => {
     const f = victoryFlashFrames();
