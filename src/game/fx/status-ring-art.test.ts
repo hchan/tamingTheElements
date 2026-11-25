@@ -76,8 +76,8 @@ describe('ring art path choice', () => {
   it('a plate ring keeps only the timer arc (no rim, no shapes)', () => {
     const body = { x: 100, y: 100, w: 80, h: 160 };
     const base = { status: 5, element: 'fire', id: 1, body, now: 10, alpha: 1, fraction: 0.5, scale: 1, reduced: false, highContrast: false } as const;
-    const full = ringFrame(base as never);
-    const plate = ringFrame({ ...base, plate: true } as never);
+    const full = ringFrame(base);
+    const plate = ringFrame({ ...base, plate: true });
     expect(plate.segs.length).toBeLessThan(full.segs.length);
     expect(plate.cx).toBe(full.cx);
   });
