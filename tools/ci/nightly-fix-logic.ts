@@ -1,6 +1,7 @@
 // Nightly fix loop: pure logic (guardrails, prompts, triage, push preconditions, report). No fs, git, clock or claude here;
 // tools/ci/nightly-fix.ts does the I/O. Tests: tests/repo/nightly-fix.test.ts. Design: ideas/in-progress/nightly-fix-loop.md.
-import { isStale, parseResults, unrecordedFailures, type KnownRed, type NightlyStatus, type Results, type TestRef } from './nightly-status';
+import type { PushStatus } from './nightly-push';
+import { describeStatus, isStale, parseResults, unrecordedFailures, type KnownRed, type NightlyStatus, type Results, type TestRef } from './nightly-status';
 import { redact } from './redact';
 import type { Tier } from './test-tiers';
 
@@ -46,6 +47,9 @@ export interface FailureResult {
   readonly outcome: Outcome;
   readonly rounds: number;
   readonly reason: string;
+  /** Report-only context (optional so older statuses still read). */
+  readonly tier?: Tier;
+  readonly errorTail?: readonly string[];
 }
 
 // ---- hard stops (enforced on the diff, not only in the prompt) ----
@@ -412,11 +416,64 @@ export interface FixStatus {
   readonly pushed: boolean;
   readonly results: readonly FailureResult[];
   readonly blockers: readonly string[];
+  /** Local branch holding unpushed fixes, when there are any. */
+  readonly keptBranch?: string;
 }
+
+const ERR_LINES = 3;
+/** Last non-empty lines of an error message. */
+export const errorTail = (msg: string): string[] => msg.split('\n').map((l) => l.trim()).filter(Boolean).slice(-ERR_LINES).map((l) => l.slice(0, 160));
+const classOf = (r: FailureResult): string => (r.outcome === 'flaky' ? 'flaky-on-retry' : r.outcome === 'p2-record' ? 'P2' : 'real');
+const cell = (t: string): string => t.replace(/\|/g, '/').replace(/\s+/g, ' ').trim();
+const TABLE_HEAD = ['| spec | title | tier | class | rounds | outcome | last 3 error lines |', '| --- | --- | --- | --- | --- | --- | --- |'];
+
+/** Per distinct red: a table row each, then the exact next commands. */
 export function describeFix(s: FixStatus | undefined): string[] {
   if (!s) return [];
   const out = [`nightly fix: ${s.state}${s.pushed ? ' (pushed)' : ''} for ${s.sha.slice(0, 7)} at ${s.finishedAt}`];
-  for (const r of s.results) out.push(`  ${r.outcome}: ${r.file}: ${r.title} (${String(r.rounds)} round(s)) ${r.reason}`);
+  if (s.results.length) {
+    out.push('', ...TABLE_HEAD);
+    for (const r of s.results) out.push(`| ${cell(specPath(r.file))} | ${cell(r.title)} | ${r.tier ?? '?'} | ${classOf(r)} | ${String(r.rounds)} | ${r.outcome} | ${cell((r.errorTail ?? []).join(' / ') || r.reason)} |`);
+    out.push('', 'Do next:');
+    const day = s.finishedAt.slice(0, 10);
+    for (const r of s.results) {
+      if (r.outcome === 'flaky' || r.outcome === 'p2-record')
+        out.push(`  - ${r.title}: add to known-red.json: ${JSON.stringify({ file: specPath(r.file), titleIncludes: r.title, tier: r.tier ?? 'P2', firstSeen: day, idea: '<ideas/brainstorm/...md>', status: 'open' })}`);
+      else if (r.outcome !== 'fixed') out.push(`  - ${r.title}: corepack pnpm e2e -- ${specPath(r.file)}`);
+    }
+    if (s.keptBranch) out.push(`  - fixes kept locally on branch ${s.keptBranch} (git log ${s.keptBranch})`);
+  }
   for (const b of s.blockers) out.push(`  blocked: ${b}`);
   return out;
+}
+
+export interface MorningInput {
+  readonly status: NightlyStatus | undefined;
+  readonly fix: FixStatus | undefined;
+  readonly push: PushStatus | undefined;
+  readonly nowMs: number;
+}
+/** The one-screen morning report (report file and `nightly:status` print the same text): PUSHED/NOT PUSHED, red table, Do next, gate tail, untested-local count. */
+export function morningReport(i: MorningInput): string[] {
+  const { status, fix, push } = i;
+  let head: string;
+  if (push?.pushed) head = `PUSHED ${push.sha.slice(0, 7)} to origin/main`;
+  else if (fix?.pushed) head = `PUSHED ${fix.sha.slice(0, 7)} to origin/main`;
+  else {
+    const why = push?.blockers[0] ?? fix?.blockers[0] ?? (fix ? `fix loop ended ${fix.state}` : status ? (status.state === 'red' ? 'red night, nothing classified yet' : `nightly e2e is ${status.state}`) : 'no nightly status recorded');
+    head = `NOT PUSHED: ${why}`;
+  }
+  const out = [head, ...describeStatus(status, i.nowMs)];
+  const f = describeFix(fix);
+  if (f.length) out.push(...f);
+  else if (status?.state === 'red' && status.unrecorded.length) {
+    out.push('', ...TABLE_HEAD);
+    for (const t of status.unrecorded) out.push(`| ${cell(specPath(t.file))} | ${cell(t.title)} | ? | unclassified | 0 | none | - |`);
+    out.push('', 'Do next:', ...status.unrecorded.map((t) => `  - ${t.title}: corepack pnpm e2e -- ${specPath(t.file)}`));
+  }
+  const gt = push?.gateTail ?? [];
+  if (gt.length) out.push('', `gate:commit red, last ${String(gt.length)} lines:`, ...gt.map((l) => `  | ${l}`));
+  if (push && !push.pushed) out.push(...push.blockers.slice(1).map((b) => `  - ${b}`));
+  out.push(`untested local commits on main: ${String(push?.untestedLocal ?? 0)}`);
+  return out.map(redact);
 }

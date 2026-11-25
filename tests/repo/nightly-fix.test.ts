@@ -7,8 +7,9 @@ import {
   addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, collectUnfinished, deadlineFor, deadlineReached, DENIED_TOOLS, noPushEnv,
   extractFailures, finalState, forbiddenTouched, FULL_RUN_MS, isForbiddenPath, judgeFullRun, MAX_FULL_CYCLES, MAX_ROUNDS, parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops,
   retargets, retryAllowed, classifyReds, redsVerdict, dedupeRefs, blockingReds, MAX_REAL_REDS, knownRedProposal, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
-  type PushInput,
+  type PushInput, morningReport, type FixStatus,
 } from '../../tools/ci/nightly-fix-logic';
+import type { PushStatus } from '../../tools/ci/nightly-push';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
 
 describe('forbidden paths', () => {
@@ -867,5 +868,46 @@ describe('nightly-fix command (fake runner)', () => {
       expect(main(['report'], deps())).toBe(0);
       expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toContain('no status recorded');
     });
+  });
+});
+
+describe('one-screen morning report (pure render)', () => {
+  const SHA = 'a'.repeat(40);
+  const night = (failed: { file: string; title: string }[]) => finishStatus(pendingStatus(SHA, 'r', 's'), 1, { passed: 5, failed, flaky: [] }, [], 'f', 'PC');
+  const fix = (state: FixStatus['state'], pushed: boolean, results: FixStatus['results'], extra: Partial<FixStatus> = {}): FixStatus => ({ schema: 1, state, sha: SHA, finishedAt: '2026-11-25T03:00:00.000Z', pushed, results, blockers: [], ...extra });
+  const pushed: PushStatus = { schema: 1, verdict: 'known-red', sha: SHA, pushed: true, blockers: [], untestedLocal: 2, finishedAt: 't' };
+  const now = new Date('2026-11-25T08:00:00Z').getTime();
+
+  it('pushed: first line PUSHED, count of untested local commits', () => {
+    const t = morningReport({ status: night([]), fix: undefined, push: pushed, nowMs: now });
+    expect(t[0]).toBe('PUSHED aaaaaaa to origin/main');
+    expect(t.at(-1)).toBe('untested local commits on main: 2');
+  });
+  it('needs-human: table row with tier, class, rounds, last 3 error lines, the e2e command and the kept branch', () => {
+    const f = fix('needs-human', false, [{ file: 'match-end.spec.ts', title: 'ends | cleanly', outcome: 'needs-human', rounds: 3, reason: 'r', tier: 'P0', errorTail: ['e1', 'e2', 'e3'] }], { blockers: ['3 rounds failed'], keptBranch: 'nightly-fix-kept/2026-11-25' });
+    const t = morningReport({ status: night([{ file: 'match-end.spec.ts', title: 'x' }]), fix: f, push: undefined, nowMs: now });
+    expect(t[0]).toBe('NOT PUSHED: 3 rounds failed');
+    expect(t).toContain('| tests/e2e/match-end.spec.ts | ends / cleanly | P0 | real | 3 | needs-human | e1 / e2 / e3 |');
+    expect(t).toContain('  - ends / cleanly'.replace('/', '|') + ': corepack pnpm e2e -- tests/e2e/match-end.spec.ts');
+    expect(t.join('\n')).toContain('branch nightly-fix-kept/2026-11-25');
+  });
+  it('gate red: reason is first line and the gate tail is shown', () => {
+    const p: PushStatus = { ...pushed, pushed: false, blockers: ['gate:commit failed on the tested commit'], gateTail: ['FAIL a.test.ts', 'boom'] };
+    const t = morningReport({ status: night([]), fix: undefined, push: p, nowMs: now });
+    expect(t[0]).toBe('NOT PUSHED: gate:commit failed on the tested commit');
+    expect(t).toContain('  | FAIL a.test.ts');
+  });
+  it('all flaky/P2: proposes known-red JSON, nothing to rerun, no host leaks', () => {
+    const f = fix('fixed-pushed', true, [
+      { file: 'a.spec.ts', title: 'flaky one', outcome: 'flaky', rounds: 0, reason: 'passed on retry', tier: 'P1' },
+      { file: 'b.spec.ts', title: 'p2 one', outcome: 'p2-record', rounds: 0, reason: 'ssh://user@10.0.0.5/x', tier: 'P2', errorTail: ['at ssh://user@10.0.0.5/x'] },
+    ]);
+    const t = morningReport({ status: night([]), fix: f, push: undefined, nowMs: now });
+    const text = t.join('\n');
+    expect(t[0]).toBe('PUSHED aaaaaaa to origin/main');
+    expect(text).toContain('flaky-on-retry');
+    expect(text).toContain('"file":"tests/e2e/a.spec.ts","titleIncludes":"flaky one","tier":"P1","firstSeen":"2026-11-25"');
+    expect(text).not.toContain('corepack pnpm e2e --');
+    expect(text).not.toContain('10.0.0.5');
   });
 });

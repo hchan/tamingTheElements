@@ -161,7 +161,7 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     const lines: string[] = [];
     nightlyStatus({ statusDir: join(dir, 'gate'), now: () => new Date(2026, 10, 20, 3, 0, 0), out: (t: string) => lines.push(t) } as unknown as E2eDeps);
     const text = lines.join('');
-    expect(text).toContain('not pushed');
+    expect(text.split('\n')[0]).toMatch(/^NOT PUSHED: /);
     expect(text).toContain('gate:commit failed on the tested commit');
     expect(text).toContain('| FAIL tests/repo/pin.test.ts');
   });
@@ -241,6 +241,7 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
   it('the 09:00 report includes the push result', () => {
     main(['collect-and-fix'], deps({}));
     expect(main(['report'], deps({}))).toBe(0);
-    expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toContain('nightly clean push');
+    expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toMatch(/^# .*\n\nPUSHED [0-9a-f]{7} to origin\/main\n/);
+    expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toContain('untested local commits on main: 0');
   });
 });

@@ -21,12 +21,12 @@ import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, LOCK_STALE_MS, MAX_FULL_CYCLES, MAX_REAL_REDS, mergeSubject, noPushEnv, parseNulList, parseTriage, pushBlockers, PUSH_ARGS,
+  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, LOCK_STALE_MS, MAX_FULL_CYCLES, MAX_REAL_REDS, mergeSubject, morningReport, noPushEnv, parseNulList, parseTriage, pushBlockers, PUSH_ARGS,
   redsVerdict, retargets, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage,
   type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type PushInput, type RetryOutcome,
 } from './nightly-fix-logic';
-import { describePush, nightVerdict, pushCleanNight, readPushStatus } from './nightly-push';
+import { nightVerdict, pushCleanNight, readPushStatus } from './nightly-push';
 import { tierOf } from './test-tiers';
 import { describeStatus, parseRawId, parseResults, pendingStatus, unrecordedFailures, type Results } from './nightly-status';
 import { redact } from './redact';
@@ -80,8 +80,16 @@ export function readFixStatus(dir: string): FixStatus | undefined {
   }
 }
 
+/** Report context of this process's one fix run: error tails per red and the branch name unpushed fixes are kept under. */
+const errTails = new Map<string, string[]>();
+let keptName = '';
+
 function writeFixStatus(d: FixDeps, sha: string, results: FailureResult[], pushed: boolean, blockers: string[], force?: FixState): FixStatus {
-  const s: FixStatus = { schema: 1, state: force ?? finalState(results, pushed), sha, finishedAt: d.now().toISOString(), pushed, results, blockers };
+  const rich = results.map((r) => ({ ...r, tier: tierOf(r.file, r.title), errorTail: errTails.get(`${r.file}\0${r.title}`) ?? [] }));
+  const s: FixStatus = {
+    schema: 1, state: force ?? finalState(results, pushed), sha, finishedAt: d.now().toISOString(), pushed, results: rich, blockers,
+    ...(!pushed && keptName && results.some((r) => r.outcome === 'fixed') ? { keptBranch: keptName } : {}),
+  };
   mkdirSync(d.statusDir, { recursive: true });
   writeFileSync(fixStatusPath(d.statusDir), `${JSON.stringify(s, null, 2)}\n`);
   writeFileSync(join(d.statusDir, 'nightly-fix-report.md'), `${[...describeStatus(readStatus(d.statusDir), d.now().getTime()), ...describeFix(s)].join('\n')}\n`);
@@ -172,6 +180,9 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const stamp = d.now().toISOString().slice(0, 10);
   const branch = `nightly-fix/${stamp}`;
   life.branch = branch;
+  keptName = `nightly-fix-kept/${stamp}`;
+  errTails.clear();
+  for (const f of failures) errTails.set(`${f.file}\0${f.title}`, errorTail(f.message));
   const startMs = opts.startMs ?? d.now().getTime();
   const done = (pushed: boolean, blockers: string[], force?: FixState): number => {
     writeFixStatus(d, st.sha, results, pushed, blockers, force);
@@ -523,9 +534,7 @@ function collectWithRetry(d: FixDeps, start: Date): void {
 
 /** Read-only morning report (the 09:00 job): the nightly status plus the fix result, written to nightly-morning-report.md. */
 export function report(d: FixDeps): number {
-  const lines = describeStatus(readStatus(d.statusDir), d.now().getTime());
-  lines.push(...describeFix(readFixStatus(d.statusDir)));
-  lines.push(...describePush(readPushStatus(d.statusDir)));
+  const lines = morningReport({ status: readStatus(d.statusDir), fix: readFixStatus(d.statusDir), push: readPushStatus(d.statusDir), nowMs: d.now().getTime() });
   if (existsSync(lockPath(d.statusDir))) lines.push('nightly fix loop: lock file present, the loop may still be running (or crashed; the lock goes stale after 12 h)');
   mkdirSync(d.statusDir, { recursive: true });
   writeFileSync(join(d.statusDir, 'nightly-morning-report.md'), `# Nightly morning report (${d.now().toISOString()})\n\n${lines.join('\n')}\n`);
