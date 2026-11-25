@@ -118,8 +118,11 @@ for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) 
       await tapTourSplash(page);
       await page.waitForFunction(ARENA_READY);
       await page.evaluate(`window.__TTE__.arena.step(91)`);
-      // each atlas (the lead's and the stage 1 foe's, wispera) loads lazily the first time its hero is drawn (the legacy strip shows until then)
-      await expect.poll(async () => page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.loaded : [])`), { timeout: 90_000 }).toEqual(expect.arrayContaining(['sindarosa', 'wispera']));
+      // each atlas (the lead's and the stage 1 foe's) loads lazily the first time its hero is drawn (the legacy strip shows until then);
+      // the foe depends on the seed and the roster (24 heroes now), so assert both drawn heroes use an atlas, whoever the foe is
+      await expect.poll(async () => page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.characters.map((c) => c.texture) : [])`), { timeout: 90_000 }).toEqual(expect.arrayContaining(['sheet:sindarosa']));
+      const drawn = await page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.characters.map((c) => c.texture) : [])`);
+      expect(drawn.length === 2 && drawn.every((t) => t.startsWith('sheet:')), JSON.stringify(drawn)).toBe(true);
       const samples = await fight(page, 200, 8);
       await shot(page, `${tag}-tour-stage1`);
       const actions = checkSamples(samples);
