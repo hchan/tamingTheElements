@@ -11,7 +11,7 @@ const SHA = 'c'.repeat(40);
 const OTHER = 'e'.repeat(40);
 
 describe('clean-night push decision (pure)', () => {
-  const ok: CleanPushInput = { verdict: 'green', noEnvOverride: true, onMain: true, treeClean: true, originIsAncestor: true, testedIsAncestor: true, hasCommits: true, gateCommitOk: true };
+  const ok: CleanPushInput = { verdict: 'green', noEnvOverride: true, originIsAncestor: true, testedIsAncestor: true, hasCommits: true, gateCommitOk: true };
   const red = (unrecorded: number) =>
     finishStatus(pendingStatus(SHA, 'raw-1', 's'), 1, { passed: 1, failed: [{ file: 'a.spec.ts', title: 'x' }], flaky: [] }, unrecorded ? [] : [{ file: 'tests/e2e/a.spec.ts', titleIncludes: 'x' }], 'f', 'PC');
 
@@ -36,11 +36,8 @@ describe('clean-night push decision (pure)', () => {
   it('diverged (origin/main not an ancestor) blocks, never forced', () => {
     expect(cleanPushBlockers({ ...ok, originIsAncestor: false }).join(' ')).toMatch(/diverged.*never forced/);
   });
-  it('a dirty tree blocks', () => {
-    expect(cleanPushBlockers({ ...ok, treeClean: false }).join(' ')).toMatch(/not clean/);
-  });
-  it('gate:commit fail, not on main, a tested sha that is not an ancestor, nothing to push and a Mac-lane env override each block', () => {
-    for (const k of ['gateCommitOk', 'onMain', 'testedIsAncestor', 'hasCommits', 'noEnvOverride'] as const) expect(cleanPushBlockers({ ...ok, [k]: false })).toHaveLength(1);
+  it('gate:commit fail, a tested sha that is not an ancestor, nothing to push and a Mac-lane env override each block', () => {
+    for (const k of ['gateCommitOk', 'testedIsAncestor', 'hasCommits', 'noEnvOverride'] as const) expect(cleanPushBlockers({ ...ok, [k]: false })).toHaveLength(1);
   });
   it('describes the result', () => {
     const s: PushStatus = { schema: 1, verdict: 'green', sha: SHA, pushed: false, blockers: ['b'], finishedAt: 't' };
@@ -61,21 +58,26 @@ interface Night {
   /** Output of a failing gate:commit (default: a short two-line tail). */
   gateOut?: string;
   head?: string;
-  /** HEAD is 3 commits past the tested sha (tested is an ancestor of HEAD). */
+  /** main is 3 commits past the tested sha (tested is an ancestor of main). */
   moved?: boolean;
-  branch?: string;
   ahead?: string;
+  /** HEAD of the nightly worktree (default: the tested sha). */
+  wtHead?: string;
+  /** nightly-precheck.json contents. */
+  precheck?: { sha: string; pass: boolean; tail?: string[] };
   env?: Record<string, string>;
 }
 
 describe('collect-and-fix pushes main on a night with no new reds (fake runner)', () => {
   let dir: string;
   let calls: string[];
+  let cwds: string[];
   let out: string;
   beforeEach(() => {
     mkdirSync(resolve('.scratch'), { recursive: true });
     dir = mkdtempSync(join(resolve('.scratch'), 'nightly-push-test-'));
     calls = [];
+    cwds = [];
     out = '';
     mkdirSync(join(dir, 'gate'), { recursive: true });
     writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(pendingStatus(SHA, 'raw-1', new Date(2026, 10, 19, 23, 0, 0).toISOString())));
@@ -89,6 +91,7 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
       mkdirSync(join(dir, 'tools', 'ci'), { recursive: true });
       writeFileSync(join(dir, 'tools', 'ci', 'known-red.json'), JSON.stringify({ entries: n.known.map((t) => ({ file: 'tests/e2e/menu.spec.ts', titleIncludes: t })) }));
     }
+    if (n.precheck) writeFileSync(join(dir, 'gate', 'nightly-precheck.json'), JSON.stringify({ schema: 1, finishedAt: 't', ...n.precheck }));
     const reds = n.reds ?? [];
     return {
       env: n.env ?? {},
@@ -102,22 +105,21 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
       err: (s) => {
         out += s;
       },
-      run: (cmd, args, _cwd, env) => {
+      run: (cmd, args, cwd, env) => {
         const line = `${cmd} ${args.join(' ')}`;
         calls.push(line);
+        cwds.push(`${line} @ ${cwd}`);
         const ok = (stdout = '', code = 0) => ({ code, stdout, stderr: '' });
         if (line.includes('--pc-attach raw-1')) {
           const specs = ['ok', ...reds].map((t) => ({ title: t, tests: [{ status: reds.includes(t) ? 'unexpected' : 'expected' }] }));
           writeFileSync(env['PLAYWRIGHT_JSON_OUTPUT_FILE'] ?? '', JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs }] }));
           return ok('e2e ran on: PC', reds.length ? 1 : 0);
         }
-        if (line === 'git rev-parse HEAD') return ok(`${n.head ?? SHA}\n`);
-        if (line === 'git symbolic-ref --short HEAD') return ok(`${n.branch ?? 'main'}\n`);
-        if (line === 'git status --porcelain') return ok(n.dirty ? ' M src/a.ts\n' : '');
+        if (line === 'git rev-parse HEAD') return ok(`${n.wtHead ?? SHA}\n`);
         if (line === `git merge-base --is-ancestor origin/main ${SHA}`) return ok('', n.diverged ? 1 : 0);
-        if (line === `git merge-base --is-ancestor ${SHA} HEAD`) return ok('', n.head === undefined || n.moved ? 0 : 1);
+        if (line === `git merge-base --is-ancestor ${SHA} main`) return ok('', n.head === undefined || n.moved ? 0 : 1);
         if (line === `git rev-list --count origin/main..${SHA}`) return ok(`${n.ahead ?? '2'}\n`);
-        if (line === `git rev-list --count ${SHA}..HEAD`) return ok(n.moved ? '3\n' : '0\n');
+        if (line === `git rev-list --count ${SHA}..main`) return ok(n.moved ? '3\n' : '0\n');
         if (line.startsWith('git worktree')) return ok();
         if (line === 'corepack pnpm gate:commit') {
           expect(env['GIT_CONFIG_VALUE_0']).toBe('disabled:');
@@ -132,7 +134,7 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
   const gates = (): string[] => calls.filter((c) => c.includes('gate:commit'));
   const pushStatus = (): PushStatus => JSON.parse(readFileSync(join(dir, 'gate', 'nightly-push-status.json'), 'utf8')) as PushStatus;
 
-  it('green night: gate:commit on main, then exactly one plain push of HEAD to main', () => {
+  it('green night: gate:commit on main, then exactly one plain push of the tested sha to main', () => {
     expect(main(['collect-and-fix'], deps({}))).toBe(0);
     expect(gates()).toHaveLength(1);
     expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
@@ -172,18 +174,47 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
     expect(pushStatus()).toMatchObject({ verdict: 'known-red', pushed: true });
   });
-  it('main moved after the tested sha (ancestor): gate in a temp worktree, push the tested sha, report the untested count', () => {
+  it('main moved after the tested sha (ancestor): gate in the nightly wt, no temp worktree, push the tested sha, report the untested count', () => {
     expect(main(['collect-and-fix'], deps({ head: OTHER, moved: true }))).toBe(0);
-    expect(calls.filter((c) => c.startsWith('git worktree add --detach'))).toHaveLength(1);
-    expect(calls.filter((c) => c.startsWith('git worktree remove'))).toHaveLength(1);
+    expect(calls.filter((c) => c.startsWith('git worktree'))).toEqual([]);
     expect(gates()).toHaveLength(1);
     expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
     expect(pushes().join(' ')).not.toMatch(/--force| -f\b|\+|HEAD:main/);
     expect(pushStatus()).toMatchObject({ pushed: true, untestedLocal: 3 });
   });
-  it('main moved and the gate fails: temp worktree removed, no push', () => {
+  it('dirty main checkout and main 20 commits past the tested sha: still pushes exactly T:main, plain, never reads the tree', () => {
+    expect(main(['collect-and-fix'], deps({ dirty: true, head: OTHER, moved: true }))).toBe(0);
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
+    expect(calls.some((c) => c.startsWith('git status') || c.startsWith('git symbolic-ref'))).toBe(false);
+  });
+  it('gate:commit runs in the nightly worktree, not the main checkout', () => {
+    main(['collect-and-fix'], deps({}));
+    expect(cwds.filter((c) => c.startsWith('corepack pnpm gate:commit'))).toEqual([`corepack pnpm gate:commit @ ${join(dir, '.scratch', 'nightly-wt')}`]);
+  });
+  it('the nightly worktree on another sha is moved to the tested sha and installed first', () => {
+    main(['collect-and-fix'], deps({ wtHead: OTHER }));
+    const i = calls.indexOf(`git checkout --detach --force ${SHA}`);
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(calls[i + 1]).toContain('pnpm install --frozen-lockfile');
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
+  });
+  it('a precheck failure recorded for the tested sha blocks with its tail, no second gate run', () => {
+    main(['collect-and-fix'], deps({ precheck: { sha: SHA, pass: false, tail: ['FAIL tests/repo/pin.test.ts'] } }));
+    expect(gates()).toEqual([]);
+    expect(pushes()).toEqual([]);
+    expect(pushStatus().gateTail).toEqual(['FAIL tests/repo/pin.test.ts']);
+    expect(pushStatus().blockers.join(' ')).toMatch(/precheck/);
+  });
+  it('a precheck failure for another sha is ignored', () => {
+    main(['collect-and-fix'], deps({ precheck: { sha: OTHER, pass: false } }));
+    expect(pushes()).toEqual([`git push origin ${SHA}:main`]);
+  });
+  it('a failed gate:commit writes its full output to nightly-push-gate.log', () => {
+    main(['collect-and-fix'], deps({ gate: 1, gateOut: 'full\noutput\n' }));
+    expect(readFileSync(join(dir, 'gate', 'nightly-push-gate.log'), 'utf8')).toContain('full\noutput');
+  });
+  it('main moved and the gate fails: no push', () => {
     expect(main(['collect-and-fix'], deps({ head: OTHER, moved: true, gate: 1 }))).toBe(0);
-    expect(calls.filter((c) => c.startsWith('git worktree remove'))).toHaveLength(1);
     expect(pushes()).toEqual([]);
   });
   it('a new red goes to the fix loop, no plain push and no gate:commit', () => {
@@ -198,14 +229,8 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     expect(pushes()).toEqual([]);
     expect(pushStatus().blockers.join(' ')).toMatch(/diverged/);
   });
-  it('dirty tree on main: no gate, no push', () => {
-    expect(main(['collect-and-fix'], deps({ dirty: true }))).toBe(0);
-    expect(gates()).toEqual([]);
-    expect(pushes()).toEqual([]);
-    expect(pushStatus().blockers.join(' ')).toMatch(/not clean/);
-  });
-  it('gate:commit red, untested commits on main, not on main or nothing ahead: no push', () => {
-    for (const n of [{ gate: 1 }, { head: OTHER }, { branch: 'feature' }, { ahead: '0' }, { env: { CI: '1' } }] as Night[]) {
+  it('gate:commit red, history changed or nothing ahead: no push', () => {
+    for (const n of [{ gate: 1 }, { head: OTHER }, { ahead: '0' }, { env: { CI: '1' } }] as Night[]) {
       calls = [];
       writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(pendingStatus(SHA, 'raw-1', new Date(2026, 10, 19, 23, 0, 0).toISOString())));
       expect(main(['collect-and-fix'], deps(n))).toBe(0);

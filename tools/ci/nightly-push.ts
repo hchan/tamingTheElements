@@ -1,11 +1,11 @@
 /**
  * Clean-night push (the 02:00 `nightly-fix.ts collect-and-fix` job): when the collected 23:00 full e2e is green, or red only with
- * known-red tests (tools/ci/known-red.json), push local main to origin/main with the shared plain push (`PUSH_ARGS`, never forced,
- * never another branch). Preconditions, all checked in `cleanPushBlockers` (pure): the checkout is on main with a clean tree,
- * origin/main (fetched) is an ancestor of the commit the full run tested (`st.sha`), that commit is an ancestor of main (main
+ * known-red tests (tools/ci/known-red.json), push the tested commit to origin/main with a plain push (never forced, never another
+ * branch). Sha-based: the main checkout (its branch, a dirty tree) is never read or touched. Preconditions, `cleanPushBlockers`
+ * (pure): origin/main (fetched) is an ancestor of the commit the full run tested (`st.sha`), that commit is an ancestor of main (main
  * may have moved on since 23:00), there is something to push, `gate:commit` passes on the tested commit's tree (credentials
- * stripped, pushes disabled; on main itself when HEAD is the tested commit, else in a temporary detached worktree under
- * `.scratch/`, removed afterwards), no Mac-lane env override, before the hard stop. What is pushed is exactly the tested commit,
+ * stripped, pushes disabled) in the nightly worktree `.scratch/nightly-wt` (moved to the tested sha if needed; a precheck failure
+ * recorded for that sha blocks without a re-run; a failed gate's full output goes to tte-gate/nightly-push-gate.log), no Mac-lane env override, before the hard stop. What is pushed is exactly the tested commit,
  * `git push origin <tested-sha>:main` (plain fast-forward, never forced); commits merged after it (untested) stay local and are
  * counted in the status file (`untestedLocal`). A tested sha that is not an ancestor of main (history rewritten) still blocks.
  * A new (unrecorded) red never pushes here: that night goes to the fix loop. After a push, the Pages build is dispatched (best effort; the daily cron is the fallback). Report: tte-gate/nightly-push-status.json.
@@ -14,6 +14,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BLOCKING_ENV, capTimeout, deadlineReached, GATE_TIMEOUT_MS, noPushEnv, PUSH_ARGS } from './nightly-fix-logic';
+import { readPrecheck } from './nightly-precheck';
 import type { NightlyStatus } from './nightly-status';
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -42,11 +43,9 @@ export function nightVerdict(s: NightlyStatus | undefined): NightVerdict {
 export interface CleanPushInput {
   readonly verdict: NightVerdict;
   readonly noEnvOverride: boolean;
-  readonly onMain: boolean;
-  readonly treeClean: boolean;
   /** `git merge-base --is-ancestor origin/main <tested-sha>` after a fetch. */
   readonly originIsAncestor: boolean;
-  /** The commit the full run tested is HEAD or an ancestor of it (main may have moved on; the tested commit is what is pushed). */
+  /** The commit the full run tested is `main` or an ancestor of it (main may have moved on; the tested commit is what is pushed). */
   readonly testedIsAncestor: boolean;
   readonly hasCommits: boolean;
   readonly gateCommitOk: boolean;
@@ -58,8 +57,6 @@ export function cleanPushBlockers(i: CleanPushInput): string[] {
   if (i.verdict === 'new-red') out.push('the full run has new (unrecorded) reds; no plain push');
   if (i.verdict === 'not-run') out.push('no completed full run (not-run, pending or stale); no push');
   if (!i.noEnvOverride) out.push(`one of ${BLOCKING_ENV.join(', ')} is set; no push`);
-  if (!i.onMain) out.push('the checkout is not on main');
-  if (!i.treeClean) out.push('the working tree on main is not clean');
   if (!i.originIsAncestor) out.push('origin/main is not an ancestor of the tested commit (diverged); no push, never forced');
   if (!i.testedIsAncestor) out.push('the tested commit is not an ancestor of main (history changed since the full run); not pushed');
   if (!i.hasCommits) out.push('the tested commit has nothing to push');
@@ -106,7 +103,11 @@ export function readPushStatus(dir: string): PushStatus | undefined {
 /** Plain fast-forward push of one commit to main (same shape as `PUSH_ARGS`, with the tested sha instead of HEAD). */
 export const pushArgsFor = (sha: string): readonly string[] => ['push', 'origin', `${sha}:main`];
 
-/** Check the preconditions on the main checkout (`d.repo`) and push the tested commit when none blocks. Writes the push status; returns 0. */
+/** The nightly worktree the 23:00 submit checks out (nightly-e2e.ts WT_REL); the 02:00 gate runs here. */
+export const NIGHTLY_WT_REL = join('.scratch', 'nightly-wt');
+export const gateLogPath = (dir: string): string => join(dir, 'nightly-push-gate.log');
+
+/** Check the preconditions (sha-based, `d.repo` is only used for refs) and push the tested commit when none blocks. Writes the push status; returns 0. */
 export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number): number {
   const git = (...a: string[]): { code: number; stdout: string } => d.run('git', a, d.repo, d.env);
   const verdict = nightVerdict(st);
@@ -121,22 +122,15 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
     return 0;
   };
   git('fetch', 'origin', 'main');
-  const head = (): string => git('rev-parse', 'HEAD').stdout.trim();
-  const clean = (): boolean => {
-    const s = git('status', '--porcelain');
-    return s.code === 0 && s.stdout.trim() === '';
-  };
   const tested = st.sha;
-  const testedOk = (): boolean => tested !== '' && git('merge-base', '--is-ancestor', tested, 'HEAD').code === 0;
+  const testedOk = (): boolean => tested !== '' && git('merge-base', '--is-ancestor', tested, 'main').code === 0;
   const num = (r: { stdout: string }): number => Number.parseInt(r.stdout.trim(), 10);
   const count = num(git('rev-list', '--count', `origin/main..${tested}`));
-  const moved = num(git('rev-list', '--count', `${tested}..HEAD`));
+  const moved = num(git('rev-list', '--count', `${tested}..main`));
   untested = Number.isFinite(moved) && moved > 0 ? moved : 0;
   const cheap: CleanPushInput = {
     verdict,
     noEnvOverride: !BLOCKING_ENV.some((k) => d.env[k]),
-    onMain: git('symbolic-ref', '--short', 'HEAD').stdout.trim() === 'main',
-    treeClean: clean(),
     originIsAncestor: git('merge-base', '--is-ancestor', 'origin/main', tested).code === 0,
     testedIsAncestor: testedOk(),
     hasCommits: Number.isFinite(count) && count > 0,
@@ -145,28 +139,36 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
   const first = cleanPushBlockers(cheap);
   if (first.length) return finish(false, first);
   if (deadlineReached(startMs, d.now())) return finish(false, ['hard stop reached before gate:commit; nothing pushed']);
+  // The 23:00 precheck already ran gate:commit on this very sha: a recorded failure is final (no second run).
+  const pre = readPrecheck(d.statusDir);
+  if (pre && pre.sha === tested && !pre.pass) {
+    gateTail = [...(pre.tail ?? [])];
+    return finish(false, ['the 23:00 precheck gate:commit failed on the tested commit; not re-run']);
+  }
   const gateEnv = noPushEnv(d.env);
-  let gateOk: boolean;
-  if (head() === tested) {
-    const g = d.run('corepack', ['pnpm', 'gate:commit'], d.repo, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now()));
-    gateOk = g.code === 0;
-    if (!gateOk) gateTail = tailOf(g);
-  } else {
-    // Main moved on: gate the tested tree in a throwaway detached worktree, so the live checkout is never touched.
-    const wt = join(d.repo, '.scratch', `nightly-push-gate-${tested.slice(0, 12)}`);
+  const wt = join(d.repo, NIGHTLY_WT_REL);
+  const capped = (): number => capTimeout(GATE_TIMEOUT_MS, startMs, d.now());
+  // Gate in the nightly worktree (same-tree stamp: a hit when the precheck passed), never in the main checkout.
+  const here = d.run('git', ['rev-parse', 'HEAD'], wt, d.env);
+  let ready = { code: 0, stdout: '', stderr: '' };
+  if (here.code !== 0 || here.stdout.trim() !== tested) {
     mkdirSync(join(d.repo, '.scratch'), { recursive: true });
+    const co = here.code === 0 ? d.run('git', ['checkout', '--detach', '--force', tested], wt, d.env) : d.run('git', ['worktree', 'add', '--detach', '--force', wt, tested], d.repo, d.env);
+    ready = co.code === 0 ? d.run('corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], wt, gateEnv, capped()) : co;
+  }
+  const g = ready.code === 0 ? d.run('corepack', ['pnpm', 'gate:commit'], wt, gateEnv, capped()) : ready;
+  const gateOk = g.code === 0;
+  if (!gateOk) {
+    gateTail = tailOf(g);
     try {
-      const add = d.run('git', ['worktree', 'add', '--detach', wt, tested], d.repo, d.env);
-      const inst = add.code === 0 ? d.run('corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())) : add;
-      const g = inst.code === 0 ? d.run('corepack', ['pnpm', 'gate:commit'], wt, gateEnv, capTimeout(GATE_TIMEOUT_MS, startMs, d.now())) : inst;
-      gateOk = g.code === 0;
-      if (!gateOk) gateTail = tailOf(g);
-    } finally {
-      d.run('git', ['worktree', 'remove', '--force', wt], d.repo, d.env);
+      mkdirSync(d.statusDir, { recursive: true });
+      writeFileSync(gateLogPath(d.statusDir), `gate:commit at ${tested} (exit ${String(g.code)})\n${g.stdout}\n${g.stderr}\n`);
+    } catch {
+      /* best effort; the tail is in the status */
     }
   }
-  // Re-read the live checkout so nothing that changed meanwhile is pushed.
-  const after = cleanPushBlockers({ ...cheap, gateCommitOk: gateOk, treeClean: clean(), testedIsAncestor: testedOk() });
+  // Re-check ancestry so nothing that changed meanwhile is pushed.
+  const after = cleanPushBlockers({ ...cheap, gateCommitOk: gateOk, testedIsAncestor: testedOk() });
   if (after.length) return finish(false, after);
   if (d.run('git', pushArgsFor(tested), d.repo, d.env).code !== 0) return finish(false, ['git push failed (not forced)']);
   // Pages is built only by the cron or a dispatch (not on push): start the build for what was just pushed. Best effort; the
