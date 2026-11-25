@@ -38,9 +38,9 @@ export const FLASH_HEROES: ReadonlySet<string> = new Set(['quarrak']);
 export const FLASH_MS = 700;
 export const POP_SCALE = 1.06;
 
-/** Whether `hero` gets the flash fallback: a win, no still for the hero, the flag on, and motion allowed (reduced motion keeps the plain portrait). */
+/** Whether `hero` gets the flash fallback: a win, no still for the hero, released or the flag on, and motion allowed (reduced motion keeps the plain portrait). */
 export function victoryFlashFor(hero: string, won: boolean, search: string, devBuild: boolean, reducedMotion: boolean): boolean {
-  return won && !reducedMotion && FLASH_HEROES.has(hero) && !VICTORY_HEROES.has(hero) && cutinFlagOn(search, devBuild);
+  return won && !reducedMotion && FLASH_HEROES.has(hero) && !VICTORY_HEROES.has(hero) && (heroReleased(hero) || cutinFlagOn(search, devBuild));
 }
 
 /** The hero's element (Quarrak is earth); void for an unknown slug. */
