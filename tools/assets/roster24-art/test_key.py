@@ -18,12 +18,12 @@ except ImportError:  # pragma: no cover
 N = 128
 
 
-def ring_plate(bg):
+def ring_plate(bg, ring=(230, 110, 20)):
     """Orange ring (radius 0.30-0.40) on a flat bg-coloured plate."""
     a = np.zeros((N, N, 3), np.uint8) + np.array(bg, np.uint8)
     r = key.radius_map(a.shape)
     m = (r > 0.30) & (r < 0.40)
-    a[m] = (230, 110, 20)
+    a[m] = ring
     return a
 
 
@@ -34,9 +34,9 @@ class KeyTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.d = Path(self.tmp.name)
 
-    def alpha_of(self, method, bg):
+    def alpha_of(self, method, bg, ring=(230, 110, 20)):
         src = self.d / "in.png"
-        Image.fromarray(ring_plate(bg)).save(src)
+        Image.fromarray(ring_plate(bg, ring)).save(src)
         out = self.d / "out.png"
         key.key_file(method, str(src), str(out))
         im = Image.open(out)
@@ -66,6 +66,15 @@ class KeyTests(unittest.TestCase):
         a = np.asarray(Image.open(out))[..., 3]
         self.assertGreater(a[N // 2, int(N * 0.75)], 240)
         self.assertEqual(a[2, 2], 0)
+
+    def test_relluma_keys_ring_on_grey_ground(self):
+        for m in ("relluma", "freeze", "daze", "tide"):
+            a = self.alpha_of(m, (90, 90, 90), (240, 240, 225))
+            self.assertGreater(a[N // 2, int(N * 0.85)], 0.8 * 255, m)
+            self.assertEqual(a[0, 0], 0, m)
+            self.assertEqual(a[0, N - 1], 0, m)
+            r = key.radius_map((N, N, 3))
+            self.assertEqual(int(a[r > 0.5].max()), 0, m)
 
     def test_cli_refuses_to_overwrite_source(self):
         src = self.d / "in.png"

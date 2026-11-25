@@ -6,6 +6,8 @@ Methods (recorded in .scratch/status-fx/approval-8171.json, art-director conditi
   haste : luminance key as alpha (grey wisps on black) + radial feather
   heal  : radial annulus mask (plate is grey, not black) + hue key on green
   snag  : radial annulus mask, dark centre removed by luminance key
+  relluma : radial annulus 0.20-0.47 x luma key relative to the corner median (plates on a grey ground)
+  freeze, daze, tide : status-ring plates, relluma with per-slot defaults (freeze/daze/tide, see key-rings.py)
   radial, luma, satlum, hue : the building blocks alone
 Usage: ~/claudetmp/venv/bin/python -I key.py <method> <in.png> <out.png> [--rmin 0.25 --rmax 0.5 --feather 0.04]
 Radii are fractions of the image side (0.5 = inscribed circle). Needs Pillow + numpy.
@@ -124,8 +126,39 @@ def key_snag(rgb, **k):
     return compose(rgb, _rad(rgb, k) * luma_key(rgb, 0.05, 0.3))
 
 
+def bg_luma(rgb):
+    """Median luminance of the corners (r > 0.5): the plate's own ground level."""
+    return float(np.median(luminance(rgb)[radius_map(rgb.shape) > 0.5]))
+
+
+def relluma_alpha(rgb, rmin=0.20, rmax=0.47, feather=0.035, lo=0.05, hi=0.30):
+    """Radial annulus x luma key measured against the corner median (bg+lo .. bg+hi)."""
+    bg = bg_luma(rgb)
+    return radial_mask(rgb.shape, rmin, rmax, feather) * smoothstep(bg + lo, bg + hi, luminance(rgb))
+
+
+def key_relluma(rgb, **k):
+    # CLI defaults (0.25/0.5/0.04) mean "not given": relluma has its own defaults
+    given = (k["rmin"], k["rmax"], k["feather"]) != (0.25, 0.5, 0.04)
+    a = relluma_alpha(rgb, *(k["rmin"], k["rmax"], k["feather"])) if given else relluma_alpha(rgb)
+    return compose(rgb, a, unmatte=False)
+
+
+def key_freeze(rgb, **k):
+    return key_relluma(rgb, **k)
+
+
+def key_daze(rgb, **k):
+    return key_relluma(rgb, **k)
+
+
+def key_tide(rgb, **k):
+    return key_relluma(rgb, **k)
+
+
 METHODS = dict(radial=key_radial, luma=key_luma, satlum=key_satlum, hue=key_hue,
-               burn=key_burn, haste=key_haste, heal=key_heal, snag=key_snag)
+               burn=key_burn, haste=key_haste, heal=key_heal, snag=key_snag,
+               relluma=key_relluma, freeze=key_freeze, daze=key_daze, tide=key_tide)
 
 
 def key_array(method, rgb, rmin=0.25, rmax=0.5, feather=0.04):
