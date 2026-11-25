@@ -3,14 +3,14 @@ import { KO_FALLBACK_HEROES, KO_FALLBACK_MS, koFallbackFor, koFallbackFrames } f
 
 describe('ko fallback', () => {
   it('covers exactly the heroes with no KO art', () => {
-    expect([...KO_FALLBACK_HEROES]).toEqual(['umbrel', 'nykra']);
+    expect([...KO_FALLBACK_HEROES]).toEqual(['umbrel']);
     expect(KO_FALLBACK_MS).toBeGreaterThanOrEqual(600);
     expect(KO_FALLBACK_MS).toBeLessThanOrEqual(900);
   });
 
   it('needs a loss, an eligible hero and the roster24 flag in a dev/test build', () => {
     expect(koFallbackFor('umbrel', true, '?ff=roster24', true)).toBe(true);
-    expect(koFallbackFor('nykra', true, '?ff=play,roster24', true)).toBe(true);
+    expect(koFallbackFor('nykra', true, '?ff=play,roster24', true)).toBe(false);
     expect(koFallbackFor('umbrel', false, '?ff=roster24', true)).toBe(false);
     expect(koFallbackFor('glimmaw', true, '?ff=roster24', true)).toBe(false);
     expect(koFallbackFor('umbrel', true, '', true)).toBe(false);

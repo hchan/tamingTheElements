@@ -6,7 +6,7 @@ import { cutinFlagOn } from './cutin-gate';
  * result screen the losing hero's portrait card slumps, desaturates and dims the same way. Render only (Web Animations on the
  * DOM, no sim state, no randomness), behind `?ff=roster24` in dev/test builds like the victory still. Other heroes keep the plain card.
  */
-export const KO_FALLBACK_HEROES: ReadonlySet<string> = new Set(['umbrel', 'nykra']);
+export const KO_FALLBACK_HEROES: ReadonlySet<string> = new Set(['umbrel']);
 
 export const KO_FALLBACK_MS = 800;
 

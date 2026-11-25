@@ -8,7 +8,7 @@ const approval = JSON.parse(readFileSync('tools/assets/ko-gen/approval.json', 'u
 describe('KO frames (tools/assets/ko-gen/ko-rigonly.py)', () => {
   it('ships only art-director-approved heroes, as PNGs; parked Fiara is absent', () => {
     const shipped = readdirSync(DIR).filter((f) => f.endsWith('.png')).sort();
-    expect(shipped).toEqual(['brazgor_ko.png', 'durrok_ko.png', 'glimmaw_ko.png', 'hyalia_ko.png', 'kindrel_ko.png', 'ouroth_ko.png', 'pax_ko.png', 'quarrak_ko.png', 'treenoc_ko.png', 'vortigal_ko.png', 'zephra_ko.png']);
+    expect(shipped).toEqual(['abyssor_ko.png', 'brazgor_ko.png', 'durrok_ko.png', 'glimmaw_ko.png', 'hyalia_ko.png', 'kindrel_ko.png', 'nykra_ko.png', 'ouroth_ko.png', 'pax_ko.png', 'quarrak_ko.png', 'treenoc_ko.png', 'vortigal_ko.png', 'zephra_ko.png']);
     for (const f of shipped) {
       const a = approval[`ko_${f.replace('_ko.png', '')}`];
       expect(a?.reviewer, f).toBe('art-director');
@@ -20,7 +20,7 @@ describe('KO frames (tools/assets/ko-gen/ko-rigonly.py)', () => {
     }
     expect(approval['ko_fiara']?.approved).toBeNull();
     expect(approval['ko_umbrel']?.approved).toBeNull();
-    expect(approval['ko_nykra']?.approved).toBeNull();
-    expect(approval['ko_abyssor']?.approved).toBeNull();
+    expect(approval['ko_nykra']?.approved).toBeTruthy();
+    expect(approval['ko_abyssor']?.approved).toBeTruthy();
   });
 });
