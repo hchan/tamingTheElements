@@ -19,6 +19,7 @@ const STILLS: Record<string, { src: string; srcSha: string; outSha: string; faci
   umbrel: { src: 'r805-umbrel-victory_58210_d0.5.png', srcSha: '0e96f965b6989867f4ec9e7105e704a2e2e0216aa69e734ac1e08c2a58aa47d0', outSha: 'fdd3b5f819a90770012068c142f72dd0d0ef3727bc9f68c473fd4a714babe0d4', facing: 'left' },
   abyssor: { src: 'r842-abyssor-vic_61100_d0.4.png', srcSha: '065281af8b8142323d19d64c50f52f634adc78cf390f1e07475624965ad3856e', outSha: 'bb9d4bf9fc0c98689617269010f50cf010e017e3b3d8a42bb90443d469163731', facing: 'front' },
   durrok: { src: 'durrok_win.png', srcSha: '4d328ce59d291f532363df3d97d0f1b17eff3cb8ba8b5e0342d448ee49de135d', outSha: '485a6fa08552f6744b033d208292bf401cd0b16a993995750dcdf09d7fade826', facing: 'right' },
+  quarrak: { src: 'quarrak_win.png', srcSha: '9200f3f35b5d9c9efa831b1020a6c852c2189849ecc9c873706baf1b78b24f68', outSha: 'c6f6c8e56bd554e3b09e5f8b994492858fb4017bfd02d4615c2216646f64fbe8', facing: 'right' },
 };
 
 describe('victory frames (tools/assets/victory-gen/victory-key.py)', () => {

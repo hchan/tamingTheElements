@@ -99,5 +99,15 @@
   "source": "durrok_win.png",
   "facing": "right",
   "note": "CPU-warp still, trunk-only raised pose (durrok5.py) plus alpha-only cleanup (durrok_cleanup.py); art-director APPROVE overall 4 (tools/assets/victory-warp/approval.json, sha256 4d328ce5...e135d, copied from victory-warp/approved/durrok_win.png); replaces the earlier durrok3 warp and the r992 i2i still"
+ },
+ "quarrak_victory": {
+  "approved": "out/quarrak_vic_i2i_r1003_100300_d0.45.png",
+  "verdict": "APPROVE",
+  "reviewer": "art-director",
+  "date": "2026-11-24",
+  "beats_shipped": true,
+  "source": "quarrak_win.png",
+  "facing": "right",
+  "note": "GPU i2i r1003 seed 100300 d0.45 from a warp (tools/assets/victory-poses/quarrak/warp-init.py, queue.json); art-director APPROVE overall 4; minor swirl on the top shell plates accepted; keyed with flood tolerance 30 (HERO_TOL) to drop the ground-shadow haze"
  }
 }
