@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { main, type FixDeps } from '../../tools/ci/nightly-fix';
-import { cleanPushBlockers, describePush, nightVerdict, type CleanPushInput, type PushStatus } from '../../tools/ci/nightly-push';
+import { cleanPushBlockers, describePush, dispatchPages, DISPATCH_PAGES_ARGS, pushArgsFor, nightVerdict, type CleanPushInput, type PushStatus } from '../../tools/ci/nightly-push';
 import { status as nightlyStatus, type Deps as E2eDeps } from '../../tools/ci/nightly-e2e';
 import { GATE_TAIL_LINES } from '../../tools/ci/nightly-push';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
@@ -243,5 +243,33 @@ describe('collect-and-fix pushes main on a night with no new reds (fake runner)'
     expect(main(['report'], deps({}))).toBe(0);
     expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toMatch(/^# .*\n\nPUSHED [0-9a-f]{7} to origin\/main\n/);
     expect(readFileSync(join(dir, 'gate', 'nightly-morning-report.md'), 'utf8')).toContain('untested local commits on main: 0');
+  });
+});
+
+describe('pushArgsFor hex guard and dispatchPages', () => {
+  it('accepts a 40 or 64 hex sha and builds the plain sha:main push', () => {
+    expect(pushArgsFor(SHA)).toEqual(['push', 'origin', `${SHA}:main`]);
+    expect(pushArgsFor('d'.repeat(64))).toEqual(['push', 'origin', `${'d'.repeat(64)}:main`]);
+  });
+  it.each(['', 'main', 'HEAD', 'abc123', 'C'.repeat(40), `${SHA} `, `${'c'.repeat(39)}g`, 'c'.repeat(41)])('throws for %j (an empty sha would delete origin main)', (s) => {
+    expect(() => pushArgsFor(s)).toThrow(/hex/);
+  });
+  it('dispatchPages runs gh without GITHUB_TOKEN and reports success or the cron fallback', () => {
+    const calls: { cmd: string; args: readonly string[]; env: Record<string, string | undefined> }[] = [];
+    const out: string[] = [];
+    const mk = (code: number) => ({
+      env: { GITHUB_TOKEN: 'x', PATH: '/bin' },
+      repo: '/r',
+      out: (s: string) => out.push(s),
+      run: (cmd: string, args: readonly string[], _cwd: string, env: Record<string, string | undefined>) => {
+        calls.push({ cmd, args, env });
+        return { code, stdout: '', stderr: '' };
+      },
+    });
+    expect(dispatchPages(mk(0))).toBe(true);
+    expect(calls[0]).toMatchObject({ cmd: 'gh', args: DISPATCH_PAGES_ARGS });
+    expect(calls[0]?.env).not.toHaveProperty('GITHUB_TOKEN');
+    expect(dispatchPages(mk(1))).toBe(false);
+    expect(out).toEqual(['Pages build dispatched\n', 'Pages dispatch failed (the daily cron will deploy)\n']);
   });
 });

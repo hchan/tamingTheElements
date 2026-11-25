@@ -21,8 +21,12 @@ export const MAX_FULL_CYCLES = 2;
 /** Estimate of a full PC run plus collect; a full re-run is only started when this much time is left (an estimate: tune after the first real night). */
 export const FULL_RUN_MS = 90 * 60_000;
 /** A fix round (claude plus the spec re-run) is only started when this much time is left. */
-/** Budget for gate:push after a full run (its hard cap is GATE_TIMEOUT_MS, but it normally takes far less). */
-export const GATE_PUSH_ESTIMATE_MS = 15 * 60_000;
+/** Budget for gate:commit after a verify run or a full run (its hard cap is GATE_TIMEOUT_MS, but it normally takes far less). */
+export const GATE_ESTIMATE_MS = 15 * 60_000;
+/** Verify rounds on the merge commit (fix, same-spec run, gate:commit): at most this many. */
+export const MAX_VERIFY_ROUNDS = 3;
+/** Time kept free after the last gate for integrating into main and pushing. */
+export const LAND_MARGIN_MS = 5 * 60_000;
 export const MIN_ROUND_MS = 20 * 60_000;
 /** Collect retry: the 01:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
 export const RETRY_WAIT_MS = 20 * 60_000;
@@ -125,8 +129,10 @@ export function deadlineFor(start: Date): Date {
 export const deadlineReached = (startMs: number, now: Date): boolean => now.getTime() - startMs >= MAX_RUN_MS || now.getTime() >= deadlineFor(new Date(startMs)).getTime();
 const left = (now: Date, startMs: number): number => deadlineFor(new Date(startMs)).getTime() - now.getTime();
 export const canStartRound = (startMs: number, now: Date): boolean => left(now, startMs) >= MIN_ROUND_MS;
-/** The full run plus the gate:push that follows it must both fit before the deadline. */
-export const canStartFullRun = (startMs: number, now: Date): boolean => left(now, startMs) >= FULL_RUN_MS + GATE_PUSH_ESTIMATE_MS;
+/** The full run plus the gate that follows it must both fit before the deadline. */
+export const canStartFullRun = (startMs: number, now: Date): boolean => left(now, startMs) >= FULL_RUN_MS + GATE_ESTIMATE_MS;
+/** A verify round needs the same-spec run, the gate:commit and the landing margin before the deadline. */
+export const canStartVerify = (startMs: number, now: Date): boolean => left(now, startMs) >= RERUN_TIMEOUT_MS + GATE_ESTIMATE_MS + LAND_MARGIN_MS;
 /** A child timeout never runs past the deadline (so nothing is left running after 07:00). */
 export const capTimeout = (ms: number, startMs: number, now: Date): number => Math.max(1000, Math.min(ms, left(now, startMs)));
 
@@ -399,6 +405,107 @@ export function pushBlockers(i: PushInput): string[] {
   return b;
 }
 
+// ---- verify loop and landing (WP3: merge M into local main, push M) ----
+export interface VerifyInput {
+  /** The router child of the same-spec run on the merge commit. */
+  readonly child: ChildResult;
+  /** Parsed Playwright JSON of that run (undefined when none was written). */
+  readonly json: unknown;
+  /** The real reds the fix targets (green means every one of them passed). */
+  readonly todo: readonly TestRef[];
+  /** The failures of the 23:00 nightly (`st.failed`). */
+  readonly baseline: readonly TestRef[];
+  readonly known: readonly KnownRed[];
+}
+export interface VerifyVerdict {
+  readonly ran: boolean;
+  readonly green: boolean;
+  readonly greenCount: number;
+  readonly newReds: TestRef[];
+}
+/** Same-spec run on M_k: exit 0 alone is not green; every todo title must have passed (flaky is not green), and a red outside the baseline is new. */
+export function verifyVerdict(i: VerifyInput): VerifyVerdict {
+  const ran = !rerunStops(i.child) && i.json !== undefined && i.json !== null && typeof i.json === 'object';
+  if (!ran) return { ran: false, green: false, greenCount: 0, newReds: [] };
+  const greenCount = i.todo.filter((t) => titlePassed(i.json, t)).length;
+  return { ran: true, green: i.todo.length > 0 && greenCount === i.todo.length, greenCount, newReds: judgeFullRun(parseResults(i.json), i.baseline, i.known).newReds };
+}
+/** D3: a diff that leaves the re-run spec files can break something else, so one full run on M precedes the landing. */
+export function needsFullRun(changed: readonly string[], specs: readonly string[]): boolean {
+  return changed.some((c) => !specs.some((s) => sameSpec(normalizePath(c), specPath(normalizePath(s)))));
+}
+
+export interface IntegrationInput {
+  readonly msLeft: number;
+  /** `worktree list` shows exactly one checkout of refs/heads/main and it is the repo. */
+  readonly mainCheckedOutHere: boolean;
+  readonly headIsMain: boolean;
+  /** No tracked changes, no assume-unchanged or skip-worktree entries. */
+  readonly trackedClean: boolean;
+  /** Names of merge, cherry-pick, revert, bisect, rebase or index.lock states found. */
+  readonly operationsInProgress: readonly string[];
+  /** The tested commit T is main or an ancestor of it. */
+  readonly testedIsAncestor: boolean;
+  /** `merge-tree --write-tree` found no conflict (undefined: not asked, as when M is already in main). */
+  readonly mergeTreeClean: boolean | undefined;
+  readonly markersClean: boolean | undefined;
+  readonly forbidden: readonly string[];
+}
+/** Every reason not to touch the main checkout; empty means merge M into main. */
+export function integrationRefusals(i: IntegrationInput): string[] {
+  const b: string[] = [];
+  if (i.msLeft < LAND_MARGIN_MS) b.push('not enough time left to integrate into main');
+  if (!i.mainCheckedOutHere) b.push('main is not checked out exactly once, in the repo checkout');
+  if (!i.headIsMain) b.push('the repo checkout is not on main');
+  if (!i.trackedClean) b.push('main has uncommitted tracked changes');
+  if (i.operationsInProgress.length) b.push(`git operation in progress: ${i.operationsInProgress.join(', ')}`);
+  if (!i.testedIsAncestor) b.push('the tested commit is not an ancestor of main (history changed)');
+  if (i.mergeTreeClean === false) b.push('merging into main would conflict');
+  if (i.markersClean === false) b.push('conflict markers in the merged tree');
+  if (i.forbidden.length) b.push(`merged diff touches forbidden paths: ${i.forbidden.join(', ')}`);
+  return b;
+}
+
+export interface LandInput {
+  /** The sha to push is full hex (40 or 64). */
+  readonly shaIsHex: boolean;
+  readonly noEnvOverride: boolean;
+  readonly beforeDeadline: boolean;
+  readonly sameSpecsGreen: boolean;
+  readonly gateCommitOk: boolean;
+  /** The full run on M had no new reds, or none was needed. */
+  readonly collateralOk: boolean;
+  readonly mergeOk: boolean;
+  /** M is an ancestor of local main. */
+  readonly integrated: boolean;
+  /** origin/main (fetched) is an ancestor of M. */
+  readonly originIsAncestor: boolean;
+  readonly hasCommits: boolean;
+}
+/** Every reason the push of M must not happen; empty means `git push origin <M>:main` (plain, never forced). */
+export function landBlockers(i: LandInput): string[] {
+  const b: string[] = [];
+  if (!i.shaIsHex) b.push('the merge commit sha is not full hex; no push');
+  if (!i.noEnvOverride) b.push('CI, TTE_E2E_LOCAL or TTE_ALLOW_MAC_E2E is set');
+  if (!i.beforeDeadline) b.push('hard stop reached before the push');
+  if (!i.mergeOk) b.push('merge --no-ff of the fixes failed');
+  if (!i.sameSpecsGreen) b.push('the same-spec run on the merged commit is not green');
+  if (!i.gateCommitOk) b.push('gate:commit failed on the merged commit');
+  if (!i.collateralOk) b.push('the full run on the merged commit has new reds');
+  if (!i.integrated) b.push('the merged commit is not in local main (integration refused)');
+  if (!i.originIsAncestor) b.push('origin/main diverged from the merged commit; not pushed, never forced');
+  if (!i.hasCommits) b.push('nothing to push');
+  return b;
+}
+
+/** Local branch that keeps M when integration was refused: `nightly-fix-merged/<date>`, then `-2` .. `-19`; undefined when all are taken. */
+export function mergedBranchName(date: string, exists: (name: string) => boolean): string | undefined {
+  const base = `nightly-fix-merged/${date}`;
+  if (!exists(base)) return base;
+  for (let n = 2; n < 20; n++) if (!exists(`${base}-${String(n)}`)) return `${base}-${String(n)}`;
+  return undefined;
+}
+
 export function finalState(results: readonly FailureResult[], pushed: boolean): FixState {
   if (results.some((r) => r.outcome === 'needs-human')) return 'needs-human';
   if (pushed && results.every((r) => r.outcome === 'fixed' || r.outcome === 'flaky' || r.outcome === 'p2-record')) return 'fixed-pushed';
@@ -418,6 +525,27 @@ export interface FixStatus {
   readonly blockers: readonly string[];
   /** Local branch holding unpushed fixes, when there are any. */
   readonly keptBranch?: string;
+  /** Verify rounds on the merge commit (one entry per round). */
+  readonly rounds?: readonly VerifyRound[];
+  /** The verified merge commit M. */
+  readonly mergeSha?: string;
+  /** What reached origin/main (M); the morning headline prefers it over `sha`. */
+  readonly pushedSha?: string;
+  /** M was merged into local main (or already was). */
+  readonly integrated?: boolean;
+  /** Local branch holding M when integration was refused. */
+  readonly mergedBranch?: string;
+  /** Last lines of a failed gate:commit on the merge commit. */
+  readonly gateTail?: readonly string[];
+}
+
+export interface VerifyRound {
+  readonly round: number;
+  readonly sha: string;
+  readonly green: number;
+  readonly total: number;
+  readonly newReds: number;
+  readonly gate: 'green' | 'red' | 'skipped';
 }
 
 const ERR_LINES = 3;
@@ -458,7 +586,7 @@ export function morningReport(i: MorningInput): string[] {
   const { status, fix, push } = i;
   let head: string;
   if (push?.pushed) head = `PUSHED ${push.sha.slice(0, 7)} to origin/main`;
-  else if (fix?.pushed) head = `PUSHED ${fix.sha.slice(0, 7)} to origin/main`;
+  else if (fix?.pushed) head = `PUSHED ${(fix.pushedSha ?? fix.sha).slice(0, 7)} to origin/main`;
   else {
     const why = push?.blockers[0] ?? fix?.blockers[0] ?? (fix ? `fix loop ended ${fix.state}` : status ? (status.state === 'red' ? 'red night, nothing classified yet' : `nightly e2e is ${status.state}`) : 'no nightly status recorded');
     head = `NOT PUSHED: ${why}`;
