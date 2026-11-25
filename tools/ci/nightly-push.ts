@@ -13,7 +13,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BLOCKING_ENV, capTimeout, deadlineReached, GATE_TIMEOUT_MS, noPushEnv, PUSH_ARGS } from './nightly-fix-logic';
+import { BLOCKING_ENV, capTimeout, deadlineReached, GATE_TIMEOUT_MS, noPushEnv } from './nightly-fix-logic';
 import { readPrecheck } from './nightly-precheck';
 import type { NightlyStatus } from './nightly-status';
 
@@ -100,8 +100,22 @@ export function readPushStatus(dir: string): PushStatus | undefined {
   }
 }
 
-/** Plain fast-forward push of one commit to main (same shape as `PUSH_ARGS`, with the tested sha instead of HEAD). */
-export const pushArgsFor = (sha: string): readonly string[] => ['push', 'origin', `${sha}:main`];
+/**
+ * Plain fast-forward push of one commit to main (same shape as `PUSH_ARGS`, with the tested sha instead of HEAD). Throws unless the
+ * sha is full hex (40 or 64): `:main` would delete origin/main and `main:main` would push untested local commits.
+ */
+export function pushArgsFor(sha: string): readonly string[] {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(sha)) throw new Error('pushArgsFor: refusing a sha that is not 40 or 64 hex characters');
+  return ['push', 'origin', `${sha}:main`];
+}
+
+/** Start the Pages build for what was just pushed (best effort; the daily cron is the fallback). GITHUB_TOKEN is stripped because a stale one breaks gh. */
+export function dispatchPages(d: Pick<PushDeps, 'env' | 'repo' | 'run' | 'out'>): boolean {
+  const { GITHUB_TOKEN: _stale, ...ghEnv } = d.env;
+  const dispatched = d.run('gh', DISPATCH_PAGES_ARGS, d.repo, ghEnv).code === 0;
+  d.out(dispatched ? 'Pages build dispatched\n' : 'Pages dispatch failed (the daily cron will deploy)\n');
+  return dispatched;
+}
 
 /** The nightly worktree the 23:00 submit checks out (nightly-e2e.ts WT_REL); the 01:00 gate runs here. */
 export const NIGHTLY_WT_REL = join('.scratch', 'nightly-wt');
@@ -173,8 +187,6 @@ export function pushCleanNight(d: PushDeps, st: NightlyStatus, startMs: number):
   if (d.run('git', pushArgsFor(tested), d.repo, d.env).code !== 0) return finish(false, ['git push failed (not forced)']);
   // Pages is built only by the cron or a dispatch (not on push): start the build for what was just pushed. Best effort; the
   // 14:00 UTC cron is the fallback. GITHUB_TOKEN is stripped because a stale one breaks gh.
-  const { GITHUB_TOKEN: _stale, ...ghEnv } = d.env;
-  const dispatched = d.run('gh', DISPATCH_PAGES_ARGS, d.repo, ghEnv).code === 0;
-  d.out(dispatched ? 'Pages build dispatched\n' : 'Pages dispatch failed (the daily cron will deploy)\n');
+  dispatchPages(d);
   return finish(true, []);
 }

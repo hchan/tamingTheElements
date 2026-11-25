@@ -7,7 +7,7 @@ import {
   addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, collectUnfinished, deadlineFor, deadlineReached, DENIED_TOOLS, noPushEnv,
   extractFailures, finalState, forbiddenTouched, FULL_RUN_MS, isForbiddenPath, judgeFullRun, MAX_FULL_CYCLES, MAX_ROUNDS, parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops,
   retargets, retryAllowed, classifyReds, redsVerdict, dedupeRefs, blockingReds, MAX_REAL_REDS, knownRedProposal, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
-  type PushInput, morningReport, type FixStatus,
+  type PushInput, morningReport, type FixStatus, type LandInput, MAX_VERIFY_ROUNDS, LAND_MARGIN_MS, GATE_ESTIMATE_MS, canStartVerify, verifyVerdict, needsFullRun, integrationRefusals, landBlockers, mergedBranchName,
 } from '../../tools/ci/nightly-fix-logic';
 import type { PushStatus } from '../../tools/ci/nightly-push';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
@@ -909,5 +909,74 @@ describe('one-screen morning report (pure render)', () => {
     expect(text).toContain('"file":"tests/e2e/a.spec.ts","titleIncludes":"flaky one","tier":"P1","firstSeen":"2026-11-25"');
     expect(text).not.toContain('corepack pnpm e2e --');
     expect(text).not.toContain('10.0.0.5');
+  });
+});
+
+describe('WP3a verify and landing logic (pure)', () => {
+  const at = (h: number, m = 0): Date => new Date(2026, 10, 25, h, m, 0, 0);
+  const pass = (t: { file: string; title: string }): { suites: unknown[] } => ({ suites: [{ file: t.file, specs: [{ title: t.title, tests: [{ status: 'expected', results: [{ status: 'passed' }] }] }] }] });
+  const fail = (t: { file: string; title: string }): { suites: unknown[] } => ({ suites: [{ file: t.file, specs: [{ title: t.title, tests: [{ status: 'unexpected', results: [{ status: 'failed' }] }] }] }] });
+  const join2 = (...p: { suites: unknown[] }[]): unknown => ({ suites: p.flatMap((x) => x.suites) });
+  const a = { file: 'a.spec.ts', title: 'a' };
+  const b = { file: 'b.spec.ts', title: 'b' };
+
+  it('constants: 3 verify rounds, 5 min land margin, gate estimate 15 min', () => {
+    expect(MAX_VERIFY_ROUNDS).toBe(3);
+    expect(LAND_MARGIN_MS).toBe(5 * 60_000);
+    expect(GATE_ESTIMATE_MS).toBe(15 * 60_000);
+  });
+  it('canStartVerify needs rerun + gate + margin (60 min) before the 07:00 stop', () => {
+    expect(canStartVerify(at(1).getTime(), at(5, 59))).toBe(true);
+    expect(canStartVerify(at(1).getTime(), at(6, 1))).toBe(false);
+  });
+  it('verifyVerdict: all todo green and no new red', () => {
+    const v = verifyVerdict({ child: { code: 0 }, json: join2(pass(a), pass(b)), todo: [a, b], baseline: [a, b], known: [] });
+    expect(v).toMatchObject({ ran: true, green: true, greenCount: 2, newReds: [] });
+  });
+  it('verifyVerdict: exit 0 with a todo not passed is not green; a red outside the baseline is new', () => {
+    const c = { file: 'c.spec.ts', title: 'c' };
+    const v = verifyVerdict({ child: { code: 1 }, json: join2(pass(a), fail(b), fail(c)), todo: [a, b], baseline: [a, b], known: [] });
+    expect(v.green).toBe(false);
+    expect(v.greenCount).toBe(1);
+    expect(v.newReds).toEqual([c]);
+    expect(verifyVerdict({ child: { code: 0 }, json: { suites: [] }, todo: [a], baseline: [a], known: [] }).green).toBe(false);
+  });
+  it('verifyVerdict: router stop, signal, timeout, or no JSON is not ran', () => {
+    for (const child of [{ code: 95 }, { code: 0, signal: 'SIGTERM' }, { code: 1, timedOut: true }, { code: 2 }]) expect(verifyVerdict({ child, json: pass(a), todo: [a], baseline: [], known: [] }).ran).toBe(false);
+    expect(verifyVerdict({ child: { code: 0 }, json: undefined, todo: [a], baseline: [], known: [] }).ran).toBe(false);
+  });
+  it('needsFullRun: only when the diff leaves the re-run spec files', () => {
+    expect(needsFullRun(['tests/e2e/a.spec.ts'], ['a.spec.ts'])).toBe(false);
+    expect(needsFullRun(['tests/e2e/a.spec.ts', 'src/game/x.ts'], ['tests/e2e/a.spec.ts'])).toBe(true);
+    expect(needsFullRun(['tests/e2e/other.spec.ts'], ['a.spec.ts'])).toBe(true);
+    expect(needsFullRun([], ['a.spec.ts'])).toBe(false);
+  });
+  it('integrationRefusals: empty when all is well, one reason per violated condition', () => {
+    const ok = { msLeft: 3600_000, mainCheckedOutHere: true, headIsMain: true, trackedClean: true, operationsInProgress: [], testedIsAncestor: true, mergeTreeClean: true, markersClean: true, forbidden: [] };
+    expect(integrationRefusals(ok)).toEqual([]);
+    expect(integrationRefusals({ ...ok, mergeTreeClean: undefined, markersClean: undefined })).toEqual([]);
+    expect(integrationRefusals({ ...ok, msLeft: 1000 })).toHaveLength(1);
+    expect(integrationRefusals({ ...ok, trackedClean: false, headIsMain: false })).toHaveLength(2);
+    expect(integrationRefusals({ ...ok, operationsInProgress: ['MERGE_HEAD'] })[0]).toContain('MERGE_HEAD');
+    expect(integrationRefusals({ ...ok, testedIsAncestor: false, mergeTreeClean: false, markersClean: false, mainCheckedOutHere: false })).toHaveLength(4);
+    expect(integrationRefusals({ ...ok, forbidden: ['tools/x.ts'] })[0]).toContain('tools/x.ts');
+  });
+  it('landBlockers: empty when every condition holds, each failing one blocks', () => {
+    const ok: LandInput = { shaIsHex: true, noEnvOverride: true, beforeDeadline: true, sameSpecsGreen: true, gateCommitOk: true, collateralOk: true, mergeOk: true, integrated: true, originIsAncestor: true, hasCommits: true };
+    expect(landBlockers(ok)).toEqual([]);
+    for (const k of Object.keys(ok) as (keyof LandInput)[]) expect(landBlockers({ ...ok, [k]: false }), k).toHaveLength(1);
+    expect(landBlockers({ ...ok, originIsAncestor: false })[0]).toContain('never forced');
+  });
+  it('mergedBranchName: base, then -2 .. -19, then undefined', () => {
+    expect(mergedBranchName('2026-11-25', () => false)).toBe('nightly-fix-merged/2026-11-25');
+    const taken = new Set(['nightly-fix-merged/2026-11-25', 'nightly-fix-merged/2026-11-25-2']);
+    expect(mergedBranchName('2026-11-25', (n) => taken.has(n))).toBe('nightly-fix-merged/2026-11-25-3');
+    expect(mergedBranchName('2026-11-25', () => true)).toBeUndefined();
+  });
+  it('morningReport headline prefers pushedSha over sha', () => {
+    const f: FixStatus = { schema: 1, state: 'fixed-pushed', sha: 'a'.repeat(40), finishedAt: '2026-11-25T03:00:00.000Z', pushed: true, results: [], blockers: [], pushedSha: 'b'.repeat(40), mergeSha: 'b'.repeat(40) };
+    expect(morningReport({ status: undefined, fix: f, push: undefined, nowMs: 0 })[0]).toBe('PUSHED bbbbbbb to origin/main');
+    const noPushed: FixStatus = { schema: 1, state: 'fixed-pushed', sha: f.sha, finishedAt: f.finishedAt, pushed: true, results: [], blockers: [] };
+    expect(morningReport({ status: undefined, fix: noPushed, push: undefined, nowMs: 0 })[0]).toBe('PUSHED aaaaaaa to origin/main');
   });
 });
