@@ -12,10 +12,10 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
-import { describePush, readPushStatus } from './nightly-push';
+import { readPushStatus } from './nightly-push';
 import { describePrecheck, makePrecheck, PRECHECK_TIMEOUT_MS, readPrecheck, writePrecheck } from './nightly-precheck';
 import { noPushEnv } from './nightly-fix-logic';
-import { describeFix, type FixStatus } from './nightly-fix-logic';
+import { morningReport, type FixStatus } from './nightly-fix-logic';
 import { appendHistory, describeStatus, finishStatus, notRunStatus, parseRawId, parseResults, pendingStatus, prevTotalFromHistory, validateStatus, type NightlyStatus } from './nightly-status';
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -139,16 +139,16 @@ export function collect(d: Deps): number {
 }
 
 export function status(d: Deps): number {
-  for (const l of describeStatus(readStatus(d.statusDir), d.now().getTime())) d.out(`${l}\n`);
+  let fx: FixStatus | undefined;
   try {
-    const fx = JSON.parse(readFileSync(join(d.statusDir, 'nightly-fix-status.json'), 'utf8')) as FixStatus;
-    for (const l of describeFix(fx.schema === 1 ? fx : undefined)) d.out(`${l}\n`);
+    const v = JSON.parse(readFileSync(join(d.statusDir, 'nightly-fix-status.json'), 'utf8')) as FixStatus;
+    fx = v.schema === 1 ? v : undefined;
   } catch {
     /* no fix report yet */
   }
+  // The same one-screen text as nightly-morning-report.md.
+  for (const l of morningReport({ status: readStatus(d.statusDir), fix: fx, push: readPushStatus(d.statusDir), nowMs: d.now().getTime() })) d.out(`${l}\n`);
   for (const l of describePrecheck(readPrecheck(d.statusDir))) d.out(`${l}\n`);
-  // Blocker reasons and the gate:commit tail of the latest push attempt (empty when none was recorded).
-  for (const l of describePush(readPushStatus(d.statusDir))) d.out(`${l}\n`);
   return 0;
 }
 
