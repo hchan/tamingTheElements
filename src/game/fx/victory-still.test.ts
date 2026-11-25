@@ -7,10 +7,10 @@ describe('victory still gate', () => {
     expect([...VICTORY_HEROES]).toEqual(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok']);
   });
   it('needs a win, the hero, ?ff=roster24 and a dev or test build', () => {
-    expect(victoryStillFor('nykra', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/nykra_victory.png');
-    expect(victoryStillFor('nykra', false, '?ff=roster24', true, '/')).toBeNull();
-    expect(victoryStillFor('nykra', true, '', true, '/')).toBeNull();
-    expect(victoryStillFor('nykra', true, '?ff=roster24', false, '/')).toBeNull();
+    expect(victoryStillFor('umbrel', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/umbrel_victory.png');
+    expect(victoryStillFor('umbrel', false, '?ff=roster24', true, '/')).toBeNull();
+    expect(victoryStillFor('umbrel', true, '', true, '/')).toBeNull();
+    expect(victoryStillFor('umbrel', true, '?ff=roster24', false, '/')).toBeNull();
     expect(victoryStillFor('zephra', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/zephra_victory.png');
     expect(victoryStillFor('zephra', true, '', false, '/')).toBe('/assets/img/victory/zephra_victory.png'); // released
     expect(victoryStillFor('vortigal', true, '', false, '/')).toBe('/assets/img/victory/vortigal_victory.png');
@@ -20,6 +20,7 @@ describe('victory still gate', () => {
     expect(victoryStillFor('kindrel', true, '', false, '/')).toBe('/assets/img/victory/kindrel_victory.png');
     expect(victoryStillFor('brazgor', true, '', false, '/')).toBe('/assets/img/victory/brazgor_victory.png');
     expect(victoryStillFor('ouroth', true, '', false, '/')).toBe('/assets/img/victory/ouroth_victory.png');
+    expect(victoryStillFor('nykra', true, '', false, '/')).toBe('/assets/img/victory/nykra_victory.png');
     expect(victoryStillFor('fiara', true, '?ff=roster24', true, '/')).toBeNull();
   });
   it('honours a base path', () => {
@@ -34,7 +35,7 @@ describe('victory flash fallback (no still)', () => {
     expect(victoryFlashFor('quarrak', false, '?ff=roster24', true, false)).toBe(false);
     expect(victoryFlashFor('quarrak', true, '', true, false)).toBe(false);
     expect(victoryFlashFor('quarrak', true, '?ff=roster24', false, false)).toBe(false);
-    expect(victoryFlashFor('nykra', true, '?ff=roster24', true, false)).toBe(false);
+    expect(victoryFlashFor('umbrel', true, '?ff=roster24', true, false)).toBe(false);
     expect(victoryStillFor('quarrak', true, '?ff=roster24', true, '/')).toBeNull();
   });
   it('pops about 6% and settles back', () => {
