@@ -37,6 +37,7 @@
     "e2e:local": "tsx tools/ci/e2e-route.ts run --local",
     "visual:capture": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts capture",
     "visual:abilities": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts abilities",
+    "visual:stills": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts stills",
     "visual:pacing": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts pacing",
     "visual:regress": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts regress",
     "visual:update": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts update",

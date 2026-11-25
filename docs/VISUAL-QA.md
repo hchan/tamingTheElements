@@ -13,6 +13,7 @@ human, or an AI agent that can open PNGs, reviews. Config: `playwright.visual.co
 | `pnpm visual:regress` | `expect(page).toHaveScreenshot()` for the deterministic subset (DOM screens, stepped arena frames) against committed baselines. Skipped when this platform has no baselines |
 | `pnpm visual:update` | Same specs with `--update-snapshots`: (re)creates baselines for the current platform |
 | `pnpm visual:abilities` | Ability graphics audit shots (`tests/visual/ability-audit.spec.ts`): casts Snag, Charge, Dash, Guard, Weather, supers, Stick, Capture and boss abilities, saves frames at fixed tick offsets to `test-results/visual/abilities/` (`ABILITY_OUT`, `ABILITY_ONLY=name,...`); feeds docs/ABILITY-AUDIT.md |
+| `pnpm visual:stills` | Long gate (not `@smoke`, not in `pnpm e2e`; real fights, about 20 s each). `tests/visual/stills.spec.ts`: roster24 victory stills (glimmaw, kindrel, umbrel, durrok, quarrak) on the Versus results, the freeze/daze status-ring plates, and a procedural-fallback shot with the plate requests aborted. Writes `test-results/visual/stills/` (`STILLS_OUT`) |
 | `pnpm ci:local --visual` | The usual local CI plus capture, pacing and regress |
 
 Use `E2E_PORT=n` to avoid port collisions between worktrees. `?ff=fps` (dev and test builds only, statically removed from
