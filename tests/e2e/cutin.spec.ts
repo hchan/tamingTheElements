@@ -44,7 +44,7 @@ test('zephra is released: picker lists it and the cut-in shows without ?ff=roste
   const cutinRequests: string[] = [];
   page.on('request', (r) => { if (r.url().includes('/assets/img/cutin/')) cutinRequests.push(r.url()); });
   await page.goto(`${START}&ff=arcade#arcade`);
-  await expect(page.getByLabel('Your race').locator('option[value="kindrel"]')).toHaveCount(0);
+  await expect(page.getByLabel('Your race').locator('option[value="nykra"]')).toHaveCount(0);
   await page.getByLabel('Your race').selectOption('zephra');
   await page.getByLabel('AI race').selectOption('fiara');
   await page.getByRole('button', { name: 'Fight!' }).click();
