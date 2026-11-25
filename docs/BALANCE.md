@@ -593,3 +593,18 @@ Plan round R5 (balance-24): four heroes outside the 1v1 .40-.60 or 2v2 .35-.65 b
 After round 1 every hero is inside both bounds: 1v1 .405 (brazgor, the lowest, 1 win above the limit) to .579; 2v2 .421 (kindrel) to .630 (abyssor). No round 2 was needed. Seed-41 hold-out, `--roster legacy` and 3v3 runs were not made.
 
 Re-record: `golden:record --ruleset arcade` (nine Arcade goldens change content: arcade-moves, -weather, -tag, -tag3, -traps, -elemental, -cc, -ot, -run; arcade-1v1 and arcade-roster24-b1/b2/b3 change only the simVersion header), `golden:record` (Classic goldens header only), `balance:record --ruleset arcade` with `--roster full` and `--team-size 2`; `baseline.json` (Classic) untouched.
+
+## Arcade retune R6 (SIM_VERSION 115)
+
+Plan round R6 (balance-24), run after R5 left two edge entries: abyssor-led 2v2 .630 (top) and brazgor 1v1 .405 (bottom, 1 win above the limit). Two data-only constants in `src/core/sim/arcade-numbers.ts`: `ARCADE_2V2_LIFE_PM` abyssor 590 -> 560 (-5.1%; 1v1 bit-identical, 3v3 3367 -> 3195, 2v2 4377 -> 4153) and brazgor `hpPm` 4030 -> 4151 (+3.0% at every size, 2v2 570 kept: 3v3 2297 -> 2366, 2v2 2986 -> 3075). Classic never reads these tables. All numbers below are measurements (released roster, aiLevel 3, 16 seeds, `sim:match --tournament`), not estimates.
+
+| hero, mode (seed 1, 16 seeds) | before | after |
+|---|---|---|
+| brazgor 1v1 | 40.5 | 45.4 |
+| abyssor-led 2v2 (sindarosa partner) | 63.0 | 55.4 |
+
+Result: with seeds 1-16 every hero is inside 40-60 in both modes. Seed-41 hold-out: vortigal 1v1 61.1 and treenoc 2v2 60.9 are just over 60; with a 16-seed SE of about 2.6 pp per hero they are treated as noise and not retuned (the seed-1 pass has both inside the band).
+
+Held, not applied: the round-2 lever kindrel / treenoc / cyclonius 2v2 life tweak (kindrel 710 -> 730, treenoc 720 -> 700, cyclonius 810 -> 790; all 2v2-only, 1v1 bit-identical) stays unapplied because no seed-1 entry was out of band.
+
+Re-record (SIM_VERSION 115): `golden:record --ruleset arcade` (roster24-b2 and b3 change content, the other Arcade goldens only the simVersion header), `golden:record` (Classic, header only), `balance:record --ruleset arcade` with `--roster full` and `--team-size 2` (`arcade-full-baseline.json`, `arcade-2v2-baseline.json`); `baseline.json` (Classic) untouched. Commit: 9b78e7f2.
