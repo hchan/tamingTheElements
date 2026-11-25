@@ -1,3 +1,8 @@
+---
+status: idea
+added: 2026-11-24
+---
+
 # status-ring reduced-motion tide ring flaky
 
 Nightly full e2e at 45fc58f: `status rings draw, stack and clear (reduced motion)` failed with the tide-motion pixel diff
