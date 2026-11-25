@@ -85,12 +85,9 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
 });
 
 describe('SIM_VERSION 113 1v1 life cut keeps team life', () => {
-  it('brazgor and ouroth 1v1 life dropped while 2v2/3v3 team life is the v112 value', () => {
-    expect(arcadeLifePm(arcadeRaceNumbers('brazgor')[0], 1, 'brazgor')).toBe(4030);
+  it('ouroth 1v1 life dropped while 2v2/3v3 team life is the v112 value (brazgor moved again in v115)', () => {
     expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 1, 'ouroth')).toBe(6031);
-    expect(arcadeLifePm(arcadeRaceNumbers('brazgor')[0], 3, 'brazgor')).toBe(2297);
     expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 3, 'ouroth')).toBe(3787);
-    expect(arcadeLifePm(arcadeRaceNumbers('brazgor')[0], 2, 'brazgor')).toBe(2986);
     expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 2, 'ouroth')).toBe(4923);
   });
 });
@@ -101,6 +98,13 @@ describe('SIM_VERSION 114 outlier re-fit', () => {
     expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('fiara')[0], n, 'fiara'))).toEqual([4235, 3074, 3996]);
     expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('curomo')[0], n, 'curomo'))).toEqual([5880, 4116, 5350]);
     expect(arcadeRaceNumbers('treenoc')[1]).toBe(1253);
+  });
+});
+
+describe('SIM_VERSION 115 R6 retune', () => {
+  it('brazgor life +3 percent at every size; abyssor 2v2/3v3 trimmed, 1v1 kept', () => {
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('brazgor')[0], n, 'brazgor'))).toEqual([4151, 2366, 3075]);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('abyssor')[0], n, 'abyssor'))).toEqual([5707, 3195, 4153]);
   });
 });
 

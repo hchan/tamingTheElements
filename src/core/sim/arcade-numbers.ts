@@ -57,7 +57,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   quarrak: [3515, 760], // Re-fit in SIM_VERSION 110 (was [3365, 760]; team life 2271 -> 2372 with 2v2 675 kept)
   hyalia: [7600, 2108],
   // Roster-24 batch 2 (SIM_VERSION 73), provisional until fitted with tools/sim/low-races/mat.sh.
-  brazgor: [4030, 727], // Re-fit in SIM_VERSION 113 (was [4478, 727]; 65.4% 1v1, -10% life, 2v2 513 -> 570 keeps team life); SIM_VERSION 110 (was [4688, 727])
+  brazgor: [4151, 727], // SIM_VERSION 115 (was [4030, 727]; 1v1 40.5%, +3.0% life at every size, 2v2 570 kept); re-fit in SIM_VERSION 113 (was [4478, 727]; 65.4% 1v1, -10% life, 2v2 513 -> 570 keeps team life); SIM_VERSION 110 (was [4688, 727])
   glimmaw: [7531, 2027],
   durrok: [4892, 1058], // Re-fit in SIM_VERSION 110 (was [4689, 1058]; 2v2 675 -> 647 keeps team life)
   zephra: [6745, 2423],
@@ -104,7 +104,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   durrok: 647, // 675 before SIM_VERSION 110; 625 before SIM_VERSION 109; 590 before SIM_VERSION 102
   zephra: 830, // 760 before SIM_VERSION 102
   ouroth: 628, // 590 before SIM_VERSION 113 (1v1 life cut, team life kept)
-  abyssor: 590, // 550 before SIM_VERSION 106; 475 before SIM_VERSION 103; 430 before 102
+  abyssor: 560, // 590 before SIM_VERSION 115 (abyssor-led 2v2 63.0%); 550 before SIM_VERSION 106; 475 before SIM_VERSION 103; 430 before 102
   vortigal: 650, // 740 before SIM_VERSION 102; 665 before SIM_VERSION 94 (41.6% in 2v2)
   umbrel: 660,
 };
