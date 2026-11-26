@@ -1,3 +1,8 @@
+---
+status: idea
+added: 2026-11-26
+---
+
 # Live browser match stalls (found 2026-11-26)
 
 `pnpm online:live-browser` (two headless pages, one Chromium, real relay) now fails: the 300-tick match (6 s nominal) takes about 58 s
