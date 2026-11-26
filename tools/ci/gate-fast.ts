@@ -1,7 +1,7 @@
 /**
  * `pnpm gate:fast [--base <ref>]`: the per-merge check (owner, 2026-11-21). Lint of the changed files, typecheck, depcruise,
  * the dom project and the core tests affected by the change (`vitest --changed <base>`, default HEAD~1) and, when any changed path is outside src/, the whole repo project (pin tests read files by path). It writes no
- * stamp: the full `gate:commit` (all tests, legacy, build, size) runs nightly before the 01:00 push job, which keeps its own
+ * stamp: the full `gate:commit` (all tests, legacy, build, size) runs nightly before the 02:00 push job, which keeps its own
  * `gate:commit` on main. Docs/TESTING.md "Fast gate".
  */
 import { spawn } from 'node:child_process';

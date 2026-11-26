@@ -16,12 +16,12 @@
  * nightly-push.ts preconditions hold (origin/main an ancestor, main is the tested commit, clean tree, gate:commit). Report: tte-gate/nightly-push-status.json.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, byTier, noProgress, spendAllowed, NIGHT_SPEND_CAP_USD, ROUND_BUDGET_USD, type RoundSig, canStartFullRun, canStartRound, canStartVerify, errorSig, failureSpendAllowed, normalizeDiff, PER_FAILURE_SPEND_CAP_USD, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
+  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, byTier, noProgress, spendAllowed, NIGHT_SPEND_CAP_USD, ROUND_BUDGET_USD, type RoundSig, canStartFullRun, canStartRound, canStartVerify, errorSig, failureSpendAllowed, normalizeDiff, PER_FAILURE_SPEND_CAP_USD, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, deadlineFor, dedupeRefs, localDay, describeFix, errorTail, extractFailures, finalState,
   forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, mergeSubject, mergedBranchName, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
   redsVerdict, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage, verifyVerdict,
   type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type LandInput, type RetryOutcome, type VerifyRound,
@@ -81,20 +81,27 @@ export function readFixStatus(dir: string): FixStatus | undefined {
   }
 }
 
-/** Claude rounds already started on this date (a second run the same night continues the count; another date starts at 0). */
+/** Claude rounds already started on this local date (a second run the same night continues the count; an older date starts at 0). A file that exists but cannot be read as {date, rounds}, or is dated later than today, fails CLOSED: the night cap counts as reached. A missing file is 0. */
 const spentPath = (dir: string): string => join(dir, 'nightly-fix-spend.json');
-function readSpent(dir: string, date: string): number {
+export function readSpent(dir: string, date: string): { rounds: number; failClosed?: string } {
+  if (!existsSync(spentPath(dir))) return { rounds: 0 };
+  const closed = (why: string): { rounds: number; failClosed: string } => ({ rounds: NIGHT_SPEND_CAP_USD / ROUND_BUDGET_USD, failClosed: `${why}; treating the night spend cap as reached` });
   try {
-    const v = JSON.parse(readFileSync(spentPath(dir), 'utf8')) as { date?: string; rounds?: number };
-    return v.date === date && Number.isInteger(v.rounds) && (v.rounds ?? 0) >= 0 ? (v.rounds ?? 0) : 0;
+    const v = JSON.parse(readFileSync(spentPath(dir), 'utf8')) as { date?: unknown; rounds?: unknown };
+    if (typeof v.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v.date) || typeof v.rounds !== 'number' || !Number.isInteger(v.rounds) || v.rounds < 0) return closed('nightly-fix-spend.json has the wrong shape');
+    if (v.date > date) return closed(`nightly-fix-spend.json is dated ${v.date}, later than today (${date})`);
+    return { rounds: v.date === date ? v.rounds : 0 };
   } catch {
-    return 0;
+    return closed('nightly-fix-spend.json is unreadable or not valid JSON');
   }
 }
 function writeSpent(dir: string, date: string, rounds: number): void {
   mkdirSync(dir, { recursive: true });
-  writeFileSync(spentPath(dir), `${JSON.stringify({ date, rounds })}\n`);
+  const tmp = `${spentPath(dir)}.tmp`;
+  writeFileSync(tmp, `${JSON.stringify({ date, rounds })}\n`);
+  renameSync(tmp, spentPath(dir));
 }
+const hhmm = (d: Date): string => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
 /** Report context of this process's one fix run: error tails per red and the branch name unpushed fixes are kept under. */
 const errTails = new Map<string, string[]>();
@@ -206,13 +213,13 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const failures = extractFailures(json, dedupeRefs(st.unrecorded));
   const fixWt = resolve(d.repo, FIX_WT);
   const mergeWt = resolve(d.repo, MERGE_WT);
-  const stamp = d.now().toISOString().slice(0, 10);
+  const startMs = opts.startMs ?? d.now().getTime();
+  const stamp = localDay(new Date(startMs)); // local date of the night (branch names and spend key)
   const branch = `nightly-fix/${stamp}`;
   life.branch = branch;
   keptName = `nightly-fix-kept/${stamp}`;
   errTails.clear();
   for (const f of failures) errTails.set(`${f.file}\0${f.title}`, errorTail(f.message));
-  const startMs = opts.startMs ?? d.now().getTime();
   const done = (pushed: boolean, blockers: string[], force?: FixState, extra?: Partial<FixStatus>): number => {
     // Whenever the fixes stay on a local branch (life.keep), the status names it.
     writeFixStatus(d, st.sha, results, pushed, blockers, force, { ...(life.keep && keptName ? { keptBranch: keptName } : {}), ...extra });
@@ -239,7 +246,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   let seq = 0;
   /** Re-run one spec on the PC (never the Mac) and read its JSON: green = exit 0 and the title ended `passed` (not skipped). */
-  const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string; error: string } => {
+  const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string; error: string; timedOut: boolean } => {
     const jsonOut = join(d.statusDir, `nightly-fix-rerun-${String(++seq)}.json`);
     rmSync(jsonOut, { force: true });
     const r = sh(cwd, 'corepack', rerunArgs(f.file), capTimeout(RERUN_TIMEOUT_MS, startMs, d.now()), { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
@@ -253,7 +260,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       passed = false;
     }
     const tail = redact(`${r.stdout}\n${r.stderr}`.split('\n').slice(-40).join('\n'));
-    return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail, error };
+    return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail, error, timedOut: !!r.timedOut };
   };
 
   /** Full suite on the merged tree: detach-submit then attach through the router (PC only). */
@@ -324,11 +331,14 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   }
   const todo = byTier(stillRed, (t) => tierOf(t.file, t.title)).filter((f) => classified.some((c) => c.cls === 'real' && c.file === f.file && c.title === f.title));
 
+  /** A child that timed out at the deadline is the hard stop (checked before any red/failure reading), else a plain timeout. */
+  const timeoutWhy = (what: string): string => (deadlineReached(startMs, d.now()) ? `hard stop at ${hhmm(deadlineFor(new Date(startMs)))}: ${what} timed out at the deadline; stopping` : `${what} timed out; stopping`);
   const reset = (to: string): void => {
     git(fixWt, 'reset', '--hard', to);
     git(fixWt, 'clean', '-ffdx', '-e', 'node_modules'); // ignored files too (settings.local.json), never node_modules
   };
-  let roundsStarted = readSpent(d.statusDir, stamp); // claude rounds started this night, continued from an earlier run of the same date (spend cap)
+  const spent = readSpent(d.statusDir, stamp);
+  let roundsStarted = spent.rounds; // claude rounds started this night, continued from an earlier run of the same date (spend cap)
   const sigs = new Map<string, RoundSig[]>(); // per failure, kept across verify rounds (no-progress stop: every earlier round counts)
   const failRounds = new Map<string, number>(); // claude rounds per failure this night (its share of the spend cap)
   const committed = new Set<string>(); // failures with a fix commit on F: they stay in the verify targets
@@ -340,8 +350,13 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       const key = `${f.file}\0${f.title}`;
       const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
         // An earlier fix commit stays on F and in M: its 'fixed' result (and verify target) is kept, a later flaky/needs-human/unfixed pass must not orphan it.
-        if (outcome !== 'fixed' && committed.has(key)) return;
         const at = results.findIndex((r) => r.file === f.file && r.title === f.title);
+        if (outcome !== 'fixed' && committed.has(key)) {
+          // Keep the fixed outcome, but the later outcome and why must reach the report.
+          const old = results[at];
+          if (old) results[at] = { ...old, reason: redact(`${old.reason.slice(0, 100)}; later pass: ${outcome}: ${reason}`).slice(0, 300) };
+          return;
+        }
         if (at >= 0) results.splice(at, 1);
         results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
       };
@@ -365,7 +380,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
           break;
         }
         if (!spendAllowed(roundsStarted)) {
-          stopped = `night spend cap reached (${String(NIGHT_SPEND_CAP_USD)} USD at ${String(ROUND_BUDGET_USD)} USD per round, ${String(roundsStarted)} rounds); stopping`;
+          stopped = spent.failClosed ?? `night spend cap reached (${String(NIGHT_SPEND_CAP_USD)} USD at ${String(ROUND_BUDGET_USD)} USD per round, ${String(roundsStarted)} rounds); stopping`;
           put('unfixed', rounds, stopped);
           reset(head0);
           break;
@@ -416,7 +431,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
           const r = rerun(fixWt, f);
           previous = r.tail;
           if (r.stop) {
-            stopped = `router exit ${String(r.code)}: the re-run could not complete; stopping`;
+            stopped = r.timedOut ? timeoutWhy('the re-run') : `router exit ${String(r.code)}: the re-run could not complete; stopping`;
             put('unfixed', rounds, stopped);
             reset(head0);
             break;
@@ -511,7 +526,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     const entry = (gate: VerifyRound['gate']): VerifyRound => ({ round, sha: M, green: vv.greenCount, total: targets.length, newReds: vv.newReds.length, gate });
     if (!vv.ran) {
       rounds.push(entry('skipped'));
-      blockers.push(`the same-spec run on the merged commit could not complete (router exit ${String(vr.code)}); nothing pushed`);
+      blockers.push(vr.timedOut ? timeoutWhy('the same-spec run on the merged commit') : `the same-spec run on the merged commit could not complete (router exit ${String(vr.code)}); nothing pushed`);
       break;
     }
     if (vv.newReds.length > 0) {
@@ -528,6 +543,11 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     }
     // gate:commit on M (never gate:push), then a collateral full run if the diff leaves the re-run specs.
     const g = sh(mergeWt, 'corepack', ['pnpm', 'gate:commit'], capTimeout(GATE_TIMEOUT_MS, startMs, d.now()), noPushEnv(d.env));
+    if (g.timedOut) {
+      rounds.push(entry('skipped'));
+      blockers.push(timeoutWhy('gate:commit'), 'nothing pushed, the fixes stay on a local branch');
+      break;
+    }
     if (g.code !== 0) {
       rounds.push(entry('red'));
       gateTail = redact(`${g.stdout}\n${g.stderr}`).split('\n').filter((l) => l.trim() !== '').slice(-GATE_TAIL_LINES);

@@ -31,7 +31,7 @@ export const LAND_MARGIN_MS = 5 * 60_000;
 export const MIN_ROUND_MS = 20 * 60_000;
 /** The per-spec re-run that follows a claude round needs at least this much time too (its timeout is capped at the deadline anyway). */
 export const MIN_RERUN_MS = 15 * 60_000;
-/** Collect retry: the 01:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
+/** Collect retry: the 02:00 run waits this long between tries while the 23:00 run is unfinished, until the cutoff (04:30). */
 export const RETRY_WAIT_MS = 20 * 60_000;
 export const RETRY_CUTOFF = { hour: 4, minute: 30 } as const;
 /** Router exits recorded by collect that mean the PC job is not finished or not reachable yet (94 unreachable, 95 busy). */
@@ -147,7 +147,7 @@ export function retryAllowed(s: NightlyStatus | undefined, start: Date, now: Dat
   const cutoff = new Date(start);
   cutoff.setHours(RETRY_CUTOFF.hour, RETRY_CUTOFF.minute, 0, 0);
   if (start.getHours() >= MORNING_STOP_HOUR) cutoff.setDate(cutoff.getDate() + 1);
-  const limit = Math.min(cutoff.getTime(), deadlineFor(start).getTime() - MIN_ROUND_MS);
+  const limit = Math.min(cutoff.getTime(), deadlineFor(start).getTime() - MIN_ROUND_MS - MIN_RERUN_MS);
   return collectUnfinished(s) && now.getTime() + RETRY_WAIT_MS <= limit;
 }
 
@@ -219,22 +219,33 @@ export interface RoundSig {
   readonly diff: string;
   readonly error: string;
 }
-const COMMENT_ONLY = /^(\/\/|\/\*|\*|#)/;
-/** Added and removed lines only, whitespace collapsed, comment-only and blank lines dropped, sorted: a re-indented, re-commented or re-ordered edit looks the same. */
+const COMMENT_ONLY = /^(\/\/|\/\*|\*( |\/|$))/;
+const HASH_COMMENT_FILE = /\.(sh|ya?ml|py)$/;
+const FILE_HEADER = /^(\+\+\+|---) [ab/]/;
+/** Added and removed lines only, in diff order (reordering statements is a real change), whitespace collapsed; blank and comment-only lines dropped (`#` counts as a comment only in sh, yaml and py files, never for #private fields or CSS #ids). */
 export function normalizeDiff(diff: string): string {
-  return diff
-    .split('\n')
-    .filter((l) => (l.startsWith('+') || l.startsWith('-')) && !l.startsWith('+++') && !l.startsWith('---'))
-    .map((l) => `${l[0] ?? ''}${l.slice(1).replace(/\s+/g, ' ').trim()}`)
-    .filter((l) => l.length > 1 && !COMMENT_ONLY.test(l.slice(1)))
-    .sort()
-    .join('\n');
+  let hash = false;
+  const out: string[] = [];
+  for (const l of diff.split('\n')) {
+    if (FILE_HEADER.test(l)) {
+      if (l.startsWith('+++')) hash = HASH_COMMENT_FILE.test(l.slice(4).trim());
+      continue;
+    }
+    if (!l.startsWith('+') && !l.startsWith('-')) continue;
+    const body = l.slice(1).replace(/\s+/g, ' ').trim();
+    if (body === '' || COMMENT_ONLY.test(body) || (hash && body.startsWith('#'))) continue;
+    out.push(`${l[0] ?? ''}${body}`);
+  }
+  return out.join('\n');
 }
-/** Error signature from the re-run's Playwright JSON (extractFailures message): first non-empty line, digits and durations masked. '' when there is no error text. */
+/** Error signature from the re-run's Playwright JSON (extractFailures message): its first three non-empty lines (the matcher line plus Expected/Received), '' when there is no error text. Numbers in the first line and durations (`5000ms`) anywhere are masked; the compared values on later lines stay, so a different value is progress. */
 export function errorSig(message: string): string {
   if (message.startsWith('(no error text')) return '';
-  const line = message.split('\n').map((l) => l.trim()).find((l) => l !== '') ?? '';
-  return line.replace(/\d+(\.\d+)?\s*(ms|s|m)?\b/g, '#').slice(0, 200);
+  const lines = message.split('\n').map((l) => l.trim()).filter((l) => l !== '').slice(0, 3);
+  return lines
+    .map((l, i) => (i === 0 ? l.replace(/\d+(?:\.\d+)?/g, '#') : l.replace(/\d+(?:\.\d+)?\s?(?:ms|s)\b/g, '#')))
+    .join(' | ')
+    .slice(0, 300);
 }
 /** The round repeats ANY earlier round of this failure (same normalised diff on the same base, or the same error): another round cannot help (needs-human). Catches A,B,A,B. */
 export const noProgress = (earlier: readonly RoundSig[], cur: RoundSig): boolean =>
@@ -286,6 +297,8 @@ export function titlePassed(json: unknown, ref: TestRef): boolean {
 }
 /** After a re-run exit other than green (0) or red (1) the whole loop stops (89/94/95/96 and anything unknown). */
 export const stopsLoop = (exit: number): boolean => STOP_EXITS.includes(exit) || (exit !== 0 && exit !== 1);
+/** Local calendar day (YYYY-MM-DD): the key of a night's branches and spend count (a night run starts after midnight, so this is the morning's date). */
+export const localDay = (d: Date): string => `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export const specPath = (file: string): string => (file.includes('/') ? file : `tests/e2e/${file}`);
 
 // ---- failure extraction from the collected Playwright JSON ----
