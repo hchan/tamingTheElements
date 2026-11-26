@@ -1,3 +1,9 @@
+---
+paths:
+  - "tools/assets/**"
+  - "public/assets/**"
+  - "ideas/**/*art*"
+---
 # Art generation efficiency rules (owner agreed 2026-11-19; permanent, survives context compaction)
 
 Cause: the bottleneck is approval yield and turnaround, not 4060 speed (weather 0/97, fc86 0/54, 6d97 0/24 approved).

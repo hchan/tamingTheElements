@@ -1,3 +1,9 @@
+---
+paths:
+  - "tools/assets/**"
+  - "public/assets/**"
+  - "ideas/**/*art*"
+---
 # Art autonomy (owner, 2026-11-19, permanent)
 
 The owner delegated art decisions: "you decide with your reviewer agents", "be 100% autonomous", "you decide".
