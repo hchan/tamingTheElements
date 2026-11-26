@@ -132,7 +132,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 
 `src/ui/screens/settings-touch.ts` (the Settings "On-screen buttons" group: `touchGroup`, `hasTouchScreen`, `readTouchForm`; split out of `settings.ts`)
 
-`tools/ci/nightly-push.ts` (clean-night push of local main by the 01:00 job after a green or known-red-only full e2e; pure `nightVerdict`/`cleanPushBlockers`); see [TESTING.md](TESTING.md) "Nightly fix loop".
+`tools/ci/nightly-push.ts` (clean-night push of local main by the 02:00 job after a green or known-red-only full e2e; pure `nightVerdict`/`cleanPushBlockers`); see [TESTING.md](TESTING.md) "Nightly fix loop".
 
 `tools/ci/nightly-fix-land.ts` (landing of verified nightly fixes: `integrateMain` merges the verified merge commit into local main without touching a dirty tree, `pushMerged` pushes exactly that commit with a plain `git push origin <M>:main`, `keepMerged` keeps it on `nightly-fix-merged/<date>`; pure rules `integrationRefusals`/`landBlockers` in `nightly-fix-logic.ts`), tested by `tests/repo/nightly-fix-land.test.ts` (fake runner) and `tests/repo/nightly-fix-land-real-git.test.ts` (real git); see [TESTING.md](TESTING.md) "Nightly fix loop".
 

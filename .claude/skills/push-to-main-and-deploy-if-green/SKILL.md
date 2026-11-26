@@ -1,12 +1,12 @@
 ---
 name: push-to-main-and-deploy-if-green
-description: Push the tested local main to origin/main and start the GitHub Pages deploy, but only when the full gate is green. Use when the user types /push-to-main-and-deploy-if-green or asks to ship main now instead of waiting for the 01:00 job. Never forces, never pushes other branches.
+description: Push the tested local main to origin/main and start the GitHub Pages deploy, but only when the full gate is green. Use when the user types /push-to-main-and-deploy-if-green or asks to ship main now instead of waiting for the 02:00 job. Never forces, never pushes other branches.
 allowed-tools: Bash(git *), Bash(corepack pnpm *), Bash(env -u GITHUB_TOKEN gh *), Read
 ---
 
 # push-to-main-and-deploy-if-green
 
-The user typing this skill IS the explicit ask to push (owner rule: no push without an ask; the 01:00 job is the default path).
+The user typing this skill IS the explicit ask to push (owner rule: no push without an ask; the 02:00 job is the default path).
 Run from the main checkout. Read-only until every check below passes. Never force-push, never rewrite history, never push a branch other than main.
 Tags: push only `relay-v*` tags that point at a commit inside the pushed range (never move or delete one).
 
