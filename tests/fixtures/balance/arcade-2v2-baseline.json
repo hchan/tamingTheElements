@@ -17,30 +17,30 @@
   "stalemates": 1,
   "timeouts": 0,
   "winRates": {
-    "abyssor": 0.522,
-    "brazgor": 0.495,
-    "curomo": 0.467,
-    "cyclonius": 0.603,
-    "durrok": 0.446,
-    "echo": 0.5,
-    "fiara": 0.473,
-    "glimmaw": 0.486,
-    "hyalia": 0.476,
-    "ishimi": 0.44,
-    "kindrel": 0.467,
+    "abyssor": 0.527,
+    "brazgor": 0.462,
+    "curomo": 0.522,
+    "cyclonius": 0.598,
+    "durrok": 0.457,
+    "echo": 0.505,
+    "fiara": 0.467,
+    "glimmaw": 0.492,
+    "hyalia": 0.47,
+    "ishimi": 0.435,
+    "kindrel": 0.571,
     "lavax": 0.505,
-    "morblass": 0.451,
-    "nykra": 0.489,
-    "ouroth": 0.489,
+    "morblass": 0.457,
+    "nykra": 0.505,
+    "ouroth": 0.505,
     "pax": 0.478,
-    "quarrak": 0.473,
+    "quarrak": 0.478,
     "rokcore": 0.462,
-    "sindarosa": 0.484,
-    "treenoc": 0.63,
+    "sindarosa": 0.511,
+    "treenoc": 0.565,
     "umbrel": 0.505,
-    "vortigal": 0.576,
-    "wispera": 0.56,
-    "zephra": 0.522
+    "vortigal": 0.478,
+    "wispera": 0.527,
+    "zephra": 0.516
   },
   "styleSummary": {
     "styles": [
@@ -55,13 +55,13 @@
         },
         {
           "games": 1152,
-          "winRate": 0.519
+          "winRate": 0.516
         }
       ],
       [
         {
           "games": 1152,
-          "winRate": 0.481
+          "winRate": 0.484
         },
         {
           "games": 1056,
@@ -71,12 +71,12 @@
     ],
     "crossMeleeVsRanged": {
       "games": 1152,
-      "winRate": 0.519,
+      "winRate": 0.516,
       "stdErr": 0.015
     },
     "meanWinRate": {
-      "melee": 0.51,
-      "ranged": 0.49
+      "melee": 0.508,
+      "ranged": 0.491
     },
     "heroCount": {
       "melee": 12,
@@ -84,46 +84,46 @@
     },
     "byElement": {
       "air": {
-        "melee": 0.545,
-        "ranged": 0.534,
-        "gap": 0.011
+        "melee": 0.503,
+        "ranged": 0.528,
+        "gap": -0.025
       },
       "earth": {
-        "melee": 0.518,
-        "ranged": 0.48,
-        "gap": 0.038
+        "melee": 0.5,
+        "ranged": 0.482,
+        "gap": 0.018
       },
       "fire": {
-        "melee": 0.484,
-        "ranged": 0.487,
-        "gap": -0.003
+        "melee": 0.513,
+        "ranged": 0.494,
+        "gap": 0.019
       },
       "water": {
-        "melee": 0.493,
-        "ranged": 0.459,
-        "gap": 0.034
+        "melee": 0.518,
+        "ranged": 0.461,
+        "gap": 0.057
       }
     },
     "top6": {
-      "melee": 4,
-      "ranged": 2
+      "melee": 5,
+      "ranged": 1
     },
     "bottom6": {
-      "melee": 3,
-      "ranged": 3
+      "melee": 2,
+      "ranged": 4
     },
     "compositions": {
       "MM": {
         "games": 736,
-        "winRate": 0.535
+        "winRate": 0.534
       },
       "MR": {
         "games": 2944,
-        "winRate": 0.495
+        "winRate": 0.496
       },
       "RR": {
         "games": 736,
-        "winRate": 0.485
+        "winRate": 0.484
       }
     }
   }
