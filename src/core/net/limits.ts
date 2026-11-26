@@ -1,5 +1,5 @@
 /** Rollback window (ticks of remote-input prediction) used by the game; tests import it from here. Contract value. */
-export const ROLLBACK_WINDOW = 6;
+export const ROLLBACK_WINDOW = 8;
 
 /**
  * Most ticks a peer's batch may reach past our own newest local tick before the session reports a desync

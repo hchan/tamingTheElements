@@ -20,7 +20,7 @@ Groundwork for player-vs-player. No real network code exists yet: the pure proto
 
 ## Rollback (the online default, `LockstepOptions.rollbackWindow`)
 
-Lockstep hides latency only through input delay. With `rollbackWindow > 0` (the session default is 0 = plain lockstep; the Arena uses 6 unless `?ff=lockstep` in a dev/test build) the session predicts a missing remote input (repeats the last remote command), steps ahead, and when the real input differs restores the snapshot of that tick and re-simulates to the present.
+Lockstep hides latency only through input delay. With `rollbackWindow > 0` (the session default is 0 = plain lockstep; the Arena uses 8 (was 6; owner auto-approve 2026-11-26, see below) unless `?ff=lockstep` in a dev/test build) the session predicts a missing remote input (repeats the last remote command), steps ahead, and when the real input differs restores the snapshot of that tick and re-simulates to the present.
 
 - A `SnapshotRing` (depth window + 2) is pushed before every step. `confirmed` is the first tick stepped with a predicted remote input: everything below it is final.
 - Prediction runs at most `rollbackWindow` ticks past `confirmed`; beyond that the session stalls (`waiting`) exactly as lockstep does. Remote inputs older than `confirmed` are ignored.
@@ -76,3 +76,9 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 WebSocket-only online play (relay server, message table, sequence numbers, session flow) is specified in [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md). The WebRTC path is retired.
 
 An overview of the whole multiplayer design, with diagrams, is in [MULTIPLAYER-DESIGN.md](MULTIPLAYER-DESIGN.md).
+
+### Why the window is 8 (2026-11-26)
+
+Harness, 1000 ticks, batchEvery 3, input delay 2 (measurement, local harness, virtual clock): on the `bad` profile, window 6 gave 1318 stalls and a 21.12 s wall time, window 8 gave 169 stalls and 20.16 s, window 10 gave 12 stalls and 20.12 s. On `typical` the window barely matters (14, 8 and 8 stalls). 8 ticks is 160 ms of prediction (arithmetic, 50 Hz); 10 was not taken because a longer window also lengthens every re-simulation and the visible correction when a guess is wrong.
+
+With window 8 and the relay's input delay of 4 (same harness settings, measurement): `typical` 2 stalls, `bad` 19 stalls, against 8 and 169 at delay 2. Rollbacks stay at about 181 to 185 per 1000 ticks whatever the delay (measurement), so delay does not reduce them; the view-only correction smoother hides them. `online:measure` now defaults to the contract `ROLLBACK_WINDOW` instead of its own 6.

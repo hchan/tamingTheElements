@@ -1,10 +1,11 @@
 // Local online-play measurement (`pnpm online:measure`): two lockstep sessions over WebSocketTransport, RelayCore, InMemoryStore and a
 // loopback sender on a virtual clock. Numbers are labelled 'measurement (local harness, virtual clock)'; see docs/ONLINE-MEASURE.md.
 // pnpm online:measure [--ticks 3000] [--batch-every 1] [--profile ideal|typical|bad] [--latency ms] [--jitter ms] [--dup pct]
-//   [--reorder pct] [--loss pct] [--delay 2] [--rollback 6] [--seed 11] [--no-catch-up] [--json]
+//   [--reorder pct] [--loss pct] [--delay 2] [--rollback <contract value>] [--seed 11] [--no-catch-up] [--json]
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { formatReport, measureMatch, PROFILES, type LinkProfile } from '../src/testing/net/online-measure';
+import { ROLLBACK_WINDOW } from '../src/core/net/limits';
 
 export async function main(argv: readonly string[]): Promise<number> {
   try {
@@ -20,7 +21,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         reorder: { type: 'string' },
         loss: { type: 'string' },
         delay: { type: 'string' },
-        rollback: { type: 'string', default: '6' },
+        rollback: { type: 'string', default: String(ROLLBACK_WINDOW) },
         seed: { type: 'string', default: '11' },
         'no-catch-up': { type: 'boolean', default: false },
         json: { type: 'boolean', default: false },

@@ -126,7 +126,7 @@ sequenceDiagram
     Note over B: equal, play on
 ```
 
-Numbers [fact]: sim 50 Hz; checkpoint interval `HASH_INTERVAL` 50 ticks (1 s); rollback window 6 in the Arena (0 = plain lockstep is the session
+Numbers [fact]: sim 50 Hz; checkpoint interval `HASH_INTERVAL` 50 ticks (1 s); rollback window 8 in the Arena (was 6) (0 = plain lockstep is the session
 default); `timeoutTicks` 250 (5 s) without a packet forfeits the peer; a hidden-tab pause is allowed 1500 ticks (30 s). A predicted tick is never
 hashed, so a wrong guess cannot report a desync. Details: [NETCODE.md](NETCODE.md).
 
