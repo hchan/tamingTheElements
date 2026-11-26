@@ -16,6 +16,14 @@ export const TAG_IN_WALL_PX = 120;
 /** Arena width in px (`ARCADE_ARENA_WIDTH`, repeated so this module stays free of core imports; a test pins it). */
 export const TAG_IN_ARENA_W = 1920;
 
+/** Drop height in px at the start of a wall entry (dir 0): about one hero body height, so the falling sprite starts above the foe's head, not on it (qa-r125 left wall). */
+export const TAG_IN_DROP_PX = 240;
+
+/** Drop offset magnitude at progress `t` 0..1 for a wall entry: the same smoothstep as the slide, scaled to `TAG_IN_DROP_PX`. */
+export function tagEntryDrop(t: number): number {
+  return (TAG_IN_DROP_PX / TAG_IN_SLIDE_PX) * tagEntrySlide(t);
+}
+
 /** Slide offset magnitude at progress `t` 0..1: holds the full gap early (smoothstep), then settles to 0. */
 export function tagEntrySlide(t: number): number {
   const c = Math.min(1, Math.max(0, t));
