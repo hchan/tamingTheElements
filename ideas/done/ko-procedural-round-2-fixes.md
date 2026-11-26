@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
 
@@ -25,3 +25,6 @@ Coordinator decision (rule 13: wispera and echo are on their second procedural r
 
 ## Progress (2026-11-26, round 3 applied)
 wispera and echo removed from `KO_COLLAPSE` and `KO_COLLAPSE_LEGACY` (`koCollapseFor` returns null, plain loser face; particle kinds `spark`/`wisp` and the `ellipses`/`wisps` fields stay for others). ishimi: floor 45 -> 31 (puddle up 14 px), scaleY 0.2 -> 0.3, ripple alpha 0.3 -> 0.39, ripple 120% -> 150% wide and 34 px tall so it shows beyond the text edges. rokcore and morblass unchanged. Tests and `victory-still.spec.ts` updated (wispera/echo assert no `.matchEndKoCollapse`). Status stays idea until the art-director re-check of ishimi; if it fails, ishimi falls back too.
+
+## Progress (2026-11-26, final)
+Art-director ruled the last ishimi tweak REVISE 3 (floating teal shell on the dragon wing; rule 13 final round). ishimi falls back to the plain loser face like wispera and echo: table and `KO_COLLAPSE_LEGACY` entries removed, `koCollapseFor` returns null under every gate; tests and the `victory-still.spec.ts` hero loop updated. All procedural KOs decided: approved rokcore, morblass, lavax, fiara, cyclonius; fallback wispera, echo, ishimi. Done.

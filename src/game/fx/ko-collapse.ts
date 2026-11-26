@@ -7,7 +7,7 @@ export { koParticles };
  * Procedural KO for the Versus result screen (art-director spec; rig-only stills failed review): the loser's upright Large portrait
  * (public/assets/img/map/<hero>Large.png) collapses at its base instead of swapping to a still. Fiara burns down (scaleY about 0.5,
  * dark ember tint, a few rising embers); Cyclonius settles into a spent heap (scaleY 0.55, scaleX 1.25, alpha 0.6, grey-blue, no
- * spin, base dust); Wispera fizzles and sparks out, Lavax cools to ash, Morblass splashes then pools, Echo's wind unwinds, Rokcore crumbles and settles, Ishimi flattens into a mass. Render only (Web Animations on the DOM, no sim state, no Math.random); released heroes always, else behind
+ * spin, base dust); Lavax cools to ash, Morblass splashes then pools, Rokcore crumbles and settles. Render only (Web Animations on the DOM, no sim state, no Math.random); released heroes always, else behind
  * `?ff=roster24` in dev/test builds. The portrait is fetched when the screen shows; a failed load keeps the face.
  */
 export interface KoCollapseSpec {
@@ -44,13 +44,12 @@ export const KO_COLLAPSE: Readonly<Record<string, KoCollapseSpec>> = {
   // Lavax: cools to grey ash and slumps. Morblass: a splash up, then a wide puddle. (Wispera and Echo fell back to the plain loser face after two failed rounds, art-director 2026-11-26.)
   lavax: { scaleX: 1.05, scaleY: 0.6, alpha: 0.9, filter: 'grayscale(0.95) brightness(0.55) contrast(0.9)', ms: 1400, particle: 'ash', count: 10, color: '#6e6a66' },
   morblass: { scaleX: 1.3, scaleY: 0.4, alpha: 0.85, filter: 'brightness(0.8) sepia(1) saturate(1.6) hue-rotate(135deg)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#3f6f80', rest: { particle: 'splat', count: 6, color: '#3f6f80' }, shadow: 0.3, floor: 24 },
-  // Rokcore: crumbles in a shudder and settles into rubble. Ishimi: sags into a wide flattened mass.
+  // Rokcore: crumbles in a shudder and settles into rubble. (Wispera, Echo and Ishimi fell back to the plain loser face, art-director 2026-11-26.)
   rokcore: { scaleX: 1.2, scaleY: 0.5, alpha: 1, filter: 'grayscale(0.4) brightness(0.65) contrast(1.1)', ms: 1200, mid: { at: 0.45, scaleX: 1.04, scaleY: 0.8, alpha: 1 }, particle: 'dust', count: 12, color: '#8a7a68', shadow: 0.3, floor: 22 },
-  ishimi: { scaleX: 1.28, scaleY: 0.3, alpha: 0.9, filter: 'brightness(0.7) saturate(0.8) blur(1.2px)', ms: 1300, particle: 'dust', count: 6, color: '#7c7a86', rest: { particle: 'splat', count: 5, color: '#7c7a86' }, shadow: 0.3, floor: 31, ellipses: [{ w: 150, h: 34, alpha: 0.39, color: '#7c9ab0', blur: 2, ring: true }] },
 };
 
 /** Legacy heroes are always released, so no flag gates them; later roster24 slugs added to the table are gated like the other fx. */
-export const KO_COLLAPSE_LEGACY: ReadonlySet<string> = new Set(['fiara', 'cyclonius', 'lavax', 'morblass', 'rokcore', 'ishimi']);
+export const KO_COLLAPSE_LEGACY: ReadonlySet<string> = new Set(['fiara', 'cyclonius', 'lavax', 'morblass', 'rokcore']);
 
 export const koCollapseUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/map/${hero}Large.png`;
 
