@@ -21,3 +21,7 @@ curomo APPROVE 4 (`.scratch/ko-orig2/curomo_ko.png` in the art worktree; nudge a
 - rokcore: crumbles and settles.
 - ishimi: collapses into a flattened mass.
 So the procedural set is six: wispera, lavax, morblass, echo, rokcore, ishimi. Final KO stills for originals: sindarosa (`.scratch/ko-orig/sindarosa_ko.png`, APPROVE 4) and curomo. Both need an in-repo integration script (copy to `public/assets/img/ko/`, CREDITS.txt, `tests/repo/ko-frames.test.ts` sha pin from approval.json) and adding to `KO_STILL_HEROES` with the `ko-still.test.ts` list; do that after the art session sends the bundle path (verdict files: `.scratch/ko-orig/approval.json`, `.scratch/ko-orig2/approval.json`).
+
+## Progress (2026-11-26, builder)
+
+wispera, lavax, morblass done (status stays idea: echo, rokcore, ishimi pending). `KoCollapseSpec` gained optional `mid` frame and particle kinds spark/ash/droplet (new `src/game/fx/ko-collapse-particles.ts`); gate = `KO_COLLAPSE_LEGACY` set (legacy heroes need no flag). e2e: the existing hero loop in `tests/e2e/victory-still.spec.ts` (long gate, ~7 s each) now covers the three. Screenshots in `.scratch/ko-procedural/` for the art-director.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KO_COLLAPSE, type KoCollapseSpec, koCollapseFor, koCollapseFrames, koCollapseUrl, koParticles } from './ko-collapse';
+import { KO_COLLAPSE, KO_COLLAPSE_LEGACY, type KoCollapseSpec, koCollapseFor, koCollapseFrames, koCollapseUrl, koParticles } from './ko-collapse';
 import { KO_STILL_HEROES } from './ko-still';
 
 describe('ko collapse', () => {
@@ -7,6 +7,24 @@ describe('ko collapse', () => {
     expect(KO_COLLAPSE['fiara']).toMatchObject({ scaleY: 0.5, scaleX: 1, particle: 'ember' });
     expect(KO_COLLAPSE['cyclonius']).toMatchObject({ scaleY: 0.55, scaleX: 1.25, alpha: 0.6, particle: 'dust' });
     for (const h of Object.keys(KO_COLLAPSE)) expect(KO_STILL_HEROES.has(h), h).toBe(false);
+  });
+
+  it('pins wispera, lavax and morblass (legacy: no flag needed)', () => {
+    expect(KO_COLLAPSE['wispera']).toMatchObject({ particle: 'spark', scaleY: 0.35 });
+    expect(KO_COLLAPSE['lavax']).toMatchObject({ particle: 'ash', scaleY: 0.6 });
+    expect(KO_COLLAPSE['morblass']).toMatchObject({ particle: 'droplet', scaleX: 1.5, scaleY: 0.25 });
+    for (const h of ['wispera', 'lavax', 'morblass']) {
+      expect(KO_COLLAPSE_LEGACY.has(h), h).toBe(true);
+      expect(koCollapseFor(h, true, '', false), h).toBe(KO_COLLAPSE[h]);
+      expect(koCollapseFor(h, false, '', false), h).toBeNull();
+      const f = KO_COLLAPSE[h] as KoCollapseSpec;
+      expect(koCollapseFrames(f, true), h).toHaveLength(2);
+      expect(koCollapseFrames(f, true)[0]?.['opacity'], h).toBe(f.alpha);
+      expect(koParticles(f), h).toHaveLength(f.count);
+    }
+    expect(koCollapseFrames(KO_COLLAPSE['morblass'] as KoCollapseSpec, false)).toHaveLength(3);
+    expect(koCollapseFrames(KO_COLLAPSE['wispera'] as KoCollapseSpec, false)).toHaveLength(3);
+    expect(koCollapseFrames(KO_COLLAPSE['lavax'] as KoCollapseSpec, false)).toHaveLength(2);
   });
 
   it('needs a loss and an eligible hero', () => {
