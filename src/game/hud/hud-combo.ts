@@ -5,7 +5,7 @@ import { CHIP_RECTS_KEY, COMBO_RECTS_KEY, comboAlpha, comboLabel, comboScale, pr
 import { HUD_WIDTH } from './bars';
 import { comboCutFadeOf } from './combo-cut';
 import { styleCombatText } from './combat-text';
-import { COMBO_GAP, COMBO_STUCK_ALPHA, comboMode, newPlaceOut, newPlaceState, numberLane, placeCombo, resetPlaceState, type NumberLane, type PlaceInput } from './combo-anchor';
+import { COMBO_GAP, comboMode, newPlaceOut, newPlaceState, numberLane, placeCombo, resetPlaceState, stuckAlpha, stuckMix, type NumberLane, type PlaceInput } from './combo-anchor';
 import type { PlaceOut, PlaceState } from './combo-anchor';
 import { hudText, type HudFlags } from './hud-ctx';
 import { hudOnPage, hudToDom, comboKey, comboRightX } from './hud-math';
@@ -47,6 +47,7 @@ export class HudCombo {
   private readonly avoid: [HudRect[], HudRect[]] = [[], []];
   private readonly modes: ['anchored' | 'band', 'anchored' | 'band'] = ['band', 'band'];
   private readonly serials: [number, number] = [-1, -1];
+  private readonly stuckMixes: [number, number] = [0, 0];
   private readonly wasAnchored: [boolean, boolean] = [false, false];
   private readonly trace: [ComboTrace, ComboTrace] = [newTrace(), newTrace()];
   private readonly ceilRects: { x: number; y: number; w: number; h: number }[] = [];
@@ -75,6 +76,7 @@ export class HudCombo {
       t?.setVisible(false);
       resetPlaceState(this.placeStates[team]);
       this.wasAnchored[team] = false;
+      this.stuckMixes[team] = 0;
       this.modes[team] = 'band';
       return;
     }
@@ -149,10 +151,11 @@ export class HudCombo {
       tr.baseY = b0;
       tr.fresh = fresh;
     }
+    const mix = (this.stuckMixes[team] = stuckMix(this.stuckMixes[team], out.stuck, this.flags.frameMs, reduced));
     const alpha = comboAlpha(c) * dim;
     t.setPosition(out.x, out.y)
       .setScale(Math.min(comboScale(c, reduced), out.popMax))
-      .setAlpha(out.stuck ? Math.min(alpha, COMBO_STUCK_ALPHA) : alpha)
+      .setAlpha(stuckAlpha(alpha, mix))
       .setVisible(true);
     t.setAlpha(t.alpha * comboCutFadeOf(this.scene.registry, t.y, t.originY, t.displayHeight));
   }
@@ -287,6 +290,7 @@ export class HudCombo {
       this.modes[t] = 'band';
       this.serials[t] = -1;
       this.wasAnchored[t] = false;
+      this.stuckMixes[t] = 0;
     }
   }
 }
