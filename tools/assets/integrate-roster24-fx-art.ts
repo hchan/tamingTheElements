@@ -14,6 +14,8 @@ export interface FxPin {
   sha256: string;
   w: number;
   h: number;
+  /** install path relative to public/assets/img/ (default fx/<name>.png). */
+  dst?: string;
 }
 export interface HeroFx {
   provenance: string;
@@ -37,6 +39,15 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
     keyed: false,
     fx: {
       wyrmCoil: { src: 'wyrmCoil_r2.png', sha256: '98506d2115a92622c6817b047a82b420daab88e2a3484c571ac47d9853cd5f98', w: 80, h: 80 },
+    },
+  },
+  zephra: {
+    provenance: 'tools/assets/fx-gen/provenance/zephra-fx',
+    keyed: true,
+    fx: {
+      staticMote: { src: 'staticMote.png', sha256: '6db8da551cfa9b19b3383b8104d0a4484d57d9d7be6f5152d508a28b966284f1', w: 80, h: 80 },
+      skitter: { src: 'skitter.png', sha256: '1d19674079151b2df14d8693d38f86fd824da4eea90a8b253ec8112a9ad369c4', w: 80, h: 80 },
+      staticMoteLoop: { src: 'staticMoteLoop.png', sha256: '63b656107eb59a6b84dab8cc64d35b12babbd93e1db6ed122e55241f885e32e1', w: 1280, h: 160, dst: 'fx/loop/staticMoteLoop.png' },
     },
   },
 };
@@ -73,7 +84,7 @@ if (import.meta.url === `file://${process.argv[1] ?? ''}`) {
   for (const name of verify(hero, srcDir)) {
     const pin = h.fx[name];
     if (!pin) continue;
-    const dst = resolve(ROOT, `public/assets/img/fx/${name}.png`);
+    const dst = resolve(ROOT, `public/assets/img/${pin.dst ?? `fx/${name}.png`}`);
     if (check) {
       if (sha(readFileSync(dst)) !== pin.sha256) throw new Error(`${name}: installed file differs from the approved pin`);
     } else copyFileSync(resolve(srcDir, pin.src), dst);
