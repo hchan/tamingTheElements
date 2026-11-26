@@ -122,6 +122,8 @@ export interface ArenaProbe {
    * the sim stays paused; `false` holds them again. Tick-driven views (call-outs, the super cinematic) still move only with steps.
    */
   ageFx(on: boolean): void;
+  /** Each character's raw sim x and the x its body is drawn at (after interpolation and the online correction smoother); the live-match jump proof samples this per frame. */
+  drawnXs(): { id: number; team: number; simX: number; drawnX: number }[];
   fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; numberBoxes: { x: number; y: number; w: number; h: number }[]; popBoxes: { x: number; y: number; w: number; h: number }[]; comboBoxes: ComboProbe[]; combo: [number, number]; meter: [number, number] };
   /**
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
