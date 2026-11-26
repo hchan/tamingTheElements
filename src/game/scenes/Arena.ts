@@ -18,6 +18,7 @@ import {
   capturedRosterIndices,
   characterId,
   LockstepSession,
+  CatchUp,
   FramePacer,
   collectCommands,
   Cmd,
@@ -156,6 +157,8 @@ export class Arena extends Phaser.Scene {
   private session: LockstepSession | undefined;
   private readonly pacer = new FramePacer();
   private pacing = false;
+  private readonly catchUp = new CatchUp(); // rollback only: repays stalled ticks
+  private lastStepped = false;
   /** Rollback only: shows each event id once, so a corrected payload does not replay a sound or effect. */
   private playOnce: PlayOnce | undefined;
   /** The battle's sound; public so the Arcade audio layers (`audio/arcade-audio.ts`, a lazy chunk) can find it. */
@@ -201,7 +204,10 @@ export class Arena extends Phaser.Scene {
     if (rollbackWindow > 0) this.playOnce = new PlayOnce();
     this.pacing = rollbackWindow === 0;
     this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow, ...(net.tickLimit === undefined ? {} : { tickLimit: net.tickLimit }), ...(net.inputDelay === undefined ? {} : { inputDelay: net.inputDelay }), ...(net.batchEvery === undefined ? {} : { batchEvery: net.batchEvery }) }) : undefined;
-    this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
+    this.driver = new FixedStepDriver({ tick: () => {
+      this.advance([undefined, undefined]);
+      if (this.session && !this.pacing) this.catchUp.repay(this.lastStepped, () => { this.advance([undefined, undefined]); return this.lastStepped; });
+    }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;
     this.arcadeMatch = arcadeMatch;
@@ -489,7 +495,9 @@ export class Arena extends Phaser.Scene {
       const mine = collectCommands(world, side === 0 ? [this.agents[0], undefined] : [undefined, this.agents[0]])[side];
       // Frame-advantage pacing (lockstep only: with rollback the advantage is the prediction lead, not a stall signal): a peer that runs ahead of its own best case skips an update now and then (the sim is unaffected).
       if (this.pacing && this.pacer.shouldSkip(this.session.frameAdvantage())) return;
+      this.lastStepped = false;
       const r = this.session.update(mine);
+      this.lastStepped = r.stepped;
       this.launch?.net?.onStatus?.(r.status, this.session);
       if (!r.stepped) {
         if (r.status === 'desync' || r.status === 'forfeit') this.driver?.pause('ended');

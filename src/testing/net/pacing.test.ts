@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
-import { FramePacer } from '../../core/net/pacing';
+import { CatchUp, FramePacer } from '../../core/net/pacing';
+import { ONLINE_CATCH_UP_MAX_DEBT } from '../../core/net/limits';
 import { LockstepSession } from '../../core/net/session';
 import { hash } from '../../core/sim/hash';
 import { createMatch, type MatchSetup } from '../../core/sim/match';
@@ -64,5 +65,30 @@ describe('frame-advantage pacing', () => {
     const p = new FramePacer();
     for (let i = 0; i < 1000; i++) expect(p.shouldSkip(i % 2)).toBe(false);
     expect(p.skipped).toBe(0);
+  });
+});
+
+describe('CatchUp', () => {
+  it('owes one update per stalled call and repays one per extra step', () => {
+    const c = new CatchUp();
+    expect(c.tick(false)).toBe(false);
+    expect(c.tick(false)).toBe(false);
+    expect(c.owed).toBe(2);
+    expect(c.tick(true)).toBe(true);
+    c.paid(true);
+    expect(c.owed).toBe(1);
+    expect(c.tick(true)).toBe(true);
+    c.paid(false); // the extra update stalled: the debt stays
+    expect(c.owed).toBe(1);
+  });
+
+  it('caps the debt so a long outage does not cause a burst', () => {
+    const c = new CatchUp();
+    for (let i = 0; i < ONLINE_CATCH_UP_MAX_DEBT + 20; i++) c.tick(false);
+    expect(c.owed).toBe(ONLINE_CATCH_UP_MAX_DEBT);
+  });
+
+  it('asks for nothing when nothing is owed', () => {
+    expect(new CatchUp().tick(true)).toBe(false);
   });
 });

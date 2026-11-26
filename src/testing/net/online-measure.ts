@@ -1,3 +1,4 @@
+import { CatchUp } from '../../core/net/pacing';
 import { LockstepSession } from '../../core/net/session';
 import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
@@ -58,6 +59,8 @@ export interface MeasureOptions {
   /** Let the sessions raise their input delay after repeated stalls (default false, so reports stay comparable). */
   readonly adaptive?: boolean;
   readonly rollbackWindow?: number;
+  /** Repay stalled wall ticks with extra updates (the game's behaviour; default true). */
+  readonly catchUp?: boolean;
   /** Seeds the link impairments and the relay's random numbers. */
   readonly netSeed?: number;
 }
@@ -221,6 +224,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
     (side) => new LockstepSession({ world: worlds[side], side, transport: transports[side], match: matchId, inputDelay, tickLimit: ticks, adaptive: o.adaptive ?? false, rollbackWindow, batchEvery }),
   ) as [LockstepSession, LockstepSession];
   const hashed = [0, 0];
+  const catchUps = [new CatchUp(), new CatchUp()] as const;
   const done = (): boolean => sessions.every((s) => s.status === 'ended' || s.status === 'desync' || s.status === 'forfeit');
 
   let wall = 0;
@@ -234,7 +238,9 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
     }
     if (clock.ms % PING_MS === 0) for (const t of transports) t.ping();
     for (const s of sessions) {
-      s.update(script[s.side][s.nextStampTick] ?? 0);
+      const r = s.update(script[s.side][s.nextStampTick] ?? 0);
+      const cu = catchUps[s.side];
+      if (o.catchUp !== false && cu.tick(r.stepped)) cu.paid(s.update(script[s.side][s.nextStampTick] ?? 0).stepped);
       const cps = s.checkpoints();
       for (; (hashed[s.side] as number) < cps.length; hashed[s.side] = (hashed[s.side] as number) + 1) {
         const [tick, h] = cps[hashed[s.side] as number] as readonly [number, number];
@@ -296,6 +302,7 @@ export function formatReport(r: MeasureReport): string {
     row('messages/s per match (total)', `${String(r.messages.total.perSec)} ${m}`),
     row('  client to relay / relay to client', `${String(r.messages.clientToRelay.perSec)} / ${String(r.messages.relayToClient.perSec)} ${m}`),
     row('bytes/s (total, up, down)', `${String(r.bytes.total.perSec)}, ${String(r.bytes.clientToRelay.perSec)}, ${String(r.bytes.relayToClient.perSec)} ${m}`),
+    row('wall time for the match (ticks/50 Hz = nominal)', `${String(r.durationSec)} s ${m}`),
     row('rollbacks / stalls', `${String(r.rollbacks)} / ${String(r.stalls)} ${m}`),
     row('final hashes equal', `${String(r.finalHashEqual)} (relay agreed: ${String(r.relayAgreed)}, offline reference: ${String(r.matchesOfflineReference)}) ${m}`),
     row('link grade', `${r.link.grade ?? 'n/a'} (median RTT ${String(r.link.medianRttMs ?? 'n/a')} ms) ${m}`),
