@@ -17,6 +17,16 @@ describe('roster24 gate', () => {
   });
 });
 
+describe('the 24-hero roster is the default (no flag)', () => {
+  it('a plain page lists all 24 playable heroes: 12 legacy plus 12 appended, no void, no flag read', () => {
+    expect(ARCADE_RACES).toHaveLength(24);
+    expect(arcadeRacesFor('')).toEqual(ARCADE_RACES);
+    expect(arcadeRacesFor('?ff=roster24')).toEqual(ARCADE_RACES);
+    expect(CHARACTERS.filter((c) => c.element !== 'void' && !ARCADE_RACES.includes(c.id))).toEqual([]);
+    for (const id of RELEASED_ROSTER24) expect(ARCADE_RACES).toContain(id);
+  });
+});
+
 const PAX = 'pax' as CharacterId;
 const CUROMO = 'curomo' as CharacterId;
 

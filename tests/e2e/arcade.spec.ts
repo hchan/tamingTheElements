@@ -229,3 +229,18 @@ test('8-way aim: the arrow follows the held diagonal, turns back to the foe afte
   expect((await characters(page, 1)).find((c) => c.id === foe)?.hp).toBeLessThan(before?.hp ?? 0);
   expect(errors).toEqual([]);
 });
+
+// The 24-hero roster is the default: the menu's Versus entry, with no `?ff=` flag, lists all 24 playable heroes (plus Empty) in the hero pickers.
+// Long gate: one page load, a screenshot is attached to the report.
+test('Versus from the menu with no flags offers all 24 heroes', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await page.goto(START);
+  await page.getByRole('link', { name: /Versus/ }).or(page.getByRole('button', { name: /Versus/ })).first().click();
+  const race = page.getByLabel('Your race');
+  await expect(race).toBeVisible();
+  await expect(race.locator('option')).toHaveCount(25); // 24 heroes plus Empty
+  await expect(page.getByLabel('AI race').locator('option')).toHaveCount(25);
+  await expect(race.locator('option[value="umbrel"]')).toHaveCount(1);
+  await info.attach('versus-picker', { body: await page.screenshot(), contentType: 'image/png' });
+  if (errors.length > 0) throw new Error(errors.join('\n'));
+});
