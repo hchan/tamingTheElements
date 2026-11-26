@@ -21,7 +21,8 @@ const oracleAvailable = (): boolean => existsSync(resolve(oracleDir, 'war/WEB-IN
 // Heavy sim, fuzz and balance tests take seconds alone (slowest: fun-gate ~17 s and weather property ~5 s when all 263 files
 // run in parallel). With several agents on the same machine the 13 vitest workers get a small slice of the CPU and those
 // stretch 10x or more past the old 60 s, then fail although they pass alone. The timeout only guards against hangs, so it is
-// generous; it asserts nothing. (Wall-clock assertions in tests/repo/sim-perf.test.ts are separate and use medians/minimums.)
+// generous; it asserts nothing. hookTimeout (vitest default 10 s) gets the same value: beforeEach hooks that build real git
+// repos (nightly-fix-land and nightly-push real-git, pc-snapshot) take well under 1 s alone but hit 10 s under load. (Wall-clock assertions in tests/repo/sim-perf.test.ts are separate and use medians/minimums.)
 const TEST_TIMEOUT_MS = 240_000;
 
 export default defineConfig({
@@ -50,7 +51,7 @@ export default defineConfig({
         test: {
           name: 'core',
           environment: 'node',
-          testTimeout: TEST_TIMEOUT_MS,
+          testTimeout: TEST_TIMEOUT_MS, hookTimeout: TEST_TIMEOUT_MS,
           include: ['src/**/*.test.ts'],
           exclude: ['src/**/*.dom.test.ts'],
         },
@@ -58,11 +59,11 @@ export default defineConfig({
       {
         // DOM unit tests for src/ui and src/game (menus, pause dialog, touch controls): happy-dom, `*.dom.test.ts` next to the code.
         resolve: { alias },
-        test: { name: 'dom', environment: 'happy-dom', testTimeout: TEST_TIMEOUT_MS, include: ['src/**/*.dom.test.ts'] },
+        test: { name: 'dom', environment: 'happy-dom', testTimeout: TEST_TIMEOUT_MS, hookTimeout: TEST_TIMEOUT_MS, include: ['src/**/*.dom.test.ts'] },
       },
       {
         resolve: { alias },
-        test: { name: 'legacy', environment: 'node', testTimeout: TEST_TIMEOUT_MS, include: ['tests/legacy/**/*.test.ts'] },
+        test: { name: 'legacy', environment: 'node', testTimeout: TEST_TIMEOUT_MS, hookTimeout: TEST_TIMEOUT_MS, include: ['tests/legacy/**/*.test.ts'] },
       },
       {
         // Oracle-executing characterization tests: need `pnpm oracle:restore` (legacy tree from the git tag). Without
@@ -71,14 +72,14 @@ export default defineConfig({
         test: {
           name: 'oracle',
           environment: 'node',
-          testTimeout: TEST_TIMEOUT_MS,
+          testTimeout: TEST_TIMEOUT_MS, hookTimeout: TEST_TIMEOUT_MS,
           include: oracleAvailable() ? ['tests/oracle/**/*.test.ts'] : ['tests/oracle/oracle-absent.test.ts'],
           exclude: oracleAvailable() ? ['tests/oracle/oracle-absent.test.ts'] : [],
         },
       },
       {
         resolve: { alias },
-        test: { name: 'repo', environment: 'node', testTimeout: TEST_TIMEOUT_MS, include: ['tests/{repo,lint}/**/*.test.ts'] },
+        test: { name: 'repo', environment: 'node', testTimeout: TEST_TIMEOUT_MS, hookTimeout: TEST_TIMEOUT_MS, include: ['tests/{repo,lint}/**/*.test.ts'] },
       },
       {
         resolve: { alias },

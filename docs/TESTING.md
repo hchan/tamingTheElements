@@ -43,6 +43,10 @@ turn heavy tests into timing-only failures. Check `uptime` first and wait if loa
 workers (`VITEST_MAX_WORKERS`, a quarter of the cores, minimum 2) whenever load1 is above the core count (`loadEnv` in
 `tools/ci/gate.ts`; an explicit `VITEST_MAX_WORKERS` wins); this changes only how many files run at once, never the results.
 The slow property cases carry an explicit 900 s timeout, a hang guard that asserts nothing.
+Vitest `testTimeout` and `hookTimeout` are both 240 s in every project (`TEST_TIMEOUT_MS` in `vitest.config.ts`; the vitest hook default of 10 s
+failed real-git `beforeEach` hooks under load). Subprocess-heavy files carry named hang-guard limits (`tests/repo/gpu-ctl-py.test.ts`: 32 s alone, 900 s
+guard). Only the pure wall-clock test in `tests/repo/sim-perf.test.ts` is skipped, with a printed reason, when load1 exceeds 4x the core count
+(`LOAD_SKIP_FACTOR`); correctness and allocation checks always run. Never add retries or loosen assertions for load.
 
 ### Builder checklist
 
