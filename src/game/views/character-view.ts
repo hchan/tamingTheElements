@@ -308,15 +308,15 @@ export class CharacterView {
     }
     if (this.fit) this.scale = arcadeHeroScale(c.h);
     const k = this.scale * displayScaleOf(c.sprite);
-    // The drawn body box (tucked inside the world in Arcade): the image and every attachment follow it, not the sim x (WALL-3a).
     const vb = visualBox(x, y, c.w, c.h, k, this.vbScratch, this.fit ? arcadePlayfield().w : undefined);
     // `shift` (throw/pull smoothing, MotionSmoother.shiftFor) moves the drawn body only; attachments, hit boxes and the sim stay put.
     this.image.setPosition(vb.x + (shift?.dx ?? 0), vb.y + (shift?.dy ?? 0));
     this.image.setDisplaySize(vb.w, vb.h);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     const ax = this.fit ? vb.x : x;
-    this.placeGlow(c.sprite, ax, y, c.w * k, c.h * k);
-    this.placeAura(ax, y, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
+    const ay = this.fit ? vb.y : y; // Arcade: attachments follow the drawn body in x and y
+    this.placeGlow(c.sprite, ax, ay, c.w * k, c.h * k);
+    this.placeAura(ax, ay, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
     this.placeShadow(this.fit ? vb.x + vb.w / 2 : x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
     if (this.fit) this.ensureHook();
     const stage = tintStage(this.flashLeft, frozenTint);

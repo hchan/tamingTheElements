@@ -204,6 +204,15 @@ describe('CharacterView attachments follow the drawn body (WALL-3a)', () => {
       for (const a of rest) expect(a.x).toBe(centre);
     });
   }
+  it('glow, halo and aura are centred on the drawn body in y (Arcade, 2x sprite spans 300..460)', () => {
+    const { view, made } = make(true);
+    view.apply(at(800), 0, 1);
+    const [body, glow, halo, aura] = made;
+    expect(body?.y).toBe(300);
+    expect(glow?.y).toBeCloseTo(300 + 160 * 0.66);
+    expect(halo?.y).toBeCloseTo(300 + 160 * 0.5);
+    expect(aura?.y).toBeCloseTo(300 + 160 * 0.52);
+  });
   it('Classic (not fit) keeps the sim-x anchors', () => {
     const { view, made } = make(false);
     view.apply(at(0), 0, 1);

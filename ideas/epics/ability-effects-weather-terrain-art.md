@@ -21,7 +21,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [buff-debuff-animation](../in-progress/buff-debuff-animation.md) (in progress): Better animation for buffs and debuffs, on the heroes and on the HUD. Owner request (2026-11-13): "I need better animation on the buffs and debuffs on the heroes and on the HUD."
 - [crowd-control-animations](../in-progress/crowd-control-animations.md) (in progress): Crowd-control animations (dazed, snagged, iced, ...) and matching abilities. Owner idea (2026-11-14): the opponent needs a visible animation when dazed, snagged, iced and so on, and we should create the corresponding abilities.
 - [pseudo-3d-ability-and-status-animations](../in-progress/pseudo-3d-ability-and-status-animations.md) (in progress): Pseudo-3D animations for abilities, specials and status effects. Owner, 2026-11-15: "maybe we can have SOME 3d ...
-- [glow-aura-y-anchor](../brainstorm/glow-aura-y-anchor.md): Glow and aura y anchor. WALL-3a re-centred glow and aura on the drawn body in x only (Q11 decision);
+- [glow-aura-y-anchor](../done/glow-aura-y-anchor.md): Glow and aura y anchor. WALL-3a re-centred glow and aura on the drawn body in x only (Q11 decision);
 - [pose-vfx-anchor-k2](../brainstorm/pose-vfx-anchor-k2.md): Pose VFX anchors at k=2. Pose-layer effects anchor on sim coordinates, not the k=2 fit box.
 - [floor-tags-1](../in-progress/floor-tags-1.md) (in progress): FLOOR-TAGS-1: floor chips stay whole and off heads. Source: ideas/brainstorm/qa-r73-findings.md item 3 (chips such as "WATER +HP" cut off at the view edge or hidden under a drawn head).
 - [own-element-tile-effects](../in-progress/own-element-tile-effects.md) (in progress): Hero standing on a tile of its own element. Owner request (2026-11-13): when a hero stands on a stage patch of its own element, show an animation, and one for each element:
@@ -49,7 +49,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### AE-2 Status animations and anchors
 
-- Members: [buff-debuff-animation](../in-progress/buff-debuff-animation.md), [crowd-control-animations](../in-progress/crowd-control-animations.md), [pseudo-3d-ability-and-status-animations](../in-progress/pseudo-3d-ability-and-status-animations.md), [glow-aura-y-anchor](../brainstorm/glow-aura-y-anchor.md), [pose-vfx-anchor-k2](../brainstorm/pose-vfx-anchor-k2.md)
+- Members: [buff-debuff-animation](../in-progress/buff-debuff-animation.md), [crowd-control-animations](../in-progress/crowd-control-animations.md), [pseudo-3d-ability-and-status-animations](../in-progress/pseudo-3d-ability-and-status-animations.md), [glow-aura-y-anchor](../done/glow-aura-y-anchor.md), [pose-vfx-anchor-k2](../brainstorm/pose-vfx-anchor-k2.md)
 - Size: L
 - Shared files: src/game/fx/* (status-fx*, cc-fx*), pose-layer.ts
 - Flags: needs browser/e2e, owner art review
