@@ -10,14 +10,18 @@ interface Drawn { x: number; y: number; px: number; py: number; }
 
 export class CorrectionSmoother {
   private lastRollbacks = 0;
+  private lastTick = 0;
+  private advanced = 0;
   private corrected = false;
   private readonly lastSim = new Map<number, Pos>();
   private readonly offset = new Map<number, Pos>();
 
-  /** Once per frame, before drawing: the session's running rollback count. */
-  begin(rollbacks: number): void {
+  /** Once per frame, before drawing: the session's running rollback count and sim tick (to know how far the sim moved since the last frame). */
+  begin(rollbacks: number, simTick: number): void {
     this.corrected = rollbacks !== this.lastRollbacks;
     this.lastRollbacks = rollbacks;
+    this.advanced = Math.max(0, simTick - this.lastTick);
+    this.lastTick = simTick;
   }
 
   /** Per character per frame: shifts `c` (the render copy) by the decaying correction offset. */
@@ -26,8 +30,10 @@ export class CorrectionSmoother {
     let off = this.offset.get(id);
     if (last) {
       if (this.corrected) {
-        const dx = last.x - c.x;
-        const dy = last.y - c.y;
+        // Where the fighter would have been drawn had the old history held: last drawn sim position plus the normal steps since.
+        // Only the gap to that is a misprediction; ordinary motion must not be blended or the fighter would pause on every rollback.
+        const dx = last.x + this.advanced * (c.x - c.px) - c.x;
+        const dy = last.y + this.advanced * (c.y - c.py) - c.y;
         if (Math.abs(dx) > CORRECTION_MAX_PX || Math.abs(dy) > CORRECTION_MAX_PX) off = undefined; // a teleport or respawn: do not drag
         else if (Math.abs(dx) >= CORRECTION_MIN_PX || Math.abs(dy) >= CORRECTION_MIN_PX) {
           off = { x: (off?.x ?? 0) + dx, y: (off?.y ?? 0) + dy };
