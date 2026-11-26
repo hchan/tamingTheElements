@@ -1,6 +1,7 @@
 // Sim performance gate (docs/PERFORMANCE.md). Bounds are deliberately generous so a loaded CI machine never trips them;
 // they exist to catch an order-of-magnitude regression (an accidental O(n^2), a per-tick state copy).
 // Wall-clock is read with performance.now() in this TEST only; src/core itself never reads a clock.
+import { cpus, loadavg } from 'node:os';
 import { setFlagsFromString } from 'node:v8';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
@@ -20,6 +21,17 @@ const RUNS = 7;
 const MEDIAN_TICK_MS_BOUND = 0.5;
 /** Wall-clock bound for 1000 ticks (20 s of game time), for the fastest of RUNS, on a loaded machine. */
 const THOUSAND_TICKS_MS_BOUND = 2000;
+
+/**
+ * Wall-clock assertions only (never correctness): the bounds keep a ~10x margin over an idle machine (about 0.05 ms/tick), so they
+ * only fail when the machine is oversubscribed by far more than that (load1 above 4x the core count, seen at 100+ with several
+ * agents and full runs). Then the number measures the scheduler, not the sim, so that one test is skipped with this reason.
+ * Structural and allocation checks below are load-independent and always run.
+ */
+const LOAD_SKIP_FACTOR = 4;
+const load1 = loadavg()[0] ?? 0;
+const overloaded = load1 > LOAD_SKIP_FACTOR * Math.max(1, cpus().length);
+if (overloaded) console.info(`sim perf: wall-clock test skipped, load1 ${load1.toFixed(1)} > ${String(LOAD_SKIP_FACTOR)}x cores (machine oversubscribed)`);
 
 /** Pre-built, repeating command stream (movement plus both ability buttons) so the timed loop builds nothing itself. */
 const STREAM: readonly Command[] = (() => {
@@ -80,7 +92,7 @@ describe('sim performance', () => {
     expect(statuses).toBeGreaterThan(0);
   });
 
-  it(`a tick averages under ${String(MEDIAN_TICK_MS_BOUND)} ms (median of ${String(RUNS)} runs); ${String(TICKS)} ticks finish in bounded time`, () => {
+  it.skipIf(overloaded)(`a tick averages under ${String(MEDIAN_TICK_MS_BOUND)} ms (median of ${String(RUNS)} runs); ${String(TICKS)} ticks finish in bounded time`, () => {
     const warm = battle();
     for (let t = 0; t < 300; t++) tick(warm, t); // warm-up so the JIT has compiled the systems
     const perTick: number[] = [];
