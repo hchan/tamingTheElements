@@ -178,6 +178,8 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       void import('../fx/ko-fallback').then((m) => { m.showKoFallback(root, loser, side, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test'); });
       // KO still for the loser (the 14 approved heroes, see fx/ko-still.ts; lazy chunk, gated inside fx/ko-still).
       void import('../fx/ko-still').then((m) => { m.showKoStill(root, loser, side, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test', import.meta.env.BASE_URL); });
+      // Procedural flame/dust collapse for Fiara and Cyclonius (render only; lazy chunk, gated inside fx/ko-collapse).
+      void import('../fx/ko-collapse').then((m) => { m.showKoCollapse(root, loser, side, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test', import.meta.env.BASE_URL); });
     }
     // The primary action takes focus (not the heading), and a held Enter or Space must not auto-repeat into Rematch.
     view?.querySelector<HTMLElement>('#arcadeRematch')?.focus({ preventScroll: true });
