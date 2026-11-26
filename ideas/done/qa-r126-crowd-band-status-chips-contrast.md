@@ -1,6 +1,6 @@
 # Status chips (ADREN, SAFE) over the crowd band are low contrast and crowd the bench portrait
 
-status: idea
+status: done
 added: 2026-11-19
 
 Severity: minor
@@ -13,3 +13,5 @@ Screenshot: /Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a84dea11
 Suggested fix: raise chip fill alpha to about 0.85 with a lighter 1 px border, or darken the crowd scrim under the chip row.
 
 triaged: 2026-11-21 real, small, but chip code is in Hud.ts (off limits this pass). Plan: next pass, failing-first test on chip fill alpha.
+
+done: 2026-11-26. Already fixed on main by d5977de70 (CHIP_FILL_ALPHA 0.9, test "chip fill (qa-r126)" in src/game/hud/status-icons.test.ts). No further code change; border not added (fill alpha alone is the suggested fix).
