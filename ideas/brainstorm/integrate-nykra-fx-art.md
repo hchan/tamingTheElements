@@ -12,3 +12,12 @@ Art session (2026-11-26), Nykra bundle `.claude/worktrees/gpu-job-server/.scratc
 Gaps: hoof_crash icon is the old 64x64 CC0 pick (a 128px procedural candidate exists, unapproved); open rig defects recorded by the director (idle/walk/cast near-identical, leg slivers on walk frame 1, narrowed N view).
 
 Build after the Zephra fx builder merges (one agent at a time on `tools/assets/integrate-roster24-fx-art.ts`): add a nykra entry, sha pin, provenance and credit lines, contact sheet.
+
+## Update (art-director verdicts, 2026-11-26): batch of three, hoofCrash dropped
+
+Approval file (art worktree) `.claude/worktrees/gpu-job-server/.scratch/fx-r3/approval.json`. APPROVE 4, beats shipped, drop-in:
+- Glimmaw `abyssFlash`: `.scratch/fx-r3/abyssFlash.png` 80x80 RGBA -> `public/assets/img/fx/abyssFlash.png`.
+- Durrok `bristleStomp`: `.scratch/fx-r3/bristleStomp.png` 80x60 RGBA -> `public/assets/img/fx/bristleStomp.png`.
+- Nykra `kelpLash` (see above, approval `.scratch/fx-keyed2/approval.json`) is unaffected.
+Nykra `hoofCrash`: REVISE 3 (reads as a teal whirlpool; the f269 plate is a swirl). DROPPED: keep the shipped hoofCrash; ignore the hoofCrash note in the Nykra manifest.
+One builder adds all three entries (nykra kelpLash, glimmaw abyssFlash, durrok bristleStomp) to the table after the Zephra fx builder merges.
