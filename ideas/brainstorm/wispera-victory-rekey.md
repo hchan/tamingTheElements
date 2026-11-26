@@ -11,3 +11,8 @@ Wispera victory REVISE: the keyed still keeps a flat grey disc (~25-30% of the r
 
 Also: recapture the sindarosa and curomo KO stills at full opacity (wait ~500 ms after the fade in `tests/e2e/victory-still.spec.ts`) and send them to the art-director; the curomo 6 px nudge stays unless more than 3 px of float shows.
 Layout note (not art): wispera and curomo victory stills sit inside the yellow-glow card and look slightly "framed" next to fiara; optional card polish.
+
+## Progress note (2026-11-26)
+- Part 1 done: `key_wispera` in `tools/assets/victory-gen/victory-key.py` (S < 0.15 and L 90-150 keyed, matte 0.35, erode 3 px, feather 1.5 px, dark cloud outside 0.8 ball radius x0.25, ball interior forced opaque so the rust speck leaves no hole; core not brightened). Only `wispera_victory.png` changed; pin updated. Before/after sheet: `.scratch/wispera-rekey/sheet.png` (worktree-local).
+- Part 2 done: `tests/e2e/victory-still.spec.ts` waits for opacity 1 and finished animations before the screenshot; PC run, 5 passed; stills in `.scratch/originals-stills/` (curomo-ko, curomo-victory, sindarosa-ko, wispera-victory).
+- Open: art-director re-check of wispera victory, sindarosa KO and curomo KO nudge. Status stays idea until then.

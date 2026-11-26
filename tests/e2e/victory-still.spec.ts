@@ -110,6 +110,8 @@ for (const [kind, hero] of ORIGINALS) test(`${hero} ${kind === 'victory' ? 'wins
   await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
   await expect(page.locator(`#arcadeResults ${kind === 'victory' ? '.matchEndStill' : '.matchEndKoStill'}`)).toHaveAttribute('data-hero', hero);
   expect(requests.length).toBe(1);
+  // the still fades in over 400 ms: capture only at full opacity
+  await waitFor(page, 'still fade finished', `(() => { const el = document.querySelector('#arcadeResults ${kind === 'victory' ? '.matchEndStill' : '.matchEndKoStill'}'); return !!el && getComputedStyle(el).opacity === '1' && el.getAnimations().every((a) => a.playState === 'finished'); })()`);
   await test.info().attach(`${hero}-${kind}`, { body: await page.screenshot(), contentType: 'image/png' }); // fetched with the router's test-results
   if (SHOT_DIR) {
     mkdirSync(SHOT_DIR, { recursive: true });
