@@ -15,7 +15,31 @@
  "matte": {
   "minIsland": 40,
   "band": 1,
-  "fringeLum": 35
+  "fringeLum": 35,
+  "holes": {
+   "rgb": [
+    128,
+    128,
+    128
+   ],
+   "tol": 8,
+   "minPx": 30,
+   "grow": 1,
+   "rects": [
+    [
+     30,
+     230,
+     130,
+     400
+    ],
+    [
+     190,
+     230,
+     290,
+     380
+    ]
+   ]
+  }
  },
  "rim": {
   "color": [
