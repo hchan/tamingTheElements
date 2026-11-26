@@ -632,7 +632,7 @@ Owner intent: stuns are overpowered; make stun a rarer skill and turn other skil
 
 Measurements (`tools/sim/stun-lock.ts`, estimate from seeded AI matches):
 
-| | lock share | longest run | run p90 | mean run | hits per combo | supers per match |
+| | lock share | longest run (world ticks) | run p90 | mean run | hits per combo | supers per match |
 |---|---|---|---|---|---|---|
 | 1v1 v116 | 0.3045 | 220 | 104 | 65.6 | 2.0 | 7.42 |
 | 1v1 v117 | 0.1804 | 175 | 62 | 29.8 | 1.38 | 6.63 (-10.6%) |
@@ -640,3 +640,23 @@ Measurements (`tools/sim/stun-lock.ts`, estimate from seeded AI matches):
 | 2v2 v117 | 0.1133 | 199 | 79 | 33.0 | 1.5 | 18.88 |
 
 Supers fell under 30%, so the AI super timing is unchanged. Fun gates: multi-hit combo share fell to 0.129 (1v1) and 0.152 (2v2) on purpose; bands moved to [0.08, 0.5] and [0.1, 0.55]. Classic balance drift is 0.0pp; Classic goldens changed only in the simVersion header. Arcade goldens and both Arcade baselines were re-recorded because the stun numbers change every Arcade replay.
+
+## Arcade R8 retune (SIM_VERSION 118)
+
+Cause: v117 let supers skip the juggle cap and the stun cap (`!sup`), so three supers in a row could chain a stun of 135 game ticks, and the v117 stun nerf moved the Arcade win rates outside the bands (1v1 brazgor 16.8%, 2v2 ishimi 21.7%; melee-vs-ranged cross 0.343 against a 0.42 target).
+
+Changes:
+
+- Super hits obey `SUPER_COMBO_STUN_CAP_TICKS` 80 (a combo of supers is capped; supers still skip the juggle limit and ignore stun immunity). Longest stun run 135 -> 79 game ticks (1v1).
+- Race numbers retuned in `src/core/sim/arcade-numbers.ts` (`ARCADE_RACE_NUMBERS` life and damage per-mille, `ARCADE_2V2_LIFE_PM`). In 2v2 the team life is life x pm, so a 1v1 life change was compensated in pm. Rounds were judged on 4-seed runs (sigma about 5.2 pp in 1v1, 3.7 pp at 8 seeds in 2v2), then the standard seeds with a seed-2 holdout. Biggest moves: brazgor (life 5600, damage 850 per-mille), kindrel, nykra, ouroth and echo up; zephra, hyalia and morblass down.
+
+Measurements (`tools/sim/stun-lock.ts`, game ticks unless marked W = world ticks):
+
+| | lock share | longest run | run p90 | mean run | hits per combo | supers per match |
+|---|---|---|---|---|---|---|
+| 1v1 v118 | 0.1774 | 79 (W 201) | 51 | 29.21 | 1.36 | 6.917 |
+| 2v2 v118 | 0.1068 | 119 (W 253) | 87 | 35.22 | 1.63 | 19.813 |
+
+Known exception: `expireStuns` zeroes the combo total at natural expiry, so a super that lands on the exact expiry tick starts a fresh combo and an unbroken run can exceed 81 game ticks (2v2 longest 119). Not closed; options are to treat a stun that ended this tick as the same combo for supers, or to give supers stun immunity.
+
+Standard-seed win rates (1v1 16 seeds, 2v2 8 seeds): 1v1 37.5-63.0%, 2v2 42.4-58.4%, all inside the hard 35-65% band (pinned by `tests/repo/arcade-baseline-bands.test.ts`). Residual: 1v1 melee-vs-ranged cross is 0.403 (v117 0.343), still under the 0.42 target. Arcade baselines and goldens were re-recorded because Arcade behaviour changed on purpose; Classic hashes are unchanged (Classic goldens changed only in the simVersion header).
