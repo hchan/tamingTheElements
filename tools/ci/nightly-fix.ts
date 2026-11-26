@@ -1,13 +1,13 @@
 /**
  * Nightly fix loop (runs after `nightly:collect` when the status is red with unrecorded failures):
  *   pnpm nightly:fix [--dry-run]            fix loop only (needs a fresh collected red status)
- *   nightly-fix.ts collect-and-fix          collect (retry every 20 min until 04:30 while the 23:00 full run is unfinished), then the fix loop (the 01:00 LaunchAgent)
+ *   nightly-fix.ts collect-and-fix          collect (retry every 20 min until 04:30 while the 23:00 full run is unfinished), then the fix loop (the 02:00 LaunchAgent)
  *   nightly-fix.ts report                   read-only morning report to tte-gate/nightly-morning-report.md (the 09:00 LaunchAgent)
  * Per failure: a sandboxed headless `claude -p` round (file tools only, no user/project settings, see nightly-fix-logic.ts) in a
  * fresh worktree from origin/main (.scratch/nightly-fix-wt), then a re-run of that spec only via the router (`--pc`: PC only, never
- * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). At most 3 rounds, at most 3 failures, one run at a time (lock file).
+ * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). No round-count cap (since 2026-11-26): a failure stops on no progress (it repeats an earlier normalised diff or error), its share of the spend cap, the night spend cap or the hard stop; one run at a time (lock file).
  * Verify loop (WP3e/3f): collect -> fix -> merge --no-ff of the fix branch F onto the tested sha T in a detached worktree (M) -> re-run the fixed
- * specs on M (PC only) -> gate:commit -> a FULL e2e of M when the diff leaves those specs; up to 3 rounds (a red round goes back to a fix pass).
+ * specs on M (PC only) -> gate:commit -> a FULL e2e of M when the diff leaves those specs; until green or the hard stop (a red round goes back to a fix pass).
  * Hard stop 07:00 for a night run (22:00 by day, 6 h max): nothing starts that cannot finish. Flaky and known-red specs are reported, never chased.
  * Then integrateMain(M) into local main and pushMerged (plain `git push origin M:main`, never forced) when `landBlockers` is empty; a partial
  * night or a visual change is merged locally but not pushed; a red gate or a collateral red is needs-human; unverified fixes stay on
@@ -16,13 +16,13 @@
  * nightly-push.ts preconditions hold (origin/main an ancestor, main is the tested commit, clean tree, gate:commit). Report: tte-gate/nightly-push-status.json.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, canStartVerify, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, MAX_REAL_REDS, MAX_VERIFY_ROUNDS, mergeSubject, mergedBranchName, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
+  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, byTier, noProgress, spendAllowed, NIGHT_SPEND_CAP_USD, ROUND_BUDGET_USD, type RoundSig, canStartFullRun, canStartRound, canStartVerify, errorSig, failureSpendAllowed, normalizeDiff, PER_FAILURE_SPEND_CAP_USD, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, deadlineFor, dedupeRefs, localDay, describeFix, errorTail, extractFailures, finalState,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, mergeSubject, mergedBranchName, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
   redsVerdict, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage, verifyVerdict,
   type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type LandInput, type RetryOutcome, type VerifyRound,
 } from './nightly-fix-logic';
@@ -80,6 +80,28 @@ export function readFixStatus(dir: string): FixStatus | undefined {
     return undefined;
   }
 }
+
+/** Claude rounds already started on this local date (a second run the same night continues the count; an older date starts at 0). A file that exists but cannot be read as {date, rounds}, or is dated later than today, fails CLOSED: the night cap counts as reached. A missing file is 0. */
+const spentPath = (dir: string): string => join(dir, 'nightly-fix-spend.json');
+export function readSpent(dir: string, date: string): { rounds: number; failClosed?: string } {
+  if (!existsSync(spentPath(dir))) return { rounds: 0 };
+  const closed = (why: string): { rounds: number; failClosed: string } => ({ rounds: NIGHT_SPEND_CAP_USD / ROUND_BUDGET_USD, failClosed: `${why}; treating the night spend cap as reached` });
+  try {
+    const v = JSON.parse(readFileSync(spentPath(dir), 'utf8')) as { date?: unknown; rounds?: unknown };
+    if (typeof v.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v.date) || typeof v.rounds !== 'number' || !Number.isInteger(v.rounds) || v.rounds < 0) return closed('nightly-fix-spend.json has the wrong shape');
+    if (v.date > date) return closed(`nightly-fix-spend.json is dated ${v.date}, later than today (${date})`);
+    return { rounds: v.date === date ? v.rounds : 0 };
+  } catch {
+    return closed('nightly-fix-spend.json is unreadable or not valid JSON');
+  }
+}
+function writeSpent(dir: string, date: string, rounds: number): void {
+  mkdirSync(dir, { recursive: true });
+  const tmp = `${spentPath(dir)}.tmp`;
+  writeFileSync(tmp, `${JSON.stringify({ date, rounds })}\n`);
+  renameSync(tmp, spentPath(dir));
+}
+const hhmm = (d: Date): string => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
 /** Report context of this process's one fix run: error tails per red and the branch name unpushed fixes are kept under. */
 const errTails = new Map<string, string[]>();
@@ -191,13 +213,13 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   const failures = extractFailures(json, dedupeRefs(st.unrecorded));
   const fixWt = resolve(d.repo, FIX_WT);
   const mergeWt = resolve(d.repo, MERGE_WT);
-  const stamp = d.now().toISOString().slice(0, 10);
+  const startMs = opts.startMs ?? d.now().getTime();
+  const stamp = localDay(new Date(startMs)); // local date of the night (branch names and spend key)
   const branch = `nightly-fix/${stamp}`;
   life.branch = branch;
   keptName = `nightly-fix-kept/${stamp}`;
   errTails.clear();
   for (const f of failures) errTails.set(`${f.file}\0${f.title}`, errorTail(f.message));
-  const startMs = opts.startMs ?? d.now().getTime();
   const done = (pushed: boolean, blockers: string[], force?: FixState, extra?: Partial<FixStatus>): number => {
     // Whenever the fixes stay on a local branch (life.keep), the status names it.
     writeFixStatus(d, st.sha, results, pushed, blockers, force, { ...(life.keep && keptName ? { keptBranch: keptName } : {}), ...extra });
@@ -205,12 +227,12 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   if (dry) {
     d.out(`nightly:fix dry run for ${st.sha.slice(0, 7)}: ${String(failures.length)} failure(s); nothing is launched or pushed\n`);
-    d.out(`  first: ONE retry of all ${String(failures.length)} distinct red(s) via the router (--pc), then tier: flaky-on-retry and P2 reds never block (no real P0/P1 red = clean push); more than ${String(MAX_REAL_REDS)} real reds = broken night (needs-human, no rounds)\n`);
+    d.out(`  first: ONE retry of all ${String(failures.length)} distinct red(s) via the router (--pc), then tier: flaky-on-retry and P2 reds never block (no real P0/P1 red = clean push); every real red is worked one at a time, P0/P1 first, with no round cap (stops: green, the 07:00 hard stop, no progress, the night spend cap ${String(NIGHT_SPEND_CAP_USD)} USD at ${String(ROUND_BUDGET_USD)} USD per round)\n`);
     d.out(`  worktree: git worktree add -B ${branch} ${fixWt} ${st.sha.slice(0, 7)} (the tested commit; then pnpm install --frozen-lockfile --prefer-offline)\n`);
     for (const f of failures) {
       d.out(`--- ${f.file}: ${f.title}\n  claude ${claudeArgs('<prompt>').slice(2).join(' ')}\n  re-run: corepack ${rerunArgs(f.file).join(' ')} (PC only)\n${buildPrompt(f, 1, '')}\n`);
     }
-    d.out(`  verify: per round merge --no-ff ${branch} onto the tested commit in a detached ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, the fixed specs re-run on the merged commit (--pc, PC only), corepack pnpm gate:commit, and a FULL e2e of the merged tree when the diff leaves those specs (max ${String(MAX_VERIFY_ROUNDS)} rounds, none after the 07:00 hard stop); then merge into local main and, only if everything is green and the night is complete, git push origin <merged sha>:main (no force)\n`);
+    d.out(`  verify: per round merge --no-ff ${branch} onto the tested commit in a detached ${mergeWt} ("${mergeSubject('<what>')}"), conflict-marker grep, the fixed specs re-run on the merged commit (--pc, PC only), corepack pnpm gate:commit, and a FULL e2e of the merged tree when the diff leaves those specs (no round cap; loops until green or the 07:00 hard stop); then merge into local main and, only if everything is green and the night is complete, git push origin <merged sha>:main (no force)\n`);
     return 0;
   }
   const sh = (cwd: string, cmd: string, args: string[], timeout?: number, env: Env = d.env): FixRun => d.run(cmd, args, cwd, env, timeout);
@@ -224,18 +246,21 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   let seq = 0;
   /** Re-run one spec on the PC (never the Mac) and read its JSON: green = exit 0 and the title ended `passed` (not skipped). */
-  const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string } => {
+  const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string; error: string; timedOut: boolean } => {
     const jsonOut = join(d.statusDir, `nightly-fix-rerun-${String(++seq)}.json`);
     rmSync(jsonOut, { force: true });
-    const r = sh(cwd, 'corepack', rerunArgs(f.file), RERUN_TIMEOUT_MS, { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
+    const r = sh(cwd, 'corepack', rerunArgs(f.file), capTimeout(RERUN_TIMEOUT_MS, startMs, d.now()), { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
     let passed = false;
+    let error = '';
     try {
-      passed = titlePassed(JSON.parse(readFileSync(jsonOut, 'utf8')) as unknown, f);
+      const j = JSON.parse(readFileSync(jsonOut, 'utf8')) as unknown;
+      passed = titlePassed(j, f);
+      if (!passed) error = errorSig(extractFailures(j, [f])[0]?.message ?? '');
     } catch {
       passed = false;
     }
     const tail = redact(`${r.stdout}\n${r.stderr}`.split('\n').slice(-40).join('\n'));
-    return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail };
+    return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail, error, timedOut: !!r.timedOut };
   };
 
   /** Full suite on the merged tree: detach-submit then attach through the router (PC only). */
@@ -300,23 +325,38 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     const pushed = pushCleanNight(d, { ...st, unrecorded: [] }, startMs) === 0 && readPushStatus(d.statusDir)?.pushed === true;
     return done(pushed, pushed ? [] : [...(readPushStatus(d.statusDir)?.blockers ?? ['clean-night push blocked'])]);
   }
-  if (verdict === 'broken-night' || classified.some((c) => c.cls === 'unclassified')) {
+  if (classified.some((c) => c.cls === 'unclassified')) {
     for (const c of blockingReds(classified)) if (c.cls === 'real') record(c);
-    return done(false, [verdict === 'broken-night' ? `${String(blockingReds(classified).length)} real P0/P1 reds (more than ${String(MAX_REAL_REDS)}): a broken night, needs-human, no rounds` : 'the classification retry could not run; reds treated as real, nothing pushed, no rounds'], verdict === 'broken-night' ? 'needs-human' : undefined);
+    return done(false, ['the classification retry could not run; reds treated as real, nothing pushed, no rounds']);
   }
-  const todo = stillRed.filter((f) => classified.some((c) => c.cls === 'real' && c.file === f.file && c.title === f.title));
+  const todo = byTier(stillRed, (t) => tierOf(t.file, t.title)).filter((f) => classified.some((c) => c.cls === 'real' && c.file === f.file && c.title === f.title));
 
+  /** A child that timed out at the deadline is the hard stop (checked before any red/failure reading), else a plain timeout. */
+  const timeoutWhy = (what: string): string => (deadlineReached(startMs, d.now()) ? `hard stop at ${hhmm(deadlineFor(new Date(startMs)))}: ${what} timed out at the deadline; stopping` : `${what} timed out; stopping`);
   const reset = (to: string): void => {
     git(fixWt, 'reset', '--hard', to);
     git(fixWt, 'clean', '-ffdx', '-e', 'node_modules'); // ignored files too (settings.local.json), never node_modules
   };
+  const spent = readSpent(d.statusDir, stamp);
+  let roundsStarted = spent.rounds; // claude rounds started this night, continued from an earlier run of the same date (spend cap)
+  const sigs = new Map<string, RoundSig[]>(); // per failure, kept across verify rounds (no-progress stop: every earlier round counts)
+  const failRounds = new Map<string, number>(); // claude rounds per failure this night (its share of the spend cap)
+  const committed = new Set<string>(); // failures with a fix commit on F: they stay in the verify targets
   const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `${st.sha}..${branch}`).stdout.trim() || '0');
   /** One fix pass over `todo` (existing per-failure rounds); returns why it stopped early, or ''. A later result for a spec replaces its earlier one. */
   const fixPass = (todo: readonly Failure[]): string => {
     let stopped = '';
     for (const f of todo) {
+      const key = `${f.file}\0${f.title}`;
       const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
+        // An earlier fix commit stays on F and in M: its 'fixed' result (and verify target) is kept, a later flaky/needs-human/unfixed pass must not orphan it.
         const at = results.findIndex((r) => r.file === f.file && r.title === f.title);
+        if (outcome !== 'fixed' && committed.has(key)) {
+          // Keep the fixed outcome, but the later outcome and why must reach the report.
+          const old = results[at];
+          if (old) results[at] = { ...old, reason: redact(`${old.reason.slice(0, 100)}; later pass: ${outcome}: ${reason}`).slice(0, 300) };
+          return;
+        }
         if (at >= 0) results.splice(at, 1);
         results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
       };
@@ -328,13 +368,27 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       let previous = '';
       let rounds = 0;
       for (;;) {
+        if (!failureSpendAllowed(failRounds.get(key) ?? 0)) {
+          put('unfixed', rounds, `this failure used its share of the night spend cap (${String(PER_FAILURE_SPEND_CAP_USD)} USD at ${String(ROUND_BUDGET_USD)} USD per round); the other failures go on`);
+          reset(head0);
+          break;
+        }
         if (deadlineReached(startMs, d.now()) || !canStartRound(startMs, d.now())) {
           stopped = 'too close to the hard stop (07:00 for a night run, 22:00 by day) for another round; stopping';
           put('unfixed', rounds, stopped);
           reset(head0);
           break;
         }
+        if (!spendAllowed(roundsStarted)) {
+          stopped = spent.failClosed ?? `night spend cap reached (${String(NIGHT_SPEND_CAP_USD)} USD at ${String(ROUND_BUDGET_USD)} USD per round, ${String(roundsStarted)} rounds); stopping`;
+          put('unfixed', rounds, stopped);
+          reset(head0);
+          break;
+        }
         rounds++;
+        roundsStarted++;
+        failRounds.set(key, (failRounds.get(key) ?? 0) + 1);
+        writeSpent(d.statusDir, stamp, roundsStarted);
         const marker = join(d.statusDir, `nightly-fix-marker-${String(rounds)}`);
         writeFileSync(marker, '');
         const c = sh(fixWt, 'claude', claudeArgs(buildPrompt(f, rounds, previous)), capTimeout(ROUND_TIMEOUT_MS, startMs, d.now()), claudeEnv(d.env));
@@ -366,22 +420,35 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
           break;
         }
         let green = false;
+        let sig: RoundSig = { base: head0, diff: normalizeDiff(git(fixWt, 'diff', '--cached', '-U0', head0).stdout), error: '' };
         if (!forbidden.length) {
+          if (deadlineReached(startMs, d.now())) {
+            stopped = 'the hard stop passed before the re-run; stopping';
+            put('unfixed', rounds, stopped);
+            reset(head0);
+            break;
+          }
           const r = rerun(fixWt, f);
           previous = r.tail;
           if (r.stop) {
-            stopped = `router exit ${String(r.code)}: the re-run could not complete; stopping`;
+            stopped = r.timedOut ? timeoutWhy('the re-run') : `router exit ${String(r.code)}: the re-run could not complete; stopping`;
             put('unfixed', rounds, stopped);
             reset(head0);
             break;
           }
           green = r.green;
+          sig = { ...sig, error: green ? '' : r.error };
         }
-        const t = triage({ round: rounds, forbidden, agent: parseTriage(c.stdout).verdict, diffEmpty: names.length === 0, rerunExit: green ? 0 : 1 });
+        const earlier = sigs.get(key) ?? [];
+        const stuck = !green && noProgress(earlier, sig);
+        sigs.set(key, [...earlier, sig]);
+        const t = triage({ round: rounds, forbidden, agent: parseTriage(c.stdout).verdict, diffEmpty: names.length === 0, rerunExit: green ? 0 : 1, noProgress: stuck });
         if (t.outcome === 'retry') continue;
         if (t.outcome === 'fixed') {
+          committed.add(key);
           const ok = git(fixWt, 'commit', '-m', `nightly-fix: ${slug(f.title)}`, '-m', `Fixes ${specPath(f.file)}: green on the PC re-run.\n\n${TRAILER}`).code === 0;
           if (!ok) {
+            committed.delete(key);
             put('unfixed', rounds, 'git commit failed');
             reset(head0);
             break;
@@ -395,7 +462,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
 
   // Verify loop (WP3e): each round = fix pass -> merge --no-ff F onto T in a detached worktree (M) -> same-spec run on M -> gate:commit ->
-  // a full run when the diff leaves the re-run specs. Max MAX_VERIFY_ROUNDS rounds; then integrate M into local main and push exactly M.
+  // a full run when the diff leaves the re-run specs. No round cap: until green, the deadline, no progress or the spend cap; then integrate M into local main and push exactly M.
   const known = loadKnownRed(fixWt);
   const blockers: string[] = [];
   const rounds: VerifyRound[] = [];
@@ -404,7 +471,11 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   let verified: { M: string; changed: string[] } | undefined;
   let queue: readonly Failure[] = todo;
   let lastStopped = '';
-  for (let round = 1; round <= MAX_VERIFY_ROUNDS && queue.length > 0; round++) {
+  for (let round = 1; queue.length > 0; round++) {
+    if (deadlineReached(startMs, d.now()) || (round > 1 && !spendAllowed(roundsStarted))) {
+      blockers.push(deadlineReached(startMs, d.now()) ? 'the hard stop passed before the next verify round; fixes kept on a local branch' : 'night spend cap reached before the next verify round; fixes kept on a local branch');
+      break;
+    }
     const before = ahead();
     const stopped = fixPass(queue);
     lastStopped = stopped;
@@ -440,7 +511,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       break;
     }
     // Same-spec run on M: every fixed spec, one router call; green = each fixed title passed and no new red.
-    const targets = todo.filter((f) => fixed.some((r) => r.file === f.file && r.title === f.title));
+    const targets = todo.filter((f) => committed.has(`${f.file}\0${f.title}`));
     const specList = [...new Set(targets.map((f) => specPath(f.file)))];
     const vJson = join(d.statusDir, `nightly-fix-verify-${String(round)}.json`);
     rmSync(vJson, { force: true });
@@ -455,7 +526,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     const entry = (gate: VerifyRound['gate']): VerifyRound => ({ round, sha: M, green: vv.greenCount, total: targets.length, newReds: vv.newReds.length, gate });
     if (!vv.ran) {
       rounds.push(entry('skipped'));
-      blockers.push(`the same-spec run on the merged commit could not complete (router exit ${String(vr.code)}); nothing pushed`);
+      blockers.push(vr.timedOut ? timeoutWhy('the same-spec run on the merged commit') : `the same-spec run on the merged commit could not complete (router exit ${String(vr.code)}); nothing pushed`);
       break;
     }
     if (vv.newReds.length > 0) {
@@ -468,11 +539,15 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       rounds.push(entry('skipped'));
       queue = targets.filter((f) => !titlePassed(vj, f));
       d.out(`nightly:fix: verify round ${String(round)}: ${String(vv.greenCount)}/${String(targets.length)} green on the merged commit\n`);
-      if (round === MAX_VERIFY_ROUNDS) blockers.push(`verify red after ${String(MAX_VERIFY_ROUNDS)} rounds; nothing pushed, the fixes stay on a local branch`);
       continue;
     }
     // gate:commit on M (never gate:push), then a collateral full run if the diff leaves the re-run specs.
     const g = sh(mergeWt, 'corepack', ['pnpm', 'gate:commit'], capTimeout(GATE_TIMEOUT_MS, startMs, d.now()), noPushEnv(d.env));
+    if (g.timedOut) {
+      rounds.push(entry('skipped'));
+      blockers.push(timeoutWhy('gate:commit'), 'nothing pushed, the fixes stay on a local branch');
+      break;
+    }
     if (g.code !== 0) {
       rounds.push(entry('red'));
       gateTail = redact(`${g.stdout}\n${g.stderr}`).split('\n').filter((l) => l.trim() !== '').slice(-GATE_TAIL_LINES);

@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
 
@@ -14,3 +14,5 @@ Plan (split agents: code+tests, docs, a dry-run check; no sim change, no browser
 - Update docs/TESTING.md (the cap text; also the stale "01:00" LaunchAgent time: the installed collect job runs at 02:00) and CLAUDE.md "Fix means verified" (cap 3 stays for interactive loops; the nightly loops to 07:00).
 - Tests: `tools/ci` nightly-fix unit tests pin the old caps; update them and add one for no-progress stop and one for the 07:00 stop (injected clock).
 - Verify with `pnpm nightly:fix --dry-run` (prints prompts and commands, launches nothing).
+
+Done 2026-11-26: caps removed (`MAX_ROUNDS`, `MAX_VERIFY_ROUNDS`, `MAX_REAL_REDS`, broken-night shortcut); added `NIGHT_SPEND_CAP_USD` / `ROUND_BUDGET_USD` and the no-progress stop in `tools/ci/nightly-fix-logic.ts`; tests in `tests/repo/nightly-fix.test.ts`; docs/TESTING.md "Nightly loop stops". Not run for real (no night run was made).

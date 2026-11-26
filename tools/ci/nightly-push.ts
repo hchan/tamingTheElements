@@ -1,5 +1,5 @@
 /**
- * Clean-night push (the 01:00 `nightly-fix.ts collect-and-fix` job): when the collected 23:00 full e2e is green, or red only with
+ * Clean-night push (the 02:00 `nightly-fix.ts collect-and-fix` job): when the collected 23:00 full e2e is green, or red only with
  * known-red tests (tools/ci/known-red.json), push the tested commit to origin/main with a plain push (never forced, never another
  * branch). Sha-based: the main checkout (its branch, a dirty tree) is never read or touched. Preconditions, `cleanPushBlockers`
  * (pure): origin/main (fetched) is an ancestor of the commit the full run tested (`st.sha`), that commit is an ancestor of main (main
@@ -117,7 +117,7 @@ export function dispatchPages(d: Pick<PushDeps, 'env' | 'repo' | 'run' | 'out'>)
   return dispatched;
 }
 
-/** The nightly worktree the 23:00 submit checks out (nightly-e2e.ts WT_REL); the 01:00 gate runs here. */
+/** The nightly worktree the 23:00 submit checks out (nightly-e2e.ts WT_REL); the 02:00 gate runs here. */
 export const NIGHTLY_WT_REL = join('.scratch', 'nightly-wt');
 export const gateLogPath = (dir: string): string => join(dir, 'nightly-push-gate.log');
 
