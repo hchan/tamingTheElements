@@ -1,7 +1,9 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
+
+Done 2026-11-26: seven fx installed via the per-hero table (nykra kelpLash, glimmaw abyssFlash, durrok bristleStomp, hyalia bellPulse/bellPulseLoop/stingingFilament, ouroth scorchBreath); hoofCrash stays shipped. Provenance under `tools/assets/fx-gen/provenance/<hero>-fx/`.
 
 # Integrate approved Nykra fx via the per-hero installer table
 
