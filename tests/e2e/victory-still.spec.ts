@@ -83,3 +83,30 @@ for (const hero of ['fiara', 'cyclonius', 'wispera', 'lavax', 'morblass', 'echo'
   }
   expect(errors).toEqual([]);
 });
+
+// Originals' stills (victory: curomo, wispera; KO: sindarosa, curomo): released heroes, the flag is kept for parity with the loops above.
+// Long gate (no @smoke): a real two-round fight, about 20 s each.
+const ORIGINALS: Array<['victory' | 'ko', string]> = [['victory', 'curomo'], ['victory', 'wispera'], ['ko', 'sindarosa'], ['ko', 'curomo']];
+for (const [kind, hero] of ORIGINALS) test(`${hero} ${kind === 'victory' ? 'wins' : 'loses'} the match: its original ${kind} still shows on the results screen`, async ({ page }) => {
+  const errors = collectErrors(page);
+  const requests: string[] = [];
+  page.on('request', (r) => { if (r.url().includes(`/assets/img/${kind}/`)) requests.push(r.url()); });
+  await page.goto(`${START}&ff=arcade,roster24#arcade`);
+  await page.getByLabel('Your race').selectOption(kind === 'victory' ? hero : 'fiara');
+  await page.getByLabel('AI race').selectOption(kind === 'victory' ? 'fiara' : hero);
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await waitFor(page, 'arena ready', ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(91)`);
+  for (let round = 0; round < 2; round++) {
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 300, 360, 0); a.place(f.id, 540, 360, 4); a.setMeter(0, 1000); a.setHp(f.id, 1); a.step(1, [${String(SUPER)}, 0]); a.step(${String(ROUND)}); })()`);
+  }
+  await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
+  await expect(page.locator(`#arcadeResults ${kind === 'victory' ? '.matchEndStill' : '.matchEndKoStill'}`)).toHaveAttribute('data-hero', hero);
+  expect(requests.length).toBe(1);
+  await test.info().attach(`${hero}-${kind}`, { body: await page.screenshot(), contentType: 'image/png' }); // fetched with the router's test-results
+  if (SHOT_DIR) {
+    mkdirSync(SHOT_DIR, { recursive: true });
+    await page.screenshot({ path: `${SHOT_DIR}/${hero}-${kind}-original.png` });
+  }
+  expect(errors).toEqual([]);
+});

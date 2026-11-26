@@ -109,5 +109,60 @@
   "source": "quarrak_win.png",
   "facing": "right",
   "note": "GPU i2i r1003 seed 100300 d0.45 from a warp (tools/assets/victory-poses/quarrak/warp-init.py, queue.json); art-director APPROVE overall 4; minor swirl on the top shell plates accepted; keyed with flood tolerance 30 (HERO_TOL) to drop the ground-shadow haze"
+ },
+ "curomo_victory": {
+  "approved": "v-curomo_61001_d0.4.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "source": "v-curomo_61001_d0.4.png",
+  "facing": "right",
+  "note": "GPU i2i d0.4 from the baked sprite"
+ },
+ "ishimi_victory": {
+  "approved": "v-ishimi_61001_d0.4.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "source": "v-ishimi_61001_d0.4.png",
+  "facing": "right",
+  "note": "GPU i2i d0.4; static pose accepted, the creature has no limbs"
+ },
+ "sindarosa_victory": {
+  "approved": "v-sindarosa_61001_d0.4.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "source": "v-sindarosa_61001_d0.4.png",
+  "facing": "right",
+  "note": "GPU i2i d0.4; slightly pink/soft, matches the shipped look"
+ },
+ "morblass_victory": {
+  "approved": "v3-morblass_63031_d0.5.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "source": "v3-morblass_63031_d0.5.png",
+  "facing": "right",
+  "note": "GPU i2i d0.5 (round 2); the d0.55 sibling is near-identical, d0.5 is closer to the init"
+ },
+ "wispera_victory": {
+  "approved": "wispera_win.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "source": "wispera_win.png",
+  "facing": "right",
+  "note": "CPU warp tools/assets/victory-gen/w2.py (wispera_a.png); director: core slightly blown out, do not brighten"
  }
 }

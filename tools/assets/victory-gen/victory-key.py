@@ -7,7 +7,7 @@ transparent cut-out (only cropped and scaled). zephra is the CPU-warp still tool
 kept here as the record, they need the private warp workspace and are not rerun by the installer).
 Steps: flood-fill the grey background from the four corners (tolerance 14), erode the matte 1 px and feather it 1 px, crop to the
 body plus a 12 px margin, scale to fit the 320x314 map-portrait box (same scale class as map/glimmawLarge.png and the KO frame).
-quarrak's source is tools/assets/victory-poses/quarrak/quarrak_victory.png (GPU i2i; copied byte for byte to provenance/quarrak_win.png; minor swirl on the top shell plates accepted). No flip (facings are in approval.json). Drawn only behind ?ff=roster24 (src/game/fx/victory-still.ts).
+curomo, ishimi, sindarosa (GPU i2i d0.4 seed 61001) and morblass (i2i d0.5 seed 63031) are the originals' stills (sources copied byte for byte); wispera is the CPU warp w2.py (wispera_a.png, needs the private warp workspace, kept as the record; do not brighten the core). quarrak's source is tools/assets/victory-poses/quarrak/quarrak_victory.png (GPU i2i; copied byte for byte to provenance/quarrak_win.png; minor swirl on the top shell plates accepted). No flip (facings are in approval.json). Drawn only behind ?ff=roster24 (src/game/fx/victory-still.ts).
 Pillow only.
 """
 import sys
@@ -30,6 +30,11 @@ HEROES = {
     "abyssor": "r842-abyssor-vic_61100_d0.4.png",
     "durrok": "durrok_win.png",
     "quarrak": "quarrak_win.png",
+    "curomo": "v-curomo_61001_d0.4.png",
+    "ishimi": "v-ishimi_61001_d0.4.png",
+    "sindarosa": "v-sindarosa_61001_d0.4.png",
+    "morblass": "v3-morblass_63031_d0.5.png",
+    "wispera": "wispera_win.png",
 }
 TOL, MARGIN, BOX = 14, 12, (320, 314)
 KEY = (255, 0, 255)

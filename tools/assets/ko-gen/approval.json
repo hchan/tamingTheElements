@@ -112,5 +112,23 @@
   "score": 4,
   "sha256": "1e404ac7a91929f44a068cb2e51731fc87bcceba5ed2a73000ace1771abc91b0",
   "note": "Source: approved cutout sources/vortigal-ko-cut.png (sources/approval-wave2.json)."
+ },
+ "ko_curomo": {
+  "approved": "approved/originals/curomo_ko.png (ko-originals-rig.py round 2; install-original-ko.py nudges 6 px down)",
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "score": 4,
+  "sha256": "04f60689430071f23c0f841b1e9b258dc9a1571d051ef9417903d25302dde236",
+  "note": "APPROVE 4 (approved/originals/approval.json). Released hero; never had a procedural collapse."
+ },
+ "ko_sindarosa": {
+  "approved": "approved/originals/sindarosa_ko.png (install-original-ko.py, unchanged copy)",
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true,
+  "score": 4,
+  "sha256": "12d3d410c0e0b78fb5e7d304a903f1894ad83a43a04062c14c611a58b93930af",
+  "note": "APPROVE 4 (approved/originals/approval.json). Released hero; never had a procedural collapse."
  }
 }
