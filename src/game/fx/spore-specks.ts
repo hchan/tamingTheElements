@@ -9,7 +9,7 @@ import { SPORE_BOX, SPORE_SPEED } from './umbrel-fx';
  * Math.random): the scatter comes from `hash01`, so a stepped probe shows any frame. Reduced motion keeps the shipped sprite plus a puff.
  */
 /** Coordinator seam: false makes the views use the shipped sprite path exactly as before the procedural burst. */
-export const SPORE_PROCEDURAL = true;
+export const SPORE_PROCEDURAL = false; // art-director round 2 (2026-11-26): 3.5, keep the shipped sprite
 /** The seam as a call, so the false branch in the views is not flagged as dead code. */
 export const sporeProcedural = (on: boolean = SPORE_PROCEDURAL): boolean => on;
 
