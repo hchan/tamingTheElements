@@ -18,4 +18,5 @@ To do: audit every menu screen at 360 px and desktop, decide a simple hierarchy 
 ## Progress (stepwise)
 
 - WP MENU-A (main menu) done: every button has a plain-words subline (data-sub, `aria-describedby`), Online stays the one gold featured entry, Play keeps first focus, Settings and Help are a smaller two-up row; phone landscape stays one row of five without sublines.
-- Remaining: B Versus screen, C Settings, D Help and Play, E Online (after the OnlineClient merge).
+- WP MENU-B (part): Versus has a one-line intro under the heading that follows Who plays ("Two players, same screen ..." vs "Fight the computer ...") and points other-computer play to Online. Option density not yet trimmed.
+- Remaining: B Versus screen (trim options), C Settings, D Help and Play, E Online (after the OnlineClient merge).

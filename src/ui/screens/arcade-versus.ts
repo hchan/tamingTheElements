@@ -245,6 +245,9 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'arcadePick';
   page.append(el('h1', 'heading', 'Versus'));
+  const intro = el('p', 'heroHint', '');
+  intro.id = 'arcadeIntro';
+  page.append(intro);
   const form = el('form', 'settingsForm vsForm');
   const f = form.elements as unknown as Fields;
   const hint = keysFold();
@@ -290,6 +293,9 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const sync = (): void => {
     const { size } = syncFields(form, f);
     hint.hidden = f['mode']?.value !== 'local';
+    intro.textContent = f['mode']?.value === 'local'
+      ? 'Two players, same screen: both of you play on this computer. To play someone on another computer, use Online.'
+      : 'Fight the computer. To play someone on another computer, use Online.';
     teamHint.hidden = size === '1';
     for (const r of refreshers) r();
     roster.refresh();
