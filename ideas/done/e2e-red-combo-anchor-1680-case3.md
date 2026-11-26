@@ -10,4 +10,4 @@ Found 2026-11-19 in the full e2e on the PC (job 20261119-154740-full-b71c2b, 697
 ## Progress
 
 - 2026-11-19: fixed by 6f8c0f29 (merge of 3cc42b15, `obstacleCap` in `src/game/hud/combo-anchor.ts`: the milestone pop is capped so the scaled box keeps the gap to obstacles). Verified on the PC short lane: the spec passed 16/16.
-- The second failure of that full run (`arcade-weather.spec.ts:108`) moved to [e2e-red-arcade-weather-108-reduced-motion](../brainstorm/e2e-red-arcade-weather-108-reduced-motion.md).
+- The second failure of that full run (`arcade-weather.spec.ts:108`) moved to [e2e-red-arcade-weather-108-reduced-motion](./e2e-red-arcade-weather-108-reduced-motion.md).
