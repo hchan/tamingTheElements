@@ -24,6 +24,7 @@
     "e2e:smoke": "tsx tools/ci/e2e-route.ts smoke",
     "e2e": "tsx tools/ci/e2e-route.ts run",
     "pc:probe": "tsx tools/ci/pc-probe.ts",
+    "worktree:prune": "tsx tools/dev/worktree-prune.ts",
     "gpu:submit": "tsx tools/gpu-queue/jobs.ts submit",
     "gpu:status": "tsx tools/gpu-queue/jobs.ts status",
     "gpu:list": "tsx tools/gpu-queue/jobs.ts list",
