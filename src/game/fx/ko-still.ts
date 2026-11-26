@@ -6,8 +6,7 @@ import { cutinFlagOn, heroReleased } from './cutin-gate';
  * `?ff=roster24` in dev/test builds (the cut-in gate). The image is fetched when the screen shows, never preloaded; a failed load keeps
  * the face. The stills are wide, body-only crops (tight bbox), so the card sizes by width and the fade-in is the only motion.
  */
-// Abyssor is held (art-director 2026-11-26: the KO reads as a different monster); re-add after the i2i redo is approved.
-export const KO_STILL_HEROES: ReadonlySet<string> = new Set(['umbrel', 'nykra']);
+export const KO_STILL_HEROES: ReadonlySet<string> = new Set(['umbrel', 'abyssor', 'nykra']);
 
 export const koStillUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/ko/${hero}_ko.png`;
 
