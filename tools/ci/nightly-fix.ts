@@ -22,7 +22,7 @@ import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
   addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, canStartFullRun, canStartRound, canStartVerify, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
-  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, MAX_REAL_REDS, MAX_VERIFY_ROUNDS, mergeSubject, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
+  forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, MAX_REAL_REDS, MAX_VERIFY_ROUNDS, mergeSubject, mergedBranchName, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
   redsVerdict, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage, verifyVerdict,
   type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type LandInput, type RetryOutcome, type VerifyRound,
 } from './nightly-fix-logic';
@@ -89,7 +89,6 @@ function writeFixStatus(d: FixDeps, sha: string, results: FailureResult[], pushe
   const rich = results.map((r) => ({ ...r, tier: tierOf(r.file, r.title), errorTail: errTails.get(`${r.file}\0${r.title}`) ?? [] }));
   const s: FixStatus = {
     schema: 1, state: force ?? finalState(results, pushed), sha, finishedAt: d.now().toISOString(), pushed, results: rich, blockers,
-    ...(!pushed && !extra.integrated && !extra.mergedBranch && keptName && results.some((r) => r.outcome === 'fixed') ? { keptBranch: keptName } : {}),
     ...extra,
   };
   mkdirSync(d.statusDir, { recursive: true });
@@ -140,16 +139,30 @@ export function fix(d: FixDeps, dry: boolean, opts: FixOpts = {}): number {
     if (life.prepared) {
       d.run('git', ['worktree', 'remove', '--force', resolve(d.repo, FIX_WT)], d.repo, d.env);
       const br = life.branch;
-      // After an exception keep the branch whenever it is ahead of the tested commit.
-      if (life.threw && Number(d.run('git', ['rev-list', '--count', `${life.tip || 'origin/main'}..${br}`], d.repo, d.env).stdout.trim() || '0') > 0) life.keep = true;
-      // Unpushed fixes (collateral red, no time, gate failed) stay reachable on a local branch for the human; never overwrite an earlier kept branch.
-      if (life.keep) {
-        const base = `nightly-fix-kept/${br.slice('nightly-fix/'.length)}`;
-        let name = base;
-        for (let n = 2; n < 20 && d.run('git', ['branch', '--list', name], d.repo, d.env).stdout.trim(); n++) name = `${base}-${String(n)}`;
-        d.run('git', ['branch', name, br], d.repo, d.env);
+      const g = (...a: string[]): FixRun => d.run('git', a, d.repo, d.env);
+      const tip = g('rev-parse', '--verify', '-q', `refs/heads/${br}`);
+      const brSha = tip.stdout.trim();
+      // After an exception keep the branch whenever it is ahead of the tested commit; a failed or empty count counts as ahead.
+      const count = (): number => {
+        const r = g('rev-list', '--count', `${life.tip || 'origin/main'}..${br}`);
+        return r.code === 0 && r.stdout.trim() !== '' ? Number(r.stdout.trim()) : Number.NaN;
+      };
+      if (life.threw && !(count() === 0)) life.keep = true;
+      // Delete F only once its commits are provably elsewhere: never on a kept branch that is missing or at another sha.
+      let safe = false;
+      if (tip.code !== 0 || brSha === '') safe = false;
+      else if (life.keep) {
+        // Unpushed fixes (collateral red, no time, gate failed) stay reachable on a local branch for the human; never overwrite an earlier kept branch.
+        const name = mergedBranchName(br.slice('nightly-fix/'.length), (n) => g('branch', '--list', n).stdout.trim() !== '', 'nightly-fix-kept');
+        if (name) {
+          g('branch', name, br);
+          const at = g('rev-parse', '--verify', '-q', `refs/heads/${name}`);
+          safe = at.code === 0 && at.stdout.trim() === brSha;
+        }
+      } else {
+        safe = count() === 0 || g('branch', '--list', 'nightly-fix-merged/*', '--contains', br).stdout.trim() !== '';
       }
-      d.run('git', ['branch', '-D', br], d.repo, d.env);
+      if (safe) g('branch', '-D', br);
     }
     rmSync(lockPath(d.statusDir), { force: true });
   }
@@ -186,7 +199,8 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   for (const f of failures) errTails.set(`${f.file}\0${f.title}`, errorTail(f.message));
   const startMs = opts.startMs ?? d.now().getTime();
   const done = (pushed: boolean, blockers: string[], force?: FixState, extra?: Partial<FixStatus>): number => {
-    writeFixStatus(d, st.sha, results, pushed, blockers, force, extra);
+    // Whenever the fixes stay on a local branch (life.keep), the status names it.
+    writeFixStatus(d, st.sha, results, pushed, blockers, force, { ...(life.keep && keptName ? { keptBranch: keptName } : {}), ...extra });
     return 0;
   };
   if (dry) {
@@ -206,7 +220,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     rmSync(wt, { recursive: true, force: true });
     git(d.repo, 'worktree', 'prune');
     if (git(d.repo, 'worktree', 'add', '-B', br, wt, st.sha).code !== 0) return false;
-    return sh(wt, 'corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline']).code === 0;
+    return sh(wt, 'corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code === 0;
   };
   let seq = 0;
   /** Re-run one spec on the PC (never the Mac) and read its JSON: green = exit 0 and the title ended `passed` (not skipped). */
@@ -298,18 +312,11 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `${st.sha}..${branch}`).stdout.trim() || '0');
   /** One fix pass over `todo` (existing per-failure rounds); returns why it stopped early, or ''. A later result for a spec replaces its earlier one. */
-  const earlierFix = new Set<string>();
   const fixPass = (todo: readonly Failure[]): string => {
     let stopped = '';
     for (const f of todo) {
       const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
         const at = results.findIndex((r) => r.file === f.file && r.title === f.title);
-        // A later cycle's flaky/unfixed/needs-human never erases an earlier fix that is in the verified tree: it becomes a note.
-        if (at >= 0 && outcome !== 'fixed' && results[at]?.outcome !== undefined && earlierFix.has(`${f.file}\0${f.title}`)) {
-          const prev = results[at] as FailureResult;
-          results[at] = { ...prev, reason: redact(`${prev.reason}; later cycle: ${outcome}: ${reason}`).slice(0, 300) };
-          return;
-        }
         if (at >= 0) results.splice(at, 1);
         results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
       };
@@ -414,7 +421,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     rmSync(mergeWt, { recursive: true, force: true });
     git(d.repo, 'worktree', 'prune');
     life.mergePrepared = true;
-    if (git(d.repo, 'worktree', 'add', '--detach', mergeWt, st.sha).code !== 0 || sh(mergeWt, 'corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline']).code !== 0) {
+    if (git(d.repo, 'worktree', 'add', '--detach', mergeWt, st.sha).code !== 0 || sh(mergeWt, 'corepack', ['pnpm', 'install', '--frozen-lockfile', '--prefer-offline'], capTimeout(GATE_TIMEOUT_MS, startMs, d.now())).code !== 0) {
       blockers.push('could not prepare the merge worktree');
       break;
     }
@@ -498,6 +505,13 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       }
       d.out(`nightly:fix: collateral full run has no new reds (${String(v.remaining.length)} still open)\n`);
     }
+    // What was tested must be exactly M: the worktree is still at M and nothing was written into it (gate, install or re-run).
+    const headNow = git(mergeWt, 'rev-parse', 'HEAD');
+    const dirty = git(mergeWt, 'status', '--porcelain', '--untracked-files=all');
+    if (headNow.code !== 0 || headNow.stdout.trim() !== M || dirty.code !== 0 || dirty.stdout.trim() !== '') {
+      blockers.push('the merge worktree changed while verifying (HEAD moved or files were written); not integrating');
+      break;
+    }
     verified = { M, changed };
     break;
   }
@@ -516,24 +530,28 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   // The merge and fix worktrees go before integration so the fix branch can be deleted once it is in M.
   git(d.repo, 'worktree', 'remove', '--force', mergeWt);
   git(d.repo, 'worktree', 'remove', '--force', fixWt);
-  const ig = integrateMain(d, M, st.sha, stamp, startMs);
-  const integrated = ig.how !== 'refused';
+  // A visual change is never integrated: main would carry it and the next clean-night push could push it unseen. M stays on its own branch.
+  const hold = visual.length > 0;
+  const ig = hold ? undefined : integrateMain(d, M, st.sha, stamp, startMs);
+  const integrated = ig !== undefined && ig.how !== 'refused';
   let pushed = false;
+  let onOrigin = false;
   const notes: string[] = [...blockers];
-  if (integrated) {
+  if (hold) notes.push(`visual change (${visual.slice(0, 3).join(', ')}): not merged into local main, not pushed; a human looks first`);
+  else if (ig && integrated) {
     notes.push(...ig.postFailures.map((p) => `post-integration check: ${p}`));
     if (partial) notes.push('partial night (not every real red is fixed): merged into local main, not pushed');
-    else if (visual.length) notes.push(`visual change (${visual.slice(0, 3).join(', ')}): merged into local main, not pushed; a human looks first`);
     else if (ig.postFailures.length === 0) {
       const pr = pushMerged(d, M, startMs, { sameSpecsGreen: true, gateCommitOk: true, collateralOk: true, mergeOk: true });
       pushed = pr.pushed;
+      onOrigin = pr.alreadyOnOrigin;
       if (!pr.pushed && !pr.alreadyOnOrigin) notes.push(...pr.blockers);
     }
-  } else notes.push(...ig.refusals.map((r) => `integration refused: ${r}`));
+  } else if (ig) notes.push(...ig.refusals.map((r) => `integration refused: ${r}`));
   const kept = keepMerged(d, M, st.sha, stamp, [branch]);
   if (kept.error) notes.push(kept.error);
   life.keep = kept.error !== undefined; // a failed keep leaves F in place: keep it on the kept branch too
-  return done(pushed, notes, forced, { ...extra, mergeSha: M, integrated, ...(pushed ? { pushedSha: M } : {}), ...(!integrated && kept.branch ? { mergedBranch: kept.branch } : {}) });
+  return done(pushed, notes, forced, { ...extra, mergeSha: M, integrated, ...(pushed || onOrigin ? { pushedSha: M } : {}), ...(!integrated && kept.branch ? { mergedBranch: kept.branch } : {}) });
 }
 
 /** Image, style or snapshot changes: landed locally, never pushed unseen. */
@@ -584,6 +602,10 @@ export function main(argv: readonly string[], d: FixDeps): number {
       const v = nightVerdict(st);
       if (st && (v === 'green' || v === 'known-red') && statusUsable(st, d.now().getTime(), notBefore)) return pushCleanNight(d, st, start.getTime());
       return fix(d, false, { notBefore, startMs: start.getTime(), lockHeld: true });
+    } catch (e) {
+      const st = readStatus(d.statusDir);
+      writeFixStatus(d, st?.sha ?? '', [], false, [`error: ${redact(e instanceof Error ? e.message : String(e)).slice(0, 300)}`], 'needs-human');
+      return 1;
     } finally {
       rmSync(lockPath(d.statusDir), { force: true });
     }

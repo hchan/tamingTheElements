@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { readStatus } from '../../tools/ci/nightly-e2e';
 import { fix, main, report, type FixDeps, type FixRun } from '../../tools/ci/nightly-fix';
 import {
   addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, collectUnfinished, deadlineFor, deadlineReached, DENIED_TOOLS, noPushEnv,
@@ -367,7 +368,7 @@ describe('nightly-fix command (fake runner)', () => {
     mkdirSync(join(dir, 'gate'), { recursive: true });
     writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(red));
   };
-  const status = (): { state: string; pushed: boolean; blockers: string[]; results: { outcome: string; reason: string }[]; integrated?: boolean; mergeSha?: string; pushedSha?: string; mergedBranch?: string } =>
+  const status = (): { state: string; pushed: boolean; blockers: string[]; results: { outcome: string; reason: string }[]; integrated?: boolean; mergeSha?: string; pushedSha?: string; mergedBranch?: string; keptBranch?: string } =>
     JSON.parse(readFileSync(join(dir, 'gate', 'nightly-fix-status.json'), 'utf8')) as ReturnType<typeof status>;
   const lockSeen: boolean[] = [];
   let classifies: string[] = [];
@@ -465,7 +466,7 @@ describe('nightly-fix command (fake runner)', () => {
           case 'worktree':
             return git[1] === 'list' ? ok(`worktree ${join(dir, 'repo')}\nHEAD ${BASE}\nbranch refs/heads/main\n`) : ok();
           case 'status':
-            return ok(sc.dirtyMain ? ' M src/x.ts\n' : '');
+            return ok(sc.dirtyMain && !cwd.includes('nightly-fix-merge') ? ' M src/x.ts\n' : '');
           case 'merge-tree':
             return ok(`${TREE}\n`);
           case 'merge-base':
@@ -664,6 +665,7 @@ describe('nightly-fix command (fake runner)', () => {
     expect(pushes()).toEqual([]);
     expect(status().blockers.join(' ')).toContain('verify red after 3 rounds');
     expect(kept()).toBe(true);
+    expect(status().keptBranch).toBe('nightly-fix-kept/2026-11-20');
     expect(calls.some((c) => c.includes('gate:commit'))).toBe(false);
     expect(status().results.some((r) => r.outcome === 'fixed')).toBe(false);
   });
@@ -681,11 +683,84 @@ describe('nightly-fix command (fake runner)', () => {
     expect(status()).toMatchObject({ pushed: false, mergeSha: MERGED, mergedBranch: expect.stringContaining('nightly-fix-merged/') as string });
     expect(calls.some((c) => c.startsWith(`git branch nightly-fix-merged/`) && c.endsWith(` ${MERGED}`))).toBe(true);
   });
-  it('a visual change is merged into local main but never pushed', () => {
+  it('a visual change is never integrated into local main: main is unmoved, no push, M kept on its own branch', () => {
     go({ mergedNames: 'tests/e2e/menu.spec.ts-snapshots/a.png\0' });
     expect(pushes()).toEqual([]);
-    expect(status()).toMatchObject({ integrated: true, pushed: false });
+    expect(calls.some((c) => c.includes('merge --ff-only') || (c.includes('merge --no-ff') && c.includes('--no-edit')))).toBe(false);
+    expect(status()).toMatchObject({ integrated: false, pushed: false, mergeSha: MERGED, mergedBranch: expect.stringContaining('nightly-fix-merged/') as string });
     expect(status().blockers.join(' ')).toContain('visual change');
+    expect(calls.some((c) => c.startsWith('git branch nightly-fix-merged/') && c.endsWith(` ${MERGED}`))).toBe(true);
+  });
+  it('a push that finds M already on origin is recorded as landed', () => {
+    const d = deps();
+    writeRed();
+    const run: FixDeps['run'] = (cmd, args, cwd, env) => {
+      if (cmd === 'git' && args[0] === 'merge-base' && args[2] === MERGED && args[3] === 'refs/remotes/origin/main') return { code: 0, stdout: '', stderr: '' };
+      return d.run(cmd, args, cwd, env);
+    };
+    expect(fix({ ...d, run }, false)).toBe(0);
+    expect(pushes()).toEqual([]);
+    expect(status().pushedSha).toBe(MERGED);
+    const st = JSON.parse(readFileSync(join(dir, 'gate', 'nightly-fix-status.json'), 'utf8')) as FixStatus;
+    expect(morningReport({ status: readStatus(join(dir, 'gate')), fix: st, push: undefined, nowMs: NOON().getTime() })[0]).toBe(`PUSHED ${MERGED.slice(0, 7)} to origin/main`);
+  });
+  it('the merge worktree must still be at M and clean before M is integrated', () => {
+    const d = deps();
+    writeRed();
+    const run: FixDeps['run'] = (cmd, args, cwd, env) => {
+      if (cmd === 'git' && args[0] === 'status' && cwd.includes('nightly-fix-merge')) return { code: 0, stdout: '?? junk.txt\n', stderr: '' };
+      return d.run(cmd, args, cwd, env);
+    };
+    expect(fix({ ...d, run }, false)).toBe(0);
+    expect(pushes()).toEqual([]);
+    expect(calls.some((c) => c.includes('merge --ff-only'))).toBe(false);
+    expect(status().blockers.join(' ')).toContain('merge worktree changed');
+  });
+  it('pnpm install in both worktrees carries a timeout', () => {
+    writeRed();
+    const d = deps();
+    const timeouts: (number | undefined)[] = [];
+    const run: FixDeps['run'] = (cmd, args, cwd, env, t) => {
+      if (cmd === 'corepack' && args[1] === 'install') timeouts.push(t);
+      return d.run(cmd, args, cwd, env, t);
+    };
+    fix({ ...d, run }, false);
+    expect(timeouts.length).toBeGreaterThanOrEqual(2);
+    expect(timeouts.every((t) => typeof t === 'number' && t > 0)).toBe(true);
+  });
+  it('F is never deleted when the kept branch could not be created or sits at another sha', () => {
+    for (const mode of ['missing', 'other']) {
+      calls = [];
+      writeRed();
+      const d = deps({ gate: 1 });
+      const run: FixDeps['run'] = (cmd, args, cwd, env, t) => {
+        if (cmd === 'git' && args[0] === 'branch' && args[1]?.startsWith('nightly-fix-kept/')) {
+          calls.push(`git ${args.join(' ')}`);
+          return mode === 'missing' ? { code: 128, stdout: '', stderr: 'no' } : { code: 0, stdout: '', stderr: '' };
+        }
+        if (cmd === 'git' && args[0] === 'rev-parse' && args.some((a) => a.startsWith('refs/heads/nightly-fix-kept/'))) return mode === 'missing' ? { code: 1, stdout: '', stderr: '' } : { code: 0, stdout: `${MOVED}\n`, stderr: '' };
+        return d.run(cmd, args, cwd, env, t);
+      };
+      rmSync(join(dir, 'gate', 'nightly-fix-status.json'), { force: true });
+      fix({ ...d, run }, false);
+      expect(kept(), mode).toBe(true);
+      expect(calls.some((c) => c.startsWith('git branch -D nightly-fix/2026-11-20')), mode).toBe(false);
+    }
+  });
+  it('an exception with an unreadable rev-list count keeps the branch (never deleted blind)', () => {
+    writeRed();
+    const d = deps();
+    let thrown = false;
+    const run: FixDeps['run'] = (cmd, args, cwd, env, t) => {
+      if (cmd === 'corepack' && args.join(' ').includes('gate:commit')) {
+        thrown = true;
+        throw new Error('boom');
+      }
+      if (thrown && cmd === 'git' && args[0] === 'rev-list') return { code: 128, stdout: '', stderr: 'bad' };
+      return d.run(cmd, args, cwd, env, t);
+    };
+    expect(fix({ ...d, run }, false)).toBe(1);
+    expect(kept()).toBe(true);
   });
   it('an existing kept branch is never overwritten', () => {
     go({ gate: 1, keptExists: true });
@@ -716,6 +791,7 @@ describe('nightly-fix command (fake runner)', () => {
     expect(calls.some((c) => c.includes('gate:commit'))).toBe(false);
     expect(status().blockers.join(' ')).toContain('not enough time');
     expect(kept()).toBe(true);
+    expect(status().keptBranch).toBe('nightly-fix-kept/2026-11-20');
   });
   it('past the hard stop: no round starts at all', () => {
     go({ clock: new Date(2026, 10, 20, 6, 50, 0) });
@@ -898,6 +974,18 @@ describe('nightly-fix command (fake runner)', () => {
     });
   });
 
+  describe('collect-and-fix exception', () => {
+    it('an exception in collect writes a needs-human status with a redacted error and returns 1', () => {
+      const d = deps();
+      mkdirSync(join(dir, 'gate'), { recursive: true });
+      writeFileSync(join(dir, 'gate', 'nightly-status.json'), JSON.stringify(pendingStatus(SHA, 'raw-1', 's')));
+      expect(main(['collect-and-fix'], { ...d, run: () => { throw new Error('boom from /Users/bob/x'); } })).toBe(1);
+      expect(status().state).toBe('needs-human');
+      expect(status().blockers.join(' ')).not.toContain('/Users/bob');
+      expect(existsSync(join(dir, 'gate', 'nightly-fix.lock'))).toBe(false);
+    });
+  });
+
   describe('09:00 morning report', () => {
     it('writes a read-only report from the nightly and fix status, and notes a live lock', () => {
       writeRed();
@@ -916,6 +1004,18 @@ describe('nightly-fix command (fake runner)', () => {
 });
 
 describe('one-screen morning report (pure render)', () => {
+  it('ignores push and fix statuses from another sha (stale files)', () => {
+    const S = 'a'.repeat(40);
+    const OLD = 'b'.repeat(40);
+    const night = finishStatus(pendingStatus(S, 'r', 's'), 1, { passed: 5, failed: [{ file: 'menu.spec.ts', title: 'opens' }], flaky: [] }, [], 'f', 'PC');
+    const stalePush: PushStatus = { schema: 1, verdict: 'green', sha: OLD, pushed: true, blockers: [], untestedLocal: 0, finishedAt: 't' };
+    const staleFix: FixStatus = { schema: 1, state: 'fixed-pushed', sha: OLD, finishedAt: 't', pushed: true, results: [], blockers: [], pushedSha: OLD };
+    const t = morningReport({ status: night, fix: staleFix, push: stalePush, nowMs: Date.now() });
+    expect(t[0]).toMatch(/^NOT PUSHED/);
+    expect(t.join('\n')).not.toContain('bbbbbbb');
+    const same = morningReport({ status: night, fix: { ...staleFix, sha: S, pushedSha: S }, push: undefined, nowMs: Date.now() });
+    expect(same[0]).toBe('PUSHED aaaaaaa to origin/main');
+  });
   const SHA = 'a'.repeat(40);
   const night = (failed: { file: string; title: string }[]) => finishStatus(pendingStatus(SHA, 'r', 's'), 1, { passed: 5, failed, flaky: [] }, [], 'f', 'PC');
   const fix = (state: FixStatus['state'], pushed: boolean, results: FixStatus['results'], extra: Partial<FixStatus> = {}): FixStatus => ({ schema: 1, state, sha: SHA, finishedAt: '2026-11-25T03:00:00.000Z', pushed, results, blockers: [], ...extra });

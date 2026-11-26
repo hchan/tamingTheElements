@@ -1,5 +1,5 @@
 /**
- * Landing of verified nightly fixes (WP3c; plan: .scratch/plans/nightly-wp3-push-path.md sections 3-4). Not wired into nightly-fix.ts yet.
+ * Landing of verified nightly fixes (WP3c; plan: .scratch/plans/nightly-wp3-push-path.md sections 3-4). Used by nightly-fix.ts (verify loop, integrate, push).
  * `integrateMain` merges the verified merge commit M (built on the tested sha T) into the local main checkout without ever touching a
  * dirty tree: it refuses (writing nothing) on any `integrationRefusals` reason, predicts conflicts with `merge-tree`, merges with
  * explicit flags (`--ff-only`, or `--no-ff --no-edit`, both `--no-autostash --no-overwrite-ignore`), aborts only a merge it started
