@@ -15,3 +15,7 @@ Built, awaiting art-director review (status stays `idea`). `src/game/fx/spore-sp
 ## Progress (2026-11-26, round 2, builder)
 
 Art-director REVISE 2.5 applied: normal blend only, weighted palette (olive 40, ochre 30, loam 20, bright ochre 10), 26 specks, radius 6-14 (most 7-10), 1 px rim, alpha 0.9 holding then easing out over 30-40 ticks, thrown 40-90 px with gravity 0.05. The cream blob was the defence view trail dots (team colour with a white core) behind the projectile: now skipped for the procedural spore. Seam `SPORE_PROCEDURAL` in spore-specks.ts (false = shipped sprite path as before). Shots: `.scratch/sporeburst2/umbrel-spore-r2-t{10,20,30,45,60}.png` in the builder worktree. Status stays `idea` until the director approves.
+
+## Round 2 verdict (art-director, 2026-11-26): PARKED, SPORE_PROCEDURAL = false, shipped sprite stays
+
+Round 2 scored 3.5 (colour and cream blob fixed, but: flat hard-edged discs read as vector bubbles, cramped clump ~100 px wide that never fans out, low contrast on the busy floor; does not beat the shipped soft textured puff). Rule 13: no more rounds of this method. The seam `SPORE_PROCEDURAL` in `src/game/fx/spore-specks.ts` is now false (shipped sprite and trail behave as before; the code stays for a later method). If revisited, change the method: enlarge and regrade the shipped puff, or a soft textured particle atlas (CC0 smoke/dust, credits recorded) tinted olive/ochre, throw 120-180 px, fade 40+ ticks, no flat vector discs.

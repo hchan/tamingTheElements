@@ -11,7 +11,7 @@ const all = (): ReturnType<typeof sporeSpecks>[] => Array.from({ length: SPORE_V
 describe('spore specks (round 2)', () => {
   it('has 26 specks and the procedural seam is on', () => {
     expect(SPECK_COUNT).toBe(26);
-    expect(SPORE_PROCEDURAL).toBe(true);
+    expect(SPORE_PROCEDURAL).toBe(false);
     const peak = Math.max(...all().map((f) => f.length));
     expect(peak).toBeLessThanOrEqual(SPECK_COUNT);
     expect(peak).toBeGreaterThanOrEqual(16);
