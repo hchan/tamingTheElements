@@ -2,6 +2,9 @@
  * Lane stagger for the floating call-outs over a fighter (qa-r29: ROOTED, FREE, COUNTER, HEAL, SNAG and the damage numbers
  * all started on the same spot and read as one smear). A new pop takes the lowest lane no live pop near it occupies. Pure.
  */
+import { EntityFlag } from '@core/index';
+import { chipRect, tagPill } from '../hud/slim-hud';
+
 export const POP_LANE_PX = 22;
 /** Two pops are "near" when their anchors are within this box (px). */
 export const POP_NEAR_X = 110;
@@ -87,4 +90,46 @@ export function clearOfChips(rects: readonly (readonly RectLike[])[] | undefined
     if (!moved) break;
   }
   return top;
+}
+
+/**
+ * HUD rects the bench row takes under the scrim (the tag pill and one portrait per benched hero, bars included), so a call-out
+ * pinned at the ceiling clears them (the callout-pop-limits "slid under the TAG portrait" shot). `benchOf[team]` is the bench size;
+ * `out` (one array per team) is refilled and returned, so a caller can reuse it.
+ */
+export function benchRects(benchOf: readonly number[], out: { x: number; y: number; w: number; h: number }[][] = [[], []]): { x: number; y: number; w: number; h: number }[][] {
+  for (let team = 0; team < 2; team++) {
+    const list = out[team] ?? (out[team] = []);
+    list.length = 0;
+    const n = benchOf[team] ?? 0;
+    if (n <= 0) continue;
+    const pill = tagPill(team);
+    const first = chipRect(team, 0);
+    const last = chipRect(team, n - 1);
+    const x0 = Math.min(pill.x, first.x, last.x);
+    const x1 = Math.max(pill.x + pill.w, first.x + first.size, last.x + last.size);
+    list.push({ x: x0, y: first.y, w: x1 - x0, h: pill.barY + 8 - first.y });
+  }
+  return out;
+}
+
+/** Bench obstacles kept between frames: `refresh` recounts the benched heroes per team through `each` (view.forEachCharacter), `ceil` is `popCeil` over them. */
+export function createBench(): {
+  refresh(each: (cb: (c: { team: number; flags: number }) => void) => void): void;
+  ceil(x0: number, x1: number): number;
+} {
+  const benchOf = [0, 0];
+  const rects = benchRects(benchOf);
+  const count = (c: { team: number; flags: number }): void => {
+    if (c.team < 2 && (c.flags & EntityFlag.benched) !== 0) benchOf[c.team] = (benchOf[c.team] ?? 0) + 1;
+  };
+  return {
+    refresh(each): void {
+      benchOf[0] = 0;
+      benchOf[1] = 0;
+      each(count);
+      benchRects(benchOf, rects);
+    },
+    ceil: (x0, x1) => popCeil(rects, x0, x1),
+  };
 }

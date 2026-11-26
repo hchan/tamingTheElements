@@ -3,7 +3,7 @@ import { arcadeHeroScale, drawnBox, fitToBox, visualBox } from '../views/hero-sc
 import { EntityFlag, arcadePlayfield, GUARD_MAX, SimEventKind, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
-import { POP_NEAR_X, POP_NEAR_Y, POP_NUMBER_CLEAR_PX, popCeil, popLaneLift, type LivePop } from './pop-lanes';
+import { createBench, POP_NEAR_X, POP_NEAR_Y, POP_NUMBER_CLEAR_PX, popCeil, popLaneLift, type LivePop } from './pop-lanes';
 import { type Box, clearAbove, dropBelow, easeTo, easeUp, overlapsAny, slideClear } from './defence-callouts';
 import { mountClashView } from './clash-view';
 import { styleCombatText } from '../hud/combat-text';
@@ -469,12 +469,11 @@ export function mountDefenceView(
       highContrast = p.highContrast;
     }
   };
-
+  const bench = createBench(); // the bench row under the scrim is a ceiling obstacle too
   // World y of the lowest line a call-out centred on cx may reach: the HUD ceiling (scrim and chips) mapped back to the world.
   const ceilAt = (cx: number, halfW: number): number => {
     const hx = projectToHud(cx, 0, camView, hudView, hudPt).x;
-    const ceil = popCeil(chips, hx - halfW / s, hx + halfW / s);
-    return projectToHud(hx, ceil, hudView, camView, hudPt).y;
+    return projectToHud(hx, Math.max(popCeil(chips, hx - halfW / s, hx + halfW / s), bench.ceil(hx - halfW / s, hx + halfW / s)), hudView, camView, hudPt).y;
   };
 
   /**
@@ -503,6 +502,7 @@ export function mountDefenceView(
       xLo = camView.x + NUMBER_MARGIN * s;
       xHi = camView.x + camView.w - NUMBER_MARGIN * s;
       chips = reg?.get(CHIP_RECTS_KEY) as (readonly (readonly HudRect[])[]) | undefined;
+      bench.refresh((cb) => { view.forEachCharacter(cb); });
     }
     const clampX = (x: number, hw: number): number => (proj ? Math.min(Math.max(x, xLo + hw), xHi - hw) : x);
     let nObst = pops.length;
