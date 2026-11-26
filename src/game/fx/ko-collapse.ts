@@ -1,10 +1,13 @@
 import { cutinFlagOn, heroReleased } from './cutin-gate';
+import { type KoParticleKind, koParticles, particleEl } from './ko-collapse-particles';
+
+export { koParticles };
 
 /**
  * Procedural KO for the Versus result screen (art-director spec; rig-only stills failed review): the loser's upright Large portrait
  * (public/assets/img/map/<hero>Large.png) collapses at its base instead of swapping to a still. Fiara burns down (scaleY about 0.5,
  * dark ember tint, a few rising embers); Cyclonius settles into a spent heap (scaleY 0.55, scaleX 1.25, alpha 0.6, grey-blue, no
- * spin, base dust). Render only (Web Animations on the DOM, no sim state, no Math.random); released heroes always, else behind
+ * spin, base dust); Wispera fizzles and sparks out, Lavax cools to ash, Morblass splashes then pools. Render only (Web Animations on the DOM, no sim state, no Math.random); released heroes always, else behind
  * `?ff=roster24` in dev/test builds. The portrait is fetched when the screen shows; a failed load keeps the face.
  */
 export interface KoCollapseSpec {
@@ -14,8 +17,10 @@ export interface KoCollapseSpec {
   /** CSS filter at the end state (the DOM equivalent of the Phaser tint). */
   readonly filter: string;
   readonly ms: number;
-  /** Particles: rising embers or base dust. */
-  readonly particle: 'ember' | 'dust';
+  /** Optional middle frame (offset `at`, 0..1) before the end state, e.g. a splash that rises before the puddle. */
+  readonly mid?: { readonly at: number; readonly scaleX: number; readonly scaleY: number; readonly alpha: number };
+  /** Particles: rising embers, base dust, sparks, ash flakes or splash droplets. */
+  readonly particle: KoParticleKind;
   readonly count: number;
   readonly color: string;
 }
@@ -23,14 +28,20 @@ export interface KoCollapseSpec {
 export const KO_COLLAPSE: Readonly<Record<string, KoCollapseSpec>> = {
   fiara: { scaleX: 1, scaleY: 0.5, alpha: 1, filter: 'brightness(0.6) sepia(1) saturate(2.2) hue-rotate(-18deg)', ms: 900, particle: 'ember', count: 9, color: '#ff8a2a' },
   cyclonius: { scaleX: 1.25, scaleY: 0.55, alpha: 0.6, filter: 'grayscale(0.55) sepia(0.25) hue-rotate(180deg) brightness(0.85)', ms: 900, particle: 'dust', count: 7, color: '#8899aa' },
+  // Wispera: the orb flickers, shrinks and sparks out (the mid dip is the fizzle). Lavax: cools to grey ash and slumps. Morblass: a splash up, then a wide puddle.
+  wispera: { scaleX: 0.7, scaleY: 0.35, alpha: 0.35, filter: 'brightness(0.55) saturate(0.6)', ms: 1000, mid: { at: 0.35, scaleX: 0.95, scaleY: 0.9, alpha: 0.7 }, particle: 'spark', count: 12, color: '#bfe8ff' },
+  lavax: { scaleX: 1.05, scaleY: 0.6, alpha: 0.9, filter: 'grayscale(0.95) brightness(0.55) contrast(0.9)', ms: 1400, particle: 'ash', count: 10, color: '#6e6a66' },
+  morblass: { scaleX: 1.5, scaleY: 0.25, alpha: 0.75, filter: 'brightness(0.8) saturate(0.9)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#4aa3d8' },
 };
+
+/** Legacy heroes are always released, so no flag gates them; later roster24 slugs added to the table are gated like the other fx. */
+export const KO_COLLAPSE_LEGACY: ReadonlySet<string> = new Set(['fiara', 'cyclonius', 'wispera', 'lavax', 'morblass']);
 
 export const koCollapseUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/map/${hero}Large.png`;
 
 /** The spec when `hero` lost (`lost`) and is released or the flag is on, else null. */
 export function koCollapseFor(hero: string, lost: boolean, search: string, devBuild: boolean): KoCollapseSpec | null {
-  // Fiara and Cyclonius are legacy heroes (always released), so no flag is needed; a roster24 slug added later is gated like the other fx.
-  const legacy = hero === 'fiara' || hero === 'cyclonius';
+  const legacy = KO_COLLAPSE_LEGACY.has(hero);
   return lost && Object.hasOwn(KO_COLLAPSE, hero) && (legacy || heroReleased(hero) || cutinFlagOn(search, devBuild)) ? (KO_COLLAPSE[hero] ?? null) : null;
 }
 
@@ -39,43 +50,9 @@ export function koCollapseFrames(spec: KoCollapseSpec, reduced: boolean): Keyfra
   const end = { transform: `scale(${String(spec.scaleX)}, ${String(spec.scaleY)})`, filter: spec.filter, opacity: spec.alpha };
   const from = { transform: 'scale(1, 1)', filter: 'none', opacity: 1 };
   if (reduced) return [{ ...end, offset: 0 }, { ...end, offset: 1 }];
-  return [{ ...from, offset: 0 }, { ...end, offset: 1 }];
-}
-
-export interface Particle { readonly x: number; readonly dx: number; readonly dy: number; readonly size: number; readonly delay: number }
-
-/** Deterministic particle layout (index hash, no randomness): x in percent of the width, drift and rise in px. */
-export function koParticles(spec: KoCollapseSpec): Particle[] {
-  const out: Particle[] = [];
-  for (let i = 0; i < spec.count; i++) {
-    const h = Math.imul(i + 1, 2654435761) >>> 0;
-    const a = (h >>> 8) % 100;
-    const b = (h >>> 16) % 100;
-    const ember = spec.particle === 'ember';
-    out.push({
-      x: 20 + Math.floor(a * 0.6),
-      dx: ember ? Math.floor(b / 2) - 25 : (a < 50 ? -1 : 1) * (10 + Math.floor(b / 3)),
-      dy: ember ? -(50 + b) : -(6 + Math.floor(b / 8)),
-      size: ember ? 3 + (b % 3) : 8 + (b % 8),
-      delay: i * (ember ? 90 : 60),
-    });
-  }
-  return out;
-}
-
-function particleEl(spec: KoCollapseSpec, p: Particle): HTMLElement {
-  const d = document.createElement('i');
-  d.className = 'matchEndKoParticle';
-  d.style.cssText = `position:absolute;bottom:0;left:${String(p.x)}%;width:${String(p.size)}px;height:${String(p.size)}px;border-radius:50%;background:${spec.color};opacity:0;pointer-events:none;${spec.particle === 'ember' ? `box-shadow:0 0 6px ${spec.color};` : 'filter:blur(3px);'}`;
-  d.animate(
-    [
-      { transform: 'translate(0, 0)', opacity: 0 },
-      { transform: `translate(${String(p.dx / 2)}px, ${String(p.dy / 2)}px)`, opacity: spec.particle === 'ember' ? 1 : 0.5, offset: 0.4 },
-      { transform: `translate(${String(p.dx)}px, ${String(p.dy)}px)`, opacity: 0 },
-    ],
-    { duration: spec.ms + 400, delay: p.delay, easing: 'ease-out', fill: 'backwards' },
-  );
-  return d;
+  const m = spec.mid;
+  const mid = m ? [{ transform: `scale(${String(m.scaleX)}, ${String(m.scaleY)})`, filter: spec.filter, opacity: m.alpha, offset: m.at }] : [];
+  return [{ ...from, offset: 0 }, ...mid, { ...end, offset: 1 }];
 }
 
 /** Swaps the loser card's face for the collapsing portrait once it has loaded. `side` 'main' = `.matchEndMain`, 'side' = `.matchEndSide`. */

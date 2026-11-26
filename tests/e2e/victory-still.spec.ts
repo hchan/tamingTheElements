@@ -60,9 +60,9 @@ for (const hero of ['umbrel', 'abyssor', 'nykra', 'glimmaw', 'quarrak', 'ouroth'
   expect(errors).toEqual([]);
 });
 
-// Procedural KO collapse (src/game/fx/ko-collapse.ts): Fiara and Cyclonius lose and the Large portrait collapses at its base.
+// Procedural KO collapse (src/game/fx/ko-collapse.ts): Fiara, Cyclonius, Wispera, Lavax and Morblass lose and the Large portrait collapses at its base.
 // Long gate: a real two-round fight, about 20 s each. SHOT_DIR saves the headless screenshot.
-for (const hero of ['fiara', 'cyclonius']) test(`${hero} loses the match: its portrait collapses on the results screen`, async ({ page }) => {
+for (const hero of ['fiara', 'cyclonius', 'wispera', 'lavax', 'morblass']) test(`${hero} loses the match: its portrait collapses on the results screen`, async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto(`${START}&ff=arcade,roster24#arcade`);
   await page.getByLabel('Your race').selectOption(hero === 'fiara' ? 'glimmaw' : 'fiara');
