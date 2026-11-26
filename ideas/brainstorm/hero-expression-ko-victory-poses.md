@@ -25,3 +25,8 @@ Art-director approved echo 49060 and wispera 49073 (my variants; its own prompts
 
 ## Progress note 2026-11-26 (procedural KO collapse)
 Rig-only stills failed the art-director (Fiara REVISE, Cyclonius REJECT), so Fiara and Cyclonius lose via a procedural DOM collapse of their Large portrait on the Versus result screen: `src/game/fx/ko-collapse.ts` (parameter table `KO_COLLAPSE`, `ko-collapse.test.ts`, e2e in `tests/e2e/victory-still.spec.ts`, shots in `.scratch/ko-collapse/`). Render only, no SIM_VERSION bump. Fiara: scaleY 0.5, ember tint, rising embers. Cyclonius: scaleX 1.25, scaleY 0.55, alpha 0.6, grey-blue, base dust. Other heroes without KO art are unchanged.
+
+## Slot #9 result (art session, 2026-11-26): whole-sprite i2i not viable; parked by coordinator
+
+Method probe on Kindrel and Nykra (hurt/angry/smug expressions), whole-sprite i2i at denoise 0.35-0.45: art-director REVISE 2 on both (verdict `.claude/worktrees/gpu-job-server/.scratch/expr-probe/approval.json`): the expression does not appear at a denoise that keeps the design, because the face is about 5% of the sprite. Not viable for a bulk run (rule 13, rule 14).
+Remaining routes (neither needed for playability): (a) head-only inpaint at 2x crop or canny ControlNet with a free head region, which needs a tool the GPU queue does not have (a `tools/gpu-queue` change); (b) procedural rig edits on our side (head swap frame, squint overlay, ear rotation) driven by the hurt/KO/victory states. Coordinator decision (owner delegated game decisions): PARKED, no GPU slot; revisit only after the 24 heroes' ability/KO/victory presentation is finished. If revisited, start with (b) on one hero (Kindrel) as a Phaser/CSS overlay with a real-game screenshot to the art-director.
