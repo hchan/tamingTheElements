@@ -198,6 +198,12 @@ describe('the TAG! call placement (WP-HF1)', () => {
     const right = { x: 1000, y: 110, w: 256, h: 60 };
     expect(placeCall(1150, 150, 90, 46, [right], out).x).toBeLessThanOrEqual(right.x - 90);
   });
+  it('slides toward the real frame centre on a wide view, not a fixed 640', () => {
+    // Frame centre 900: a head at x 700 is LEFT of centre, so it slides right past the readout; with the fixed 640 it went left.
+    const combo = { x: 620, y: 110, w: 200, h: 60 };
+    expect(placeCall(700, 150, 90, 46, [combo], out, 900).x).toBeGreaterThanOrEqual(combo.x + combo.w + 90);
+    expect(placeCall(700, 150, 90, 46, [combo], out).x).toBeLessThanOrEqual(combo.x - 90);
+  });
   it('leaves a combo that is not in its way alone', () => {
     expect(placeCall(600, 500, 90, 46, [{ x: 24, y: 110, w: 200, h: 60 }], out).x).toBe(600);
   });
