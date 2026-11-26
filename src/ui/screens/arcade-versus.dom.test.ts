@@ -104,6 +104,16 @@ describe('arcadePickView (DOM)', () => {
     expect(document.getElementById('arcadePick')?.textContent).not.toMatch(/Classic|Arcade|ruleset|Capture/);
   });
 
+  it('says in one line that same-screen play is not online, and follows the Who plays choice', () => {
+    mount();
+    const intro = (): string => document.getElementById('arcadeIntro')?.textContent ?? '';
+    expect(intro()).toMatch(/Fight the computer/);
+    expect(intro()).toMatch(/use Online/);
+    change(sel('arcadeMode'), 'local');
+    expect(intro()).toMatch(/^Two players, same screen/);
+    expect(intro()).toMatch(/another computer, use Online/);
+  });
+
   it('explains the lower tag-team life only for 2v2 and 3v3', () => {
     mount();
     const h = (): HTMLElement | null => document.getElementById('arcadeTeamHint');
