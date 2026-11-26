@@ -108,6 +108,13 @@ describe('SIM_VERSION 115 R6 retune', () => {
   });
 });
 
+describe('SIM_VERSION 116 2v2 retune', () => {
+  it('treenoc trimmed and kindrel raised in 2v2/3v3, 1v1 kept', () => {
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('treenoc')[0], n, 'treenoc'))).toEqual([6540, 4545, 5908]);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('kindrel')[0], n, 'kindrel'))).toEqual([6120, 4467, 5807]);
+  });
+});
+
 describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
   it('leaves a 1v1 life alone and scales a two-hero roster by the per-race table, within sane bounds', () => {
     for (const race of PLAYABLE) {

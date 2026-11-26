@@ -608,3 +608,20 @@ Result: with seeds 1-16 every hero is inside 40-60 in both modes. Seed-41 hold-o
 Held, not applied: the round-2 lever kindrel / treenoc / cyclonius 2v2 life tweak (kindrel 710 -> 730, treenoc 720 -> 700, cyclonius 810 -> 790; all 2v2-only, 1v1 bit-identical) stays unapplied because no seed-1 entry was out of band.
 
 Re-record (SIM_VERSION 115): `golden:record --ruleset arcade` (roster24-b2 and b3 change content, the other Arcade goldens only the simVersion header), `golden:record` (Classic, header only), `balance:record --ruleset arcade` with `--roster full` and `--team-size 2` (`arcade-full-baseline.json`, `arcade-2v2-baseline.json`); `baseline.json` (Classic) untouched. Commit: 9b78e7f2.
+
+## Arcade 2v2 retune R7 (SIM_VERSION 116)
+
+Levers (ARCADE_2V2_LIFE_PM, 1v1 bit-identical; 3v3 moves too): treenoc 720 -> 695 (-3.47%), kindrel 710 -> 730 (+2.82%). Cyclonius 810 -> 790 skipped: its gate (32-seed mean above .58) failed, measured .569.
+
+Measurement (2v2, released roster, 16 seeds each, lead-team win rate, seed 1 / seed 41):
+
+| entry | before | after |
+|---|---|---|
+| treenoc-led | .587 / .609 | .541 / .516 |
+| kindrel-led | .427 / .448 | .552 / .516 |
+| cyclonius-led | .568 / .571 | .563 / .568 |
+| vortigal-led | .549 / .541 | .462 / .496 |
+| nykra-led | .500 / .489 | .519 / .497 |
+| curomo-led | .489 / .497 | .514 / .538 |
+
+All 24 entries are inside .40-.60 at both seeds. Kindrel moved more than planned (+10 pp at seed 1 against an estimate of +3 to +5; SE about 2.6 pp), so no further step is planned. Re-record: arcade-2v2-baseline.json and the Arcade/Classic goldens (header only for Classic).

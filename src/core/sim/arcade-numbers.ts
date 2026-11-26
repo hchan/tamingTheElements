@@ -93,11 +93,11 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   pax: 628, // 647 before SIM_VERSION 112 (1v1 life +3%, team life unchanged); 675 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 660 before SIM_VERSION 100
   rokcore: 740, // 670 before SIM_VERSION 69 (roster WP 0.4)
   sindarosa: 785, // 830 before SIM_VERSION 106; 800 before SIM_VERSION 101
-  treenoc: 720, // 785 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 695 before SIM_VERSION 101; 714 before SIM_VERSION 86
+  treenoc: 695, // 720 before SIM_VERSION 116 (2v2/3v3 only: takes back the team-mode side of the v114 +10% damage); 785 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 695 before SIM_VERSION 101; 714 before SIM_VERSION 86
   wispera: 689, // 710 before SIM_VERSION 112 (1v1 life +3.04%, team life unchanged); 690 before SIM_VERSION 101; 650 before SIM_VERSION 100; 632 before SIM_VERSION 86
   hyalia: 650,
   quarrak: 675, // 725 before SIM_VERSION 102
-  kindrel: 710, // 755 before SIM_VERSION 103; 725 before 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
+  kindrel: 730, // 710 before SIM_VERSION 116 (kindrel-led 2v2 was the lowest entry); 755 before SIM_VERSION 103; 725 before 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
   nykra: 692, // 655 before SIM_VERSION 109; 740 before SIM_VERSION 102
   brazgor: 570, // 513 before SIM_VERSION 113; 490 before SIM_VERSION 110; 460 before SIM_VERSION 102
   glimmaw: 670,
