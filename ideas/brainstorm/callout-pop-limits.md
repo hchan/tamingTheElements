@@ -1,5 +1,5 @@
 ---
-status: done
+status: brainstorm
 added: 2026-11-17
 ---
 
