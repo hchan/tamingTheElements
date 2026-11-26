@@ -27,19 +27,28 @@ export interface KoCollapseSpec {
   readonly rest?: { readonly particle: KoParticleKind; readonly count: number; readonly color: string };
   /** Alpha of a dark ground shadow ellipse under the portrait (anchors the pile on the floor line). */
   readonly shadow?: number;
+  /** Floor anchor: px the whole stage (portrait, shadow, particles) sits below its layout box, so the pile rests on the name label line (art-director round 2). */
+  readonly floor?: number;
+  /** Flat ellipses on the floor behind the portrait (second swirl ring, water ripple, dust streak). */
+  readonly ellipses?: readonly KoEllipse[];
+  /** Resting particles lying along the floor (dust wisps); same shape as `rest`. */
+  readonly wisps?: { readonly particle: KoParticleKind; readonly count: number; readonly color: string };
 }
+
+/** `w` in percent of the stage width, `h` and `blur` in px; `ring` draws an outline instead of a fill. */
+export interface KoEllipse { readonly w: number; readonly h: number; readonly alpha: number; readonly color: string; readonly blur: number; readonly ring?: boolean }
 
 export const KO_COLLAPSE: Readonly<Record<string, KoCollapseSpec>> = {
   fiara: { scaleX: 1, scaleY: 0.5, alpha: 1, filter: 'brightness(0.6) sepia(1) saturate(2.2) hue-rotate(-18deg)', ms: 900, particle: 'ember', count: 9, color: '#ff8a2a' },
   cyclonius: { scaleX: 1.25, scaleY: 0.55, alpha: 0.6, filter: 'grayscale(0.55) sepia(0.25) hue-rotate(180deg) brightness(0.85)', ms: 900, particle: 'dust', count: 7, color: '#8899aa' },
   // Wispera: the orb flickers, shrinks and sparks out (the mid dip is the fizzle). Lavax: cools to grey ash and slumps. Morblass: a splash up, then a wide puddle.
-  wispera: { scaleX: 0.8, scaleY: 0.5, alpha: 0.6, filter: 'brightness(1.05) saturate(0.55) sepia(0.2) hue-rotate(150deg) drop-shadow(0 0 8px #cfe8f0)', ms: 1000, mid: { at: 0.35, scaleX: 0.95, scaleY: 0.9, alpha: 0.7 }, particle: 'spark', count: 12, color: '#bfe8ff', rest: { particle: 'mote', count: 7, color: '#e8f8ff' }, shadow: 0.3 },
+  wispera: { scaleX: 1.36, scaleY: 0.85, alpha: 0.6, filter: 'brightness(0.95) saturate(0.45) sepia(0.3) hue-rotate(200deg) drop-shadow(0 0 8px #a9b0c8)', ms: 1000, mid: { at: 0.35, scaleX: 1.6, scaleY: 1.5, alpha: 0.7 }, particle: 'spark', count: 12, color: '#a9b0c8', rest: { particle: 'mote', count: 7, color: '#c4c8dc' }, shadow: 0.3, floor: 55, ellipses: [{ w: 110, h: 46, alpha: 0.35, color: '#a9b0c8', blur: 1, ring: true }], wisps: { particle: 'wisp', count: 9, color: '#a9b0c8' } },
   lavax: { scaleX: 1.05, scaleY: 0.6, alpha: 0.9, filter: 'grayscale(0.95) brightness(0.55) contrast(0.9)', ms: 1400, particle: 'ash', count: 10, color: '#6e6a66' },
-  morblass: { scaleX: 1.3, scaleY: 0.4, alpha: 0.85, filter: 'brightness(0.8) sepia(1) saturate(1.6) hue-rotate(135deg)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#3f6f80', rest: { particle: 'splat', count: 6, color: '#3f6f80' }, shadow: 0.3 },
+  morblass: { scaleX: 1.3, scaleY: 0.4, alpha: 0.85, filter: 'brightness(0.8) sepia(1) saturate(1.6) hue-rotate(135deg)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#3f6f80', rest: { particle: 'splat', count: 6, color: '#3f6f80' }, shadow: 0.3, floor: 24 },
   // Echo: the wind unwinds (puffs out wide, thins to a pale ghost). Rokcore: crumbles in a shudder and settles into rubble. Ishimi: sags into a wide flattened mass.
-  echo: { scaleX: 1.15, scaleY: 0.5, alpha: 0.6, filter: 'brightness(0.9) saturate(0.55)', ms: 1100, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.05, alpha: 0.85 }, particle: 'dust', count: 9, color: '#d6e6ee', rest: { particle: 'mote', count: 6, color: '#e8f8ff' }, shadow: 0.3 },
-  rokcore: { scaleX: 1.2, scaleY: 0.5, alpha: 1, filter: 'grayscale(0.4) brightness(0.65) contrast(1.1)', ms: 1200, mid: { at: 0.45, scaleX: 1.04, scaleY: 0.8, alpha: 1 }, particle: 'dust', count: 12, color: '#8a7a68', shadow: 0.3 },
-  ishimi: { scaleX: 1.6, scaleY: 0.28, alpha: 0.9, filter: 'brightness(0.7) saturate(0.8)', ms: 1300, particle: 'dust', count: 6, color: '#7c7a86', rest: { particle: 'splat', count: 5, color: '#7c7a86' }, shadow: 0.3 },
+  echo: { scaleX: 1.5, scaleY: 0.6, alpha: 0.75, filter: 'brightness(0.65) saturate(0.6) sepia(0.35) hue-rotate(170deg) contrast(1.1)', ms: 1100, mid: { at: 0.3, scaleX: 1.4, scaleY: 1.2, alpha: 0.85 }, particle: 'dust', count: 9, color: '#7d8aa0', rest: { particle: 'mote', count: 6, color: '#e8f8ff' }, shadow: 0.3, floor: 28, ellipses: [{ w: 130, h: 6, alpha: 0.4, color: '#9aa6b8', blur: 2 }] },
+  rokcore: { scaleX: 1.2, scaleY: 0.5, alpha: 1, filter: 'grayscale(0.4) brightness(0.65) contrast(1.1)', ms: 1200, mid: { at: 0.45, scaleX: 1.04, scaleY: 0.8, alpha: 1 }, particle: 'dust', count: 12, color: '#8a7a68', shadow: 0.3, floor: 22 },
+  ishimi: { scaleX: 1.28, scaleY: 0.2, alpha: 0.9, filter: 'brightness(0.7) saturate(0.8) blur(1.2px)', ms: 1300, particle: 'dust', count: 6, color: '#7c7a86', rest: { particle: 'splat', count: 5, color: '#7c7a86' }, shadow: 0.3, floor: 45, ellipses: [{ w: 120, h: 26, alpha: 0.3, color: '#7c9ab0', blur: 2, ring: true }] },
 };
 
 /** Legacy heroes are always released, so no flag gates them; later roster24 slugs added to the table are gated like the other fx. */
@@ -71,6 +80,15 @@ function shadowEl(alpha: number): HTMLElement {
   return d;
 }
 
+/** Flat ellipse on the floor behind the portrait. */
+function ellipseEl(e: KoEllipse): HTMLElement {
+  const d = document.createElement('i');
+  d.className = 'matchEndKoEllipse';
+  const left = String((100 - e.w) / 2);
+  d.style.cssText = `position:absolute;left:${left}%;width:${String(e.w)}%;bottom:${String(-e.h / 2)}px;height:${String(e.h)}px;border-radius:50%;pointer-events:none;filter:blur(${String(e.blur)}px);opacity:${String(e.alpha)};${e.ring ? `border:2px solid ${e.color};` : `background:${e.color};`}`;
+  return d;
+}
+
 /** Swaps the loser card's face for the collapsing portrait once it has loaded. `side` 'main' = `.matchEndMain`, 'side' = `.matchEndSide`. */
 export function applyKoCollapse(root: HTMLElement, hero: string, side: 'main' | 'side', spec: KoCollapseSpec, url: string, reduced: boolean): void {
   const img = new Image();
@@ -85,6 +103,13 @@ export function applyKoCollapse(root: HTMLElement, hero: string, side: 'main' | 
     img.className = 'matchEndKoPortrait';
     img.alt = '';
     img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform-origin:50% 100%;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.6))';
+    // One floor anchor for every hero: the stage drops by spec.floor so the end state rests on the name label line, and the label paints over it.
+    if (spec.floor) {
+      stage.style.top = `${String(spec.floor)}px`;
+      const name = face.parentElement?.querySelector<HTMLElement>('.matchEndName');
+      if (name) { name.style.position = 'relative'; name.style.zIndex = '1'; }
+    }
+    for (const e of spec.ellipses ?? []) stage.append(ellipseEl(e));
     if (spec.shadow !== undefined) stage.append(shadowEl(spec.shadow));
     stage.append(img);
     face.replaceWith(stage);
@@ -92,7 +117,7 @@ export function applyKoCollapse(root: HTMLElement, hero: string, side: 'main' | 
     img.animate(koCollapseFrames(spec, reduced), { duration: reduced ? 1 : spec.ms, easing: 'ease-in', fill: 'forwards' });
     if (reduced) return;
     for (const p of koParticles(spec)) stage.append(particleEl(spec, p));
-    if (spec.rest) for (const p of koParticles({ ...spec.rest, ms: spec.ms })) stage.append(particleEl({ ...spec.rest, ms: spec.ms }, p));
+    for (const r of [spec.rest, spec.wisps]) if (r) for (const p of koParticles({ ...r, ms: spec.ms })) stage.append(particleEl({ ...r, ms: spec.ms }, p));
   };
   img.src = url;
 }

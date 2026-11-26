@@ -14,3 +14,6 @@ Common fault on all five: the effect floats 30-60 px above its name label. Fix t
 - echo REVISE 3.0 (flat grey funnel disc, low contrast, floats): scale 1.3x; darker grey-blue base ~#7d8aa0 with the brighter core; squash disc to ~60% height; y 28 px above the label; thin ground-dust streak under it.
 - ishimi REVISE 3.5 (reads as a hovering blade/boat, overlaps the dragon's wing): scale down ~20% width and ~30% height; lower ~45 px onto the label line; faint ripple ellipse beneath at ~30% alpha so it reads as pooled water; less pointed edges.
 Then fresh end-state screenshots of wispera, echo, ishimi (and rokcore/morblass after the y shift) to the art-director. Render-only, tests pin parameters (`ko-collapse.test.ts`), e2e hero loop in `tests/e2e/victory-still.spec.ts` via the router. Lavax is APPROVED, unchanged.
+
+## Progress (2026-11-26)
+Built: `KoCollapseSpec.floor` (single anchor in `applyKoCollapse`: stage dropped by `floor` px, name label painted over it), `ellipses` (wispera second ring, echo streak, ishimi ripple), `wisps` (new resting `wisp` particle). Floors: rokcore 22, morblass 24, wispera 55 (the orb sits mid-image and scales up 1.7x, so 30 px left it floating), echo 28, ishimi 45. Fresh end-state shots in `.scratch/ko-procedural/`, contact crop `.scratch/ko-sheet.png`. Awaiting art-director approval; move to done afterwards.
