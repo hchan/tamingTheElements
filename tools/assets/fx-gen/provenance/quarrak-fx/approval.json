@@ -1,0 +1,4 @@
+{
+ "boulderRoll": {"verdict":"APPROVE","overall":4,"reason":"Clean alpha, no rectangle or fringe. Faceted painterly rock with a ghost trail reads as a rolling boulder and is far better than the shipped woven disc.","approved":"boulderRoll.png","beats_shipped":true,"reviewer":"art-director","date":"2026-11-26"},
+ "hurlRock": {"verdict":"REVISE","overall":3,"reason":"Rock and dust smear read as a thrown rock and beat shipped, but a thin pale octagonal outline ring hugs the rock and reads as a halo or key fringe at 2x. The dust trail is too dark and muddy, close to the rock tone.","approved":null,"beats_shipped":true,"reviewer":"art-director","date":"2026-11-26","fix":"Erode alpha 1px, then decontaminate the edge by pulling RGB from 2px inside (or despill toward the rock's mid-tone) so the light ring disappears. Lift the dust trail value about 15 percent and soften its alpha falloff so it separates from the rock."}
+}
