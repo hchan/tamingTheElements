@@ -6,9 +6,9 @@ import { readStatus } from '../../tools/ci/nightly-e2e';
 import { fix, main, report, type FixDeps, type FixRun } from '../../tools/ci/nightly-fix';
 import {
   addsSkipMarkers, buildPrompt, canStartFullRun, canStartRound, capTimeout, childFailed, claudeArgs, claudeEnv, collectUnfinished, deadlineFor, deadlineReached, DENIED_TOOLS, noPushEnv,
-  extractFailures, finalState, forbiddenTouched, FULL_RUN_MS, isForbiddenPath, judgeFullRun, MAX_FULL_CYCLES, MAX_ROUNDS, parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops,
-  retargets, retryAllowed, classifyReds, redsVerdict, dedupeRefs, blockingReds, MAX_REAL_REDS, knownRedProposal, roundAllowed, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
-  type PushInput, morningReport, type FixStatus, type LandInput, MAX_VERIFY_ROUNDS, LAND_MARGIN_MS, GATE_ESTIMATE_MS, canStartVerify, verifyVerdict, needsFullRun, integrationRefusals, landBlockers, mergedBranchName,
+  extractFailures, finalState, forbiddenTouched, FULL_RUN_MS, isForbiddenPath, judgeFullRun, MAX_FULL_CYCLES, parseNulList, parsePorcelainZ, parseTriage, pushBlockers, rerunStops,
+  retargets, retryAllowed, classifyReds, redsVerdict, dedupeRefs, blockingReds, knownRedProposal, byTier, firstError, noProgress, spendAllowed, NIGHT_SPEND_CAP_USD, ROUND_BUDGET_USD, scrub, shouldRun, specPath, statusUsable, stopsLoop, titlePassed, TOOLS, triage,
+  type PushInput, morningReport, type FixStatus, type LandInput, LAND_MARGIN_MS, GATE_ESTIMATE_MS, canStartVerify, verifyVerdict, needsFullRun, integrationRefusals, landBlockers, mergedBranchName,
 } from '../../tools/ci/nightly-fix-logic';
 import type { PushStatus } from '../../tools/ci/nightly-push';
 import { finishStatus, pendingStatus } from '../../tools/ci/nightly-status';
@@ -38,9 +38,26 @@ describe('forbidden paths', () => {
 });
 
 describe('rounds, stops and green', () => {
-  it('allows at most 3 rounds', () => {
-    expect(MAX_ROUNDS).toBe(3);
-    expect([0, 1, 2, 3, 4].map(roundAllowed)).toEqual([true, true, true, false, false]);
+  it('no round-count cap: only the per-night spend cap (one constant) limits the rounds', () => {
+    const last = NIGHT_SPEND_CAP_USD / ROUND_BUDGET_USD;
+    expect(spendAllowed(0)).toBe(true);
+    expect(spendAllowed(last - 1)).toBe(true);
+    expect(spendAllowed(last)).toBe(false);
+  });
+  it('noProgress: same diff or the same first error twice in a row; the first round never trips it', () => {
+    const a = { diff: 'd1', error: 'Error: x' };
+    expect(noProgress(undefined, a)).toBe(false);
+    expect(noProgress(a, { diff: 'd2', error: 'Error: y' })).toBe(false);
+    expect(noProgress(a, { diff: 'd1', error: 'Error: y' })).toBe(true);
+    expect(noProgress(a, { diff: 'd2', error: 'Error: x' })).toBe(true);
+    expect(noProgress({ diff: 'd1', error: '' }, { diff: 'd2', error: '' })).toBe(false);
+    expect(firstError('noise\n  Error: Timeout 5000ms\nmore')).toBe('Error: Timeout 5000ms');
+    expect(firstError('noise only')).toBe('');
+  });
+  it('byTier orders P0 before P1 before P2, stable within a tier', () => {
+    const tf = (t: { title: string }): 'P0' | 'P1' | 'P2' => (t.title.startsWith('z') ? 'P0' : t.title.startsWith('m') ? 'P2' : 'P1');
+    const r = byTier([{ file: 'a', title: 'm1' }, { file: 'a', title: 'b1' }, { file: 'a', title: 'z1' }, { file: 'a', title: 'b2' }], tf);
+    expect(r.map((x) => x.title)).toEqual(['z1', 'b1', 'b2', 'm1']);
   });
   it('stops the loop on router exits 89/94/95/96, unknown codes, signals and timeouts, not on green/red', () => {
     for (const c of [89, 94, 95, 96, 93, 97, 130, 124]) expect(stopsLoop(c)).toBe(true);
@@ -56,7 +73,8 @@ describe('rounds, stops and green', () => {
     expect(triage(base).outcome).toBe('fixed');
     expect(triage({ ...base, diffEmpty: true }).outcome).toBe('flaky');
     expect(triage({ ...base, rerunExit: 1 }).outcome).toBe('retry');
-    expect(triage({ ...base, rerunExit: 1, round: 3 }).outcome).toBe('unfixed');
+    expect(triage({ ...base, rerunExit: 1, round: 30 }).outcome).toBe('retry');
+    expect(triage({ ...base, rerunExit: 1, round: 2, noProgress: true }).outcome).toBe('needs-human');
     expect(triage({ ...base, forbidden: ['src/core/a.ts'] }).outcome).toBe('needs-human');
     expect(triage({ ...base, agent: 'needs-human' }).outcome).toBe('needs-human');
   });
@@ -163,7 +181,7 @@ describe('classifyReds', () => {
   it('a title missing from the retry results is real, not flaky', () => {
     expect(classifyReds([ref('x.spec.ts', 't')], { kind: 'ran', json: { suites: [] } }, tierFor)[0]?.cls).toBe('real');
   });
-  it('6 entries -> 4 distinct -> 2 flaky + 2 P2 -> clean-push; a real P1 blocks; more than 8 real is a broken night', () => {
+  it('6 entries -> 4 distinct -> 2 flaky + 2 P2 -> clean-push; a real P1 blocks; 40 real reds are still fixed (no broken night)', () => {
     const six = [ref('a.spec.ts', 'a'), ref('a.spec.ts', 'a'), ref('b.spec.ts', 'b'), ref('b.spec.ts', 'b'), ref('polish.spec.ts', 'c'), ref('polish2.spec.ts', 'd')];
     expect(dedupeRefs(six)).toHaveLength(4);
     const json = { suites: [...(pass(ref('a.spec.ts', 'a')) as { suites: unknown[] }).suites, ...(pass(ref('b.spec.ts', 'b')) as { suites: unknown[] }).suites, ...(fail(ref('polish.spec.ts', 'c')) as { suites: unknown[] }).suites, ...(fail(ref('polish2.spec.ts', 'd')) as { suites: unknown[] }).suites] };
@@ -174,9 +192,8 @@ describe('classifyReds', () => {
     expect(knownRedProposal(c[2] as (typeof c)[number], '2026-11-25')).toContain('"titleIncludes":"c"');
     const withReal = classifyReds([...six, ref('x.spec.ts', 'z')], { kind: 'ran', json: both(ref('a.spec.ts', 'a'), ref('x.spec.ts', 'z')) }, tierFor);
     expect(redsVerdict(withReal)).toBe('fix');
-    const many = Array.from({ length: MAX_REAL_REDS + 1 }, (_, i) => ref('x.spec.ts', `t${String(i)}`));
-    expect(redsVerdict(classifyReds(many, { kind: 'ran', json: { suites: [] } }, tierFor))).toBe('broken-night');
-    expect(redsVerdict(classifyReds(many.slice(0, MAX_REAL_REDS), { kind: 'ran', json: { suites: [] } }, tierFor))).toBe('fix');
+    const many = Array.from({ length: 40 }, (_, i) => ref('x.spec.ts', `t${String(i)}`));
+    expect(redsVerdict(classifyReds(many, { kind: 'ran', json: { suites: [] } }, tierFor))).toBe('fix');
   });
 });
 
@@ -225,7 +242,7 @@ describe('prompt, triage line, sandbox and env', () => {
   const f = { file: 'menu.spec.ts', title: 'opens', message: 'Timeout 5000ms', tracePath: 'trace.zip' };
   it('prompt has spec, title, error, trace and the hard stops', () => {
     const p = buildPrompt(f, 2, 'still red');
-    for (const s of ['tests/e2e/menu.spec.ts', 'opens', 'Timeout 5000ms', 'trace.zip', 'src/core', 'tests/fixtures', 'SIM_VERSION', 'tools/**', 'Round 2 of 3', 'still red']) expect(p).toContain(s);
+    for (const s of ['tests/e2e/menu.spec.ts', 'opens', 'Timeout 5000ms', 'trace.zip', 'src/core', 'tests/fixtures', 'SIM_VERSION', 'tools/**', 'Round 2', 'still red']) expect(p).toContain(s);
   });
   it('parses the TRIAGE line, else none', () => {
     expect(parseTriage('x\nTRIAGE: {"verdict":"flaky","reason":"r"}\n')).toEqual({ verdict: 'flaky', reason: 'r' });
@@ -326,6 +343,12 @@ interface Scenario {
   fullAttach?: number;
   /** Start of the fake clock (default noon); `sleep` advances it. */
   clock?: Date;
+  /** Every claude call advances the fake clock by this many ms (the 07:00 stop tests). */
+  claudeMs?: number;
+  /** Each staged diff differs (a new change every round); without it every round leaves the same diff. */
+  varyDiff?: boolean;
+  /** Router stdout of the per-spec re-run (the first error line is compared round to round). */
+  rerunOut?: string;
   /** Exit codes of the collect step's attach, one per try; the last repeats; a code of 1 writes a red result for `opens`. */
   collectCodes?: number[];
   /** Specs in the pre-fix nightly-results.json (all passed). */
@@ -348,9 +371,11 @@ describe('nightly-fix command (fake runner)', () => {
   let envs: Record<string, Record<string, string | undefined>>;
   let sleeps: number[];
   let clock: Date;
+  let diffSeq = 0;
   beforeEach(() => {
     sleeps = [];
     clock = NOON();
+    diffSeq = 0;
     mkdirSync(resolve('.scratch'), { recursive: true });
     dir = mkdtempSync(join(resolve('.scratch'), 'nightly-fix-test-'));
     out = '';
@@ -397,6 +422,7 @@ describe('nightly-fix command (fake runner)', () => {
         const ok = (stdout = '', code = 0): FixRun => ({ code, stdout, stderr: '' });
         if (cmd === 'claude') {
           envs['claude'] = env;
+          if (sc.claudeMs) clock = new Date(clock.getTime() + sc.claudeMs);
           return { ...ok('TRIAGE: {"verdict":"fixed","reason":"waits for the menu"}'), ...sc.claude };
         }
         if (cmd === 'corepack' && line.includes('--pc-detach')) envs['detach'] = env;
@@ -443,7 +469,7 @@ describe('nightly-fix command (fake runner)', () => {
             const specs = Array.from({ length: sc.failures ?? 1 }, (_, i) => ({ title: i === 0 ? 'opens' : `opens ${String(i)}`, file: 'menu.spec.ts', tests: [{ status: 'expected', results: [{ status: 'passed' }] }] }));
             writeFileSync(to, JSON.stringify({ suites: [{ file: 'menu.spec.ts', specs }] }));
           }
-          return ok('', code);
+          return ok(code === 0 ? '' : (sc.rerunOut ?? ''), code);
         }
         if (cmd === 'corepack' && line.includes('gate:commit')) {
           envs['gate'] = env;
@@ -482,7 +508,7 @@ describe('nightly-fix command (fake runner)', () => {
             return ok();
           case 'diff':
             if (args.includes('--cached') && args.includes('--name-only')) return ok(sc.names ?? 'tests/e2e/menu.spec.ts\0');
-            if (args.includes('--cached')) return ok(sc.diff ?? '+  await page.waitForSelector("#menu");\n');
+            if (args.includes('--cached')) return ok(`${sc.diff ?? '+  await page.waitForSelector("#menu");\n'}${sc.varyDiff ? `+  // ${String(++diffSeq)}\n` : ''}`);
             return ok(sc.mergedNames ?? 'tests/e2e/menu.spec.ts\0');
           case 'rev-list':
             if (args.some((a) => a === `origin/main..${SHA}`)) return ok('3\n'); // the tested commit is ahead of origin
@@ -659,15 +685,10 @@ describe('nightly-fix command (fake runner)', () => {
     expect(status().blockers.join(' ')).toContain(why);
     expect(kept()).toBe(true);
   });
-  it('verify red after 3 rounds: no push, F is kept, three claude rounds', () => {
-    go({ verifyRed: [1, 2, 3] });
-    expect(claudeCalls()).toHaveLength(3);
-    expect(pushes()).toEqual([]);
-    expect(status().blockers.join(' ')).toContain('verify red after 3 rounds');
-    expect(kept()).toBe(true);
-    expect(status().keptBranch).toBe('nightly-fix-kept/2026-11-20');
-    expect(calls.some((c) => c.includes('gate:commit'))).toBe(false);
-    expect(status().results.some((r) => r.outcome === 'fixed')).toBe(false);
+  it('verify red three times: no round cap, a fourth round (new diff each time) turns green and pushes M', () => {
+    go({ verifyRed: [1, 2, 3], varyDiff: true });
+    expect(claudeCalls()).toHaveLength(4);
+    expect(pushes()).toEqual([`git push origin ${MERGED}:main`]);
   });
   it('a round that turns green after a red verify still lands (round 2 pushes M)', () => {
     go({ verifyRed: [1] });
@@ -824,11 +845,32 @@ describe('nightly-fix command (fake runner)', () => {
     expect(calls.some((c) => c.startsWith('git commit'))).toBe(false);
     expect(status().results[0]?.reason).toContain('skip');
   });
-  it('three red rounds: exactly three claude calls, then unfixed', () => {
-    go({ rerunCode: 1 });
-    expect(claudeCalls()).toHaveLength(3);
+  it('red rounds with a new diff and a new error each time keep going until the night spend cap', () => {
+    go({ rerunCode: 1, varyDiff: true });
+    expect(claudeCalls()).toHaveLength(NIGHT_SPEND_CAP_USD / ROUND_BUDGET_USD);
     expect(pushes()).toEqual([]);
     expect(status().results[0]).toMatchObject({ outcome: 'unfixed' });
+    expect(status().results[0]?.reason).toContain('spend cap');
+  });
+  it('no progress: the same diff twice in a row stops that failure as needs-human after two rounds', () => {
+    go({ rerunCode: 1 });
+    expect(claudeCalls()).toHaveLength(2);
+    expect(status().results[0]).toMatchObject({ outcome: 'needs-human', rounds: 2 });
+    expect(status().results[0]?.reason).toContain('no progress');
+    expect(pushes()).toEqual([]);
+  });
+  it('no progress: the same first error twice in a row stops it even when the diff changes', () => {
+    go({ rerunCode: 1, varyDiff: true, rerunOut: 'Error: Timeout 5000ms waiting for #menu' });
+    expect(claudeCalls()).toHaveLength(2);
+    expect(status().results[0]).toMatchObject({ outcome: 'needs-human' });
+  });
+  it('07:00 hard stop (injected clock): rounds run until under 20 min are left, then it stops unfixed', () => {
+    go({ rerunCode: 1, varyDiff: true, clock: new Date(2026, 10, 20, 5, 0, 0), claudeMs: 25 * 60_000 });
+    // starts 05:00, 05:25, 05:50, 06:15, 06:40 (left 20 min); 07:05 is past the stop
+    expect(claudeCalls()).toHaveLength(5);
+    expect(status().results[0]).toMatchObject({ outcome: 'unfixed' });
+    expect(status().results[0]?.reason).toContain('hard stop');
+    expect(pushes()).toEqual([]);
   });
   it('router exit 95 stops the loop', () => {
     go({ rerunCode: 95, failures: 2 });
@@ -864,16 +906,11 @@ describe('nightly-fix command (fake runner)', () => {
     expect(status().results[0]).toMatchObject({ outcome: 'unfixed', reason: 'git commit failed' });
     expect(pushes()).toEqual([]);
   });
-  it('more than 8 real reds: a broken night, needs-human, one classify retry, no claude rounds', () => {
+  it('many real reds (9) are no longer a broken night: one classify retry, then fix rounds, P0/P1 first', () => {
     go({ failures: 9 });
-    expect(status().state).toBe('needs-human');
     expect(classifies).toHaveLength(1);
-    expect(claudeCalls()).toEqual([]);
-    expect(status().blockers.join(' ')).toContain('broken night');
-  });
-  it('8 real reds still get fix rounds', () => {
-    go({ failures: 8 });
     expect(claudeCalls().length).toBeGreaterThan(0);
+    expect(status().blockers.join(' ')).not.toContain('broken night');
   });
   it('the classify retry is one router call on the PC with every red spec, never the Mac', () => {
     go();
@@ -1064,8 +1101,7 @@ describe('WP3a verify and landing logic (pure)', () => {
   const a = { file: 'a.spec.ts', title: 'a' };
   const b = { file: 'b.spec.ts', title: 'b' };
 
-  it('constants: 3 verify rounds, 5 min land margin, gate estimate 15 min', () => {
-    expect(MAX_VERIFY_ROUNDS).toBe(3);
+  it('constants: 5 min land margin, gate estimate 15 min', () => {
     expect(LAND_MARGIN_MS).toBe(5 * 60_000);
     expect(GATE_ESTIMATE_MS).toBe(15 * 60_000);
   });

@@ -5,12 +5,13 @@ import { describeStatus, isStale, parseResults, unrecordedFailures, type KnownRe
 import { redact } from './redact';
 import type { Tier } from './test-tiers';
 
-export const MAX_ROUNDS = 3;
+/** Per-round claude budget (USD, passed as --max-budget-usd). There is no round-count cap: the loop runs until green, the 07:00 stop, no progress or this night cap. */
+export const ROUND_BUDGET_USD = 5;
+/** Per-night spend cap (USD): the worst case of every started claude round (rounds started x ROUND_BUDGET_USD) may not exceed it; the one place to tune the night's cost. */
+export const NIGHT_SPEND_CAP_USD = 150;
 export const ROUND_TIMEOUT_MS = 25 * 60_000;
 export const RERUN_TIMEOUT_MS = 40 * 60_000;
 export const GATE_TIMEOUT_MS = 90 * 60_000;
-/** More real (P0/P1, or unclassified) distinct reds than this is a broken night, not something to fix by loop: report needs-human, no rounds. */
-export const MAX_REAL_REDS = 8;
 /** Absolute cap of one run; the real stop is `deadlineFor` (07:00 for a night run, 22:00 for a manual daytime run). */
 export const MAX_RUN_MS = 6 * 3600_000;
 export const STOP_HOUR = 22;
@@ -23,8 +24,6 @@ export const FULL_RUN_MS = 90 * 60_000;
 /** A fix round (claude plus the spec re-run) is only started when this much time is left. */
 /** Budget for gate:commit after a verify run or a full run (its hard cap is GATE_TIMEOUT_MS, but it normally takes far less). */
 export const GATE_ESTIMATE_MS = 15 * 60_000;
-/** Verify rounds on the merge commit (fix, same-spec run, gate:commit): at most this many. */
-export const MAX_VERIFY_ROUNDS = 3;
 /** Time kept free after the last gate for integrating into main and pushing. */
 export const LAND_MARGIN_MS = 5 * 60_000;
 export const MIN_ROUND_MS = 20 * 60_000;
@@ -204,12 +203,25 @@ export function classifyReds(reds: readonly TestRef[], retry: RetryOutcome, tier
     return tier === 'P2' ? { ...ref, cls: 'p2-record', reason: 'P2 red, failed on retry: recorded, never blocks (propose a known-red entry)' } : { ...ref, cls: 'real', reason: `${tier} red, failed on retry` };
   });
 }
-export const blockingReds = (c: readonly ClassifiedRed[]): ClassifiedRed[] => c.filter((r) => r.cls === 'real' || r.cls === 'unclassified');
-/** clean-push: nothing blocks (WP1 push); broken-night: more than MAX_REAL_REDS blocking reds (needs-human, no rounds); else fix the blocking reds only. */
-export function redsVerdict(c: readonly ClassifiedRed[]): 'clean-push' | 'fix' | 'broken-night' {
-  const n = blockingReds(c).length;
-  return n === 0 ? 'clean-push' : n > MAX_REAL_REDS ? 'broken-night' : 'fix';
+/** Another claude round may start only while its worst case still fits the night cap. */
+export const spendAllowed = (roundsStarted: number): boolean => (roundsStarted + 1) * ROUND_BUDGET_USD <= NIGHT_SPEND_CAP_USD;
+export interface RoundSig {
+  readonly diff: string;
+  readonly error: string;
 }
+/** First line of a router tail that names the failure (error, expected, received, timeout, failed); '' when there is none (then only the diff is compared). */
+export const firstError = (tail: string): string => (tail.split('\n').map((l) => l.trim()).find((l) => /error|expected|received|timeout|failed/i.test(l)) ?? '').slice(0, 200);
+/** Same diff, or the same first error, as the previous round of the same failure: another round cannot help (needs-human). */
+export const noProgress = (prev: RoundSig | undefined, cur: RoundSig): boolean => prev !== undefined && (prev.diff === cur.diff || (cur.error !== '' && prev.error === cur.error));
+export const blockingReds = (c: readonly ClassifiedRed[]): ClassifiedRed[] => c.filter((r) => r.cls === 'real' || r.cls === 'unclassified');
+/** clean-push: nothing blocks (WP1 push); else fix the blocking reds, however many (no broken-night shortcut since 2026-11-26). */
+export function redsVerdict(c: readonly ClassifiedRed[]): 'clean-push' | 'fix' {
+  return blockingReds(c).length === 0 ? 'clean-push' : 'fix';
+}
+const TIER_ORDER: Record<string, number> = { P0: 0, P1: 1, P2: 2 };
+/** P0 first, then P1, then the rest; stable within a tier. */
+export const byTier = <T extends TestRef>(items: readonly T[], tierFor: (t: TestRef) => Tier): T[] =>
+  items.map((t, i) => ({ t, i, k: TIER_ORDER[tierFor(t)] ?? 3 })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.t);
 /** Proposed known-red.json entry text for a flaky or P2 red (the report lists it; a human or the coordinator records it). */
 export const knownRedProposal = (c: ClassifiedRed, firstSeen: string): string =>
   JSON.stringify({ file: specPath(c.file), titleIncludes: c.title, tier: c.tier, firstSeen, idea: '<ideas/brainstorm/...md>', status: 'open' });
@@ -246,7 +258,6 @@ export function titlePassed(json: unknown, ref: TestRef): boolean {
   for (const s of ((json ?? {}) as { suites?: unknown[] }).suites ?? []) walk(s as Parameters<typeof walk>[0], '');
   return seen && ok;
 }
-export const roundAllowed = (roundsDone: number): boolean => roundsDone < MAX_ROUNDS;
 /** After a re-run exit other than green (0) or red (1) the whole loop stops (89/94/95/96 and anything unknown). */
 export const stopsLoop = (exit: number): boolean => STOP_EXITS.includes(exit) || (exit !== 0 && exit !== 1);
 export const specPath = (file: string): string => (file.includes('/') ? file : `tests/e2e/${file}`);
@@ -296,7 +307,7 @@ export function extractFailures(json: unknown, wanted: readonly TestRef[]): Fail
 // runs lint, tests and the re-run). Spend is capped.
 export const TOOLS = ['Read', 'Edit', 'Write', 'Glob', 'Grep'];
 export const DENIED_TOOLS = ['Bash', 'WebFetch', 'WebSearch', 'Task'];
-export const MAX_BUDGET_USD = '5';
+export const MAX_BUDGET_USD = String(ROUND_BUDGET_USD);
 export const DENY_RULES = ['Edit(node_modules/**)', 'Write(node_modules/**)', 'Edit(.claude/**)', 'Write(.claude/**)', 'Edit(.git/**)', 'Write(.git/**)'];
 
 export function claudeArgs(prompt: string): string[] {
@@ -331,7 +342,7 @@ export function claudeEnv(env: Readonly<Record<string, string | undefined>>): Re
 
 export function buildPrompt(f: Failure, round: number, previous: string): string {
   return [
-    `You are fixing one red nightly e2e test of tamingTheElements (Phaser 4 + TypeScript). Round ${String(round)} of ${String(MAX_ROUNDS)}.`,
+    `You are fixing one red nightly e2e test of tamingTheElements (Phaser 4 + TypeScript). Round ${String(round)} (the harness stops at no progress, so change something new each round).`,
     `Spec: ${specPath(f.file)}`,
     `Title: ${f.title}`,
     `Error:\n${f.message}`,
@@ -366,13 +377,15 @@ export interface RoundInput {
   readonly diffEmpty: boolean;
   /** Re-run of the failed spec: 0 green, 1 red. */
   readonly rerunExit: number;
+  /** Same diff or same first error as the previous round of this failure. */
+  readonly noProgress?: boolean;
 }
 /** 'retry' means run another round. A green re-run with an empty diff is noise (recorded known-red), with a diff it is a fix. */
 export function triage(i: RoundInput): { outcome: Outcome | 'retry'; reason: string } {
   if (i.forbidden.length) return { outcome: 'needs-human', reason: `diff touched forbidden paths: ${i.forbidden.join(', ')}` };
   if (i.agent === 'needs-human') return { outcome: 'needs-human', reason: 'the agent judged it needs a human' };
   if (i.rerunExit === 0) return i.diffEmpty ? { outcome: 'flaky', reason: 'green on re-run with no code change (candidate known-red; the coordinator acks it)' } : { outcome: 'fixed', reason: 'green on re-run after the fix' };
-  if (!roundAllowed(i.round)) return { outcome: 'unfixed', reason: `still red after ${String(MAX_ROUNDS)} rounds` };
+  if (i.noProgress) return { outcome: 'needs-human', reason: `no progress: round ${String(i.round)} left the same diff or the same first error as the round before` };
   return { outcome: 'retry', reason: 'still red' };
 }
 
