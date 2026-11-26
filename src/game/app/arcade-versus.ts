@@ -176,7 +176,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       const loser = win ? r.pick.enemy : r.pick.player;
       const side = !win && !r.pick.local ? 'main' : 'side';
       void import('../fx/ko-fallback').then((m) => { m.showKoFallback(root, loser, side, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test'); });
-      // Roster24 KO still for the loser (Umbrel, Abyssor, Nykra; lazy chunk, gated inside fx/ko-still).
+      // KO still for the loser (the 14 approved heroes, see fx/ko-still.ts; lazy chunk, gated inside fx/ko-still).
       void import('../fx/ko-still').then((m) => { m.showKoStill(root, loser, side, true, window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test', import.meta.env.BASE_URL); });
     }
     // The primary action takes focus (not the heading), and a held Enter or Space must not auto-repeat into Rematch.

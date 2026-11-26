@@ -1,12 +1,14 @@
 import { cutinFlagOn, heroReleased } from './cutin-gate';
 
 /**
- * The roster24 KO still (public/assets/img/ko/<hero>_ko.png, installed by tools/assets/ko-gen/install-r24-ko.py) on the Versus result
+ * The approved KO still (14 heroes: the roster24 set plus pax and treenoc) (public/assets/img/ko/<hero>_ko.png, installed by tools/assets/ko-gen/install-r24-ko.py) on the Versus result
  * screen when that hero lost: it replaces the loser's portrait card face. Render only; released heroes always, the rest behind
  * `?ff=roster24` in dev/test builds (the cut-in gate). The image is fetched when the screen shows, never preloaded; a failed load keeps
  * the face. The stills are wide, body-only crops (tight bbox), so the card sizes by width and the fade-in is the only motion.
  */
-export const KO_STILL_HEROES: ReadonlySet<string> = new Set(['umbrel', 'abyssor', 'nykra']);
+export const KO_STILL_HEROES: ReadonlySet<string> = new Set([
+  'abyssor', 'brazgor', 'durrok', 'glimmaw', 'hyalia', 'kindrel', 'nykra', 'ouroth', 'pax', 'quarrak', 'treenoc', 'umbrel', 'vortigal', 'zephra',
+]);
 
 export const koStillUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/ko/${hero}_ko.png`;
 
