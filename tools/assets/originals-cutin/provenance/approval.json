@@ -1,0 +1,134 @@
+{
+ "fiara": {
+  "pick": "A",
+  "file": "comp_fiara.png",
+  "verdict": "REVISE",
+  "overall": 2,
+  "reason": "Flat vector red/yellow with fringe reads pasted on painterly oil; fix: erode matte 2px, scale 1.35x, add warm ember glow plus dark contact shadow, overlay canvas grain and 0.4 blur-blend to match backdrop; if still flat, skip and keep generic band",
+  "approved": false,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": false
+ },
+ "treenoc": {
+  "pick": "B",
+  "file": "comp_treenoc_B.png",
+  "verdict": "REVISE",
+  "overall": 3,
+  "reason": "Beige sprite blends into olive; fix: dark drop-shadow 12px, darken/vignette backdrop behind sprite by ~35%, scale 1.25x, slight warm rim light",
+  "approved": false,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": false
+ },
+ "cyclonius": {
+  "pick": "A",
+  "file": "comp_cyclonius.png",
+  "verdict": "REJECT",
+  "overall": 2,
+  "reason": "Thin sprite, fist-like hand shapes (Cyclonius has none), lightning backdrop; skip, keep generic band, no regeneration",
+  "approved": false,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": false
+ },
+ "lavax": {
+  "pick": "B",
+  "file": "comp_lavax_B.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Lava vortex gives drama and frames the golem; strong contrast",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "sindarosa": {
+  "pick": "A",
+  "file": "comp_sindarosa.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Red dragon pops against grey with fire streak behind wing; B streak cuts through the wing",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "curomo": {
+  "pick": "A",
+  "file": "comp_curomo.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Pale dragon on teal ice shards, clear and painterly",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "ishimi": {
+  "pick": "A",
+  "file": "comp_ishimi.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Cyan body on green wave, great contrast, calm centre",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "pax": {
+  "pick": "A",
+  "file": "comp_pax.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Dark amber swirl gives separation; B dusty ground matches the sprite",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "rokcore": {
+  "pick": "A",
+  "file": "comp_rokcore.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Orange glow under feet separates grey golem; good scale",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "morblass": {
+  "pick": "B",
+  "file": "comp_morblass_B.png",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Darker teal backdrop lifts the pale ice figure",
+  "approved": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": true
+ },
+ "echo": {
+  "pick": "A",
+  "file": "comp_echo.png",
+  "verdict": "REVISE",
+  "overall": 3,
+  "reason": "Small pale sprite on grey; fix: scale 1.5x, darken backdrop centre 30%, blue-tinted drop-glow; B burst is worse (washes out)",
+  "approved": false,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": false
+ },
+ "wispera": {
+  "pick": "A",
+  "file": "comp_wispera.png",
+  "verdict": "REVISE",
+  "overall": 3,
+  "reason": "Orb is small but contrast on dark is fine; fix: scale 1.8x, lift to centre, add soft cyan glow; no cropping",
+  "approved": false,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "beats_shipped": false
+ }
+}

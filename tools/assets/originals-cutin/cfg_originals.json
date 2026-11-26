@@ -1,0 +1,207 @@
+{
+ "defaults": {
+  "h": 0.68,
+  "cx": 0.46,
+  "bot": 0.93,
+  "flip": true,
+  "fade": 0.1,
+  "fade_bottom": 0.0,
+  "unsharp": [
+   1.0,
+   60,
+   2
+  ],
+  "grain": 3.0
+ },
+ "heroes": {
+  "fiara": {
+   "A": "cutin-final/cutin_hero_fiara_49020_1344x768.png",
+   "shadow": [
+    60,
+    25,
+    10
+   ],
+   "v2": {
+    "pick": "A",
+    "scale": 1.35,
+    "erode": 2,
+    "soften": 0.4,
+    "canvas_grain": 14,
+    "drop": 14,
+    "glow": {
+     "color": [
+      255,
+      120,
+      30
+     ],
+     "radius": 55,
+     "strength": 1.0
+    },
+    "fade": 0.2
+   }
+  },
+  "treenoc": {
+   "A": "cutin-final/cutin_hero_treenoc_49083_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_treenoc_49080_1344x768.png",
+   "shadow": [
+    25,
+    30,
+    12
+   ],
+   "v2": {
+    "pick": "B",
+    "scale": 1.25,
+    "drop": 12,
+    "darken": 0.35,
+    "rim": {
+     "color": [
+      255,
+      190,
+      110
+     ],
+     "width": 3,
+     "strength": 0.8
+    },
+    "fade": 0.18
+   }
+  },
+  "cyclonius": {
+   "A": "cutin-final/cutin_hero_cyclonius_49030_1344x768.png",
+   "shadow": [
+    30,
+    34,
+    44
+   ]
+  },
+  "lavax": {
+   "A": "cutin-final/cutin_hero_lavax_49011_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_lavax_49010_1344x768.png",
+   "shadow": [
+    50,
+    12,
+    8
+   ]
+  },
+  "sindarosa": {
+   "A": "cutin-final/cutin_hero_sindarosa_49000_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_sindarosa_49001_1344x768.png",
+   "shadow": [
+    60,
+    25,
+    10
+   ]
+  },
+  "curomo": {
+   "A": "cutin-final/cutin_hero_curomo_49092_1344x768.png",
+   "shadow": [
+    10,
+    30,
+    40
+   ]
+  },
+  "ishimi": {
+   "A": "cutin-final/cutin_hero_ishimi_49112_1344x768.png",
+   "shadow": [
+    10,
+    40,
+    30
+   ]
+  },
+  "pax": {
+   "A": "cutin-final/cutin_hero_pax_49073_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_pax_49072_1344x768.png",
+   "shadow": [
+    40,
+    28,
+    14
+   ]
+  },
+  "rokcore": {
+   "A": "cutin-final/cutin_hero_rokcore_49060_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_rokcore_49062_1344x768.png",
+   "shadow": [
+    40,
+    34,
+    22
+   ]
+  },
+  "morblass": {
+   "A": "cutin-final/cutin_hero_morblass_49100_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_morblass_49102_1344x768.png",
+   "shadow": [
+    10,
+    30,
+    40
+   ]
+  },
+  "echo": {
+   "A": "cutin-final/cutin_hero_echo_49060_1344x768.png",
+   "B": "fetch-cu/out/cutin_hero_echo_49051_1344x768.png",
+   "h": 0.72,
+   "shadow": [
+    30,
+    36,
+    46
+   ],
+   "v2": {
+    "pick": "A",
+    "scale": 1.5,
+    "darken": 0.3,
+    "glow": {
+     "color": [
+      70,
+      150,
+      255
+     ],
+     "radius": 36,
+     "strength": 0.7
+    },
+    "fade": 0.2
+   },
+   "v3": {
+    "fade_bbox": 0.14,
+    "eyes": {
+     "thr": 60,
+     "grow": 17,
+     "core_blur": 2,
+     "keep": 0.12
+    }
+   }
+  },
+  "wispera": {
+   "A": "cutin-final/cutin_hero_wispera_49073_1344x768.png",
+   "h": 0.76,
+   "shadow": [
+    30,
+    28,
+    48
+   ],
+   "v2": {
+    "pick": "A",
+    "scale": 1.8,
+    "cx": 0.5,
+    "glow": {
+     "color": [
+      90,
+      230,
+      255
+     ],
+     "radius": 44,
+     "strength": 0.55
+    }
+   }
+  }
+ },
+ "v2_defaults": {
+  "scale": 1.0,
+  "max_vis": 0.9,
+  "erode": 0,
+  "soften": 0.0,
+  "canvas_grain": 0,
+  "drop": 0,
+  "darken": 0.0,
+  "darken_r": 0.55,
+  "glow": null,
+  "rim": null
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "curomo": {
+  "source": "comp_curomo.png",
+  "approval": "approval.json",
+  "sha256": "10cd4b1ec79262442469c1fb73887cd43692a919652ea0716d023bc8f115cd0a",
+  "bytes": 1782960
+ },
+ "ishimi": {
+  "source": "comp_ishimi.png",
+  "approval": "approval.json",
+  "sha256": "1ec62afef9ad2e2eae43fbfcdc570c4f4b8b184a2267c36133b0217cc622d809",
+  "bytes": 1785081
+ },
+ "lavax": {
+  "source": "comp_lavax_B.png",
+  "approval": "approval.json",
+  "sha256": "b27efb89cc326b7ecc58968fc15aa6bbc387cbf3073ad24b23f5768cb6ca1bf4",
+  "bytes": 1865422
+ },
+ "morblass": {
+  "source": "comp_morblass_B.png",
+  "approval": "approval.json",
+  "sha256": "91e2b0dd481652eed22a07ceeaba8a6f260fcd5081022f4983f4257695b7b83e",
+  "bytes": 1771062
+ },
+ "pax": {
+  "source": "comp_pax.png",
+  "approval": "approval.json",
+  "sha256": "01bd7974fa4530eb9eeb0a92165e4911b34024f3a4a588459cd6324899748eaa",
+  "bytes": 1857985
+ },
+ "rokcore": {
+  "source": "comp_rokcore.png",
+  "approval": "approval.json",
+  "sha256": "9ae7be77e4866cbad3f8707595ba5c2021cf0de6d39df07bea1d8e9c73894a3e",
+  "bytes": 1809263
+ },
+ "sindarosa": {
+  "source": "comp_sindarosa.png",
+  "approval": "approval.json",
+  "sha256": "2d6378a3a3f0871c8c01e366374ab0176764c9be1271546e581d5fce3f64acd6",
+  "bytes": 1823783
+ },
+ "treenoc": {
+  "source": "comp_treenoc_v2.png",
+  "approval": "approval-v2.json",
+  "sha256": "d3c216273a77885ac470ea5b9504cade4a4b104c3420b965fb34fd3dca996dd3",
+  "bytes": 1936293
+ },
+ "wispera": {
+  "source": "comp_wispera_v2.png",
+  "approval": "approval-v2.json",
+  "sha256": "f1ed77d19cfbd55ea789576becbb8e669fe1316b403531934bc6caed7b3c69bc",
+  "bytes": 1578105
+ }
+}
