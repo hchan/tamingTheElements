@@ -41,7 +41,7 @@ export function measureStunLock(seeds: number, teamSize: 1 | 2 = 1, races: reado
       for (let k = 0; k < seeds; k++) {
         const counters: StunRunCounter[] = [];
         const r = runMatch({
-          raceA: races[i] ?? '', raceB: races[j] ?? '', agentA: 'scripted', agentB: 'scripted', seed: matchSeed(1, i * 100 + j * 10 + k),
+          raceA: races[i] ?? '', raceB: races[j] ?? '', agentA: 'scripted', agentB: 'scripted', seed: matchSeed(1, (i * races.length + j) * seeds + k),
           level: 3, difficulty: 1, aIsTeam0: k % 2 === 0, ruleset: 'arcade', teamSize, aiLevel: 3,
           onTick: (world) => {
             const s = world.state;
@@ -70,6 +70,7 @@ export function measureStunLock(seeds: number, teamSize: 1 | 2 = 1, races: reado
       }
     }
   }
+  // A run still going when its match ends is never pushed to `runs`, so it is excluded from the p90 and the mean (it still counts in the longest).
   runs.sort((a, b) => a - b);
   return {
     matches,
@@ -88,6 +89,10 @@ export function measureStunLock(seeds: number, teamSize: 1 | 2 = 1, races: reado
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const { values } = parseArgs({ options: { seeds: { type: 'string' }, 'team-size': { type: 'string' }, roster: { type: 'string' } } });
+  if (values.roster !== undefined && values.roster !== 'released' && values.roster !== 'legacy') {
+    console.error(`unknown --roster ${values.roster} (legacy|released)`);
+    process.exit(2);
+  }
   const races = values.roster === 'released' ? RELEASED_RACES : RACES;
   console.log(JSON.stringify(measureStunLock(Number(values.seeds ?? 2), values['team-size'] === '2' ? 2 : 1, races)));
 }

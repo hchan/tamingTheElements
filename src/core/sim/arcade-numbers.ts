@@ -30,7 +30,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Ice Shock melee plus a 10 s fan: has to close in through fire. Re-fit in SIM_VERSION 27 (Snag replaced Shards of Ice; was [6140, 1420]) and in 30 (was [6300, 1560]: 86-88% Arcade win rate, now 60%; 6000/1250 -> 5800/1200 in 31).
   curomo: [5880, 1243], // Re-fit in SIM_VERSION 114 (was [5420, 1243]; 35.9% 1v1, 33.2% 2v2: +8.5% life at every size)
   // Tornado stun into Wind Cone is the natural combo; near the legacy power. Re-fit in SIM_VERSION 31 (was [4490, 1010]); life 4800 -> 5000 in 37.
-  cyclonius: [5264, 1072], // SIM_VERSION 118 (was [5600, 1072]; 66.6% 1v1 after v117, -6% life, 2v2 810 -> 862 keeps team life); Re-fit in SIM_VERSION 111 (was [5600, 1100]; damage -2.5%)
+  cyclonius: [5264, 1072], // SIM_VERSION 118 (was [5600, 1072]; 66.6% 1v1 after v117: -6% life, 2v2 810 -> 905 keeps team life); Re-fit in SIM_VERSION 111 (was [5600, 1100]; damage -2.5%)
   // Hurricane halves each hit and Fade only defends: one of the weakest kits (24% before). Snag replaced Fade; re-fit in SIM_VERSION 27 (was [6360, 1840]). Re-fit in SIM_VERSION 31 (was [5300, 1530]).
   echo: [7800, 1600], // SIM_VERSION 118 (was [7464, 1600]; 38.6% 1v1 after v117, +4.5% life, 2v2 680 -> 651 keeps team life); Re-fit in SIM_VERSION 112 (was [7250, 1600]; life +3%, 2v2 700 -> 680 keeps team life); 108 (was [6750, 1600]; v104 stun shift)
   // Fireball starts at 0.25x and Fire Heal is a 40 s heal. Damage 1750 -> 1450 in SIM_VERSION 27 (the Snag heroes' lines fed her wins). Re-fit in SIM_VERSION 31 (was [5140, 1450]). Ranged since SIM_VERSION 69 (roster WP 0.4: no Charge, weather charge by casting): 50.0%, numbers kept. Re-fit in SIM_VERSION 99 (was [4210, 1373]; stun-immunity retune after v98).
@@ -40,7 +40,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Crimson Fire is fast and wide: strong. Life 3320 -> 3500 in SIM_VERSION 27, 3500 -> 3900 in 36, 3900 -> 4000 in 37.
   lavax: [3680, 848], // Re-fit in SIM_VERSION 108 (was [4000, 870]; v104 stun shift); damage 870 -> 848 in SIM_VERSION 111
   // Icicles every 15 ticks plus the Ice Blast slow: strong. Re-fit in SIM_VERSION 31 (was [3370, 930]). Ranged since SIM_VERSION 69 (roster WP 0.4): 50.0%, numbers kept.
-  morblass: [3600, 1092], // R2 round 2: still 67% at 3815, life -5.6% (2v2 866 -> 817 keeps team life); SIM_VERSION 118 (was [4080, 1092]; 67.9% 1v1 after v117, -6.5% life, 2v2 810 -> 866 keeps team life); Re-fit in SIM_VERSION 111 (was [4080, 1120]; damage -2.5%)
+  morblass: [3600, 1092], // SIM_VERSION 118 (was [4080, 1092]; 67.9% 1v1 after v117: -11.8% life, 2v2 810 -> 842 keeps team life); Re-fit in SIM_VERSION 111 (was [4080, 1120]; damage -2.5%)
   // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27. Re-fit in SIM_VERSION 99 (was [4600, 1442]; stun-immunity retune after v98).
   pax: [4677, 1364], // Re-fit in SIM_VERSION 112 (was [4540, 1364]; life +3%, 2v2 647 -> 628 keeps team life); 108 (was [4351, 1364]; v104 stun shift)
   // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37. Ranged since SIM_VERSION 69 (roster WP 0.4): 51.7%, numbers kept. Re-fit in SIM_VERSION 99 (was [1850, 640]; stun-immunity retune after v98).
@@ -57,7 +57,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   quarrak: [3515, 760], // Re-fit in SIM_VERSION 110 (was [3365, 760]; team life 2271 -> 2372 with 2v2 675 kept)
   hyalia: [7334, 2108], // SIM_VERSION 118 (was [7600, 2108]; 62.4% 1v1, 64.4% 2v2 after v117, -3.5% life, 2v2 650 -> 613)
   // Roster-24 batch 2 (SIM_VERSION 73), provisional until fitted with tools/sim/low-races/mat.sh.
-  brazgor: [5600, 850], // R2 round 3: 25% 1v1 at 5000/763 (life +12%, damage +11%; 2v2 470 -> 400); // R2 round 2: 22.8% 1v1 at 4566, life +9.5% (2v2 570 -> 520 keeps team life); SIM_VERSION 118 (was [4151, 727]; 16.8% 1v1 after v117, +10% life, +5% damage, 2v2 570 kept so team life +10%); SIM_VERSION 115 (was [4030, 727]; 1v1 40.5%, +3.0% life at every size, 2v2 570 kept); re-fit in SIM_VERSION 113 (was [4478, 727]; 65.4% 1v1, -10% life, 2v2 513 -> 570 keeps team life); SIM_VERSION 110 (was [4688, 727])
+  brazgor: [5600, 850], // SIM_VERSION 118 (was [4151, 727]; 16.8% 1v1 after v117: +35% life, +17% damage, 2v2 570 -> 400); SIM_VERSION 115 (was [4030, 727]; +3.0% life at every size); re-fit in SIM_VERSION 113 (was [4478, 727]; -10% life); SIM_VERSION 110 (was [4688, 727])
   glimmaw: [7200, 2027], // SIM_VERSION 118 (was [7531, 2027]; 65.8% 1v1 and 2v2 after v117, -4.4% life, 2v2 670 -> 617)
   durrok: [4892, 1058], // Re-fit in SIM_VERSION 110 (was [4689, 1058]; 2v2 675 -> 647 keeps team life)
   zephra: [6100, 2423], // R2 round 3: 63% 1v1 at 6300 (life -3.2%, 2v2 889 -> 918); // R2 round 2: 65% at 6509, life -3.2% (2v2 860 -> 889 keeps team life); SIM_VERSION 118 (was [6745, 2423]; 62.4% 1v1 after v117, -3.5% life, 2v2 830 -> 860 keeps team life)
@@ -84,12 +84,12 @@ export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
 export const ARCADE_2V2_LIFE_SCALE_PM = 1300;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   curomo: 777, // 700 before SIM_VERSION 118 (2v2 32.6%); 740 before SIM_VERSION 101
-  cyclonius: 905, // round 2: 33.7% 2v2 at 862; // 810 before SIM_VERSION 118 (1v1 life cut, team life kept); 770 before SIM_VERSION 86
+  cyclonius: 905, // SIM_VERSION 118 (was 810; 1v1 life cut, 2v2 33.7% at 862); 770 before SIM_VERSION 86
   echo: 651, // 680 before SIM_VERSION 118 (1v1 life +4.5%, team life kept); 700 before SIM_VERSION 112 (1v1 life +3%, team life unchanged); 661 before SIM_VERSION 109; 710 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 680 before SIM_VERSION 101; 650 before SIM_VERSION 100
   fiara: 639, // 726 before SIM_VERSION 118 (2v2 67.9%); 682 before SIM_VERSION 114 (1v1 life cut, team life 3074 kept); 730 before SIM_VERSION 109; 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
   ishimi: 765, // round 3: 37% 2v2; // 630 before SIM_VERSION 118 (2v2 21.7%); 670 before SIM_VERSION 101; 720 before SIM_VERSION 86
   lavax: 826, // 874 before SIM_VERSION 118 (2v2 60.9%); 804 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged)
-  morblass: 842, // round 3: 38% 2v2; // 810 before SIM_VERSION 118 (1v1 life cut, team life kept); 865 before SIM_VERSION 109; 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
+  morblass: 842, // SIM_VERSION 118 (was 810; 1v1 life cut, team life kept, 38% 2v2 at 817); 865 before SIM_VERSION 109; 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
   pax: 628, // 647 before SIM_VERSION 112 (1v1 life +3%, team life unchanged); 675 before SIM_VERSION 108 (1v1 life re-fit, team life unchanged); 660 before SIM_VERSION 100
   rokcore: 767, // 740 before SIM_VERSION 118 (1v1 life cut, team life kept); 670 before SIM_VERSION 69 (roster WP 0.4)
   sindarosa: 838, // round 3: 37% 2v2; // 785 before SIM_VERSION 118 (1v1 life cut, team life kept); 830 before SIM_VERSION 106; 800 before SIM_VERSION 101
@@ -99,7 +99,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   quarrak: 675, // 725 before SIM_VERSION 102
   kindrel: 770, // 730 before SIM_VERSION 118 (2v2 28.3%); 710 before SIM_VERSION 116 (kindrel-led 2v2 was the lowest entry); 755 before SIM_VERSION 103; 725 before 102; 650 before SIM_VERSION 90 (the lighter Ember Bite chain: 37.1% in 2v2 at 650, 59.7% at 780)
   nykra: 595, // 692 before SIM_VERSION 118 (1v1 life +6.5%, 2v2 62.5%); 655 before SIM_VERSION 109; 740 before SIM_VERSION 102
-  brazgor: 400, // round 2: 64% 2v2 at 520; // 513 before SIM_VERSION 113; 490 before SIM_VERSION 110; 460 before SIM_VERSION 102
+  brazgor: 400, // SIM_VERSION 118 (was 570; 1v1 life +35%, team life 2912 at 2v2 after 520/570 rounds); 513 before SIM_VERSION 113; 490 before SIM_VERSION 110; 460 before SIM_VERSION 102
   glimmaw: 600, // round 3: 60% 2v2; // 670 before SIM_VERSION 118 (2v2 68.2%, team life -8%)
   durrok: 630, // round 3: 41% 2v2; // round 2: 59.8% 2v2 at 647; // 675 before SIM_VERSION 110; 625 before SIM_VERSION 109; 590 before SIM_VERSION 102
   zephra: 918, // 830 before SIM_VERSION 118 (1v1 life cut, team life kept); 760 before SIM_VERSION 102

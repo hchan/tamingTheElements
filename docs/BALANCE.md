@@ -648,15 +648,17 @@ Cause: v117 let supers skip the juggle cap and the stun cap (`!sup`), so three s
 Changes:
 
 - Super hits obey `SUPER_COMBO_STUN_CAP_TICKS` 80 (a combo of supers is capped; supers still skip the juggle limit and ignore stun immunity). Longest stun run 135 -> 79 game ticks (1v1).
-- Race numbers retuned in `src/core/sim/arcade-numbers.ts` (`ARCADE_RACE_NUMBERS` life and damage per-mille, `ARCADE_2V2_LIFE_PM`). In 2v2 the team life is life x pm, so a 1v1 life change was compensated in pm. Rounds were judged on 4-seed runs (sigma about 5.2 pp in 1v1, 3.7 pp at 8 seeds in 2v2), then the standard seeds with a seed-2 holdout. Biggest moves: brazgor (life 5600, damage 850 per-mille), kindrel, nykra, ouroth and echo up; zephra, hyalia and morblass down.
+- Race numbers retuned in `src/core/sim/arcade-numbers.ts` (`ARCADE_RACE_NUMBERS` life and damage per-mille, `ARCADE_2V2_LIFE_PM`). In 2v2 the team life is life x pm, so a 1v1 life change was compensated in pm. Rounds were judged on 4-seed runs (sigma about 5.2 pp in 1v1 (estimate), 3.7 pp at 8 seeds in 2v2), then the standard seeds with a seed-2 holdout. Biggest moves: brazgor (life 5600, damage 850 per-mille), kindrel, nykra, ouroth and echo up; zephra, hyalia and morblass down.
 
 Measurements (`tools/sim/stun-lock.ts`, game ticks unless marked W = world ticks):
 
 | | lock share | longest run | run p90 | mean run | hits per combo | supers per match |
 |---|---|---|---|---|---|---|
-| 1v1 v118 | 0.1774 | 79 (W 201) | 51 | 29.21 | 1.36 | 6.917 |
-| 2v2 v118 | 0.1068 | 119 (W 253) | 87 | 35.22 | 1.63 | 19.813 |
+| 1v1 v118 | 0.1765 | 79 (W 201) | 51 | 29.23 | 1.36 | 6.839 |
+| 2v2 v118 | 0.1059 | 147 (W 247) | 87 | 35.29 | 1.62 | 19.587 |
 
-Known exception: `expireStuns` zeroes the combo total at natural expiry, so a super that lands on the exact expiry tick starts a fresh combo and an unbroken run can exceed 81 game ticks (2v2 longest 119). Not closed; options are to treat a stun that ended this tick as the same combo for supers, or to give supers stun immunity.
+The game-tick column of this table is not comparable with the world-tick column of the v117 table above (world ticks include hit-stop and the super freeze).
 
-Standard-seed win rates (1v1 16 seeds, 2v2 8 seeds): 1v1 37.5-63.0%, 2v2 42.4-58.4%, all inside the hard 35-65% band (pinned by `tests/repo/arcade-baseline-bands.test.ts`). Residual: 1v1 melee-vs-ranged cross is 0.403 (v117 0.343), still under the 0.42 target. Arcade baselines and goldens were re-recorded because Arcade behaviour changed on purpose; Classic hashes are unchanged (Classic goldens changed only in the simVersion header).
+Known exception: `expireStuns` zeroes the combo total at natural expiry, so a super that lands on the exact expiry tick starts a fresh combo and an unbroken run can exceed 81 game ticks (2v2 longest 147). Not closed; options are to treat a stun that ended this tick as the same combo for supers, or to give supers stun immunity.
+
+Standard-seed win rates (1v1 16 seeds, 2v2 8 seeds): 1v1 37.5-63.0%, 2v2 42.4-58.4%, all inside the hard 35-65% band (pinned by `tests/repo/balance-gate.test.ts`). Residual: 1v1 melee-vs-ranged cross is 0.403 (v117 0.343), still under the 0.42 target. Arcade baselines and goldens were re-recorded because Arcade behaviour changed on purpose; Classic hashes are unchanged (Classic goldens changed only in the simVersion header).

@@ -107,6 +107,17 @@ describe('balance baseline', () => {
   });
 });
 
+/** R8 (SIM_VERSION 118): the recorded Arcade baselines stay inside the 35-65% hard limit (the target band is 40-60%; the limit leaves room for sampling noise). */
+const HARD_MIN = 0.35;
+const HARD_MAX = 0.65;
+function expectInsideBand(label: string, report: BalanceReport): void {
+  expect(Object.keys(report.winRates).length).toBeGreaterThanOrEqual(24);
+  for (const [hero, rate] of Object.entries(report.winRates)) {
+    expect(rate, `${label} ${hero}`).toBeGreaterThanOrEqual(HARD_MIN);
+    expect(rate, `${label} ${hero}`).toBeLessThanOrEqual(HARD_MAX);
+  }
+}
+
 describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report only)', () => {
   const arcade = JSON.parse(readFileSync(ARCADE_BASELINE_PATH, 'utf8')) as BalanceReport;
 
@@ -114,6 +125,10 @@ describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report o
     expect(arcade.params).toEqual(ARCADE_PARAMS);
     expect(Object.keys(arcade.winRates).sort()).toEqual([...RELEASED_RACES].sort());
     expect(arcade.matches).toBe((RELEASED_RACES.length * (RELEASED_RACES.length - 1) * ARCADE_PARAMS.seeds) / 2);
+  });
+
+  it('recorded baselines stay inside the band', () => {
+    expectInsideBand('arcade-baseline', arcade);
   });
 
   it('leaves the Classic parameters alone (Classic stays bit-identical)', () => {
@@ -130,6 +145,10 @@ describe('Arcade 2v2 balance baseline (WP-arcade-2v2-tune; compared nightly, rep
     expect(tag.params).toEqual(ARCADE_2V2_PARAMS);
     expect(Object.keys(tag.winRates).sort()).toEqual([...RELEASED_RACES].sort());
     expect(tag.matches).toBe((RELEASED_RACES.length * (RELEASED_RACES.length - 1) * ARCADE_2V2_PARAMS.seeds) / 2);
+  });
+
+  it('recorded baselines stay inside the band', () => {
+    expectInsideBand('arcade-2v2-baseline', tag);
   });
 });
 

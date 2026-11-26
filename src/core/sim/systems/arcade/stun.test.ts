@@ -478,19 +478,45 @@ describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
     expect(longest).toBeLessThanOrEqual(COMBO_STUN_CAP_TICKS);
   });
 
-  it('a super hit that would pass SUPER_COMBO_STUN_CAP_TICKS recovers the victim (stunCap, invulnerable)', () => {
+  /** Five super hits, each landing while the victim is still stunned (GAME_TICK advances between hits so the chain builds). */
+  const superChainEnding = (lastBase: number): { sink: EventSink; total: number; until: number } => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
-    applyStun(world, sink, 0, 1, 26, true);
-    applyStun(world, sink, 0, 1, 26, true);
-    applyStun(world, sink, 0, 1, 26, true); // 26 + 22 + 18 = 66 so far
+    // [game tick, base]: totals 26, 42, 58, 70 (stuns 26, 22, 18, 14 after the juggle step), then the last hit adds `lastBase - 12 - 2`.
+    for (const [tick, base] of [[0, 26], [20, 26], [40, 26], [56, 26], [68, lastBase]] as const) {
+      s.arcade[GAME_TICK] = tick;
+      applyStun(world, sink, 0, 1, base, true);
+    }
+    return { sink, total: s.arcade[E(1, ArcadeE.comboStunTotal)] ?? 0, until: s.arcade[E(1, ArcadeE.stunUntil)] ?? 0 };
+  };
+
+  it('a super chain that ends at exactly SUPER_COMBO_STUN_CAP_TICKS (80) is allowed', () => {
+    const { sink, total, until } = superChainEnding(24);
     expect(sink.events).toEqual([]);
-    s.arcade[GAME_TICK] = 5;
-    applyStun(world, sink, 0, 1, 200, true); // would add far past 80
+    expect(total).toBe(SUPER_COMBO_STUN_CAP_TICKS);
+    expect(until).toBe(80);
+  });
+
+  it('a super chain that would end at 81 recovers the victim (stunCap, invulnerable)', () => {
+    const { sink } = superChainEnding(25);
     expect(sink.events.map((e) => [e.kind, e['reason']])).toEqual([[SimEventKind.recovered, RecoveredReason.stunCap]]);
-    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(5);
-    expect(s.arcade[E(1, ArcadeE.invulnUntil)]).toBe(5 + RECOVERY_INVULN_TICKS);
+  });
+
+  it('a normal combo near COMBO_STUN_CAP_TICKS counts toward the super cap: a super hit past 80 recovers', () => {
+    // Known limitation (SIM_VERSION 118, not fixed): a plain combo's stun counts toward the super cap, so a plain chain plus a rooting
+    // super can be cut short and recovered. See ideas/brainstorm/super-stun-expiry-seam.md (slated for v119).
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    applyStun(world, sink, 0, 1, 70); // a plain chain of 70, under the plain cap of 72
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(70);
+    expect(sink.events).toEqual([]);
+    s.arcade[GAME_TICK] = 60;
+    applyStun(world, sink, 0, 1, 26, true); // juggle 1: 22 ticks, until 82, adds 12 -> 82 > 80
+    expect(sink.events.map((e) => [e.kind, e['reason']])).toEqual([[SimEventKind.recovered, RecoveredReason.stunCap]]);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(60);
+    expect(s.arcade[E(1, ArcadeE.invulnUntil)]).toBe(60 + RECOVERY_INVULN_TICKS);
   });
 
   it('a super hit leaving the chain between the plain cap and the super cap still extends the stun', () => {
