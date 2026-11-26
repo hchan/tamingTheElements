@@ -181,6 +181,8 @@ export class ProjectileView {
       fade = g.alpha * (clock.remainingMs === undefined ? 1 : meleeFadeOut(clock.remainingMs));
     }
     if (clock && kind === 'spin' && !reduced) scale = pulseBump(ageMs);
+    // Umbrel's Spore Burst is drawn as procedural specks by the ability aura view (fx/spore-specks.ts); reduced motion keeps this sprite.
+    if (!reduced && p.sprite === 'sporeBurst') fade = 0;
     const grown = melee ? 0 : (p.growPx ?? 0);
     this.image.setVisible(true).setAlpha(fade);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
