@@ -19,7 +19,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [qa-r3-label-clutter](../in-progress/qa-r3-label-clutter.md): Action-bar TAG label overlaps slot text; prop labels read as debug; heroes stack. Fix: move the TAG cue, use player-facing prop names or icons only, add a soft push-apart, hide empty status boxes, expire damage numbers faster.
 - [qa-r6-floor-label-clutter-and-hud-pips](../done/qa-r6-floor-label-clutter-and-hud-pips.md): QA r6: cryptic floor labels, unlabeled HUD pips, flat life bars. Evidence: tourfight-1.png, tourfight-4.png, fight-a-1280.png, fight-a-1920.png (~/claudetmp/qa6/).
 - [callouts-collide-with-pops](../done/callouts-collide-with-pops.md): Defence call-outs (ROOTED, FREED, PARRY ...) can still print over white damage pops. DMGNUM-1 moves the grey HUD damage numbers clear of pops and call-outs, but the white pops (shock-view.ts) and the call-outs (defence-view.ts) are sti
-- [callout-pop-limits](../brainstorm/callout-pop-limits.md): Follow-up limits of the call-out placement (upward snap, ceiling-pinned overlaps, aura word pops).
+- [callout-pop-limits](../done/callout-pop-limits.md): Follow-up limits of the call-out placement (upward snap, ceiling-pinned overlaps, aura word pops).
 - [combo-counter-anchoring](../done/combo-counter-anchoring.md): Combo counter anchoring. Anchor the combo counter to the victim in screen space with the same clamp as damage numbers, so it never leaves the picture on a panned camera.
 - [qa-r10-fight-readability](../done/qa-r10-fight-readability.md): QA r10: fight readability and intro. - ROUND 1 banner sits on the centre floor chip ("PAX x2" bleeds through the letters, fire-t1900.png);
 - [qa-r13-visual-readability](../done/qa-r13-visual-readability.md): Readability and art notes (r13). Play screen: the "More heroes below" pill overlaps the hero stat row at 1280x720 and the intro paragraph is long (02-play.png).
@@ -52,7 +52,7 @@ Done 2026-11-17: the Strike circle label now uses the Snag name and the portrait
 
 ### FR-1 Floating text lanes
 
-- Members: [callout-pop-limits](../brainstorm/callout-pop-limits.md), [combo-counter-anchoring](../done/combo-counter-anchoring.md), [qa-stale-damage-numbers](../brainstorm/qa-stale-damage-numbers.md), [tag-call-position-wide-view](../brainstorm/tag-call-position-wide-view.md), [hud-numbers-wide-view-projection](../in-progress/hud-numbers-wide-view-projection.md)
+- Members: [callout-pop-limits](../done/callout-pop-limits.md), [combo-counter-anchoring](../done/combo-counter-anchoring.md), [qa-stale-damage-numbers](../brainstorm/qa-stale-damage-numbers.md), [tag-call-position-wide-view](../brainstorm/tag-call-position-wide-view.md), [hud-numbers-wide-view-projection](../in-progress/hud-numbers-wide-view-projection.md)
 - Size: M
 - Shared files: src/game/fx/pop-lanes.ts, event-fx.ts, Hud.ts
 - Flags: needs browser/e2e

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { POP_CEIL_FLOOR, POP_CEIL_PAD, POP_LANE_PX, POP_NUMBER_CLEAR_PX, POP_MAX_LANES, popCeil, popLaneLift, clearOfChips } from './pop-lanes';
+import { POP_CEIL_FLOOR, POP_CEIL_PAD, POP_LANE_PX, POP_NUMBER_CLEAR_PX, POP_MAX_LANES, popCeil, popLaneLift, clearOfChips, benchRects } from './pop-lanes';
+import { chipRect, tagPill } from '../hud/slim-hud';
 import { SCRIM_BOTTOM } from '../hud/slim-hud';
 
 describe('popLaneLift', () => {
@@ -65,5 +66,24 @@ describe('clearOfChips (qa-r110: the weather badge must not hide a status chip)'
     const row2 = { x: 720, y: 150, w: 120, h: 24 };
     expect(clearOfChips([[chip, row2], []], 750, 910, 142, 52)).toBe(150 + 24 + POP_CEIL_PAD);
     expect(clearOfChips([[{ x: 750, y: 400, w: 100, h: 24 }], []], 750, 910, 142, 52)).toBe(142);
+  });
+});
+
+describe('benchRects', () => {
+  it('is empty without a bench', () => {
+    expect(benchRects([0, 0])).toEqual([[], []]);
+  });
+  it('covers the tag pill and each benched portrait, so popCeil sits under them', () => {
+    const out = benchRects([2, 0]);
+    expect(out[1]).toEqual([]);
+    const r = out[0]?.[0] ?? { x: 0, y: 0, w: 0, h: 0 };
+    expect(r.w).toBeGreaterThan(0);
+    const pill = tagPill(0);
+    const far = chipRect(0, 1);
+    expect(r.x).toBeLessThanOrEqual(far.x);
+    expect(r.x + r.w).toBeGreaterThanOrEqual(pill.x + pill.w);
+    expect(popCeil(out, pill.x, pill.x + pill.w)).toBe(r.y + r.h + POP_CEIL_PAD);
+    expect(popCeil(out, pill.x, pill.x + pill.w)).toBeGreaterThan(POP_CEIL_FLOOR);
+    expect(popCeil(out, 900, 960)).toBe(POP_CEIL_FLOOR);
   });
 });
