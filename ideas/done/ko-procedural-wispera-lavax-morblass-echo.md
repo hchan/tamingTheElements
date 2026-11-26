@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
 
@@ -25,3 +25,7 @@ So the procedural set is six: wispera, lavax, morblass, echo, rokcore, ishimi. F
 ## Progress (2026-11-26, builder)
 
 wispera, lavax, morblass done (status stays idea: echo, rokcore, ishimi pending). `KoCollapseSpec` gained optional `mid` frame and particle kinds spark/ash/droplet (new `src/game/fx/ko-collapse-particles.ts`); gate = `KO_COLLAPSE_LEGACY` set (legacy heroes need no flag). e2e: the existing hero loop in `tests/e2e/victory-still.spec.ts` (long gate, ~7 s each) now covers the three. Screenshots in `.scratch/ko-procedural/` for the art-director.
+
+## Progress (2026-11-26, builder, part 2)
+
+echo, rokcore, ishimi added to `KO_COLLAPSE` (appended) and `KO_COLLAPSE_LEGACY`; all six procedural KOs are in, so this idea is done (ishimi's victory still is approved but its KO still is not). Art-director round on the first three: lavax APPROVE (unchanged); wispera REVISE 2 and morblass REVISE 2.5 retuned (end alpha 0.6 / 0.85, scaleY 0.5 / 0.4, pale cyan-white and deep teal tints, dark ground shadow alpha 0.3, resting particles via new optional `rest` and `shadow` spec fields and `mote`/`splat` kinds). Echo, rokcore and ishimi follow the same lessons (end alpha >= 0.6, shadow, resting motes or blobs). Reduced motion: end state and shadow, no particles. Fresh end-state screenshots in `.scratch/ko-procedural/`; they still go to the art-director.
