@@ -268,9 +268,9 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
       if (!start.disabled) form.requestSubmit();
     },
   });
-  const stageHint = el('p', 'heroHint', 'The arena starts on the element you pick (Random draws one) and follows the Weather: call Weather in the fight to change it.');
+  const stageHint = el('p', 'heroHint', 'The arena starts on this element and follows the Weather.');
   stageHint.id = 'arcadeStageHint';
-  const teamHint = el('p', 'heroHint', 'Tag teams: you share the fight with a partner and the bench heals, so each hero has a different life than in 1v1. The hero panel shows the life for the team size you picked.');
+  const teamHint = el('p', 'heroHint', 'Tag team: partners share the fight and the bench heals. Life shown is for this team size.');
   teamHint.id = 'arcadeTeamHint';
   const hints = el('div', 'vsHints');
   hints.append(stageHint, teamHint);
