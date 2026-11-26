@@ -36,7 +36,7 @@ import { SwapBlock, swapAllowed } from './systems/swap';
 import { isArcade, isFrozen, now } from './clock';
 import {
   BUFFER_TICKS,
-  COMBO_STUN_CAP_TICKS,
+  SUPER_COMBO_STUN_CAP_TICKS,
   DASH_COOLDOWN_TICKS,
   DASH_TICKS,
   HitStopCause,
@@ -330,7 +330,7 @@ function checkArcade(
     const e = i * ARCADE_E;
     const juggle = s.arcade[e + ArcadeE.juggle] ?? 0;
     const total = s.arcade[e + ArcadeE.comboStunTotal] ?? 0;
-    if (juggle > JUGGLE_LIMIT || total > COMBO_STUN_CAP_TICKS)
+    if (juggle > JUGGLE_LIMIT || total > SUPER_COMBO_STUN_CAP_TICKS || total < -SUPER_COMBO_STUN_CAP_TICKS)
       fail(`juggle ${String(juggle)}, stun total ${String(total)}`);
     if ((s.arcade[e + ArcadeE.stunUntil] ?? 0) - g > Math.max(0, total))
       fail(`stun of ${String(i)} outlasts its combo budget`);
