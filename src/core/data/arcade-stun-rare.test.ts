@@ -6,9 +6,9 @@ const REAL_STUNS = ['tornado', 'ice-blast', 'wyrm-coil'];
 
 describe('stun is rare (SIM_VERSION 117)', () => {
   it('only Tornado, Ice Blast and Wyrm Coil stun longer than a heavy hit', () => {
-    const heavy = HIT_STUN_TICKS[2] ?? 0;
-    const longer = Object.keys(HIT_STUN_OVERRIDE).filter((slug) => hitStunFor(slug, 2) > heavy).sort();
-    expect(longer).toEqual([...REAL_STUNS].sort());
+    const heavy = HIT_STUN_TICKS[2];
+    const longer = Object.keys(HIT_STUN_OVERRIDE).filter((slug) => hitStunFor(slug, 2) > heavy).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    expect(longer).toEqual([...REAL_STUNS].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)));
   });
 
   it('no strength table entry outside the supers stuns longer than a flinch', () => {

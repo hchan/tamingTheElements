@@ -468,13 +468,13 @@ describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
   };
 
   it('a light hit every 20 ticks stuns at most 35% of 1000 ticks and never more than 26 in a row', () => {
-    const [share, longest] = chain([[20, HIT_STUN_TICKS[0] ?? 0]], 1000);
+    const [share, longest] = chain([[20, HIT_STUN_TICKS[0]]], 1000);
     expect(share).toBeLessThanOrEqual(0.35);
     expect(longest).toBeLessThanOrEqual(26);
   });
 
   it('a double team of light, medium and heavy hitters never chains past COMBO_STUN_CAP_TICKS', () => {
-    const [, longest] = chain([[20, HIT_STUN_TICKS[0] ?? 0], [30, HIT_STUN_TICKS[1] ?? 0], [26, HIT_STUN_TICKS[2] ?? 0]], 2000);
+    const [, longest] = chain([[20, HIT_STUN_TICKS[0]], [30, HIT_STUN_TICKS[1]], [26, HIT_STUN_TICKS[2]]], 2000);
     expect(longest).toBeLessThanOrEqual(COMBO_STUN_CAP_TICKS);
   });
 

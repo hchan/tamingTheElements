@@ -142,7 +142,7 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
   });
 
   it('a full-bar Normal AI still supers off a medium flinch (SIM_VERSION 117: the stun ticks down while it reacts)', () => {
-    const flinch = HIT_STUN_TICKS[1] ?? 0;
+    const flinch = HIT_STUN_TICKS[1];
     expect(ARCADE_AI_REACTION_MIN).toBeLessThan(flinch);
     let fired = 0;
     for (let seed = 0; seed < 8; seed++) {
