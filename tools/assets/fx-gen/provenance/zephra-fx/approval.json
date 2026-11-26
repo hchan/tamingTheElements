@@ -1,0 +1,5 @@
+{
+  "staticMote": {"verdict": "APPROVE", "overall": 4, "reason": "Jagged pale-steel filaments with amber/violet flecks read as static discharge, no halo, no text or faces. Slightly flat and clean-edged at 4x but crisp and legible at 80px, and clearly more readable than the shipped soft blob with two wing strokes. Watch that it does not read as a spider at small size; keep the flecks.", "approved": "staticMote.png", "reviewer": "art-director", "date": "2026-11-26", "beats_shipped": true},
+  "staticMoteLoop": {"verdict": "APPROVE", "overall": 4, "reason": "8 frames with distinct filament angles and spark positions and a gentle core pulse; shimmers rather than rotates, no popping or seams, consistent silhouette and size across frames.", "approved": "staticMoteLoop.png", "reviewer": "art-director", "date": "2026-11-26", "beats_shipped": true},
+  "skitter": {"verdict": "APPROVE", "overall": 4, "reason": "Downscaled to 80px the streaks and curl still read as wind, the teal trail holds up. Still fine.", "approved": "skitter.png", "reviewer": "art-director", "date": "2026-11-26", "beats_shipped": true}
+}

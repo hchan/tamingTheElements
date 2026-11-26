@@ -25,3 +25,6 @@ Kindrel cast sprites emberBite and cinderSpray (public/assets/img/fx/) were repl
 (tools/assets/fx-gen/provenance/kindrel-fx/approval.json, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/kindrel-fx-art.test.ts). No third-party art, no attribution required.
 Ouroth cast sprite wyrmCoil (public/assets/img/fx/) was replaced 2026-11-26 by the 80 px output of a project-own AI plate, art-director approved 2026-11-26
 (tools/assets/fx-gen/provenance/ouroth-fx/approval.json, sha256 pin in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/ouroth-fx-art.test.ts). No third-party art, no attribution required.
+Zephra cast sprites staticMote, skitter and the staticMoteLoop strip (public/assets/img/fx/, fx/loop/) were replaced 2026-11-26 by project-own procedural art
+(tools/assets/roster24-art/zephra-mote-proc.py; skitter downscaled from an approved procedural candidate), art-director approved 2026-11-26
+(tools/assets/fx-gen/provenance/zephra-fx/approval.json, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/zephra-fx-art.test.ts). No third-party art, no attribution required.

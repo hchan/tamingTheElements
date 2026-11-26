@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
 
@@ -15,3 +15,5 @@ Watch item: the mote may read spider-like at tiny sizes; keep the flecks.
 Do after the Ouroth wyrmCoil builder merges (it generalises `tools/assets/integrate-kindrel-art.ts` into a per-hero table; one builder at a time on that shared file). Then add Zephra entries, sha pins and credits, contact sheet for the art-director.
 
 Also from the art session: Abyssor bundle has no real swaps (KO r7 and cut-in identical, Large differs only in alpha 1-7, keep shipped); gaps: tentacleLash icon and abyssalPull/tentacleLash fx never approved, no Maelstrom icon. nykra, glimmaw, durrok bundles still building.
+
+Done 2026-11-26: installed via the zephra entry in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/zephra-fx-art.test.ts, provenance in tools/assets/fx-gen/provenance/zephra-fx/, generator copied to tools/assets/roster24-art/zephra-mote-proc.py. No manifest change (staticMoteLoop frame 160x160 matches).

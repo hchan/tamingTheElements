@@ -1,0 +1,5 @@
+{
+  "skitter": {"approved": "skitter-proc2/skitter-proc-1.png", "reviewer": "art-director", "date": "2026-11-26", "beats_shipped": true},
+  "staticMote": {"approved": null, "verdict": "REVISE", "reviewer": "art-director", "date": "2026-11-26", "beats_shipped": false},
+  "staticMoteLoop": {"approved": null, "verdict": "REVISE", "reviewer": "art-director", "date": "2026-11-26", "beats_shipped": false}
+}
