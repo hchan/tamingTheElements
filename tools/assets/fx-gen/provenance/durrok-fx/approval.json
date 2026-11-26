@@ -22,7 +22,8 @@
   "overall": 3,
   "reason": "Alpha is clean but it reads as a teal whirlpool swirl, not a hoof impact; shipped streak with ground cracks reads better. Re-key the approved plate f269 to keep the downward impact column and ground splash, drop the outer swirl ring (tighten the radial key), or keep shipped.",
   "approved": null,
-  "beats_shipped": false
- },
- "_note": "reviewer/date added at integration from the art-director verdict relayed in ideas/done/integrate-nykra-fx-art.md; the art session file carries no reviewer field. hoofCrash was dropped (REVISE 3)."
+  "beats_shipped": false,
+  "reviewer": "art-director",
+  "date": "2026-11-26"
+ }
 }

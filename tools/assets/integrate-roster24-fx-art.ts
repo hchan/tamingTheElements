@@ -18,8 +18,6 @@ export interface FxPin {
   dst?: string;
   /** approval entry for this file when it differs from the hero default: file in the provenance dir, key inside it (omit for a flat file). */
   approval?: { file: string; key?: string };
-  /** file name the approval must name when it approves a parent still (bellPulseLoop is cut from the approved bellPulse set). Default: src. */
-  approves?: string;
 }
 export interface HeroFx {
   provenance: string;
@@ -64,8 +62,7 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
     keyed: true,
     fx: {
       bellPulse: { src: 'bellPulse_a.png', sha256: 'e9591791ba492b8db2612bc3f43a2f118919b887b7dd1b166283bef939d23a79', w: 80, h: 80, approval: { file: 'approval.json', key: 'hyalia_bellPulse' } },
-      // The director approved the bellPulse set including the loop ("two identical 4-frame cycles, reset pop is acceptable"); the loop has no entry of its own.
-      bellPulseLoop: { src: 'bellPulseLoop.png', sha256: 'addbf398a2b3d821ea49dc5c0a37f37ff73c85721926cf9ef8933aa01e803f4a', w: 1280, h: 160, dst: 'fx/loop/bellPulseLoop.png', approval: { file: 'approval.json', key: 'hyalia_bellPulse' }, approves: 'bellPulse_a.png' },
+      bellPulseLoop: { src: 'bellPulseLoop.png', sha256: 'addbf398a2b3d821ea49dc5c0a37f37ff73c85721926cf9ef8933aa01e803f4a', w: 1280, h: 160, dst: 'fx/loop/bellPulseLoop.png', approval: { file: 'approval.json', key: 'hyalia_bellPulseLoop' } },
       stingingFilament: { src: 'stingingFilament_c.png', sha256: '4d21919496f8d8f92323f4b8a2ac22f9d49e406541da118af866c0395828efd1', w: 80, h: 80, approval: { file: 'approval-fx3.json', key: 'hyalia_stingingFilament' } },
     },
   },
@@ -84,6 +81,29 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
       staticMote: { src: 'staticMote.png', sha256: '6db8da551cfa9b19b3383b8104d0a4484d57d9d7be6f5152d508a28b966284f1', w: 80, h: 80 },
       skitter: { src: 'skitter.png', sha256: '1d19674079151b2df14d8693d38f86fd824da4eea90a8b253ec8112a9ad369c4', w: 80, h: 80 },
       staticMoteLoop: { src: 'staticMoteLoop.png', sha256: '63b656107eb59a6b84dab8cc64d35b12babbd93e1db6ed122e55241f885e32e1', w: 1280, h: 160, dst: 'fx/loop/staticMoteLoop.png' },
+    },
+  },
+  vortigal: {
+    provenance: 'tools/assets/fx-gen/provenance/vortigal-fx',
+    keyed: true,
+    fx: {
+      talonRake: { src: 'talonRake.png', sha256: 'a4fdf3af2f5cf6d8b8789e68808e9b151a51a7f05636537b017cc46a79f7b049', w: 80, h: 60 },
+    },
+  },
+  abyssor: {
+    provenance: 'tools/assets/fx-gen/provenance/abyssor-fx',
+    keyed: true,
+    fx: {
+      tentacleLash: { src: 'tentacleLash.png', sha256: '8570f56615288f029f17eac34d42cda6aead25a07e99e336fae3d5cde76846c3', w: 80, h: 60 },
+    },
+  },
+  brazgor: {
+    provenance: 'tools/assets/fx-gen/provenance/brazgor-fx',
+    keyed: true,
+    fx: {
+      // approval.json is keyed by moltenHide (its `approved` is the bare file name moltenHide_v2.png); forgeGore has its own flat approval.
+      moltenHide: { src: 'moltenHide_v2.png', sha256: 'a1e4b20874f95f8280ad0f989fac949556f37ba980932f83ded5a6178bfb678c', w: 80, h: 80 },
+      forgeGore: { src: 'forgeGore_c.png', sha256: 'a09c68a50c792c6800896dea24a56b7d193489efdc9a6a8c5773e920da9d681e', w: 80, h: 60, approval: { file: 'approval-forgeGore.json' } },
     },
   },
 };
@@ -105,7 +125,7 @@ export function verify(hero: string, srcDir?: string): string[] {
       const j = JSON.parse(readFileSync(resolve(dir, pin.approval.file), 'utf8')) as Record<string, Entry> & Entry;
       a = pin.approval.key ? j[pin.approval.key] : j;
     }
-    if (a?.approved !== (pin.approves ?? pin.src) || a.reviewer !== 'art-director' || a.beats_shipped !== true) throw new Error(`${name}: no art-director approval for ${pin.src}`);
+    if (a?.approved !== pin.src || a.reviewer !== 'art-director' || a.beats_shipped !== true) throw new Error(`${name}: no art-director approval for ${pin.src}`);
     const b = readFileSync(resolve(dir, pin.src));
     if (sha(b) !== pin.sha256) throw new Error(`${name}: sha256 ${sha(b)} does not match the approved pin`);
     if (b.readUInt32BE(16) !== pin.w || b.readUInt32BE(20) !== pin.h) throw new Error(`${name}: size is not ${String(pin.w)}x${String(pin.h)}`);

@@ -1,7 +1,9 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
+
+Done 2026-11-26: glimmaw/durrok approval.json are verbatim fx-r3, hyalia approval.json and ouroth approval-fx2.json verbatim proc-fx2; `approves:` workaround removed, bellPulseLoop uses its own hyalia_bellPulseLoop entry.
 
 # Replace the edited fx approval copies with the art session's verbatim files
 

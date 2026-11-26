@@ -1,7 +1,9 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
+
+Done 2026-11-26: vortigal talonRake, abyssor tentacleLash, brazgor moltenHide (moltenHide_v2.png) and forgeGore (forgeGore_c.png) installed via the table; provenance under `tools/assets/fx-gen/provenance/{vortigal,abyssor,brazgor}-fx/`, generator tools/assets/roster24-art/brazgor-forgegore-proc-gen.py. Open: forgeGore arc bulges upward vs the shipped diagonal streak; check rotation/anchor in a real Brazgor attack.
 
 # Integrate approved cast fx, batch 2 (installer table, tools/assets/integrate-roster24-fx-art.ts)
 
