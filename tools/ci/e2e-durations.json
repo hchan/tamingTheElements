@@ -106,6 +106,7 @@
     "storage-guards.spec.ts": { "sec": 4, "tests": 2 },
     "super-band.spec.ts": { "sec": 163, "tests": 3, "upperBound": true },
     "super-impact-shot.spec.ts": { "sec": 20, "tests": 2 },
+    "tag-entry-wall.spec.ts": { "sec": 40, "tests": 1 },
     "terrain-chips-water.spec.ts": { "sec": 60, "tests": 2 },
     "tester-mode.spec.ts": { "sec": 63, "tests": 10 },
     "tour-fight-match.spec.ts": { "sec": 8, "tests": 1 },
