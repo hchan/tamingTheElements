@@ -1,13 +1,13 @@
 /**
  * Nightly fix loop (runs after `nightly:collect` when the status is red with unrecorded failures):
  *   pnpm nightly:fix [--dry-run]            fix loop only (needs a fresh collected red status)
- *   nightly-fix.ts collect-and-fix          collect (retry every 20 min until 04:30 while the 23:00 full run is unfinished), then the fix loop (the 01:00 LaunchAgent)
+ *   nightly-fix.ts collect-and-fix          collect (retry every 20 min until 04:30 while the 23:00 full run is unfinished), then the fix loop (the 02:00 LaunchAgent)
  *   nightly-fix.ts report                   read-only morning report to tte-gate/nightly-morning-report.md (the 09:00 LaunchAgent)
  * Per failure: a sandboxed headless `claude -p` round (file tools only, no user/project settings, see nightly-fix-logic.ts) in a
  * fresh worktree from origin/main (.scratch/nightly-fix-wt), then a re-run of that spec only via the router (`--pc`: PC only, never
- * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). At most 3 rounds, at most 3 failures, one run at a time (lock file).
+ * the Mac; exits 89/94/95/96, signals and timeouts stop the loop). No round-count cap (since 2026-11-26): a failure stops on no progress (it repeats an earlier normalised diff or error), its share of the spend cap, the night spend cap or the hard stop; one run at a time (lock file).
  * Verify loop (WP3e/3f): collect -> fix -> merge --no-ff of the fix branch F onto the tested sha T in a detached worktree (M) -> re-run the fixed
- * specs on M (PC only) -> gate:commit -> a FULL e2e of M when the diff leaves those specs; up to 3 rounds (a red round goes back to a fix pass).
+ * specs on M (PC only) -> gate:commit -> a FULL e2e of M when the diff leaves those specs; until green or the hard stop (a red round goes back to a fix pass).
  * Hard stop 07:00 for a night run (22:00 by day, 6 h max): nothing starts that cannot finish. Flaky and known-red specs are reported, never chased.
  * Then integrateMain(M) into local main and pushMerged (plain `git push origin M:main`, never forced) when `landBlockers` is empty; a partial
  * night or a visual change is merged locally but not pushed; a red gate or a collateral red is needs-human; unverified fixes stay on
@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path';
 import { loadKnownRed } from './known-red';
 import { collect, readStatus, statusPath, type Deps, type RunResult } from './nightly-e2e';
 import {
-  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, byTier, firstError, noProgress, spendAllowed, NIGHT_SPEND_CAP_USD, ROUND_BUDGET_USD, type RoundSig, canStartFullRun, canStartRound, canStartVerify, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
+  addsSkipMarkers, BLOCKING_ENV, blockingReds, buildPrompt, byTier, noProgress, spendAllowed, NIGHT_SPEND_CAP_USD, ROUND_BUDGET_USD, type RoundSig, canStartFullRun, canStartRound, canStartVerify, errorSig, failureSpendAllowed, normalizeDiff, PER_FAILURE_SPEND_CAP_USD, capTimeout, childFailed, classifyReds, claudeArgs, claudeEnv, deadlineReached, dedupeRefs, describeFix, errorTail, extractFailures, finalState,
   forbiddenTouched, FULL_RUN_MS, fullRunIncomplete, GATE_TIMEOUT_MS, judgeFullRun, knownRedProposal, landBlockers, LOCK_STALE_MS, mergeSubject, mergedBranchName, morningReport, needsFullRun, noPushEnv, parseNulList, parseTriage,
   redsVerdict, retryAllowed, RETRY_WAIT_MS, RERUN_TIMEOUT_MS, rerunStops, ROUND_TIMEOUT_MS, shouldRun, slug, specPath, statusUsable, titlePassed, triage, verifyVerdict,
   type ClassifiedRed, type Failure, type FailureResult, type FixState, type FixStatus, type LandInput, type RetryOutcome, type VerifyRound,
@@ -79,6 +79,21 @@ export function readFixStatus(dir: string): FixStatus | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** Claude rounds already started on this date (a second run the same night continues the count; another date starts at 0). */
+const spentPath = (dir: string): string => join(dir, 'nightly-fix-spend.json');
+function readSpent(dir: string, date: string): number {
+  try {
+    const v = JSON.parse(readFileSync(spentPath(dir), 'utf8')) as { date?: string; rounds?: number };
+    return v.date === date && Number.isInteger(v.rounds) && (v.rounds ?? 0) >= 0 ? (v.rounds ?? 0) : 0;
+  } catch {
+    return 0;
+  }
+}
+function writeSpent(dir: string, date: string, rounds: number): void {
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(spentPath(dir), `${JSON.stringify({ date, rounds })}\n`);
 }
 
 /** Report context of this process's one fix run: error tails per red and the branch name unpushed fixes are kept under. */
@@ -224,18 +239,21 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   };
   let seq = 0;
   /** Re-run one spec on the PC (never the Mac) and read its JSON: green = exit 0 and the title ended `passed` (not skipped). */
-  const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string } => {
+  const rerun = (cwd: string, f: Ref): { stop: boolean; green: boolean; code: number; tail: string; error: string } => {
     const jsonOut = join(d.statusDir, `nightly-fix-rerun-${String(++seq)}.json`);
     rmSync(jsonOut, { force: true });
-    const r = sh(cwd, 'corepack', rerunArgs(f.file), RERUN_TIMEOUT_MS, { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
+    const r = sh(cwd, 'corepack', rerunArgs(f.file), capTimeout(RERUN_TIMEOUT_MS, startMs, d.now()), { ...noPushEnv(d.env), PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut });
     let passed = false;
+    let error = '';
     try {
-      passed = titlePassed(JSON.parse(readFileSync(jsonOut, 'utf8')) as unknown, f);
+      const j = JSON.parse(readFileSync(jsonOut, 'utf8')) as unknown;
+      passed = titlePassed(j, f);
+      if (!passed) error = errorSig(extractFailures(j, [f])[0]?.message ?? '');
     } catch {
       passed = false;
     }
     const tail = redact(`${r.stdout}\n${r.stderr}`.split('\n').slice(-40).join('\n'));
-    return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail };
+    return { stop: rerunStops(r), green: r.code === 0 && !r.signal && !r.timedOut && passed, code: r.code, tail, error };
   };
 
   /** Full suite on the merged tree: detach-submit then attach through the router (PC only). */
@@ -310,14 +328,19 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
     git(fixWt, 'reset', '--hard', to);
     git(fixWt, 'clean', '-ffdx', '-e', 'node_modules'); // ignored files too (settings.local.json), never node_modules
   };
-  let roundsStarted = 0; // claude rounds started this night (spend cap)
-  const lastSig = new Map<string, RoundSig>(); // per failure, kept across verify rounds (no-progress stop)
+  let roundsStarted = readSpent(d.statusDir, stamp); // claude rounds started this night, continued from an earlier run of the same date (spend cap)
+  const sigs = new Map<string, RoundSig[]>(); // per failure, kept across verify rounds (no-progress stop: every earlier round counts)
+  const failRounds = new Map<string, number>(); // claude rounds per failure this night (its share of the spend cap)
+  const committed = new Set<string>(); // failures with a fix commit on F: they stay in the verify targets
   const ahead = (): number => Number(git(fixWt, 'rev-list', '--count', `${st.sha}..${branch}`).stdout.trim() || '0');
   /** One fix pass over `todo` (existing per-failure rounds); returns why it stopped early, or ''. A later result for a spec replaces its earlier one. */
   const fixPass = (todo: readonly Failure[]): string => {
     let stopped = '';
     for (const f of todo) {
+      const key = `${f.file}\0${f.title}`;
       const put = (outcome: FailureResult['outcome'], rounds: number, reason: string): void => {
+        // An earlier fix commit stays on F and in M: its 'fixed' result (and verify target) is kept, a later flaky/needs-human/unfixed pass must not orphan it.
+        if (outcome !== 'fixed' && committed.has(key)) return;
         const at = results.findIndex((r) => r.file === f.file && r.title === f.title);
         if (at >= 0) results.splice(at, 1);
         results.push({ file: f.file, title: f.title, outcome, rounds, reason: redact(reason).slice(0, 300) });
@@ -330,6 +353,11 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       let previous = '';
       let rounds = 0;
       for (;;) {
+        if (!failureSpendAllowed(failRounds.get(key) ?? 0)) {
+          put('unfixed', rounds, `this failure used its share of the night spend cap (${String(PER_FAILURE_SPEND_CAP_USD)} USD at ${String(ROUND_BUDGET_USD)} USD per round); the other failures go on`);
+          reset(head0);
+          break;
+        }
         if (deadlineReached(startMs, d.now()) || !canStartRound(startMs, d.now())) {
           stopped = 'too close to the hard stop (07:00 for a night run, 22:00 by day) for another round; stopping';
           put('unfixed', rounds, stopped);
@@ -344,6 +372,8 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
         }
         rounds++;
         roundsStarted++;
+        failRounds.set(key, (failRounds.get(key) ?? 0) + 1);
+        writeSpent(d.statusDir, stamp, roundsStarted);
         const marker = join(d.statusDir, `nightly-fix-marker-${String(rounds)}`);
         writeFileSync(marker, '');
         const c = sh(fixWt, 'claude', claudeArgs(buildPrompt(f, rounds, previous)), capTimeout(ROUND_TIMEOUT_MS, startMs, d.now()), claudeEnv(d.env));
@@ -374,10 +404,15 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
           reset(head0);
           break;
         }
-        const sigKey = `${f.file}\0${f.title}`;
         let green = false;
-        let sig: RoundSig = { diff: git(fixWt, 'diff', '--cached', '-U0', head0).stdout, error: '' };
+        let sig: RoundSig = { base: head0, diff: normalizeDiff(git(fixWt, 'diff', '--cached', '-U0', head0).stdout), error: '' };
         if (!forbidden.length) {
+          if (deadlineReached(startMs, d.now())) {
+            stopped = 'the hard stop passed before the re-run; stopping';
+            put('unfixed', rounds, stopped);
+            reset(head0);
+            break;
+          }
           const r = rerun(fixWt, f);
           previous = r.tail;
           if (r.stop) {
@@ -387,15 +422,18 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
             break;
           }
           green = r.green;
-          sig = { ...sig, error: green ? '' : firstError(r.tail) };
+          sig = { ...sig, error: green ? '' : r.error };
         }
-        const stuck = !green && noProgress(lastSig.get(sigKey), sig);
-        lastSig.set(sigKey, sig);
+        const earlier = sigs.get(key) ?? [];
+        const stuck = !green && noProgress(earlier, sig);
+        sigs.set(key, [...earlier, sig]);
         const t = triage({ round: rounds, forbidden, agent: parseTriage(c.stdout).verdict, diffEmpty: names.length === 0, rerunExit: green ? 0 : 1, noProgress: stuck });
         if (t.outcome === 'retry') continue;
         if (t.outcome === 'fixed') {
+          committed.add(key);
           const ok = git(fixWt, 'commit', '-m', `nightly-fix: ${slug(f.title)}`, '-m', `Fixes ${specPath(f.file)}: green on the PC re-run.\n\n${TRAILER}`).code === 0;
           if (!ok) {
+            committed.delete(key);
             put('unfixed', rounds, 'git commit failed');
             reset(head0);
             break;
@@ -419,6 +457,10 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
   let queue: readonly Failure[] = todo;
   let lastStopped = '';
   for (let round = 1; queue.length > 0; round++) {
+    if (deadlineReached(startMs, d.now()) || (round > 1 && !spendAllowed(roundsStarted))) {
+      blockers.push(deadlineReached(startMs, d.now()) ? 'the hard stop passed before the next verify round; fixes kept on a local branch' : 'night spend cap reached before the next verify round; fixes kept on a local branch');
+      break;
+    }
     const before = ahead();
     const stopped = fixPass(queue);
     lastStopped = stopped;
@@ -454,7 +496,7 @@ function fixInner(d: FixDeps, dry: boolean, opts: FixOpts, results: FailureResul
       break;
     }
     // Same-spec run on M: every fixed spec, one router call; green = each fixed title passed and no new red.
-    const targets = todo.filter((f) => fixed.some((r) => r.file === f.file && r.title === f.title));
+    const targets = todo.filter((f) => committed.has(`${f.file}\0${f.title}`));
     const specList = [...new Set(targets.map((f) => specPath(f.file)))];
     const vJson = join(d.statusDir, `nightly-fix-verify-${String(round)}.json`);
     rmSync(vJson, { force: true });

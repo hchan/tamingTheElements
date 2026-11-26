@@ -6,7 +6,7 @@
  *   status   print the recorded status (exit 0 always: stale or not-run only warns).
  * Status: `<git common dir>/tte-gate/nightly-status.json` (+ nightly-history.jsonl). The PC is never bypassed: no Mac fallback.
  * After queuing, submit also runs `gate:commit` on that tip (nightly-precheck.ts; result in tte-gate/nightly-precheck.json, shown by status; never affects the exit code).
- * launchd runs submit at 23:00 and collect at 01:00 (tools/ci/nightly-install.ts). Pure logic: nightly-status.ts.
+ * launchd runs submit at 23:00 and collect at 02:00 (tools/ci/nightly-install.ts). Pure logic: nightly-status.ts.
  */
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
