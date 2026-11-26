@@ -3,8 +3,8 @@ import { KO_FALLBACK_HEROES } from './ko-fallback';
 import { KO_STILL_HEROES, koStillFor, koStillUrl } from './ko-still';
 
 describe('ko still', () => {
-  it('covers the 14 approved heroes (files pinned in tests/repo/ko-frames), and none of them keeps the fallback', () => {
-    expect([...KO_STILL_HEROES].sort()).toEqual(['abyssor', 'brazgor', 'durrok', 'glimmaw', 'hyalia', 'kindrel', 'nykra', 'ouroth', 'pax', 'quarrak', 'treenoc', 'umbrel', 'vortigal', 'zephra']);
+  it('covers the 16 approved heroes (files pinned in tests/repo/ko-frames), and none of them keeps the fallback', () => {
+    expect([...KO_STILL_HEROES].sort()).toEqual(['abyssor', 'brazgor', 'curomo', 'durrok', 'glimmaw', 'hyalia', 'kindrel', 'nykra', 'ouroth', 'pax', 'quarrak', 'sindarosa', 'treenoc', 'umbrel', 'vortigal', 'zephra']);
     for (const h of KO_STILL_HEROES) {
       expect(KO_FALLBACK_HEROES.has(h), h).toBe(false);
     }

@@ -25,3 +25,7 @@ Morblass victory still APPROVE 4 (beats shipped): `.claude/worktrees/gpu-job-ser
 
 Wispera victory still APPROVE 4 (CPU warp v2): `.claude/worktrees/gpu-job-server/.scratch/vic-warp2/wispera_a.png` (1024x1024 RGB on flat grey, needs the victory-key matte and scale), approval `.scratch/vic-warp2/approval.json`, generator `.scratch/vic-warp2/w2.py` (untracked; copy to tools/assets/victory-gen/ for provenance). Director note: core slightly blown out, do NOT brighten.
 Victory batch = curomo, ishimi, sindarosa, morblass, wispera (five). Echo, lavax, rokcore parked under rule 13 after three failed rounds (warps look cut/sliced): they keep the shipped victory presentation until a new method exists (rule 14 question with the owner still open).
+
+## Progress (2026-11-26, builder)
+
+Built on branch worktree-agent-a0b0eb181e6d7a028 (local commit, not pushed): victory stills for curomo, ishimi, sindarosa, morblass, wispera (victory-key.py HEROES, provenance copies, approval.json entries, sha pins, VICTORY_HEROES, w2.py kept as the wispera record, core not brightened) and KO stills for sindarosa and curomo (tools/assets/ko-gen/install-original-ko.py, approved/originals/, sha pins in ko-gen/approval.json and tests/repo/ko-frames.test.ts, KO_STILL_HEROES). Curomo KO nudged 6 px down. Parked: echo, lavax, rokcore (no approved victory; rule 13/14), more heroes later. Status stays idea until the owner/coordinator moves it.

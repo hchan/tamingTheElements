@@ -4,7 +4,7 @@ import { FLASH_HEROES, POP_SCALE, flashElementOf, VICTORY_HEROES, victoryFlashFo
 
 describe('victory still gate', () => {
   it('covers the twelve approved roster24 heroes', () => {
-    expect([...VICTORY_HEROES]).toEqual(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok', 'quarrak']);
+    expect([...VICTORY_HEROES]).toEqual(['glimmaw', 'brazgor', 'kindrel', 'vortigal', 'zephra', 'nykra', 'hyalia', 'ouroth', 'umbrel', 'abyssor', 'durrok', 'quarrak', 'curomo', 'ishimi', 'sindarosa', 'morblass', 'wispera']);
   });
   it('needs a win, the hero, ?ff=roster24 and a dev or test build', () => {
     expect(victoryStillFor('umbrel', true, '?ff=roster24', true, '/')).toBe('/assets/img/victory/umbrel_victory.png');

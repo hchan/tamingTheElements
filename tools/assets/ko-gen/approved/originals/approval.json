@@ -1,0 +1,18 @@
+{
+ "sindarosa_ko.png": {
+  "source": "ko-orig/sindarosa_ko.png (ko-originals-rig.py style rig of the baked map portrait)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "reason": "Red dragon sprawled low with wings spread, whole, full body, no human parts, nearly grounded; best of the set. Lower it a few px onto the shadow at integration."
+ },
+ "curomo_ko.png": {
+  "source": "ko-orig2/curomo_ko.png (ko-originals-rig.py, round 2)",
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reviewer": "art-director",
+  "date": "2026-11-26",
+  "reason": "Downed serpent-dragon now sits on its shadow, whole, desaturated and dark enough; wings still raised but it reads as a fallen beast. Nudge down a few px at integration."
+ }
+}

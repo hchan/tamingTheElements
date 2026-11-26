@@ -20,6 +20,11 @@ const STILLS: Record<string, { src: string; srcSha: string; outSha: string; faci
   abyssor: { src: 'r842-abyssor-vic_61100_d0.4.png', srcSha: '065281af8b8142323d19d64c50f52f634adc78cf390f1e07475624965ad3856e', outSha: 'bb9d4bf9fc0c98689617269010f50cf010e017e3b3d8a42bb90443d469163731', facing: 'front' },
   durrok: { src: 'durrok_win.png', srcSha: '4d328ce59d291f532363df3d97d0f1b17eff3cb8ba8b5e0342d448ee49de135d', outSha: '485a6fa08552f6744b033d208292bf401cd0b16a993995750dcdf09d7fade826', facing: 'right' },
   quarrak: { src: 'quarrak_win.png', srcSha: '9200f3f35b5d9c9efa831b1020a6c852c2189849ecc9c873706baf1b78b24f68', outSha: 'c6f6c8e56bd554e3b09e5f8b994492858fb4017bfd02d4615c2216646f64fbe8', facing: 'right' },
+  curomo: { src: 'v-curomo_61001_d0.4.png', srcSha: '6c32a41bfed4126a57675197b5bfededa560bb8cf348f5a9216a58831d10e8cb', outSha: '710b80299e552b1bd64096d86b26328a6c3761d77ac2f5e852cc370b080320c5', facing: 'right' },
+  ishimi: { src: 'v-ishimi_61001_d0.4.png', srcSha: '677fccaebc3b4d017486009be0123aea76c5cc692266231441b4b7f4f7abd53a', outSha: '320c6e9714450c14fe70d261e2e80d875ce6a96064e168f66d8b05f8f21119bb', facing: 'right' },
+  sindarosa: { src: 'v-sindarosa_61001_d0.4.png', srcSha: '8f1d4124d9b65e226851a968a58a08ed486716b2bd2b02ea56be8b0fa2eacb43', outSha: '5501c598f4813d61f1b3327dcb49cf3a122643555eca5d81c037ec9d5d7b3ac9', facing: 'right' },
+  morblass: { src: 'v3-morblass_63031_d0.5.png', srcSha: '28596fbed145f1767e52d8a51565a189db49f20b2d862e3a7760cf9505ad44a3', outSha: '1ad3181d01728aaa0a512921ea2e24c39922cf57b1086d59bed9270cc3ee7c6c', facing: 'right' },
+  wispera: { src: 'wispera_win.png', srcSha: '5031f0107bb94ce135bee4b90886102fe6558757cb0ba7cbd5e404e0d3b9e3e2', outSha: 'a534781f01f3cf313d2ed54229722478a0e5d7ffef82e5f8a662888d1e228872', facing: 'right' },
 };
 
 describe('victory frames (tools/assets/victory-gen/victory-key.py)', () => {
