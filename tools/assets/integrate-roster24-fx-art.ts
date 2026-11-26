@@ -6,7 +6,7 @@
 // No manifest change: the sizes are the manifest coords. Pinned by tests/repo/<hero>-fx-art.test.ts.
 import { createHash } from 'node:crypto';
 import { copyFileSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 
 export interface FxPin {
   /** File name in the provenance dir (and the name the approval must name). */
@@ -105,6 +105,9 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
     keyed: true,
     fx: {
       tentacleLash: { src: 'tentacleLash.png', sha256: '8570f56615288f029f17eac34d42cda6aead25a07e99e336fae3d5cde76846c3', w: 80, h: 60 },
+      // One shared file: abyssalPull.png is the sprite of the single 'abyssal-pull' ability (Abyssor only; Glimmaw casts lure-orb/abyss-flash).
+      // approval-fx6.json is the art session's file verbatim; its `approved` is the relative path fx-inits6/k/abyssalPull.png (compared by bare name).
+      abyssalPull: { src: 'abyssalPull.png', sha256: '9e883e85e9405b1128193dd871f8f0d6524e34cf4393f66a01debf945b91b397', w: 80, h: 80, approval: { file: 'approval-fx6.json' } },
     },
   },
   brazgor: {
@@ -135,7 +138,7 @@ export function verify(hero: string, srcDir?: string): string[] {
       const j = JSON.parse(readFileSync(resolve(dir, pin.approval.file), 'utf8')) as Record<string, Entry> & Entry;
       a = pin.approval.key ? j[pin.approval.key] : j;
     }
-    if (a?.approved !== pin.src || a.reviewer !== 'art-director' || a.beats_shipped !== true) throw new Error(`${name}: no art-director approval for ${pin.src}`);
+    if (typeof a?.approved !== 'string' || basename(a.approved) !== pin.src || a.reviewer !== 'art-director' || a.beats_shipped !== true) throw new Error(`${name}: no art-director approval for ${pin.src}`);
     const b = readFileSync(resolve(dir, pin.src));
     if (sha(b) !== pin.sha256) throw new Error(`${name}: sha256 ${sha(b)} does not match the approved pin`);
     if (b.readUInt32BE(16) !== pin.w || b.readUInt32BE(20) !== pin.h) throw new Error(`${name}: size is not ${String(pin.w)}x${String(pin.h)}`);
