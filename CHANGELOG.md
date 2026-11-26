@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Art: nine original-hero super cut-in composites (lavax, sindarosa, curomo, ishimi, pax, rokcore, morblass, treenoc, wispera; 1344x768, art-director approved 2026-11-26) installed in `public/assets/img/cutin/` by `tools/assets/originals-cutin/`; install-only, not drawn yet. No sim change.
 - Art: roster24 Durrok and Vortigal victory stills replaced by CPU-warp versions (`tools/assets/victory-gen/cpu-warp/`, art-director approved, behind ?ff=roster24, render only). KO stills installed for brazgor, kindrel, durrok, hyalia, zephra and quarrak, and Ouroth and Vortigal KO stills (art-director APPROVE 4), and Glimmaw now the turtle (art-director APPROVE 4.5) (not wired to a scene); cast FX bellPulse, staticMote, abyssalPull added; Durrok/Quarrak rig tune. No sim change.
 - Art: roster24 Durrok victory still installed (r992, art-director APPROVE 4.2, behind ?ff=roster24, render only). The victory-still e2e now covers umbrel and durrok (quake supers need the foe close). No sim change.
 - Art: Quarrak boulderRoll, Umbrel sporeBurst, Kindrel cinderSpray and Hyalia stingingFilament get real 8-frame loop bodies cut from the approved stills (`tools/assets/fx-gen/batch-m-real-loops.py`); reduced motion holds frame 0. No sim change.

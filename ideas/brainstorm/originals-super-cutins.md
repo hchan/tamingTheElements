@@ -23,3 +23,8 @@ First builder (a): installer + pins + approval copy for the seven; (b) cutin-gat
 
 Approval `.claude/worktrees/gpu-job-server/.scratch/originals-cutin/approval-v2.json` (round 2) plus `approval.json` (round 1). APPROVE 4 in round 2: treenoc `comp_treenoc_v2.png` (B backdrop), wispera `comp_wispera_v2.png` (1344x768). FIARA: REJECT 2 (flat vector fill pasted on a painterly backdrop): skip, keep the generic band. ECHO: REVISE 3 (flat cut across the top of the funnel; eyes read as a face): one more fix pass in progress.
 Final set so far (9): lavax B, sindarosa A, curomo, ishimi, pax A, rokcore A, morblass B, treenoc v2, wispera v2. Skipped: cyclonius, fiara. Echo joins when approved.
+
+## Progress note (2026-11-26, builder (a)+(c))
+
+(a) done on branch worktree-agent-abcaa4dfa03181ab4: nine composites installed to `public/assets/img/cutin/<hero>.png` (lavax, sindarosa, curomo, ishimi, pax, rokcore, morblass, treenoc, wispera) by `tools/assets/originals-cutin/install-cutins.py` (refuses unless the approval entry approves exactly the file; sha256 + byte pins; both approval files and the generator copied; `tests/repo/originals-cutin.test.ts`). File names match `cutinUrl` (`<hero>.png`). Not drawn yet: (b) `cutin-gate.ts` is another builder's. Echo still pending (add to SOURCES + `--pin` when approved).
+(c): `tools/ci/size-budget.json` only budgets gzip chunks and `assets/img/sheets/*.png`; cut-in PNGs are in neither, so no raise was needed (bundle cap is `pc-snapshot.ts` 600 MB; public/ is about 246 MB now). File left unchanged.
