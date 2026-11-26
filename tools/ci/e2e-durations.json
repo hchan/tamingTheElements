@@ -37,6 +37,7 @@
     "cinematic-teardown.spec.ts": { "sec": 4, "tests": 2 },
     "classic-bar-inset.spec.ts": { "sec": 3, "tests": 1 },
     "cleanse-fx.spec.ts": { "sec": 19, "tests": 4 },
+    "combo-super-cutin.spec.ts": { "sec": 55, "tests": 1 },
     "cutin.spec.ts": { "sec": 20, "tests": 1 },
     "danger-zone.spec.ts": { "sec": 12, "tests": 2 },
     "display-size.spec.ts": { "sec": 9, "tests": 1 },
