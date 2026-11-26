@@ -93,7 +93,7 @@ export async function runOnce(env: Readonly<Record<string, string | undefined>>,
     }
     const [a, b] = pages as [Page, Page];
     const status = async (p: Page): Promise<string> => (await p.locator('#quickStatus').textContent()) ?? '';
-    const wait = async (p: Page, sel: string, ms: number): Promise<boolean> => p.locator(sel).waitFor({ state: 'visible', timeout: ms }).then(() => true, () => false);
+    const wait = async (p: Page, sel: string, ms: number, state: 'visible' | 'attached' = 'visible'): Promise<boolean> => p.locator(sel).waitFor({ state, timeout: ms }).then(() => true, () => false);
     for (const p of pages) if (!(await wait(p, '#quickFind', LIVE_BROWSER_STEP_MS))) { out('Find never appeared'); return 1; }
     await a.locator('#quickFind').click();
     await b.locator('#quickFind').click();
@@ -102,7 +102,7 @@ export async function runOnce(env: Readonly<Record<string, string | undefined>>,
     step('matched');
     await a.locator('#quickReady').click();
     await b.locator('#quickReady').click();
-    for (const p of pages) if (!(await wait(p, '#quickLink', LIVE_BROWSER_STEP_MS))) { out(`arena did not start: ${redact(await status(p))}`); return 1; }
+    for (const p of pages) if (!(await wait(p, '#quickLink', LIVE_BROWSER_STEP_MS, 'attached'))) { out(`arena did not start: ${redact(await status(p))}`); return 1; }
     step('arenas running');
     for (const p of pages) if (!(await wait(p, '#quickAgain', LIVE_BROWSER_END_MS))) { out(`match did not end: ${redact(await status(p))}`); step(`at failure: ${recvLine()} (measurement)`); return 1; }
     const [ta, tb] = [await status(a), await status(b)];
