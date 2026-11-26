@@ -22,3 +22,6 @@ Art-director approved 10/12 cut-in backdrops (.scratch/cutin-backdrops-out/appro
 
 ## Progress note 2026-11-19 (cut-in r4)
 Art-director approved echo 49060 and wispera 49073 (my variants; its own prompts rejected: focal point mid-frame). All 12 cut-ins approved (`.scratch/regen-r4-approval.json`, sheet `.scratch/cutin-final-sheet.png`). Earth plate r4 failed again (riveted metal): r5 queued as g-20261119130251-fa2f (basalt prompt, neg rivets/metal, seeds 45200-03); rule 13 fallback is a CC0 basalt texture.
+
+## Progress note 2026-11-26 (procedural KO collapse)
+Rig-only stills failed the art-director (Fiara REVISE, Cyclonius REJECT), so Fiara and Cyclonius lose via a procedural DOM collapse of their Large portrait on the Versus result screen: `src/game/fx/ko-collapse.ts` (parameter table `KO_COLLAPSE`, `ko-collapse.test.ts`, e2e in `tests/e2e/victory-still.spec.ts`, shots in `.scratch/ko-collapse/`). Render only, no SIM_VERSION bump. Fiara: scaleY 0.5, ember tint, rising embers. Cyclonius: scaleX 1.25, scaleY 0.55, alpha 0.6, grey-blue, base dust. Other heroes without KO art are unchanged.
