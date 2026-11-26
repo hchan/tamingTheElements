@@ -1,0 +1,6 @@
+{
+ "boulderRoll": {"verdict":"REVISE","overall":3,"reason":"Smooth airbrushed grey sphere reads as a moon or plastic ball, no rock facets, cracks or grit; dust smears below are detached. Shipped is crude but reads as tumbling rock.","approved":null,"beats_shipped":false,"reviewer":"art-director","date":"2026-11-26"},
+ "hurlRock": {"verdict":"REVISE","overall":3,"reason":"Smooth beveled cube looks like a plastic die, not a hurled rock; faint smeared trail on the left is weak. Shipped has a debris cloud and cracked shard.","approved":null,"beats_shipped":false,"reviewer":"art-director","date":"2026-11-26"},
+ "talonRake": {"verdict":"APPROVE","overall":4,"reason":"Three tapered claw slashes with bone-and-rust tips, clean alpha, reads instantly as a rake at 80px, grim and restrained. Far better than shipped smeared water-like streak.","approved":"talonRake.png","beats_shipped":true,"reviewer":"art-director","date":"2026-11-26"},
+ "tentacleLash": {"verdict":"APPROVE","overall":4,"reason":"Clean teal curved tentacle with tapered tip and dark underside, no fringe, strong silhouette. Slightly smooth, no suckers, but beats the shipped lumpy blue noodle.","approved":"tentacleLash.png","beats_shipped":true,"reviewer":"art-director","date":"2026-11-26"}
+}

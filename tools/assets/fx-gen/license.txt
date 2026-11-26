@@ -33,3 +33,7 @@ Cast sprites kelpLash (Nykra), abyssFlash (Glimmaw), bristleStomp (Durrok), bell
 stingingFilament, scorchBreath: procedural, tools/assets/roster24-art/hyalia-ouroth-proc-fx2-gen.py and hyalia-filament-proc-fx3-gen.py), art-director approved 2026-11-26 (kelpLash 2026-11-21)
 (approval JSONs and sources under tools/assets/fx-gen/provenance/{nykra,glimmaw,durrok,hyalia,ouroth}-fx/, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by
 tests/repo/{nykra,glimmaw,durrok,hyalia,ouroth}-fx-art.test.ts). No third-party art, no attribution required.
+Cast sprites talonRake (Vortigal), tentacleLash (Abyssor), moltenHide and forgeGore (Brazgor) (public/assets/img/fx/) were replaced 2026-11-26 by project-own art (talonRake, tentacleLash, moltenHide:
+keyed 80 px outputs of project-own AI plates; forgeGore: procedural, tools/assets/roster24-art/brazgor-forgegore-proc-gen.py on top of hyalia-ouroth-proc-fx2-gen.py), art-director approved 2026-11-26
+(approval JSONs and sources under tools/assets/fx-gen/provenance/{vortigal,abyssor,brazgor}-fx/, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by
+tests/repo/{vortigal,abyssor,brazgor}-fx-art.test.ts). No third-party art, no attribution required.
