@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KO_COLLAPSE, koCollapseFor, koCollapseFrames, koCollapseUrl, koParticles } from './ko-collapse';
+import { KO_COLLAPSE, type KoCollapseSpec, koCollapseFor, koCollapseFrames, koCollapseUrl, koParticles } from './ko-collapse';
 import { KO_STILL_HEROES } from './ko-still';
 
 describe('ko collapse', () => {
@@ -18,7 +18,7 @@ describe('ko collapse', () => {
   });
 
   it('collapses at the base; reduced motion has no start frame', () => {
-    const f = KO_COLLAPSE['cyclonius']!;
+    const f = KO_COLLAPSE['cyclonius'] as KoCollapseSpec;
     const frames = koCollapseFrames(f, false);
     expect(frames[0]?.['transform']).toBe('scale(1, 1)');
     expect(frames[1]?.['transform']).toBe('scale(1.25, 0.55)');
@@ -26,7 +26,7 @@ describe('ko collapse', () => {
   });
 
   it('lays out the particles deterministically', () => {
-    const f = KO_COLLAPSE['fiara']!;
+    const f = KO_COLLAPSE['fiara'] as KoCollapseSpec;
     expect(koParticles(f)).toEqual(koParticles(f));
     expect(koParticles(f)).toHaveLength(f.count);
     expect(koParticles(f).every((p) => p.dy < 0)).toBe(true);
