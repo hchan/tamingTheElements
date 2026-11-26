@@ -3,7 +3,7 @@
 //   srcDir defaults to the hero's committed provenance dir (keyed outputs + approval.json).
 // Refuses to copy a file unless the approval JSON approves exactly that source file name (reviewer art-director, beats_shipped true),
 // its sha256 matches the pin (approval.json carries no sha) and its size equals the shipped size (nothing is resized).
-// No manifest change: the sizes are the manifest coords. Pinned by tests/repo/kindrel-fx-art.test.ts and ouroth-fx-art.test.ts.
+// No manifest change: the sizes are the manifest coords. Pinned by tests/repo/<hero>-fx-art.test.ts.
 import { createHash } from 'node:crypto';
 import { copyFileSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -16,6 +16,10 @@ export interface FxPin {
   h: number;
   /** install path relative to public/assets/img/ (default fx/<name>.png). */
   dst?: string;
+  /** approval entry for this file when it differs from the hero default: file in the provenance dir, key inside it (omit for a flat file). */
+  approval?: { file: string; key?: string };
+  /** file name the approval must name when it approves a parent still (bellPulseLoop is cut from the approved bellPulse set). Default: src. */
+  approves?: string;
 }
 export interface HeroFx {
   provenance: string;
@@ -34,11 +38,43 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
       cinderSpray: { src: 'cinderSpray.png', sha256: 'fda195179f9cfe050c54dbb009736bcc77060977a3671230b5cd1d7fc1034e8c', w: 80, h: 80 },
     },
   },
+  nykra: {
+    provenance: 'tools/assets/fx-gen/provenance/nykra-fx',
+    keyed: true,
+    fx: {
+      kelpLash: { src: 'kelpLash.png', sha256: '6bc89f9ac8cdfb961152b1b9d239dca205c939bd90405b5b082aa9f88c2d6fa7', w: 160, h: 40 },
+    },
+  },
+  glimmaw: {
+    provenance: 'tools/assets/fx-gen/provenance/glimmaw-fx',
+    keyed: true,
+    fx: {
+      abyssFlash: { src: 'abyssFlash.png', sha256: 'fd1487d5dc99c819572fec214e9bc5509d470d11d837e273b8e8486edb748bb8', w: 80, h: 80 },
+    },
+  },
+  durrok: {
+    provenance: 'tools/assets/fx-gen/provenance/durrok-fx',
+    keyed: true,
+    fx: {
+      bristleStomp: { src: 'bristleStomp.png', sha256: '7c2f5e83059ce1c315721aa1d9c054a8d2c8ef48da4b2f1ad58f6e6eed884462', w: 80, h: 60 },
+    },
+  },
+  hyalia: {
+    provenance: 'tools/assets/fx-gen/provenance/hyalia-fx',
+    keyed: true,
+    fx: {
+      bellPulse: { src: 'bellPulse_a.png', sha256: 'e9591791ba492b8db2612bc3f43a2f118919b887b7dd1b166283bef939d23a79', w: 80, h: 80, approval: { file: 'approval.json', key: 'hyalia_bellPulse' } },
+      // The director approved the bellPulse set including the loop ("two identical 4-frame cycles, reset pop is acceptable"); the loop has no entry of its own.
+      bellPulseLoop: { src: 'bellPulseLoop.png', sha256: 'addbf398a2b3d821ea49dc5c0a37f37ff73c85721926cf9ef8933aa01e803f4a', w: 1280, h: 160, dst: 'fx/loop/bellPulseLoop.png', approval: { file: 'approval.json', key: 'hyalia_bellPulse' }, approves: 'bellPulse_a.png' },
+      stingingFilament: { src: 'stingingFilament_c.png', sha256: '4d21919496f8d8f92323f4b8a2ac22f9d49e406541da118af866c0395828efd1', w: 80, h: 80, approval: { file: 'approval-fx3.json', key: 'hyalia_stingingFilament' } },
+    },
+  },
   ouroth: {
     provenance: 'tools/assets/fx-gen/provenance/ouroth-fx',
     keyed: false,
     fx: {
       wyrmCoil: { src: 'wyrmCoil_r2.png', sha256: '98506d2115a92622c6817b047a82b420daab88e2a3484c571ac47d9853cd5f98', w: 80, h: 80 },
+      scorchBreath: { src: 'scorchBreath_a.png', sha256: '47015bdde0c7d67a71aa0e13391ad081d9e50b5524cfa93c65281ef83f48a85f', w: 80, h: 60, approval: { file: 'approval-fx2.json', key: 'ouroth_scorchBreath' } },
     },
   },
   zephra: {
@@ -64,8 +100,12 @@ export function verify(hero: string, srcDir?: string): string[] {
   const approval = JSON.parse(readFileSync(resolve(dir, 'approval.json'), 'utf8')) as Record<string, Entry> & Entry;
   const names: string[] = [];
   for (const [name, pin] of Object.entries(h.fx)) {
-    const a: Entry | undefined = h.keyed ? approval[name] : approval;
-    if (a?.approved !== pin.src || a.reviewer !== 'art-director' || a.beats_shipped !== true) throw new Error(`${name}: no art-director approval for ${pin.src}`);
+    let a: Entry | undefined = h.keyed ? approval[name] : approval;
+    if (pin.approval) {
+      const j = JSON.parse(readFileSync(resolve(dir, pin.approval.file), 'utf8')) as Record<string, Entry> & Entry;
+      a = pin.approval.key ? j[pin.approval.key] : j;
+    }
+    if (a?.approved !== (pin.approves ?? pin.src) || a.reviewer !== 'art-director' || a.beats_shipped !== true) throw new Error(`${name}: no art-director approval for ${pin.src}`);
     const b = readFileSync(resolve(dir, pin.src));
     if (sha(b) !== pin.sha256) throw new Error(`${name}: sha256 ${sha(b)} does not match the approved pin`);
     if (b.readUInt32BE(16) !== pin.w || b.readUInt32BE(20) !== pin.h) throw new Error(`${name}: size is not ${String(pin.w)}x${String(pin.h)}`);

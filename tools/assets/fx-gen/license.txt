@@ -28,3 +28,8 @@ Ouroth cast sprite wyrmCoil (public/assets/img/fx/) was replaced 2026-11-26 by t
 Zephra cast sprites staticMote, skitter and the staticMoteLoop strip (public/assets/img/fx/, fx/loop/) were replaced 2026-11-26 by project-own procedural art
 (tools/assets/roster24-art/zephra-mote-proc.py; skitter downscaled from an approved procedural candidate), art-director approved 2026-11-26
 (tools/assets/fx-gen/provenance/zephra-fx/approval.json, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/zephra-fx-art.test.ts). No third-party art, no attribution required.
+Cast sprites kelpLash (Nykra), abyssFlash (Glimmaw), bristleStomp (Durrok), bellPulse + the bellPulseLoop strip and stingingFilament (Hyalia), and scorchBreath (Ouroth)
+(public/assets/img/fx/, fx/loop/) were replaced 2026-11-26 by project-own art (kelpLash, abyssFlash, bristleStomp: keyed 80 px outputs of project-own AI plates; bellPulse, bellPulseLoop,
+stingingFilament, scorchBreath: procedural, tools/assets/roster24-art/hyalia-ouroth-proc-fx2-gen.py and hyalia-filament-proc-fx3-gen.py), art-director approved 2026-11-26 (kelpLash 2026-11-21)
+(approval JSONs and sources under tools/assets/fx-gen/provenance/{nykra,glimmaw,durrok,hyalia,ouroth}-fx/, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by
+tests/repo/{nykra,glimmaw,durrok,hyalia,ouroth}-fx-art.test.ts). No third-party art, no attribution required.

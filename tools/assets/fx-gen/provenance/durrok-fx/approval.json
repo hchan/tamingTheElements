@@ -1,0 +1,28 @@
+{
+ "abyssFlash": {
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Clean cyan starburst with faint rune ring, no fringe, reads as a flash and clearly beats the near-invisible shipped sprite.",
+  "approved": "abyssFlash.png",
+  "beats_shipped": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26"
+ },
+ "bristleStomp": {
+  "verdict": "APPROVE",
+  "overall": 4,
+  "reason": "Tall painted spike row with soft warm base glow keyed clean; reads as a stomp eruption and is more dramatic than shipped.",
+  "approved": "bristleStomp.png",
+  "beats_shipped": true,
+  "reviewer": "art-director",
+  "date": "2026-11-26"
+ },
+ "hoofCrash": {
+  "verdict": "REVISE",
+  "overall": 3,
+  "reason": "Alpha is clean but it reads as a teal whirlpool swirl, not a hoof impact; shipped streak with ground cracks reads better. Re-key the approved plate f269 to keep the downward impact column and ground splash, drop the outer swirl ring (tighten the radial key), or keep shipped.",
+  "approved": null,
+  "beats_shipped": false
+ },
+ "_note": "reviewer/date added at integration from the art-director verdict relayed in ideas/done/integrate-nykra-fx-art.md; the art session file carries no reviewer field. hoofCrash was dropped (REVISE 3)."
+}
