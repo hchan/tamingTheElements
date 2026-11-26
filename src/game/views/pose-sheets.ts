@@ -3,6 +3,7 @@ import { sheetKey, type FrameResolver, type SheetFrame } from '../assets/sheet-f
 import type { Action } from '../assets/sheet-spec';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { setFrameBox } from './hero-scale';
+import { scanFrameOpaque } from './opaque-scan';
 
 /**
  * The sprite sheets the pose layer draws from (FUN-DESIGN 2.16 step 3, view side). Loads `sheet:<sprite>` lazily, the
@@ -42,6 +43,7 @@ export class SheetBook {
           boxed = true;
         }
       }
+      if (boxed) scanFrameOpaque(this.scene, key, this.res.frames(sprite));
       this.ready.add(sprite);
       // Portrait rigs (boxed frames) are the painted portraits themselves: drawn as baked, never graded (the ink lift would
       // flatten their painted shadows), which also saves a canvas copy of a 4096 px atlas. The procedural rigs keep the grade.

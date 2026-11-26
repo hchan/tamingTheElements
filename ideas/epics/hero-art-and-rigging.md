@@ -16,7 +16,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 - [hero-art-audit-2026-11-15](../brainstorm/hero-art-audit-2026-11-15.md): Roster-24 hero art audit (12 unreleased heroes), 2026-11-15. Method: each public/assets/img/map/<id>Large.png (400x400;
 - [sprite-cleanup-upscale-outline-pass](../brainstorm/sprite-cleanup-upscale-outline-pass.md): Sprite cleanup, upscale and outline consistency pass (all 24 heroes). Goal: one pipeline pass over all 24 hero sprites:
-- [opaque-bbox-tuck](../brainstorm/opaque-bbox-tuck.md): Tuck on the opaque bounding box. wallTuck uses the frame box, not the opaque pixels, so transparent padding leaves a gap or clips art at the wall.
+- [opaque-bbox-tuck](../in-progress/opaque-bbox-tuck.md): Tuck on the opaque bounding box. wallTuck uses the frame box, not the opaque pixels, so transparent padding leaves a gap or clips art at the wall.
 - [grim-rebuilds-rejected-fiara-treenoc-cyclonius](../brainstorm/grim-rebuilds-rejected-fiara-treenoc-cyclonius.md): Grim rebuilds of Fiara, Treenoc and Cyclonius were rejected. Owner, 2026-11-15: "Fiara and Treenoc: original is better than your new one", then Cyclonius too (its small 80x80 info-card and
 - [qa-r7-hero-contrast-and-sprite-look](../done/qa-r7-hero-contrast-and-sprite-look.md): QA r7: dark heroes vanish on the air floor; sprite mismatch persists. Evidence: fight-air.png (Echo is a faint dark swirl on blue-grey while Pax reads strongly), hero-select.png, tour-stage1.png (blocky upscaled Wispera 
 - [qa-r6-sprite-style-and-versus-defaults](../brainstorm/qa-r6-sprite-style-and-versus-defaults.md): QA r6: legacy vs rigged sprite mismatch; Versus default matchup. Evidence: hero-*.png, hero2/3-*.png, pick-*.png, tour-*.png (~/claudetmp/qa6/).
@@ -40,7 +40,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### HA-1 Sprite audit and cleanup
 
-- Members: [hero-art-audit-2026-11-15](../brainstorm/hero-art-audit-2026-11-15.md), [sprite-cleanup-upscale-outline-pass](../brainstorm/sprite-cleanup-upscale-outline-pass.md), [opaque-bbox-tuck](../brainstorm/opaque-bbox-tuck.md), [hero-sprite-grading](../in-progress/hero-sprite-grading.md), [bigger-hero-sprites](../in-progress/bigger-hero-sprites.md)
+- Members: [hero-art-audit-2026-11-15](../brainstorm/hero-art-audit-2026-11-15.md), [sprite-cleanup-upscale-outline-pass](../brainstorm/sprite-cleanup-upscale-outline-pass.md), [opaque-bbox-tuck](../in-progress/opaque-bbox-tuck.md), [hero-sprite-grading](../in-progress/hero-sprite-grading.md), [bigger-hero-sprites](../in-progress/bigger-hero-sprites.md)
 - Size: L
 - Shared files: asset manifest, public/assets/heroes/*, src/game/fx/hero-grade.ts
 - Flags: PC-offloadable, needs browser/e2e (screenshots), owner sees a sheet first
