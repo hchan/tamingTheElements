@@ -33,7 +33,7 @@ export const RETRY_WAIT_MS = 20 * 60_000;
 export const RETRY_CUTOFF = { hour: 4, minute: 30 } as const;
 /** Router exits recorded by collect that mean the PC job is not finished or not reachable yet (94 unreachable, 95 busy). */
 export const RETRY_EXITS: readonly number[] = [94, 95];
-/** Above the worst-case run (4 h of rounds plus the merge re-runs and gate:push), so a live run is never taken over. */
+/** Above the worst-case run (4 h of rounds plus the merge re-runs and gate:commit), so a live run is never taken over. */
 export const LOCK_STALE_MS = 12 * 3600_000;
 /** Router exits after which the loop stops and reports (89 no runner, 94 unreachable, 95 busy, 96 refused). */
 export const STOP_EXITS: readonly number[] = [89, 94, 95, 96];
@@ -501,9 +501,9 @@ export function landBlockers(i: LandInput): string[] {
   return b;
 }
 
-/** Local branch that keeps M when integration was refused: `nightly-fix-merged/<date>`, then `-2` .. `-19`; undefined when all are taken. */
-export function mergedBranchName(date: string, exists: (name: string) => boolean): string | undefined {
-  const base = `nightly-fix-merged/${date}`;
+/** Local branch that keeps M (`nightly-fix-merged/<date>`) or the fixes (prefix `nightly-fix-kept`), then `-2` .. `-19`; undefined when all are taken. */
+export function mergedBranchName(date: string, exists: (name: string) => boolean, prefix = 'nightly-fix-merged'): string | undefined {
+  const base = `${prefix}/${date}`;
   if (!exists(base)) return base;
   for (let n = 2; n < 20; n++) if (!exists(`${base}-${String(n)}`)) return `${base}-${String(n)}`;
   return undefined;
@@ -586,10 +586,13 @@ export interface MorningInput {
 }
 /** The one-screen morning report (report file and `nightly:status` print the same text): PUSHED/NOT PUSHED, red table, Do next, gate tail, untested-local count. */
 export function morningReport(i: MorningInput): string[] {
-  const { status, fix, push } = i;
+  const { status } = i;
+  // A status file left over from an earlier night (another sha) must not speak for tonight's run.
+  const fix = status && i.fix && i.fix.sha !== status.sha ? undefined : i.fix;
+  const push = status && i.push && i.push.sha !== status.sha ? undefined : i.push;
   let head: string;
   if (push?.pushed) head = `PUSHED ${push.sha.slice(0, 7)} to origin/main`;
-  else if (fix?.pushed) head = `PUSHED ${(fix.pushedSha ?? fix.sha).slice(0, 7)} to origin/main`;
+  else if (fix?.pushed || fix?.pushedSha) head = `PUSHED ${(fix.pushedSha ?? fix.sha).slice(0, 7)} to origin/main`;
   else {
     const why = push?.blockers[0] ?? fix?.blockers[0] ?? (fix ? `fix loop ended ${fix.state}` : status ? (status.state === 'red' ? 'red night, nothing classified yet' : `nightly e2e is ${status.state}`) : 'no nightly status recorded');
     head = `NOT PUSHED: ${why}`;
