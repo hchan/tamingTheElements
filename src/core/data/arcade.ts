@@ -67,6 +67,13 @@ export const MIN_HIT_STUN_TICKS = 6;
 export const JUGGLE_LIMIT = 3;
 /** A combo's stun chain never exceeds this many game ticks (1.44 s, SIM_VERSION 117; was 2.4 s): the hit that would pass it ends the stun instead. */
 export const COMBO_STUN_CAP_TICKS = 72;
+/**
+ * SIM_VERSION 118: a super combo's stun chain never exceeds this many game ticks. It sits above the longest single-super
+ * chain measured (comboStunTotal max 78, P95 59 over 2,571 runs), so a lone super is rarely cut short, but a second or third
+ * super cannot extend the chain (v117 let supers skip the cap: chains of 113-135 game ticks). The stun of a normal combo that
+ * a super lands on counts toward the 80 too (a plain chain near 72 plus a super can recover by stunCap).
+ */
+export const SUPER_COMBO_STUN_CAP_TICKS = 80;
 /** Invulnerability after either cap ends a combo (`recovered` reason 1 or 2), so a capped combo cannot restart at once. */
 export const RECOVERY_INVULN_TICKS = 20;
 /** Game ticks after any stun ends in which a plain hit still lands (damage, knockback) but starts no new stun (SIM_VERSION 98). */

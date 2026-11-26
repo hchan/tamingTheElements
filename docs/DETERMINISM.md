@@ -250,6 +250,8 @@ bump, unless it also changes sim inputs.
 
 SIM_VERSION 104 (Arcade only; Classic bit-identical): `JUGGLE_STUN_STEP` 2 -> 6 and `COMBO_STUN_CAP_TICKS` 150 -> 120, so juggle and combo stun are shorter. Arcade goldens and the Arcade baselines were re-recorded; Classic goldens change only in the `simVersion` header.
 
+SIM_VERSION 118 (Arcade only; Classic bit-identical): super hits obey `SUPER_COMBO_STUN_CAP_TICKS` 80 (game ticks), so overlapping super chains are capped; a super landing on the stun-expiry tick still starts a new combo (see `ideas/brainstorm/super-stun-expiry-seam.md`). Race numbers retuned (R8). Arcade goldens and baselines were re-recorded; Classic goldens change only in the `simVersion` header.
+
 ## Changing the contract or data
 
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value

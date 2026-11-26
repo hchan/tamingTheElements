@@ -85,34 +85,17 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
   });
 });
 
-describe('SIM_VERSION 113 1v1 life cut keeps team life', () => {
-  it('ouroth 1v1 life dropped while 2v2/3v3 team life is the v112 value (brazgor moved again in v115)', () => {
-    expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 1, 'ouroth')).toBe(6031);
-    expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 3, 'ouroth')).toBe(3787);
-    expect(arcadeLifePm(arcadeRaceNumbers('ouroth')[0], 2, 'ouroth')).toBe(4923);
-  });
-});
-
-describe('SIM_VERSION 114 outlier re-fit', () => {
-  it('sindarosa and curomo life move at every size; fiara 1v1 only (team life kept); treenoc damage', () => {
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('sindarosa')[0], n, 'sindarosa'))).toEqual([2806, 2202, 2862]);
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('fiara')[0], n, 'fiara'))).toEqual([4235, 3074, 3996]);
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('curomo')[0], n, 'curomo'))).toEqual([5880, 4116, 5350]);
-    expect(arcadeRaceNumbers('treenoc')[1]).toBe(1253);
-  });
-});
-
-describe('SIM_VERSION 115 R6 retune', () => {
-  it('brazgor life +3 percent at every size; abyssor 2v2/3v3 trimmed, 1v1 kept', () => {
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('brazgor')[0], n, 'brazgor'))).toEqual([4151, 2366, 3075]);
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('abyssor')[0], n, 'abyssor'))).toEqual([5707, 3195, 4153]);
-  });
-});
-
-describe('SIM_VERSION 116 2v2 retune', () => {
-  it('treenoc trimmed and kindrel raised in 2v2/3v3, 1v1 kept', () => {
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('treenoc')[0], n, 'treenoc'))).toEqual([6540, 4545, 5908]);
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('kindrel')[0], n, 'kindrel'))).toEqual([6120, 4467, 5807]);
+describe('SIM_VERSION 118 R8 retune (supersedes the v113-v116 pins)', () => {
+  it('pins the retuned [life, damage] rows and the 2v2 team-life per-mille of the moved heroes', () => {
+    expect(arcadeRaceNumbers('brazgor')).toEqual([5600, 850]);
+    expect(arcadeRaceNumbers('ouroth')).toEqual([6650, 1264]);
+    expect(arcadeRaceNumbers('kindrel')).toEqual([6680, 1537]);
+    expect(arcadeRaceNumbers('nykra')).toEqual([5788, 1215]);
+    expect(arcadeRaceNumbers('sindarosa')).toEqual([2708, 760]);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('sindarosa')[0], n, 'sindarosa'))).toEqual([2708, 2269, 2949]);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('brazgor')[0], n, 'brazgor'))).toEqual([5600, 2240, 2912]);
+    expect(ARCADE_2V2_LIFE_PM['kindrel']).toBe(770);
+    expect(ARCADE_2V2_LIFE_PM['ishimi']).toBe(765);
   });
 });
 

@@ -14,32 +14,32 @@
     "roster": "full"
   },
   "matches": 4416,
-  "stalemates": 2,
+  "stalemates": 4,
   "timeouts": 0,
   "winRates": {
-    "abyssor": 0.505,
-    "brazgor": 0.454,
-    "curomo": 0.451,
-    "cyclonius": 0.557,
-    "durrok": 0.492,
-    "echo": 0.429,
-    "fiara": 0.571,
-    "glimmaw": 0.523,
-    "hyalia": 0.524,
-    "ishimi": 0.481,
-    "kindrel": 0.473,
-    "lavax": 0.535,
-    "morblass": 0.557,
-    "nykra": 0.514,
-    "ouroth": 0.44,
-    "pax": 0.416,
-    "quarrak": 0.438,
-    "rokcore": 0.508,
-    "sindarosa": 0.571,
-    "treenoc": 0.492,
-    "umbrel": 0.522,
-    "vortigal": 0.549,
-    "wispera": 0.432,
+    "abyssor": 0.533,
+    "brazgor": 0.484,
+    "curomo": 0.446,
+    "cyclonius": 0.598,
+    "durrok": 0.405,
+    "echo": 0.459,
+    "fiara": 0.497,
+    "glimmaw": 0.548,
+    "hyalia": 0.577,
+    "ishimi": 0.459,
+    "kindrel": 0.413,
+    "lavax": 0.577,
+    "morblass": 0.63,
+    "nykra": 0.443,
+    "ouroth": 0.414,
+    "pax": 0.375,
+    "quarrak": 0.44,
+    "rokcore": 0.584,
+    "sindarosa": 0.573,
+    "treenoc": 0.59,
+    "umbrel": 0.557,
+    "vortigal": 0.444,
+    "wispera": 0.386,
     "zephra": 0.567
   },
   "styleSummary": {
@@ -55,13 +55,13 @@
         },
         {
           "games": 2304,
-          "winRate": 0.444
+          "winRate": 0.403
         }
       ],
       [
         {
           "games": 2304,
-          "winRate": 0.556
+          "winRate": 0.597
         },
         {
           "games": 2112,
@@ -71,12 +71,12 @@
     ],
     "crossMeleeVsRanged": {
       "games": 2304,
-      "winRate": 0.444,
+      "winRate": 0.403,
       "stdErr": 0.01
     },
     "meanWinRate": {
-      "melee": 0.471,
-      "ranged": 0.53
+      "melee": 0.449,
+      "ranged": 0.551
     },
     "heroCount": {
       "melee": 12,
@@ -84,24 +84,24 @@
     },
     "byElement": {
       "air": {
-        "melee": 0.47,
-        "ranged": 0.549,
-        "gap": -0.079
+        "melee": 0.43,
+        "ranged": 0.581,
+        "gap": -0.151
       },
       "earth": {
-        "melee": 0.467,
-        "ranged": 0.489,
-        "gap": -0.022
+        "melee": 0.457,
+        "ranged": 0.527,
+        "gap": -0.07
       },
       "fire": {
-        "melee": 0.456,
-        "ranged": 0.559,
-        "gap": -0.103
+        "melee": 0.437,
+        "ranged": 0.549,
+        "gap": -0.112
       },
       "water": {
-        "melee": 0.49,
-        "ranged": 0.52,
-        "gap": -0.03
+        "melee": 0.474,
+        "ranged": 0.546,
+        "gap": -0.072
       }
     },
     "top6": {
