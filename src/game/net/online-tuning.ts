@@ -10,3 +10,11 @@ export const ONLINE_MAX_START_INPUT_DELAY = 2;
 
 /** The delay the client starts with: the relay's suggestion, capped. */
 export const startInputDelay = (relayDelay: number): number => Math.min(relayDelay, ONLINE_MAX_START_INPUT_DELAY);
+
+/** Rollback-correction smoothing (view only). All three are estimates to tune by feel, not measurements. */
+/** Per-frame multiplier on the leftover correction offset (0.8 fades ~90% in 10 frames, about 170 ms at 60 fps). */
+export const CORRECTION_DECAY = 0.8;
+/** Corrections smaller than this many px are not blended (normal one-tick motion is below it). */
+export const CORRECTION_MIN_PX = 3;
+/** Corrections larger than this many px are teleports (respawn, swap) and snap. */
+export const CORRECTION_MAX_PX = 160;
