@@ -66,20 +66,20 @@ describe('combo counter', () => {
     const raw = first['amount'] ?? 0;
     expect(first).toMatchObject({ combo: 1, scalePm: 1000, counter: 0 });
     const seen = [first];
-    // Hits 2..7 land while stunned; the 7th is the juggle-cap hit (damage, no stun, `recovered` reason 1).
+    // Hits 2..5 land while stunned; the 5th is the juggle-cap hit (damage, no stun, `recovered` reason 1).
     for (let i = 2; i <= JUGGLE_LIMIT + 2; i++) seen.push(hit(world, sink));
-    expect(seen.map((e) => e['combo'])).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(seen.map((e) => e['scalePm'])).toEqual([1000, 1000, 900, 800, 700, 600, 500]);
+    expect(seen.map((e) => e['combo'])).toEqual([1, 2, 3, 4, 5]);
+    expect(seen.map((e) => e['scalePm'])).toEqual([1000, 1000, 900, 800, 700]);
     for (const e of seen) expect(e['amount']).toBe((raw * (e['scalePm'] ?? 0)) / 1000);
     expect(sink.events.filter((e) => e.kind === SimEventKind.recovered).map((e) => e['reason'])).toEqual([1]);
     expect(isStunned(s, 1)).toBe(false);
-    expect(s.arcade[COMBO_HITS]).toBe(7);
+    expect(s.arcade[COMBO_HITS]).toBe(5);
 
     const again = hit(world, sink);
     const ended = sink.events.filter((e) => e.kind === SimEventKind.comboEnded);
     const total = seen.reduce((sum, e) => sum + Math.round((e['amount'] ?? 0) * Q4_ONE) / Q4_ONE, 0); // the combo total adds each hit rounded to Q4
     expect(ended).toHaveLength(1);
-    expect(ended[0]).toMatchObject({ team: 0, hits: 7, damage: Math.round(total * Q4_ONE) / Q4_ONE });
+    expect(ended[0]).toMatchObject({ team: 0, hits: 5, damage: Math.round(total * Q4_ONE) / Q4_ONE });
     expect(sink.events.indexOf(ended[0] as SimEvent)).toBeLessThan(sink.events.indexOf(again));
     expect(again).toMatchObject({ combo: 1, scalePm: 1000 });
     expect(s.arcade[COMBO_HITS]).toBe(1);

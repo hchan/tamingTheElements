@@ -45,7 +45,7 @@ const ofKind = (evs: readonly SimEvent[], k: number): SimEvent[] => evs.filter((
 describe('charge numbers (FUN-DESIGN 2.17)', () => {
   it('has the design numbers', () => {
     expect([CHARGE_TICKS, CHARGE_SPEED_MULT, CHARGE_COOLDOWN_TICKS, CHARGE_STUN_TICKS, CHARGE_DAMAGE, METER_CHARGE])
-      .toEqual([12, 5, 300, 26, 12, 40]);
+      .toEqual([12, 5, 300, 16, 12, 40]);
     expect(CHARGE_MAX_STEP_PX).toBe(30);
     expect(CHARGE_AI_MIN_DIST).toBeGreaterThan((CHARGE_MAX_STEP_PX * CHARGE_TICKS) / 2);
   });

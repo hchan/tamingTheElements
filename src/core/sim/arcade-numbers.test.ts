@@ -78,7 +78,8 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
     }
     for (const [slug, ticks] of Object.entries(ARCADE_COOLDOWN_TICKS)) {
       const def = defs.find((d) => d.id === slug);
-      expect([slug, def?.kind]).toEqual([slug, slug === SNAG_ABILITY ? 'melee' : 'range']);
+      const kind = slug === SNAG_ABILITY || slug === 'wyrm-coil' ? 'melee' : slug === 'ice-blast' ? 'debuff' : 'range';
+      expect([slug, def?.kind]).toEqual([slug, kind]);
       expect(Number.isInteger(ticks) && (ticks ?? 0) > 0).toBe(true);
     }
   });

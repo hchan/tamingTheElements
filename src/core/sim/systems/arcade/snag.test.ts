@@ -57,7 +57,7 @@ function throwSnag(world: SimWorld, slot = 0, foeCmd: Command = 0): SimEvent[] {
 describe('Snag data (FUN-DESIGN 2.20)', () => {
   it('has the design numbers and slots', () => {
     expect([SNAG_RANGE_PX, SNAG_WIDTH_PX, SNAG_COOLDOWN_TICKS, SNAG_ROOT_TICKS, SNAG_IMMUNE_TICKS]).toEqual([240, 40, 400, 60, 75]);
-    expect([SNAG_DAMAGE, SNAG_STUN_TICKS]).toEqual([30, 20]);
+    expect([SNAG_DAMAGE, SNAG_STUN_TICKS]).toEqual([30, 12]);
     expect(ARCADE_SNAG_SLOT).toEqual({ treenoc: 0, wispera: 0, curomo: 1, echo: 0 });
     expect(SNAG_ABILITY).toBe('entangling-vines');
     const ids = ALL_ABILITIES.map((d) => d.id);

@@ -55,35 +55,33 @@ export function hitStrengthFor(slug: string, baseDamage: number, melee: boolean)
 }
 
 /**
- * Hit-stun in game ticks by strength (FUN-DESIGN 2.3): light 32, medium 38, heavy 44, super 48. Each hit taken while
- * already stunned (`juggle`) takes JUGGLE_STUN_STEP off, never below MIN_HIT_STUN_TICKS. WP-arcade-numbers raised them
- * from the first 12/16/22/26: the projectile cooldowns are 15-30 game ticks (Fire Blast, Sonar Blast and Fireball 30,
- * Wind Cone and Rock Pellet 20, Icicles 15), so a stun shorter than the cooldown ended before any follow-up could land and median combo
- * was 1 hit; at 32 a light hit covers one cooldown (median combo 2+ in the round robin). The caps below still bound it.
+ * Hit-stun in game ticks by strength (FUN-DESIGN 2.3): light 12, medium 16, heavy 20, super 26 (SIM_VERSION 117 nerf: stun is a
+ * rare skill, so a plain hit is a flinch; was 32/38/44/48). Each hit taken while already stunned (`juggle`) takes JUGGLE_STUN_STEP off,
+ * never below MIN_HIT_STUN_TICKS. Only Tornado, Ice Blast and Wyrm Coil keep a longer stun (HIT_STUN_OVERRIDE).
  */
-export const HIT_STUN_TICKS: PerStrength = [32, 38, 44, 48];
+export const HIT_STUN_TICKS: PerStrength = [12, 16, 20, 26];
 /** SIM_VERSION 104: 6 (was 2), so a juggle chain shortens fast (FUN-DESIGN 2.3). */
-export const JUGGLE_STUN_STEP = 6;
+export const JUGGLE_STUN_STEP = 4;
 export const MIN_HIT_STUN_TICKS = 6;
 /** At `juggle >= JUGGLE_LIMIT` the next hit deals damage but no stun and the victim recovers. */
-export const JUGGLE_LIMIT = 5;
-/** A combo's stun chain never exceeds this many game ticks (2.4 s, SIM_VERSION 104; was 150 / 3 s): the hit that would pass it ends the stun instead. */
-export const COMBO_STUN_CAP_TICKS = 120;
+export const JUGGLE_LIMIT = 3;
+/** A combo's stun chain never exceeds this many game ticks (1.44 s, SIM_VERSION 117; was 2.4 s): the hit that would pass it ends the stun instead. */
+export const COMBO_STUN_CAP_TICKS = 72;
 /** Invulnerability after either cap ends a combo (`recovered` reason 1 or 2), so a capped combo cannot restart at once. */
 export const RECOVERY_INVULN_TICKS = 20;
 /** Game ticks after any stun ends in which a plain hit still lands (damage, knockback) but starts no new stun (SIM_VERSION 98). */
-export const STUN_IMMUNE_TICKS = 20;
+export const STUN_IMMUNE_TICKS = 30;
 /** Tornado stuns (heavy, obeying the caps) instead of the Classic 150-tick freeze. */
-export const FREEZE_STUN_TICKS = 60;
+export const FREEZE_STUN_TICKS = 45;
 /** WP-snag-tune: hit-stun of the Snag hit in game ticks (the Vines' 60 stun would chain into the root; FUN-DESIGN 2.20). */
-export const SNAG_STUN_TICKS = 20;
+export const SNAG_STUN_TICKS = 12;
 export const HIT_STUN_OVERRIDE: Readonly<Partial<Record<string, number>>> = {
   tornado: FREEZE_STUN_TICKS,
   'entangling-vines': SNAG_STUN_TICKS,
   'abyss-flash': 20, // roster-24 B2: Glimmaw's stun burst
-  'stinging-filament': 15, // roster-24 B1: a short sting, it chains with its own 18-tick cooldown
+  'ice-blast': 40, // SIM_VERSION 117: Morblass's signature freeze, one of the three real stuns (with tornado and wyrm-coil)
   'wyrm-coil': 24, // roster-24 B3: Ouroth's grab holds the victim while it is thrown
-  'abyssal-pull': 12, // roster-24 B3: a short stun after the drag
+  'abyssal-pull': 6, // roster-24 B3: a flinch after the drag (SIM_VERSION 117: 12 -> 6)
 };
 
 /** Base hit-stun of an ability's hit: the override, else the strength table. */
@@ -104,7 +102,7 @@ export const CHARGE_TICKS = 12;
 export const CHARGE_SPEED_MULT = 5;
 export const CHARGE_MAX_STEP_PX = 30;
 export const CHARGE_COOLDOWN_TICKS = 300;
-export const CHARGE_STUN_TICKS = 26;
+export const CHARGE_STUN_TICKS = 16;
 export const CHARGE_DAMAGE = 12;
 export const METER_CHARGE = 40;
 export const CHARGE_AI_MIN_DIST = 200;
@@ -173,7 +171,7 @@ export const TRAP_SPIKE_DAMAGE = 18;
  * element chart, weather and combo scale (Sindarosa's and Rokcore's damagePm of 650/690 left their traps at 13 to 14 per hit).
  */
 export const TRAP_HIT_FLOOR = 20;
-export const TRAP_SPIKE_STUN_TICKS = 50;
+export const TRAP_SPIKE_STUN_TICKS = 36;
 /** WP 39e: 600 -> 500 (half speed) and a 40 -> 60 tick linger. */
 export const TRAP_PUDDLE_SLOW_PM = 500;
 export const TRAP_PUDDLE_LINGER_TICKS = 60;
@@ -381,7 +379,7 @@ export const GUARD_MAX = 1000;
  */
 export const GUARD_DRAIN_PM = 8000;
 export const GUARD_REGEN = 5;
-export const GUARD_BREAK_STUN_TICKS = 60;
+export const GUARD_BREAK_STUN_TICKS = 45;
 export const PARRY_TICKS = 8;
 export const PARRY_STUN_TICKS = 20;
 export const PARRY_LOCK_TICKS = 20;
@@ -500,14 +498,14 @@ export const DASH_ATTACK_CANCEL_FROM = 10;
  * (ICE_SHATTER_PM extra damage per mille); downed: knockdown with WAKE_INVULN_TICKS of wake-up invulnerability and a
  * QUICK_RISE_TICKS quick rise within QUICK_RISE_WINDOW_TICKS; silenced: no casts. Grace = ticks a hit cannot break it.
  */
-export const DAZE_TICKS = 70;
+export const DAZE_TICKS = 50;
 export const DAZE_GRACE_TICKS = 10;
 export const DAZE_MASH_TICKS = 3;
 export const DAZE_MIN_TICKS = 24;
-export const ICED_TICKS = 45;
+export const ICED_TICKS = 30;
 export const ICE_GRACE_TICKS = 8;
 export const ICE_SHATTER_PM = 1250;
-export const DOWN_TICKS = 40;
+export const DOWN_TICKS = 30;
 export const WAKE_INVULN_TICKS = 12;
 export const QUICK_RISE_WINDOW_TICKS = 8;
 export const QUICK_RISE_TICKS = 20;

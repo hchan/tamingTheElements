@@ -79,7 +79,7 @@ function landAt(world: SimWorld, g: number, c0: Command = 0): readonly SimEvent[
 describe('guard and parry table (FUN-DESIGN 2.8, 2.12)', () => {
   it('has the design numbers', () => {
     expect([GUARD_CHIP_PM, BLOCK_STUN_TICKS, GUARD_MAX, GUARD_DRAIN_PM, GUARD_REGEN, GUARD_BREAK_STUN_TICKS])
-      .toEqual([250, 8, 1000, 8000, 5, 60]);
+      .toEqual([250, 8, 1000, 8000, 5, 45]);
     expect([PARRY_TICKS, PARRY_HIT_STOP_TICKS, PARRY_STUN_TICKS, PARRY_LOCK_TICKS, METER_PARRY]).toEqual([8, 10, 20, 20, 150]);
   });
 

@@ -136,6 +136,9 @@ export const ARCADE_COOLDOWN_TICKS: Readonly<Partial<Record<string, number>>> = 
   'hurl-rock': 90, // 25 in Classic: Quarrak's sustained zoning, 500 ms is a pellet stream (roster-24 B1)
   'crimson-fire': 18, // 20 in Classic: off Rock Pellet's 20
   [SNAG_ABILITY]: SNAG_COOLDOWN_TICKS, // Snag (WP-snag)
+  tornado: 350, // SIM_VERSION 117: a rarer stun (300 in Classic)
+  'ice-blast': 350, // SIM_VERSION 117: a rarer freeze
+  'wyrm-coil': 175, // SIM_VERSION 117: a rarer hold
 };
 
 /** The cooldown `def` books: its Arcade override in Arcade, else (and always in Classic) the legacy `cooldownTicks`. */
