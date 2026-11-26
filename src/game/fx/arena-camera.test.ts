@@ -51,6 +51,15 @@ describe('arena camera', () => {
     expect(p.centerX).toBeCloseTo(1280, 3);
   });
 
+  it('keeps a launched foe in view while the ease lags (combo start)', () => {
+    const prev: CameraFraming = { centerX: 640, zoom: 1 };
+    const input = { ...base, x1: 500, x2: 1250 }; // victim thrown past the right edge (1280 - 48 guard) of a camera still at 640
+    const next = cameraTarget(input, prev, 1 / 60);
+    expect(next.centerX + 640 / next.zoom - 48).toBeGreaterThanOrEqual(1250 - 1e-9);
+    const far = cameraTarget({ ...base, x1: 100, x2: 1250 }, prev, 1 / 60);
+    expect(far.centerX).toBeGreaterThanOrEqual(640);
+  });
+
   it('snaps on reset or when there is no previous framing', () => {
     const input = { ...base, x1: 1400, x2: 1600 };
     const ideal = idealFraming(input);
@@ -68,7 +77,7 @@ describe('arena camera', () => {
   it('is frame-rate independent for the same elapsed time', () => {
     const input = { ...base, x1: 500, x2: 1500 };
     const run = (fps: number): CameraFraming => {
-      let p: CameraFraming = { centerX: 700, zoom: 1 };
+      let p: CameraFraming = { centerX: 900, zoom: 1 };
       for (let k = 0; k < fps / 2; k++) p = cameraTarget(input, p, 1 / fps);
       return p;
     };
