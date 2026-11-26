@@ -154,11 +154,13 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
  * Applies `base` ticks of hit-stun to `victim` (FUN-DESIGN 2.3). A hit on a free victim starts a combo (juggle 0, stun
  * budget and wall bounce reset); a hit while stunned raises `juggle` and stuns `base - JUGGLE_STUN_STEP * juggle`, never under MIN_HIT_STUN_TICKS.
  * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is exactly
- * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= 5`, or one that would push the chain past COMBO_STUN_CAP_TICKS, ends
- * the stun with `recovered` (reason 1 or 2) and 20 ticks of invulnerability instead. Either way it ends the victim's
+ * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= JUGGLE_LIMIT`, or one that would push the chain past COMBO_STUN_CAP_TICKS, ends
+ * the stun with `recovered` (reason 1 or 2) and RECOVERY_INVULN_TICKS of invulnerability instead. A super (`sup`, SIM_VERSION 117) skips
+ * both caps (its hits and root would otherwise trip them after a short prefix) but still counts `juggle` and `comboStunTotal`, so a plain hit
+ * after it recovers at once and the super cannot be extended. Either way it ends the victim's
  * dash (its DASH_RECOVERY_TICKS still follow) or charge (`chargeEnded`, reason interrupted).
  */
-export function applyStun(world: SimWorld, sink: EventSink, source: number, victim: number, base: number): void {
+export function applyStun(world: SimWorld, sink: EventSink, source: number, victim: number, base: number, sup = false): void {
   const s = world.state;
   const a = s.arcade;
   const e = victim * ARCADE_E;
@@ -170,17 +172,18 @@ export function applyStun(world: SimWorld, sink: EventSink, source: number, vict
     a[e + ArcadeE.juggle] = 0;
     a[e + ArcadeE.comboStunTotal] = 0;
     a[e + ArcadeE.wallBounced] = 0;
-  } else if ((a[e + ArcadeE.juggle] ?? 0) >= JUGGLE_LIMIT) {
+  } else if (!sup && (a[e + ArcadeE.juggle] ?? 0) >= JUGGLE_LIMIT) {
     recover(s, sink, source, victim, RecoveredReason.juggleCap);
     return;
   } else {
-    a[e + ArcadeE.juggle] = (a[e + ArcadeE.juggle] ?? 0) + 1;
+    // A super's hits count juggle only up to the limit (the next plain hit recovers either way), so it never exceeds JUGGLE_LIMIT.
+    a[e + ArcadeE.juggle] = Math.min(JUGGLE_LIMIT, (a[e + ArcadeE.juggle] ?? 0) + 1);
   }
   const ticks = Math.max(MIN_HIT_STUN_TICKS, base - JUGGLE_STUN_STEP * (a[e + ArcadeE.juggle] ?? 0));
   const added = g + ticks - Math.max(until, g);
   if (added <= 0) return;
   const total = (a[e + ArcadeE.comboStunTotal] ?? 0) + added;
-  if (total > COMBO_STUN_CAP_TICKS) {
+  if (!sup && total > COMBO_STUN_CAP_TICKS) {
     recover(s, sink, source, victim, RecoveredReason.stunCap);
     return;
   }

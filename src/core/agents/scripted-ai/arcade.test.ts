@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SUPER_CHORD_TICKS, SUPER_COST } from '../../data/arcade';
+import { HIT_STUN_TICKS, SUPER_CHORD_TICKS, SUPER_COST } from '../../data/arcade';
 import { characterId } from '../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { Cmd } from '../../sim/commands';
@@ -139,6 +139,22 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
     expect(delay).toBeLessThan(ARCADE_AI_REACTION_MIN + ARCADE_AI_REACTION_SPREAD);
     expect(t.apply(view(stunned, 100 + delay - 1), cmd) & Cmd.super).toBe(0);
     expect(t.apply(view(stunned, 100 + delay), cmd)).toBe(Cmd.super | Cmd.right);
+  });
+
+  it('a full-bar Normal AI still supers off a medium flinch (SIM_VERSION 117: the stun ticks down while it reacts)', () => {
+    const flinch = HIT_STUN_TICKS[1];
+    expect(ARCADE_AI_REACTION_MIN).toBeLessThan(flinch);
+    let fired = 0;
+    for (let seed = 0; seed < 8; seed++) {
+      const t = new ArcadeTactics(AI_NORMAL, ZONER);
+      let sawSuper = false;
+      for (let k = 0; k < flinch; k++) {
+        const out = t.apply({ ...view({ meter: SUPER_COST, oppStun: flinch - k }, 100 + k), matchSeed: seed }, cmd);
+        if ((out & Cmd.super) !== 0) sawSuper = true;
+      }
+      if (sawSuper) fired++;
+    }
+    expect(fired).toBeGreaterThan(0);
   });
 
   it('does not super without the meter, while stunned, casting, recovering, off the band, or on Easy', () => {

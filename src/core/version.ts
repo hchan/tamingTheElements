@@ -395,5 +395,7 @@
  *    Re-record reason: R6 abyssor 2v2 trim and brazgor buff change Arcade goldens with those heroes (arcade-roster24-b2/b3) plus arcade-full-baseline.json and arcade-2v2-baseline.json (arcade-baseline.json if the released 1v1 roster field is affected); other goldens change only the simVersion header; baseline.json does not move.
  * 116: Arcade only (Classic hashes unchanged). ARCADE_2V2_LIFE_PM treenoc 720 -> 695 (-3.47 percent), kindrel 710 -> 730 (+2.82 percent); 1v1 unchanged; 3v3 lives treenoc 4708 -> 4545, kindrel 4345 -> 4467; 2v2 treenoc 6120 -> 5908, kindrel 5648 -> 5807. Cyclonius left at 810 (gate not met: 32-seed mean .569 <= .58).
  *    Re-record reason: 2v2 life retune, arcade-2v2 baseline + goldens; Classic and Arcade 1v1 unchanged (SIM_VERSION 116 R7).
+ * 117: Arcade only (Classic hashes unchanged). Stun nerf: HIT_STUN_TICKS 32/38/44/48 -> 12/16/20/26, JUGGLE_STUN_STEP 6 -> 4, JUGGLE_LIMIT 5 -> 3, COMBO_STUN_CAP_TICKS 120 -> 72, STUN_IMMUNE_TICKS 20 -> 30 (supers ignore the juggle limit and the cap); only tornado (45), ice-blast (40) and wyrm-coil (24) keep a real stun, with cooldowns 350/350/175; Snag stun 20 -> 12, charge 26 -> 16, spike 50 -> 36, guard break 60 -> 45, abyssal-pull 12 -> 6, stinging-filament override dropped, super rootTicks halved, CC daze 50 / iced 30 / down 30.
+ *    Re-record reason: owner 2026-11-25 "stuns are overpowered": every Arcade golden and the arcade baselines (arcade-baseline, arcade-full, arcade-2v2) change; Classic goldens change only the simVersion header; baseline.json does not move (SIM_VERSION 117).
  */
-export const SIM_VERSION = 116;
+export const SIM_VERSION = 117;

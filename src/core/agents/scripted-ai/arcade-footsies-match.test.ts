@@ -49,7 +49,7 @@ export function fnv(values: readonly number[]): number {
   return h;
 }
 
-describe('Easy and Hard command streams do not move with the Normal footsies (SIM_VERSION 108)', () => {
+describe('Easy and Hard command streams do not move with the Normal footsies (SIM_VERSION 108, re-pinned at 117 for the stun nerf)', () => {
   it('Easy vs Easy, 600 ticks', () => {
     expect(fnv(runPair(11, 'sindarosa', 'wispera', AI_EASY, AI_EASY, 600).cmds)).toBe(EASY_HASH);
   });
@@ -57,5 +57,5 @@ describe('Easy and Hard command streams do not move with the Normal footsies (SI
     expect(fnv(runPair(11, 'brazgor', 'sindarosa', AI_HARD, AI_HARD, 600).cmds)).toBe(HARD_HASH);
   });
 });
-const EASY_HASH = 1215401635;
-const HARD_HASH = 2476202342;
+const EASY_HASH = 3731000458;
+const HARD_HASH = 1866799149;

@@ -69,20 +69,20 @@ const stunOf = (id: string): number => HIT_STUN[ABILITY_DEFS.findIndex((d) => d.
 
 describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
   it('has the design numbers', () => {
-    expect(HIT_STUN_TICKS).toEqual([32, 38, 44, 48]);
-    expect([JUGGLE_STUN_STEP, MIN_HIT_STUN_TICKS, JUGGLE_LIMIT]).toEqual([6, 6, 5]);
-    expect([COMBO_STUN_CAP_TICKS, RECOVERY_INVULN_TICKS, FREEZE_STUN_TICKS]).toEqual([120, 20, 60]);
-    expect(STUN_IMMUNE_TICKS).toBe(20);
+    expect(HIT_STUN_TICKS).toEqual([12, 16, 20, 26]);
+    expect([JUGGLE_STUN_STEP, MIN_HIT_STUN_TICKS, JUGGLE_LIMIT]).toEqual([4, 6, 3]);
+    expect([COMBO_STUN_CAP_TICKS, RECOVERY_INVULN_TICKS, FREEZE_STUN_TICKS]).toEqual([72, 20, 45]);
+    expect(STUN_IMMUNE_TICKS).toBe(30);
     expect(KNOCKBACK_Q4).toEqual([96, 144, 224, 256]);
     expect(KNOCKBACK_DECAY_Q4).toBe(16);
     expect([RecoveredReason.stunEnded, RecoveredReason.juggleCap, RecoveredReason.stunCap]).toEqual([0, 1, 2]);
   });
 
-  it('per ability: stun by strength, Tornado 60 and Entangling Vines (the Snag hit) 20', () => {
+  it('per ability: stun by strength, Tornado 45 and Entangling Vines (the Snag hit) 12', () => {
     expect(HIT_STUN).toHaveLength(ABILITY_DEFS.length);
     const want: Record<string, number> = {
-      'wind-cone': 32, fireball: 38, 'fire-blast': 44, 'ground-shock': 44, hurricane: 32, tornado: 60,
-      'entangling-vines': 20,
+      'wind-cone': 12, fireball: 16, 'fire-blast': 20, 'ground-shock': 20, hurricane: 12, tornado: 45,
+      'entangling-vines': 12,
     };
     for (const [id, n] of Object.entries(want)) expect([id, stunOf(id)]).toEqual([id, n]);
   });
@@ -90,11 +90,11 @@ describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
 
 describe('hit-stun', () => {
   const cases = [
-    ['cyclonius', Cmd.secondary, 'wind-cone', 32],
-    ['fiara', Cmd.secondary, 'fireball', 38],
-    ['sindarosa', Cmd.primary, 'fire-blast', 44],
-    ['pax', Cmd.secondary, 'ground-shock', 44],
-    ['cyclonius', Cmd.primary, 'tornado', 60],
+    ['cyclonius', Cmd.secondary, 'wind-cone', 12],
+    ['fiara', Cmd.secondary, 'fireball', 16],
+    ['sindarosa', Cmd.primary, 'fire-blast', 20],
+    ['pax', Cmd.secondary, 'ground-shock', 20],
+    ['cyclonius', Cmd.primary, 'tornado', 45],
   ] as const;
   for (const [race, cmd, id, n] of cases) {
     it(`${id} stuns ${String(n)} game ticks from the hit`, () => {
@@ -117,7 +117,7 @@ describe('hit-stun', () => {
     const s = world.state;
     const [game] = firstHit(world, Cmd.primary);
     const until = s.arcade[E(1, ArcadeE.stunUntil)] ?? 0;
-    expect(until).toBe(game + 44);
+    expect(until).toBe(game + 20);
     const cd = cooldownIdx(1, 0);
     const ready = s.abil[cd];
     while (now(s) < until) {
@@ -135,33 +135,33 @@ describe('hit-stun', () => {
     expect(s.abil[cd]).not.toBe(ready);
   });
 
-  it('juggle: each hit while stunned takes JUGGLE_STUN_STEP (6) off, never under 6; at juggle 5 the next hit recovers (reason 1)', () => {
+  it('juggle: each hit while stunned takes JUGGLE_STUN_STEP (4) off, never under 6; at juggle 3 the next hit recovers (reason 1)', () => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
     const stuns: number[] = [];
     let g = 0;
     // Each hit lands one tick before the stun would end, so every stun extends the chain.
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < 4; k++) {
       s.arcade[GAME_TICK] = g;
-      applyStun(world, sink, 0, 1, 32);
+      applyStun(world, sink, 0, 1, 20);
       const until = s.arcade[E(1, ArcadeE.stunUntil)] ?? 0;
       stuns.push(until - g);
       expect(s.arcade[E(1, ArcadeE.juggle)]).toBe(k);
       g = until - 1;
     }
-    expect(stuns).toEqual([32, 26, 20, 14, 8, 6]);
-    expect([g, sink.events]).toEqual([100, []]);
+    expect(stuns).toEqual([20, 16, 12, 8]);
+    expect([g, sink.events]).toEqual([52, []]);
     s.arcade[GAME_TICK] = g;
-    applyStun(world, sink, 0, 1, 32);
+    applyStun(world, sink, 0, 1, 20);
     expect(sink.events.map((e) => [e.kind, e['id'], e['reason']])).toEqual([[SimEventKind.recovered, 1, 1]]);
-    expect([isStunned(s, 1), isInvulnerable(s, 1), s.arcade[E(1, ArcadeE.invulnUntil)]]).toEqual([false, true, 120]);
+    expect([isStunned(s, 1), isInvulnerable(s, 1), s.arcade[E(1, ArcadeE.invulnUntil)]]).toEqual([false, true, 72]);
     expect([s.arcade[E(1, ArcadeE.juggle)], s.arcade[E(1, ArcadeE.comboStunTotal)]]).toEqual([0, 0]);
-    s.arcade[GAME_TICK] = 120;
+    s.arcade[GAME_TICK] = 72;
     expect(isInvulnerable(s, 1)).toBe(false);
   });
 
-  it('stun cap: the hit that would push the chain past COMBO_STUN_CAP_TICKS (120) ends the stun instead (reason 2)', () => {
+  it('stun cap: the hit that would push the chain past COMBO_STUN_CAP_TICKS (72) ends the stun instead (reason 2)', () => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
@@ -169,23 +169,20 @@ describe('hit-stun', () => {
       s.arcade[GAME_TICK] = g;
       applyStun(world, sink, 0, 1, 60);
     };
-    hit(0);
-    hit(40); // juggle 1: 40 + 54 = 94
-    expect([s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.comboStunTotal)]]).toEqual([94, 94]);
-    hit(70); // juggle 2: 70 + 48 = 118 adds 24: total 118
-    expect([s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.comboStunTotal)]]).toEqual([118, 118]);
-    hit(90); // juggle 3: 90 + 42 = 132 would add 14: 132 > 120
+    hit(0); // base 60 on a 72 cap: 60
+    expect([s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.comboStunTotal)]]).toEqual([60, 60]);
+    hit(30); // juggle 1: 30 + 56 = 86 adds 26: total 86 > 72
     expect(sink.events.map((e) => [e['id'], e['reason']])).toEqual([[1, RecoveredReason.stunCap]]);
     expect([s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.invulnUntil)], isStunned(s, 1)]).toEqual([
-      90, 110, false,
+      30, 50, false,
     ]);
   });
 
   it.each([
-    ['fireball', 38, 26, 78],
-    ['wind cone', 32, 20, 60],
-    ['icicles', 32, 15, 59],
-    ['fire blast', 44, 30, 116],
+    ['fireball', 16, 26, 16],
+    ['wind cone', 12, 20, 12],
+    ['icicles', 12, 15, 12],
+    ['fire blast', 20, 30, 20],
   ])('%s chain (base %i, re-hit every %i ticks) is stunned until game tick %i', (_n, base, cd, end) => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
@@ -228,7 +225,7 @@ describe('hit-stun', () => {
     }
   });
 
-  it('Entangling Vines is Snag in Arcade (FUN-DESIGN 2.20): it roots 60 once per cast and its hit stuns SNAG_STUN_TICKS (20), no Classic freeze or effect entity', () => {
+  it('Entangling Vines is Snag in Arcade (FUN-DESIGN 2.20): it roots 60 once per cast and its hit stuns SNAG_STUN_TICKS (12), no Classic freeze or effect entity', () => {
     const world = duel('treenoc', 'pax');
     const s = world.state;
     let game = -1;
@@ -238,7 +235,7 @@ describe('hit-stun', () => {
       if ((s.arcade[E(1, ArcadeE.rootUntil)] ?? 0) !== 0) game = g;
     }
     expect(s.arcade[E(1, ArcadeE.rootUntil)]).toBe(game + 60);
-    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(game + 20);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(game + 12);
     expect(s.hp[1]).toBeLessThan(10_000); // the rope hurts (SNAG_DAMAGE)
     expect((s.flags[1] ?? 0) & EntityFlag.frozen).toBe(0);
     for (let t = 0; t < 10; t++) step(world, [0, 0]);
@@ -336,7 +333,7 @@ describe('stun immunity after a stun ends (SIM_VERSION 98)', () => {
     const s = world.state;
     const sink = new EventSink(0);
     s.arcade[GAME_TICK] = LATE;
-    for (let i = 0; i < 7; i++) applyStun(world, sink, 0, 1, 44); // juggle cap ends the chain at the 7th hit
+    for (let i = 0; i < 5; i++) applyStun(world, sink, 0, 1, 20); // juggle cap ends the chain at the 5th hit
     expect(isStunned(s, 1)).toBe(false);
     expect(stunImmune(s, 1)).toBe(true);
     s.arcade[GAME_TICK] = LATE + STUN_IMMUNE_TICKS;
@@ -444,5 +441,53 @@ describe('stun properties', () => {
       { numRuns: 30, seed: 0x5717 },
     );
     expect(stuns).toBeGreaterThan(100);
+  });
+});
+
+describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
+  // Mirrors the hit path: a plain hit stuns only when the victim is not inside the re-stun window (hit.ts).
+  const chain = (hits: readonly (readonly [number, number])[], ticks: number): [number, number] => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    let stunned = 0;
+    let run = 0;
+    let longest = 0;
+    for (let g = 0; g < ticks; g++) {
+      s.arcade[GAME_TICK] = g;
+      for (const [every, base] of hits) {
+        if (g % every === 0 && !stunImmune(s, 1)) applyStun(world, sink, 0, 1, base);
+      }
+      if (isStunned(s, 1)) {
+        stunned++;
+        run++;
+        longest = Math.max(longest, run);
+      } else run = 0;
+    }
+    return [stunned / ticks, longest];
+  };
+
+  it('a light hit every 20 ticks stuns at most 35% of 1000 ticks and never more than 26 in a row', () => {
+    const [share, longest] = chain([[20, HIT_STUN_TICKS[0]]], 1000);
+    expect(share).toBeLessThanOrEqual(0.35);
+    expect(longest).toBeLessThanOrEqual(26);
+  });
+
+  it('a double team of light, medium and heavy hitters never chains past COMBO_STUN_CAP_TICKS', () => {
+    const [, longest] = chain([[20, HIT_STUN_TICKS[0]], [30, HIT_STUN_TICKS[1]], [26, HIT_STUN_TICKS[2]]], 2000);
+    expect(longest).toBeLessThanOrEqual(COMBO_STUN_CAP_TICKS);
+  });
+
+  it('a super hit after a prefix still applies its stun (the sup bypass)', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    for (let i = 0; i < 4; i++) applyStun(world, sink, 0, 1, 20); // juggle 3: a plain hit now recovers
+    applyStun(world, sink, 0, 1, 46, true);
+    expect(sink.events).toEqual([]);
+    expect(isStunned(s, 1)).toBe(true);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBeGreaterThanOrEqual(30);
+    applyStun(world, sink, 0, 1, 20);
+    expect(isStunned(s, 1)).toBe(false);
   });
 });

@@ -185,6 +185,8 @@ describe('tag combo (FUN-DESIGN 2.6)', () => {
     const s = w.state;
     const first = of(until(w, SimEventKind.hitConfirmed, [Cmd.primary, 0]), SimEventKind.hitConfirmed)[0];
     expect(first).toMatchObject({ attacker: 0, combo: 1 });
+    // A flinch ends before the tag lands (SIM_VERSION 117), so hold the victim in stun to test the combo carry-over.
+    s.arcade[2 * ARCADE_E + ArcadeE.stunUntil] = now(s) + 200;
     expect(of(until(w, SimEventKind.tagIn, TAG), SimEventKind.tagIn)[0]?.entrance).toBe(1);
     expect(s.arcade[ARCADE_TEAM_BASE + ArcadeT.comboHits]).toBe(1);
     const ev = until(w, SimEventKind.hitConfirmed);

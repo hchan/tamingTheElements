@@ -10,12 +10,13 @@ import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { now } from '../../clock';
 import { Cmd, type Command } from '../../commands';
-import { SimEventKind, type SimEvent } from '../../events';
+import { EventSink, SimEventKind, type SimEvent } from '../../events';
 import { createMatch, type MatchSetup } from '../../match';
 import { ARCADE_E, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, EntityKind } from '../../state';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
 import { damageDecreasePct } from '../status';
+import { applyStun } from './stun';
 import { skipIntro } from './round-testkit';
 
 const METER = ARCADE_TEAM_BASE + ArcadeT.meter;
@@ -270,11 +271,33 @@ describe('Quake Rings variants', () => {
     expect(damageDecreasePct(s, 0)).toBe(0);
   });
 
-  it('Overgrowth roots the victim 40 ticks (less one juggle step) longer after the last ring than Mountain Breaker', () => {
+  it('Overgrowth roots the victim 20 ticks (less one juggle step) longer after the last ring than Mountain Breaker', () => {
     const left = (race: string): number => stunLeftAtHit(duel(race, 'pax', 100), 500, 3);
-    expect(left('treenoc') - left('rokcore')).toBe(40 - JUGGLE_STUN_STEP);
+    expect(left('treenoc') - left('rokcore')).toBe(20 - JUGGLE_STUN_STEP);
   });
 });
+
+describe('super stun under the SIM_VERSION 117 caps', () => {
+  it('the last ring of Overgrowth stuns at most 46 ticks (26 hit + 20 root)', () => {
+    const left = stunLeftAtHit(duel('treenoc', 'pax', 100), 500, 3);
+    expect(left).toBeGreaterThan(0);
+    expect(left).toBeLessThanOrEqual(46);
+  });
+
+  it('a super after a 3-hit prefix still applies its root (the sup bypass skips the juggle and cap recovery)', () => {
+    const plain = duel('treenoc', 'pax', 100);
+    const prefixed = duel('treenoc', 'pax', 100);
+    const sink = new EventSink(0);
+    for (let i = 0; i < 3; i++) applyStun(prefixed, sink, 0, 1, 20);
+    expect(isStunnedNow(prefixed)).toBe(true);
+    const a = stunLeftAtHit(plain, 500, 3);
+    const b = stunLeftAtHit(prefixed, 500, 3);
+    expect(b).toBeGreaterThanOrEqual(a);
+    expect(b).toBeGreaterThan(26);
+  });
+});
+
+const isStunnedNow = (w: SimWorld): boolean => (w.state.arcade[ARCADE_E + ArcadeE.stunUntil] ?? 0) > now(w.state);
 
 describe('Tidal Wave variants', () => {
   it('Glacier Crash starts a 120 px wall at the caster edge, full arena height, moving 20 px a tick', () => {
@@ -317,9 +340,9 @@ describe('Tidal Wave variants', () => {
     expect(w2.state.speed[1]).toBe(speed);
   });
 
-  it('Glacier Crash freezes 30 ticks (less one juggle step) longer than Slime Tsunami stuns', () => {
+  it('Glacier Crash freezes 15 ticks (less one juggle step) longer than Slime Tsunami stuns', () => {
     const left = (race: string): number => stunLeftAtHit(duel(race, 'pax', 300), 700, 1);
-    expect(left('curomo') - left('ishimi')).toBe(30 - JUGGLE_STUN_STEP);
+    expect(left('curomo') - left('ishimi')).toBe(15 - JUGGLE_STUN_STEP);
   });
 
   it('Slime Tsunami is a 180 px wall', () => {

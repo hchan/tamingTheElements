@@ -120,7 +120,7 @@ function strike(world: SimWorld, sink: EventSink, fx: number, victim: number, sp
 
 /** Extra stun (Overgrowth's root, Glacier Crash's freeze) on top of the hit's own, counted as stun. */
 function rootVictim(world: SimWorld, sink: EventSink, fx: number, victim: number, ticks: number): void {
-  if (ticks > 0 && (world.state.hp[victim] ?? 0) > 0) applyStun(world, sink, fx, victim, HIT_STUN_TICKS[3] + ticks);
+  if (ticks > 0 && (world.state.hp[victim] ?? 0) > 0) applyStun(world, sink, fx, victim, HIT_STUN_TICKS[3] + ticks, true);
 }
 
 /** The victim a super hit can land on this tick, or -1 (none, translucent, invulnerable). */

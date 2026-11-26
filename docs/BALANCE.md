@@ -625,3 +625,18 @@ Measurement (2v2, released roster, 16 seeds each, lead-team win rate, seed 1 / s
 | curomo-led | .489 / .497 | .514 / .538 |
 
 All 24 entries are inside .40-.60 at both seeds. Kindrel moved more than planned (+10 pp at seed 1 against an estimate of +3 to +5; SE about 2.6 pp), so no further step is planned. Re-record: arcade-2v2-baseline.json and the Arcade/Classic goldens (header only for Classic).
+
+## Arcade stun nerf (SIM_VERSION 117)
+
+Owner intent: stuns are overpowered; make stun a rarer skill and turn other skills into push-backs. Hit stun is now 12/16/20/26 ticks (was 32/38/44/48), JUGGLE_STUN_STEP 4, JUGGLE_LIMIT 3, COMBO_STUN_CAP_TICKS 72, STUN_IMMUNE_TICKS 30. Only Tornado (45), Ice Blast (40) and Wyrm Coil (24) keep a real stun; every other ability is knockback plus a flinch. Supers bypass the juggle and cap recovery (`sup`) and ignore stun immunity. Freeze 45, Snag 12, charge 16, spike 36, guard break 45; daze 50, iced 30, down 30. Cooldowns of Tornado, Ice Blast (350) and Wyrm Coil (175) rose.
+
+Measurements (`tools/sim/stun-lock.ts`, estimate from seeded AI matches):
+
+| | lock share | longest run | run p90 | mean run | hits per combo | supers per match |
+|---|---|---|---|---|---|---|
+| 1v1 v116 | 0.3045 | 220 | 104 | 65.6 | 2.0 | 7.42 |
+| 1v1 v117 | 0.1804 | 175 | 62 | 29.8 | 1.38 | 6.63 (-10.6%) |
+| 2v2 v116 | 0.1788 | 248 | 110 | 69.6 | 2.25 | 20.59 |
+| 2v2 v117 | 0.1133 | 199 | 79 | 33.0 | 1.5 | 18.88 |
+
+Supers fell under 30%, so the AI super timing is unchanged. Fun gates: multi-hit combo share fell to 0.129 (1v1) and 0.152 (2v2) on purpose; bands moved to [0.08, 0.5] and [0.1, 0.55]. Classic balance drift is 0.0pp; Classic goldens changed only in the simVersion header. Arcade goldens and both Arcade baselines were re-recorded because the stun numbers change every Arcade replay.
