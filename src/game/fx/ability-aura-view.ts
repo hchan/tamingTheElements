@@ -12,8 +12,8 @@ import { HURL_FLIGHT, HURL_HIT_TICKS, ROLL_FLIGHT, ROLL_HIT_TICKS, hurlImpact, p
 import { HURL_POP, HURL_SPRITE, HURL_TICKS, ROLL_POP, ROLL_SPRITE, ROLL_TICKS, boulderRoll, hurlRock, paintRock } from './quarrak-fx';
 import { BREATH_BOX, BREATH_COLOR, BREATH_POP, BREATH_SPRITE, BREATH_TICKS, COIL_BOX, COIL_COLOR, COIL_POP, COIL_SPRITE, COIL_TICKS, meleeBox, scorchBreath, wyrmCoil, type Box } from './ouroth-fx';
 import { SKITTER_COLOR, SKITTER_POP, SKITTER_SPRITE, SKITTER_TICKS, skitterHop } from './zephra-fx';
-import { MEND_COLOR, MEND_POP, MEND_SPRITE, MEND_TICKS, SPORE_COLOR, SPORE_DARK, SPORE_SPRITE, SPORE_TICKS, myceliumMend } from './umbrel-fx';
-import { sporeSpecks } from './spore-specks';
+import { MEND_COLOR, MEND_POP, MEND_SPRITE, MEND_TICKS, SPORE_COLOR, SPORE_DARK, SPORE_SPRITE, SPORE_TICKS, myceliumMend, sporeBurst } from './umbrel-fx';
+import { SPECK_RIM, SPORE_VIEW_TICKS, sporeProcedural, sporeSpecks } from './spore-specks';
 import { LURE_COLOR, LURE_CORE, LURE_POP, LURE_SPRITE, LURE_TICKS, lureOrb } from './glimmaw-fx';
 import { BELL_POP, BELL_SPRITE, BELL_TICKS, MOTE_SPRITE, MOTE_TICKS, PULL_POP, PULL_SPRITE, PULL_TICKS, abyssalPull, bellPulse, paintBell, paintMote, paintPull, staticMote } from './hyalia-zephra-abyssor-fx';
 import { mountStingFx } from './sting-fx';
@@ -267,13 +267,23 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         return age <= SKITTER_TICKS;
       }
       if (f.kind === 'spore') {
-        // Procedural speck burst (spore-specks.ts) replaces the sprite; reduced motion keeps the sprite and adds one faint puff.
-        for (const sp of sporeSpecks(f.x, f.y, f.dir, age, reduced)) {
-          glow.fillStyle(sp.color, sp.a * 0.12).fillCircle(sp.x, sp.y, sp.r * 1.4);
-          gfx.fillStyle(SPORE_DARK, sp.a * 0.5).fillCircle(sp.x + 1.5, sp.y + 1.5, sp.r);
-          gfx.fillStyle(sp.color, sp.a).fillCircle(sp.x, sp.y, sp.r);
+        if (!sporeProcedural()) {
+          const sp = sporeBurst(f.x, f.y, f.dir, age, reduced);
+          if (!sp) return false;
+          for (const p of sp.puffs) {
+            glow.fillStyle(SPORE_COLOR, p.a * 0.35 * sp.alpha).fillCircle(p.x, p.y, p.r * 1.5);
+            gfx.fillStyle(SPORE_DARK, p.a * 0.3 * sp.alpha).fillCircle(p.x + 2, p.y + 2, p.r);
+            gfx.fillStyle(SPORE_COLOR, p.a * 0.6 * sp.alpha).fillCircle(p.x, p.y, p.r);
+          }
+          paintEmbers(glow, sp.trail.map((m) => ({ x: m.x, y: m.y, r: m.r, a: m.a * sp.alpha })), SPORE_COLOR, 0.9);
+          return age <= SPORE_TICKS;
         }
-        return age <= SPORE_TICKS;
+        // Procedural speck burst (spore-specks.ts): normal-blend hard-edged discs with a dark rim, no glow (additive overlap read cream).
+        for (const sp of sporeSpecks(f.x, f.y, f.dir, age, reduced)) {
+          gfx.fillStyle(sp.color, sp.a).fillCircle(sp.x, sp.y, sp.r);
+          gfx.lineStyle(SPECK_RIM.width, SPECK_RIM.color, sp.a).strokeCircle(sp.x, sp.y, sp.r);
+        }
+        return age <= SPORE_VIEW_TICKS;
       }
       if (f.kind === 'mend') {
         const m = myceliumMend(f.x, f.y, age, reduced);

@@ -12,6 +12,7 @@ import {
 } from '../hud/arcade-hud';
 import { ELEMENT_COLORS } from './element-colors';
 import { halfPoint, revealSegs, ropeGrow } from './rope-arcs';
+import { hidesSporeSprite } from './spore-specks';
 import {
   AFTERIMAGE_ALPHA, AFTERIMAGE_GAP, BREAK_COLOR, DefenceFx, FLASH_TICKS, GUARD_COLOR, GUARD_LOW_PM,
   POP_TICKS, RING_TICKS, ROPE_COLOR, SPARK_TICKS, TICK_MS, ghostAlpha, guardFill, popAlpha, popRise, progress, ringRadius, type DefenceSink,
@@ -374,9 +375,8 @@ export function mountDefenceView(
 
   const drawProjectile = (p: RenderProjectile): void => {
     const id = p.id;
-    if (id >= SLOTS || trailTick[id] !== tick) return;
-    const n = trailN[id] ?? 0;
-    const o = id * TRAIL * 2;
+    if (id >= SLOTS || trailTick[id] !== tick || hidesSporeSprite(p.sprite, false)) return;
+    const n = trailN[id] ?? 0, o = id * TRAIL * 2;
     const r = Math.max(6, (p.w + p.h) / 4 + 2);
     const color = teamColor[p.team] ?? GUARD_COLOR;
     for (let j = 1; j * AFTERIMAGE_GAP < n; j++) {

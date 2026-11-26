@@ -11,3 +11,7 @@ Fourth method, our side: a procedural Phaser particle burst replacing the sprite
 ## Progress (2026-11-26, builder)
 
 Built, awaiting art-director review (status stays `idea`). `src/game/fx/spore-specks.ts` (table + pure tick geometry, `hash01` scatter, 18 olive/ochre/loam specks, radius 4-10 px, life 14-20 ticks, born over 20 ticks along the flight; tests in `spore-specks.test.ts` pin counts, no-cream colours, ranges). `ability-aura-view.ts` draws them instead of the old puffs; `projectile-view.ts` hides the sprite unless reduced motion (then the shipped sprite plus one faint puff). Not Phaser's ParticleEmitter on purpose: it is wall-clock timed and would not follow the manual stepping probe. Screenshots (mid-burst, ticks 7/14/22/30 after the cast): `.scratch/sporeburst/umbrel-spore-*.png` in the builder worktree.
+
+## Progress (2026-11-26, round 2, builder)
+
+Art-director REVISE 2.5 applied: normal blend only, weighted palette (olive 40, ochre 30, loam 20, bright ochre 10), 26 specks, radius 6-14 (most 7-10), 1 px rim, alpha 0.9 holding then easing out over 30-40 ticks, thrown 40-90 px with gravity 0.05. The cream blob was the defence view trail dots (team colour with a white core) behind the projectile: now skipped for the procedural spore. Seam `SPORE_PROCEDURAL` in spore-specks.ts (false = shipped sprite path as before). Shots: `.scratch/sporeburst2/umbrel-spore-r2-t{10,20,30,45,60}.png` in the builder worktree. Status stays `idea` until the director approves.

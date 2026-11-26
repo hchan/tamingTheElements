@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { RenderProjectile } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { lerp } from './character-view';
+import { hidesSporeSprite } from '../fx/spore-specks';
 import { SMOOTH_KIND, hurricaneSpin, meleeFadeOut, meleeGrowIn, pulseBump } from '../fx/ability-smooth';
 
 interface Entry {
@@ -182,7 +183,7 @@ export class ProjectileView {
     }
     if (clock && kind === 'spin' && !reduced) scale = pulseBump(ageMs);
     // Umbrel's Spore Burst is drawn as procedural specks by the ability aura view (fx/spore-specks.ts); reduced motion keeps this sprite.
-    if (!reduced && p.sprite === 'sporeBurst') fade = 0;
+    if (hidesSporeSprite(p.sprite, reduced)) fade = 0;
     const grown = melee ? 0 : (p.growPx ?? 0);
     this.image.setVisible(true).setAlpha(fade);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
