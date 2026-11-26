@@ -1,5 +1,5 @@
 import {
-  CHARGE_TICKS, ChargeEnd, COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
+  CHARGE_TICKS, ChargeEnd, COMBO_STUN_CAP_TICKS, SUPER_COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
   MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, STUN_IMMUNE_TICKS, TRAP_CAST_TICKS, TRAP_COOLDOWN_TICKS, TRAP_PUDDLE_SLOW_PM,
   WEATHER_COOLDOWN_TICKS, WEATHER_RECOVERY_TICKS,
 } from '../../../data/arcade';
@@ -156,8 +156,9 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
  * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is exactly
  * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= JUGGLE_LIMIT`, or one that would push the chain past COMBO_STUN_CAP_TICKS, ends
  * the stun with `recovered` (reason 1 or 2) and RECOVERY_INVULN_TICKS of invulnerability instead. A super (`sup`, SIM_VERSION 117) skips
- * both caps (its hits and root would otherwise trip them after a short prefix) but still counts `juggle` and `comboStunTotal`, so a plain hit
- * after it recovers at once and the super cannot be extended. Either way it ends the victim's
+ * the juggle cap (its hits and root would otherwise trip it after a short prefix) and, since SIM_VERSION 118, obeys the longer
+ * SUPER_COMBO_STUN_CAP_TICKS, so a second or third super cannot extend the chain. It still counts `juggle` and `comboStunTotal`, so a plain hit
+ * after it recovers at once. Either way it ends the victim's
  * dash (its DASH_RECOVERY_TICKS still follow) or charge (`chargeEnded`, reason interrupted).
  */
 export function applyStun(world: SimWorld, sink: EventSink, source: number, victim: number, base: number, sup = false): void {
@@ -183,7 +184,7 @@ export function applyStun(world: SimWorld, sink: EventSink, source: number, vict
   const added = g + ticks - Math.max(until, g);
   if (added <= 0) return;
   const total = (a[e + ArcadeE.comboStunTotal] ?? 0) + added;
-  if (!sup && total > COMBO_STUN_CAP_TICKS) {
+  if (total > (sup ? SUPER_COMBO_STUN_CAP_TICKS : COMBO_STUN_CAP_TICKS)) {
     recover(s, sink, source, victim, RecoveredReason.stunCap);
     return;
   }

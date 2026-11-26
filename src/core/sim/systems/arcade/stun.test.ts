@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
-  COMBO_STUN_CAP_TICKS, FREEZE_STUN_TICKS, HIT_STUN_TICKS, HitStrength, JUGGLE_LIMIT, JUGGLE_STUN_STEP, KNOCKBACK_DECAY_Q4,
+  COMBO_STUN_CAP_TICKS, SUPER_COMBO_STUN_CAP_TICKS, FREEZE_STUN_TICKS, HIT_STUN_TICKS, HitStrength, JUGGLE_LIMIT, JUGGLE_STUN_STEP, KNOCKBACK_DECAY_Q4,
   KNOCKBACK_Q4, MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, STUN_IMMUNE_TICKS,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
@@ -476,6 +476,33 @@ describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
   it('a double team of light, medium and heavy hitters never chains past COMBO_STUN_CAP_TICKS', () => {
     const [, longest] = chain([[20, HIT_STUN_TICKS[0]], [30, HIT_STUN_TICKS[1]], [26, HIT_STUN_TICKS[2]]], 2000);
     expect(longest).toBeLessThanOrEqual(COMBO_STUN_CAP_TICKS);
+  });
+
+  it('a super hit that would pass SUPER_COMBO_STUN_CAP_TICKS recovers the victim (stunCap, invulnerable)', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    applyStun(world, sink, 0, 1, 26, true);
+    applyStun(world, sink, 0, 1, 26, true);
+    applyStun(world, sink, 0, 1, 26, true); // 26 + 22 + 18 = 66 so far
+    expect(sink.events).toEqual([]);
+    s.arcade[GAME_TICK] = 5;
+    applyStun(world, sink, 0, 1, 200, true); // would add far past 80
+    expect(sink.events.map((e) => [e.kind, e['reason']])).toEqual([[SimEventKind.recovered, RecoveredReason.stunCap]]);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(5);
+    expect(s.arcade[E(1, ArcadeE.invulnUntil)]).toBe(5 + RECOVERY_INVULN_TICKS);
+  });
+
+  it('a super hit leaving the chain between the plain cap and the super cap still extends the stun', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    applyStun(world, sink, 0, 1, 76, true);
+    const total = s.arcade[E(1, ArcadeE.comboStunTotal)] ?? 0;
+    expect(total).toBeGreaterThan(COMBO_STUN_CAP_TICKS);
+    expect(total).toBeLessThanOrEqual(SUPER_COMBO_STUN_CAP_TICKS);
+    expect(sink.events).toEqual([]);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(total);
   });
 
   it('a super hit after a prefix still applies its stun (the sup bypass)', () => {
