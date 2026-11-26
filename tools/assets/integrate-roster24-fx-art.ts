@@ -48,6 +48,7 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
     keyed: true,
     fx: {
       abyssFlash: { src: 'abyssFlash.png', sha256: 'fd1487d5dc99c819572fec214e9bc5509d470d11d837e273b8e8486edb748bb8', w: 80, h: 80 },
+      lureOrb: { src: 'lureOrb.png', sha256: 'ef7f991a1c2ae63315ba611e7e4eea715a5538eadde9b47d39892acfff965bef', w: 80, h: 80, approval: { file: 'approval-fx3.json', key: 'lureOrb' } },
     },
   },
   durrok: {
@@ -55,6 +56,15 @@ export const HEROES: Readonly<Record<string, HeroFx>> = {
     keyed: true,
     fx: {
       bristleStomp: { src: 'bristleStomp.png', sha256: '7c2f5e83059ce1c315721aa1d9c054a8d2c8ef48da4b2f1ad58f6e6eed884462', w: 80, h: 60 },
+      tuskGore: { src: 'tuskGore.png', sha256: '09c22ae0888e62ce62dc136940fe73da78d5fb2ba7387cc0b9795b9f9b8ad338', w: 80, h: 60, approval: { file: 'approval-fx3.json', key: 'tuskGore' } },
+    },
+  },
+  quarrak: {
+    provenance: 'tools/assets/fx-gen/provenance/quarrak-fx',
+    keyed: true,
+    fx: {
+      // approval.json is the art session's file verbatim; its hurlRock entry is REVISE (approved null) and hurlRock is not in this table.
+      boulderRoll: { src: 'boulderRoll.png', sha256: 'fec0fd0c11bc8bb85db5b181fbd695fdd0e7c7ffdd1873d6190b4ba825d79152', w: 80, h: 80 },
     },
   },
   hyalia: {
