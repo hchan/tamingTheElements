@@ -22,7 +22,7 @@ import type { SimWorld } from '../../world';
 import { ABILITY_DEFS } from '../projectile';
 import { HIT_STUN } from './hit';
 import { setKnockback } from './knockback';
-import { applyStun, canAct, isInvulnerable, isStunned, stunImmune } from './stun';
+import { applyStun, canAct, expireStuns, isInvulnerable, isStunned, stunImmune } from './stun';
 
 const GAME_TICK = ARCADE_WORLD_BASE + ArcadeW.gameTick;
 const E = (id: number, f: number): number => id * ARCADE_E + f;
@@ -498,14 +498,37 @@ describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
     expect(until).toBe(80);
   });
 
-  it('a super chain that would end at 81 recovers the victim (stunCap, invulnerable)', () => {
-    const { sink } = superChainEnding(25);
-    expect(sink.events.map((e) => [e.kind, e['reason']])).toEqual([[SimEventKind.recovered, RecoveredReason.stunCap]]);
+  it('a super chain that would end at 81 is clamped to 80 (no recovery), and one more super at 80 recovers (stunCap)', () => {
+    const { sink, total, until } = superChainEnding(25);
+    expect(sink.events).toEqual([]);
+    expect(total).toBe(SUPER_COMBO_STUN_CAP_TICKS);
+    expect(until).toBe(80);
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink2 = new EventSink(0);
+    s.arcade[E(1, ArcadeE.comboStunTotal)] = SUPER_COMBO_STUN_CAP_TICKS;
+    s.arcade[E(1, ArcadeE.stunUntil)] = 80;
+    s.arcade[GAME_TICK] = 70;
+    applyStun(world, sink2, 0, 1, 26, true);
+    expect(sink2.events.map((e) => [e.kind, e['reason']])).toEqual([[SimEventKind.recovered, RecoveredReason.stunCap]]);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(70);
   });
 
-  it('a normal combo near COMBO_STUN_CAP_TICKS counts toward the super cap: a super hit past 80 recovers', () => {
-    // Known limitation (SIM_VERSION 118, not fixed): a plain combo's stun counts toward the super cap, so a plain chain plus a rooting
-    // super can be cut short and recovered. See ideas/brainstorm/super-stun-expiry-seam.md (slated for v119).
+  it('a super root right after the same super hit recovered the victim does not restart a stun (SIM_VERSION 119)', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    s.arcade[E(1, ArcadeE.comboStunTotal)] = SUPER_COMBO_STUN_CAP_TICKS;
+    s.arcade[E(1, ArcadeE.stunUntil)] = 80;
+    s.arcade[GAME_TICK] = 70;
+    applyStun(world, sink, 0, 1, 26, true); // room 0: recovers
+    applyStun(world, sink, 0, 1, 40, true); // the root of the same super, same tick
+    expect(sink.events.map((e) => e['reason'])).toEqual([RecoveredReason.stunCap]);
+    expect(isStunned(s, 1)).toBe(false);
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(0);
+  });
+
+  it('a normal combo near COMBO_STUN_CAP_TICKS counts toward the super cap: a super hit past 80 is clamped to 80 (SIM_VERSION 119)', () => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
@@ -513,10 +536,41 @@ describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
     expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(70);
     expect(sink.events).toEqual([]);
     s.arcade[GAME_TICK] = 60;
-    applyStun(world, sink, 0, 1, 26, true); // juggle 1: 22 ticks, until 82, adds 12 -> 82 > 80
-    expect(sink.events.map((e) => [e.kind, e['reason']])).toEqual([[SimEventKind.recovered, RecoveredReason.stunCap]]);
-    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(60);
-    expect(s.arcade[E(1, ArcadeE.invulnUntil)]).toBe(60 + RECOVERY_INVULN_TICKS);
+    applyStun(world, sink, 0, 1, 26, true); // juggle 1: 22 ticks, until 82, adds 12 -> room is 10 -> clamped
+    expect(sink.events).toEqual([]);
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(SUPER_COMBO_STUN_CAP_TICKS);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(80);
+    expect(s.arcade[E(1, ArcadeE.invulnUntil)] ?? 0).toBe(0);
+  });
+
+  it('a super on the tick a stun expires carries the old budget (SIM_VERSION 119 expiry seam)', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    applyStun(world, sink, 0, 1, 60, true);
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(60);
+    s.arcade[GAME_TICK] = 60; // the stun ends this tick
+    expireStuns(world, sink);
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(-60); // expired, budget remembered
+    applyStun(world, sink, 0, 1, 26, true);
+    // carried 60 + a fresh super hit, never past the super cap (clamped)
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBeGreaterThan(60);
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBeLessThanOrEqual(SUPER_COMBO_STUN_CAP_TICKS);
+  });
+
+  it('a super 30 ticks or more after expiry starts a fresh chain, and recovered(stunEnded) is emitted once', () => {
+    const world = duel('sindarosa', 'pax');
+    const s = world.state;
+    const sink = new EventSink(0);
+    applyStun(world, sink, 0, 1, 60, true);
+    s.arcade[GAME_TICK] = 60;
+    expireStuns(world, sink);
+    s.arcade[GAME_TICK] = 61;
+    expireStuns(world, sink);
+    expect(sink.events.filter((e) => e['reason'] === RecoveredReason.stunEnded)).toHaveLength(1);
+    s.arcade[GAME_TICK] = 60 + STUN_IMMUNE_TICKS;
+    applyStun(world, sink, 0, 1, 26, true);
+    expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(26);
   });
 
   it('a super hit leaving the chain between the plain cap and the super cap still extends the stun', () => {

@@ -252,6 +252,8 @@ SIM_VERSION 104 (Arcade only; Classic bit-identical): `JUGGLE_STUN_STEP` 2 -> 6 
 
 SIM_VERSION 118 (Arcade only; Classic bit-identical): super hits obey `SUPER_COMBO_STUN_CAP_TICKS` 80 (game ticks), so overlapping super chains are capped; a super landing on the stun-expiry tick still starts a new combo (see `ideas/brainstorm/super-stun-expiry-seam.md`). Race numbers retuned (R8). Arcade goldens and baselines were re-recorded; Classic goldens change only in the `simVersion` header.
 
+SIM_VERSION 119 (Arcade only; Classic bit-identical): closes the two v118 super-stun gaps. A super hit that would pass `SUPER_COMBO_STUN_CAP_TICKS` is clamped to the remaining room (it recovers with `stunCap` only at room 0), and an expired stun keeps its budget as `-comboStunTotal`, which a super landing within `STUN_IMMUNE_TICKS` of the expiry carries instead of starting a fresh chain. Plain hits still start fresh. Arcade goldens and baselines were re-recorded; Classic goldens change only in the `simVersion` header.
+
 ## Changing the contract or data
 
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value

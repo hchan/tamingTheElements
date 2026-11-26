@@ -332,7 +332,7 @@ function checkArcade(
     const total = s.arcade[e + ArcadeE.comboStunTotal] ?? 0;
     if (juggle > JUGGLE_LIMIT || total > COMBO_STUN_CAP_TICKS)
       fail(`juggle ${String(juggle)}, stun total ${String(total)}`);
-    if ((s.arcade[e + ArcadeE.stunUntil] ?? 0) - g > total)
+    if ((s.arcade[e + ArcadeE.stunUntil] ?? 0) - g > Math.max(0, total))
       fail(`stun of ${String(i)} outlasts its combo budget`);
     const f = s.flags[i] ?? 0;
     if (
