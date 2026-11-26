@@ -136,15 +136,17 @@ function recover(s: SimState, sink: EventSink, source: number, victim: number, r
 
 /**
  * Emits `recovered` (reason 0) for each live character whose stun ran out, once: a stun is live while
- * `comboStunTotal > 0`, which the caps already zero when they end a stun (with their own `recovered`).
+ * `comboStunTotal > 0`, which the caps already zero when they end a stun (with their own `recovered`). An expired stun keeps its
+ * budget as `-comboStunTotal` (SIM_VERSION 119): a super landing within STUN_IMMUNE_TICKS of the expiry carries it (see `applyStun`).
  */
 export function expireStuns(world: SimWorld, sink: EventSink): void {
   const s = world.state;
   const g = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     const e = id * ARCADE_E;
-    if ((s.arcade[e + ArcadeE.comboStunTotal] ?? 0) === 0 || (s.arcade[e + ArcadeE.stunUntil] ?? 0) > g) continue;
-    s.arcade[e + ArcadeE.comboStunTotal] = 0;
+    const total = s.arcade[e + ArcadeE.comboStunTotal] ?? 0;
+    if (total <= 0 || (s.arcade[e + ArcadeE.stunUntil] ?? 0) > g) continue;
+    s.arcade[e + ArcadeE.comboStunTotal] = -total; // expired, budget remembered for a super landing inside the immunity window (SIM_VERSION 119)
     if (((s.flags[id] ?? 0) & (EntityFlag.alive | EntityFlag.dead)) !== EntityFlag.alive) continue;
     sink.emit(id, SimEventKind.recovered, { id, reason: RecoveredReason.stunEnded });
   }
@@ -158,7 +160,9 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
  * the stun with `recovered` (reason 1 or 2) and RECOVERY_INVULN_TICKS of invulnerability instead. A super (`sup`, SIM_VERSION 117) skips
  * the juggle cap (its hits and root would otherwise trip it after a short prefix) and, since SIM_VERSION 118, obeys the longer
  * SUPER_COMBO_STUN_CAP_TICKS, so a second or third super cannot extend the chain. It still counts `juggle` and `comboStunTotal`, so a plain hit
- * after it recovers at once. Either way it ends the victim's
+ * after it recovers at once. SIM_VERSION 119: a super hit that would pass the cap is shortened to the room left (it recovers only when no
+ * room is left), and a super landing on or within STUN_IMMUNE_TICKS of the previous stun's expiry continues that chain's budget instead of
+ * starting a fresh one, so the unbroken stun run stays within SUPER_COMBO_STUN_CAP_TICKS across the expiry seam. Either way it ends the victim's
  * dash (its DASH_RECOVERY_TICKS still follow) or charge (`chargeEnded`, reason interrupted).
  */
 export function applyStun(world: SimWorld, sink: EventSink, source: number, victim: number, base: number, sup = false): void {
@@ -169,9 +173,12 @@ export function applyStun(world: SimWorld, sink: EventSink, source: number, vict
   if ((a[e + ArcadeE.dashUntil] ?? 0) > g) a[e + ArcadeE.dashUntil] = g;
   if ((a[e + ArcadeE.chargeUntil] ?? 0) > g) endCharge(s, sink, victim, ChargeEnd.interrupted);
   const until = a[e + ArcadeE.stunUntil] ?? 0;
+  // A super whose own hit just recovered the victim (this tick) must not restart a chain with its root (SIM_VERSION 119).
+  if (sup && (a[e + ArcadeE.invulnUntil] ?? 0) === g + RECOVERY_INVULN_TICKS) return;
   if (until <= g) {
+    const prev = a[e + ArcadeE.comboStunTotal] ?? 0;
     a[e + ArcadeE.juggle] = 0;
-    a[e + ArcadeE.comboStunTotal] = 0;
+    a[e + ArcadeE.comboStunTotal] = sup && until > 0 && g - until < STUN_IMMUNE_TICKS ? Math.abs(prev) : 0;
     a[e + ArcadeE.wallBounced] = 0;
   } else if (!sup && (a[e + ArcadeE.juggle] ?? 0) >= JUGGLE_LIMIT) {
     recover(s, sink, source, victim, RecoveredReason.juggleCap);
@@ -183,11 +190,13 @@ export function applyStun(world: SimWorld, sink: EventSink, source: number, vict
   const ticks = Math.max(MIN_HIT_STUN_TICKS, base - JUGGLE_STUN_STEP * (a[e + ArcadeE.juggle] ?? 0));
   const added = g + ticks - Math.max(until, g);
   if (added <= 0) return;
-  const total = (a[e + ArcadeE.comboStunTotal] ?? 0) + added;
-  if (total > (sup ? SUPER_COMBO_STUN_CAP_TICKS : COMBO_STUN_CAP_TICKS)) {
+  const prior = a[e + ArcadeE.comboStunTotal] ?? 0;
+  const room = (sup ? SUPER_COMBO_STUN_CAP_TICKS : COMBO_STUN_CAP_TICKS) - prior;
+  if (added > room && !(sup && room > 0)) {
     recover(s, sink, source, victim, RecoveredReason.stunCap);
     return;
   }
-  a[e + ArcadeE.stunUntil] = g + ticks;
-  a[e + ArcadeE.comboStunTotal] = total;
+  const take = Math.min(added, room); // a super is clamped to the remaining room; a plain hit never gets here with take < added
+  a[e + ArcadeE.stunUntil] = Math.max(until, g) + take;
+  a[e + ArcadeE.comboStunTotal] = prior + take;
 }

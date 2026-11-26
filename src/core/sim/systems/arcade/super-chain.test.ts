@@ -47,7 +47,7 @@ function superChain(caster: string, victim: string): { longestGame: number; maxT
   return { longestGame, maxTotal, supers, capRecoveries };
 }
 
-describe('a three-super chain (SIM_VERSION 118)', () => {
+describe('a three-super chain (SIM_VERSION 119)', () => {
   it('the super cap sits above the plain cap', () => {
     expect(SUPER_COMBO_STUN_CAP_TICKS).toBe(80);
     expect(SUPER_COMBO_STUN_CAP_TICKS).toBeGreaterThan(COMBO_STUN_CAP_TICKS);
