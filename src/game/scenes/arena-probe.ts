@@ -64,7 +64,7 @@ export interface ArenaProbeContext {
 
 type StateProbeKeys = 'hash' | 'net' | 'characters' | 'setHp' | 'place' | 'actionSlots' | 'actionBarScreen' | 'actionBar2Screen' | 'clicks' | 'captureGranted' | 'bench' | 'swapReadyTick' | 'swapNotice' | 'cheat' | 'shaking';
 
-type ViewProbeKeys = 'fx' | 'camera' | 'shockFx' | 'shockSeek' | 'superFx' | 'superBurst' | 'sheets' | 'rounds' | 'defence' | 'overlays' | 'stageAmbient' | 'weather' | 'viewsReady' | 'tag' | 'terrain' | 'traps' | 'hazard' | 'ownElement' | 'hudTextSizes' | 'heroLabels' | 'hitMarkHide' | 'idleAura' | 'idleAuraHide' | 'abilityFx' | 'dangerZones' | 'aim';
+type ViewProbeKeys = 'drawnXs' | 'fx' | 'camera' | 'shockFx' | 'shockSeek' | 'superFx' | 'superBurst' | 'sheets' | 'rounds' | 'defence' | 'overlays' | 'stageAmbient' | 'weather' | 'viewsReady' | 'tag' | 'terrain' | 'traps' | 'hazard' | 'ownElement' | 'hudTextSizes' | 'heroLabels' | 'hitMarkHide' | 'idleAura' | 'idleAuraHide' | 'abilityFx' | 'dangerZones' | 'aim';
 
 type SetterProbeKeys = 'setMeter' | 'setRoundsWon' | 'setWeatherCharge' | 'setWeather' | 'grantStatus';
 
@@ -122,6 +122,11 @@ function stateProbe(c: ArenaProbeContext): Pick<ArenaProbe, StateProbeKeys> {
 function viewProbe(c: ArenaProbeContext): Pick<ArenaProbe, ViewProbeKeys> {
   const { scene, view } = c;
   return {
+    drawnXs: () => {
+      const out: { id: number; team: number; simX: number; drawnX: number }[] = [];
+      view.forEachCharacter((ch) => { out.push({ id: ch.id, team: ch.team, simX: ch.x, drawnX: c.pool()?.peek(ch.id)?.drawnX ?? Number.NaN }); });
+      return out;
+    },
     fx: () => {
       const hud = c.arcadeHud();
       const tints: { id: number; tint: number; mode: number; wash: number }[] = [];

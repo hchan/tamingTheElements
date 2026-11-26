@@ -8,7 +8,7 @@ import { createServer } from 'node:net';
 import { pathToFileURL } from 'node:url';
 import { chromium, type Page } from '@playwright/test';
 import { parseOnlineUrl } from '../src/game/net/ws/config';
-import { parseArgs, rateLines, summarizeRuns, summaryLine } from './live-browser-match-lib';
+import { type FrameSample, jumpStats, parseArgs, rateLines, summarizeRuns, summaryLine } from './live-browser-match-lib';
 import { LIVE_BROWSER_RUN_GAP_MS, LIVE_BROWSER_MATCH_TICKS, LIVE_BROWSER_STEP_MS, LIVE_BROWSER_END_MS, LIVE_BROWSER_PAGE_ORIGIN } from './live-browser-match-constants';
 
 const OUT_DIR = '.scratch/live-browser-build';
@@ -104,7 +104,15 @@ export async function runOnce(env: Readonly<Record<string, string | undefined>>,
     await b.locator('#quickReady').click();
     for (const p of pages) if (!(await wait(p, '#quickLink', LIVE_BROWSER_STEP_MS, 'attached'))) { out(`arena did not start: ${redact(await status(p))}`); return 1; }
     step('arenas running');
+    // Per animation frame, record each character's raw sim x and drawn x (test probe), to count on-screen snaps in the real renderer.
+    const SAMPLER = 'window.__frames = []; (function loop() { const xs = window.__TTE__ && window.__TTE__.arena && window.__TTE__.arena.drawnXs && window.__TTE__.arena.drawnXs(); if (xs) window.__frames.push(xs.map(function (x) { return [x.id, x.simX, x.drawnX]; })); requestAnimationFrame(loop); })();';
+    for (const p of pages) await p.evaluate(SAMPLER);
     for (const p of pages) if (!(await wait(p, '#quickAgain', LIVE_BROWSER_END_MS))) { out(`match did not end: ${redact(await status(p))}`); step(`at failure: ${recvLine()} (measurement)`); return 1; }
+    for (const [name, p] of [['A', a], ['B', b]] as const) {
+      const frames = await p.evaluate<FrameSample[][]>('window.__frames || []');
+      const j = jumpStats(frames, 30);
+      step(`${name} view jumps over ${String(frames.length)} frames: largest raw ${j.rawMax.toFixed(0)} px, drawn ${j.drawnMax.toFixed(0)} px; over 30 px raw ${String(j.rawOver)}, drawn ${String(j.drawnOver)} (measurement, real renderer)`);
+    }
     const [ta, tb] = [await status(a), await status(b)];
     step(`ended: ${ta} | ${tb}`);
     const failed = (await Promise.all(pages.map((p) => p.locator('#quickFailure').isVisible()))).some(Boolean);

@@ -18,3 +18,6 @@ added: 2026-11-26
 - With the probe fixed, current main passed 2 of 4 live browser runs (measurement; the failures ended "Connection lost").
 - Passing runs took 22 to 32 s for a 6 s match, with receive gaps up to 3 s, and each page sent only about 6 to 8 frames/s (measurements). A full-speed page would send about 17/s (estimate).
 - The Mac load average was 51 on 14 cores (measurement) while these ran, so the two software-rendered pages were probably starved. Treat these runs as rig noise until repeated on a quiet machine or the PC.
+
+## Real-renderer jump sampler (2026-11-26)
+`online:live-browser` now samples, per animation frame, each character's raw sim x and drawn x (`__TTE__.arena.drawnXs`) and prints snaps over 30 px (estimate) raw against drawn. On the busy Mac each page rendered only about 65 frames in 30 to 90 s, about 1 to 2 fps (measurement), so one frame spans dozens of ticks and the counts are meaningless. Run it on the PC or a quiet machine before trusting it; the simulated version in `src/testing/net/view-jump.test.ts` is the number to use today.

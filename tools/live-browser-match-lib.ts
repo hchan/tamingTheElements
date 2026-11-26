@@ -43,3 +43,26 @@ export function rateLines(a: RateSummary, b: RateSummary, total: RateSummary, gr
   }
   return lines;
 }
+
+/** One animation frame of one character: raw sim x and drawn x (from `__TTE__.arena.drawnXs`). */
+export type FrameSample = readonly [id: number, simX: number, drawnX: number];
+
+/** Frame-to-frame jumps per character: the largest, and how many are over `overPx` (an estimate for a clear snap), raw against drawn. */
+export function jumpStats(frames: readonly (readonly FrameSample[])[], overPx: number): { frames: number; rawMax: number; drawnMax: number; rawOver: number; drawnOver: number } {
+  const last = new Map<number, [number, number]>();
+  let rawMax = 0; let drawnMax = 0; let rawOver = 0; let drawnOver = 0;
+  for (const f of frames) {
+    for (const [id, simX, drawnX] of f) {
+      if (Number.isNaN(drawnX)) continue;
+      const prev = last.get(id);
+      if (prev) {
+        const r = Math.abs(simX - prev[0]); const d = Math.abs(drawnX - prev[1]);
+        rawMax = Math.max(rawMax, r); drawnMax = Math.max(drawnMax, d);
+        if (r > overPx) rawOver++;
+        if (d > overPx) drawnOver++;
+      }
+      last.set(id, [simX, drawnX]);
+    }
+  }
+  return { frames: frames.length, rawMax, drawnMax, rawOver, drawnOver };
+}
