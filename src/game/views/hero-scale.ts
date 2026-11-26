@@ -4,6 +4,8 @@
  * Pure: no Phaser, so Node tests and the FX views share it.
  */
 
+import { frameOpaque } from './opaque-span';
+
 /** Phaser object name of a hero's body image, so the super band (fx) can find every fighter on the display list. */
 export const HERO_IMAGE_NAME = 'tteHero';
 
@@ -137,7 +139,7 @@ export interface SpanX {
 /**
  * The world-x extent of the drawn visual box of `img` when rotated by `rotation` radians about its top-left corner (the
  * pose layer's own pivot is applied before this, so the image origin is (0, 0) and there is no parent container: both hold
- * for the hero images, `character-view.ts`). A boxed frame spans its box, an unboxed one the whole quad. At rotation 0 this
+ * for the hero images, `character-view.ts`). A frame with measured opaque columns spans those, a boxed one its box, an unboxed one the whole quad. At rotation 0 this
  * equals `drawnBox`. Fills `out` (no allocation).
  */
 export function boxSpanX(img: BoxedImage, rotation: number, out: SpanX): SpanX {
@@ -154,6 +156,17 @@ export function boxSpanX(img: BoxedImage, rotation: number, out: SpanX): SpanX {
     u1 = u0 + b.w * sx;
     v0 = b.y * sy;
     v1 = (b.y + b.h) * sy;
+  }
+  // a measured frame spans its opaque columns, not its box (opaque-bbox-tuck): no gap at the wall, no clipped wing
+  const op = frameOpaque(f);
+  if (op !== undefined && f.width > 0) {
+    const sx = img.displayWidth / f.width;
+    u0 = (img.flipX ? f.width - op[1] : op[0]) * sx;
+    u1 = (img.flipX ? f.width - op[0] : op[1]) * sx;
+    if (b === undefined) {
+      v0 = 0;
+      v1 = img.displayHeight;
+    }
   }
   const c = Math.cos(rotation);
   const s = Math.sin(rotation);
