@@ -41,18 +41,16 @@ export interface KoEllipse { readonly w: number; readonly h: number; readonly al
 export const KO_COLLAPSE: Readonly<Record<string, KoCollapseSpec>> = {
   fiara: { scaleX: 1, scaleY: 0.5, alpha: 1, filter: 'brightness(0.6) sepia(1) saturate(2.2) hue-rotate(-18deg)', ms: 900, particle: 'ember', count: 9, color: '#ff8a2a' },
   cyclonius: { scaleX: 1.25, scaleY: 0.55, alpha: 0.6, filter: 'grayscale(0.55) sepia(0.25) hue-rotate(180deg) brightness(0.85)', ms: 900, particle: 'dust', count: 7, color: '#8899aa' },
-  // Wispera: the orb flickers, shrinks and sparks out (the mid dip is the fizzle). Lavax: cools to grey ash and slumps. Morblass: a splash up, then a wide puddle.
-  wispera: { scaleX: 1.36, scaleY: 0.85, alpha: 0.6, filter: 'brightness(0.95) saturate(0.45) sepia(0.3) hue-rotate(200deg) drop-shadow(0 0 8px #a9b0c8)', ms: 1000, mid: { at: 0.35, scaleX: 1.6, scaleY: 1.5, alpha: 0.7 }, particle: 'spark', count: 12, color: '#a9b0c8', rest: { particle: 'mote', count: 7, color: '#c4c8dc' }, shadow: 0.3, floor: 55, ellipses: [{ w: 110, h: 46, alpha: 0.35, color: '#a9b0c8', blur: 1, ring: true }], wisps: { particle: 'wisp', count: 9, color: '#a9b0c8' } },
+  // Lavax: cools to grey ash and slumps. Morblass: a splash up, then a wide puddle. (Wispera and Echo fell back to the plain loser face after two failed rounds, art-director 2026-11-26.)
   lavax: { scaleX: 1.05, scaleY: 0.6, alpha: 0.9, filter: 'grayscale(0.95) brightness(0.55) contrast(0.9)', ms: 1400, particle: 'ash', count: 10, color: '#6e6a66' },
   morblass: { scaleX: 1.3, scaleY: 0.4, alpha: 0.85, filter: 'brightness(0.8) sepia(1) saturate(1.6) hue-rotate(135deg)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#3f6f80', rest: { particle: 'splat', count: 6, color: '#3f6f80' }, shadow: 0.3, floor: 24 },
-  // Echo: the wind unwinds (puffs out wide, thins to a pale ghost). Rokcore: crumbles in a shudder and settles into rubble. Ishimi: sags into a wide flattened mass.
-  echo: { scaleX: 1.5, scaleY: 0.6, alpha: 0.75, filter: 'brightness(0.65) saturate(0.6) sepia(0.35) hue-rotate(170deg) contrast(1.1)', ms: 1100, mid: { at: 0.3, scaleX: 1.4, scaleY: 1.2, alpha: 0.85 }, particle: 'dust', count: 9, color: '#7d8aa0', rest: { particle: 'mote', count: 6, color: '#e8f8ff' }, shadow: 0.3, floor: 28, ellipses: [{ w: 130, h: 6, alpha: 0.4, color: '#9aa6b8', blur: 2 }] },
+  // Rokcore: crumbles in a shudder and settles into rubble. Ishimi: sags into a wide flattened mass.
   rokcore: { scaleX: 1.2, scaleY: 0.5, alpha: 1, filter: 'grayscale(0.4) brightness(0.65) contrast(1.1)', ms: 1200, mid: { at: 0.45, scaleX: 1.04, scaleY: 0.8, alpha: 1 }, particle: 'dust', count: 12, color: '#8a7a68', shadow: 0.3, floor: 22 },
-  ishimi: { scaleX: 1.28, scaleY: 0.2, alpha: 0.9, filter: 'brightness(0.7) saturate(0.8) blur(1.2px)', ms: 1300, particle: 'dust', count: 6, color: '#7c7a86', rest: { particle: 'splat', count: 5, color: '#7c7a86' }, shadow: 0.3, floor: 45, ellipses: [{ w: 120, h: 26, alpha: 0.3, color: '#7c9ab0', blur: 2, ring: true }] },
+  ishimi: { scaleX: 1.28, scaleY: 0.3, alpha: 0.9, filter: 'brightness(0.7) saturate(0.8) blur(1.2px)', ms: 1300, particle: 'dust', count: 6, color: '#7c7a86', rest: { particle: 'splat', count: 5, color: '#7c7a86' }, shadow: 0.3, floor: 31, ellipses: [{ w: 150, h: 34, alpha: 0.39, color: '#7c9ab0', blur: 2, ring: true }] },
 };
 
 /** Legacy heroes are always released, so no flag gates them; later roster24 slugs added to the table are gated like the other fx. */
-export const KO_COLLAPSE_LEGACY: ReadonlySet<string> = new Set(['fiara', 'cyclonius', 'wispera', 'lavax', 'morblass', 'echo', 'rokcore', 'ishimi']);
+export const KO_COLLAPSE_LEGACY: ReadonlySet<string> = new Set(['fiara', 'cyclonius', 'lavax', 'morblass', 'rokcore', 'ishimi']);
 
 export const koCollapseUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/map/${hero}Large.png`;
 
