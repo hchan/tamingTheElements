@@ -107,6 +107,7 @@
     "storage-guards.spec.ts": "P0",
     "super-band.spec.ts": "P2",
     "super-impact-shot.spec.ts": "P2",
+    "tag-entry-wall.spec.ts": "P2",
     "team-stack-text-size.spec.ts": "P2",
     "terrain-chips-water.spec.ts": "P2",
     "tester-mode.spec.ts": "P1",
