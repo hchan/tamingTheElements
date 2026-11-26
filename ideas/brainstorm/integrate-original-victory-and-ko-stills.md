@@ -20,3 +20,8 @@ Cast fx news (art session): Brazgor forgeGore/moltenHide REVISE (best seeds 1110
 ## Update (art-director, 2026-11-26): morblass victory approved, four victories now
 
 Morblass victory still APPROVE 4 (beats shipped): `.claude/worktrees/gpu-job-server/.scratch/vic-orig3/out/out/v3-morblass_63031_d0.5.png` (1024x1024 on flat grey, needs the victory-key matte and scale), approval `.scratch/vic-orig3/approval.json`. So the victory batch is curomo, ishimi, sindarosa, morblass (one builder, four heroes, pattern of commit 57da7ba8). Echo, lavax, rokcore failed round 2 (REVISE 2-3): the art session switches to CPU warps from the baked sprite (arms/fists raised, vortex widened), wispera too (rule 13). Brazgor forgeGore failed round 2: moves to i2i from a procedural crescent init; moltenHide to i2i from seed 111016 (both queued).
+
+## Update 2 (art-director, 2026-11-26): wispera victory approved, five victories; echo/lavax/rokcore parked
+
+Wispera victory still APPROVE 4 (CPU warp v2): `.claude/worktrees/gpu-job-server/.scratch/vic-warp2/wispera_a.png` (1024x1024 RGB on flat grey, needs the victory-key matte and scale), approval `.scratch/vic-warp2/approval.json`, generator `.scratch/vic-warp2/w2.py` (untracked; copy to tools/assets/victory-gen/ for provenance). Director note: core slightly blown out, do NOT brighten.
+Victory batch = curomo, ishimi, sindarosa, morblass, wispera (five). Echo, lavax, rokcore parked under rule 13 after three failed rounds (warps look cut/sliced): they keep the shipped victory presentation until a new method exists (rule 14 question with the owner still open).
