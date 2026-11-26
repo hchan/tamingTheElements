@@ -20,3 +20,6 @@ Real looping bodies for boulderRoll, sporeBurst, cinderSpray and stingingFilamen
 stills made in this project and approved by the art-director (no third-party licence): tools/assets/fx-gen/batch-m-real-loops.py, pins in
 tools/assets/fx-gen/provenance/real-loops.json. Run: ~/claudetmp/venv/bin/python -I tools/assets/fx-gen/batch-m-real-loops.py
 Status-ring plates (freeze, daze; public/assets/img/fx/status/) are AI-generated own work, keyed and regraded by tools/assets/status-ring/ (see its README.md).
+
+Kindrel cast sprites emberBite and cinderSpray (public/assets/img/fx/) were replaced 2026-11-26 by the keyed 80 px outputs of project-own AI plates, art-director approved 2026-11-21
+(tools/assets/fx-gen/provenance/kindrel-fx/approval.json, sha256 pins in tools/assets/integrate-kindrel-art.ts, pinned by tests/repo/kindrel-fx-art.test.ts). No third-party art, no attribution required.
