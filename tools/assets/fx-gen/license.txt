@@ -22,4 +22,6 @@ tools/assets/fx-gen/provenance/real-loops.json. Run: ~/claudetmp/venv/bin/python
 Status-ring plates (freeze, daze; public/assets/img/fx/status/) are AI-generated own work, keyed and regraded by tools/assets/status-ring/ (see its README.md).
 
 Kindrel cast sprites emberBite and cinderSpray (public/assets/img/fx/) were replaced 2026-11-26 by the keyed 80 px outputs of project-own AI plates, art-director approved 2026-11-21
-(tools/assets/fx-gen/provenance/kindrel-fx/approval.json, sha256 pins in tools/assets/integrate-kindrel-art.ts, pinned by tests/repo/kindrel-fx-art.test.ts). No third-party art, no attribution required.
+(tools/assets/fx-gen/provenance/kindrel-fx/approval.json, sha256 pins in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/kindrel-fx-art.test.ts). No third-party art, no attribution required.
+Ouroth cast sprite wyrmCoil (public/assets/img/fx/) was replaced 2026-11-26 by the 80 px output of a project-own AI plate, art-director approved 2026-11-26
+(tools/assets/fx-gen/provenance/ouroth-fx/approval.json, sha256 pin in tools/assets/integrate-roster24-fx-art.ts, pinned by tests/repo/ouroth-fx-art.test.ts). No third-party art, no attribution required.
