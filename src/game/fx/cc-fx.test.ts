@@ -248,8 +248,8 @@ describe('ccParts', () => {
   });
   it('only long stuns show motes', () => {
     const o = makeCcOut();
-    expect(ccParts('reel', BOX, 0, 20, false, 'full', 0, o)).toBe(0);
-    expect(ccParts('reel', BOX, 0, 40, false, 'full', 0, o)).toBe(4);
+    expect(ccParts('reel', BOX, 0, 26, false, 'full', 0, o)).toBe(0);
+    expect(ccParts('reel', BOX, 0, 30, false, 'full', 0, o)).toBe(4);
     expect(ccParts('none', BOX, 0, 40, false, 'full', 0, o)).toBe(0);
   });
   describe('stun orbit', () => {

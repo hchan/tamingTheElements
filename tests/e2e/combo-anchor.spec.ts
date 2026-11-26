@@ -308,7 +308,7 @@ test.describe('combo anchor, two counters and 2v2', () => {
     const errors = collectErrors(page);
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByLabel('Team').selectOption('2');
-    await page.getByLabel('Your race').selectOption('sindarosa');
+    await page.getByLabel('Your race').selectOption('cyclonius');
     await page.getByLabel('Your partner (2v2)').selectOption('pax');
     await page.getByLabel('AI race').selectOption('fiara');
     await page.getByRole('button', { name: 'Fight!' }).click();

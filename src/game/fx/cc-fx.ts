@@ -436,7 +436,7 @@ export function ccParts(kind: CcKindOrNone, b: Box, ageTicks: number, leftTicks:
   const sz = Math.max(6, b.w * 0.18);
   switch (kind) {
     case 'reel':
-      if (ageTicks + leftTicks >= 40) {
+      if (ageTicks + leftTicks >= 30) { // spike (36), guard break, Tornado, Ice Blast; not a 12-26 tick flinch (v117)
         addOrbit(out, caps.parts, cx, headY - b.h * 0.06, b.w * 0.42, b.h * 0.07, b.h * 0.02, 4, t / 60, sz * 0.95, 0.95, 'mote', MOTE_COLOR);
       }
       break;
