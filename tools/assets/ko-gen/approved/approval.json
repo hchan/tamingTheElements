@@ -8,12 +8,14 @@
   "hard_rejects": []
  },
  "abyssor_ko.png": {
-  "source": "ko-warp-r24.py abyssor + eye darkened 40% (director's optional note, applied after review; eye not re-reviewed)",
+  "source": "tools/assets/ko-gen/sources/abyssor_ko_r7_121010.png (r7 img2img seed 121010 d0.38, 1344x768 grey bg) matted by matte-abyssor-r7.py; replaces the 11-25 warp still",
   "verdict": "APPROVE",
   "overall": 4,
   "reviewer": "art-director",
-  "date": "2026-11-25",
-  "hard_rejects": []
+  "date": "2026-11-26",
+  "hard_rejects": [],
+  "beats_shipped": true,
+  "note": "Whole creature, one head, low sagging body, dim eye, teal accents, painterly, margin all round, no crops. Faithful to canonical design and clearly beats the shipped fish-crab (approval7.json)."
  },
  "nykra_ko.png": {
   "source": ".scratch/ko-r2/nykra_ko_r3.png (warp, horse on its back)",
