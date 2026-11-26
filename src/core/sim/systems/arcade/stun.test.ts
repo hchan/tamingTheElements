@@ -558,6 +558,27 @@ describe('stun is a flinch, not a lock (SIM_VERSION 117)', () => {
     expect(s.arcade[E(1, ArcadeE.comboStunTotal)]).toBeLessThanOrEqual(SUPER_COMBO_STUN_CAP_TICKS);
   });
 
+  it('snapshot on the expiry tick with a negative comboStunTotal restores to the same carry (SIM_VERSION 119)', () => {
+    const expireThenSuper = (world: SimWorld, mid?: (w: SimWorld) => void): [number, number] => {
+      const sink = new EventSink(0);
+      applyStun(world, sink, 0, 1, 60, true);
+      world.state.arcade[GAME_TICK] = 60;
+      expireStuns(world, sink);
+      expect(world.state.arcade[E(1, ArcadeE.comboStunTotal)]).toBe(-60);
+      mid?.(world);
+      applyStun(world, sink, 0, 1, 26, true);
+      return [hash(world.state), world.state.arcade[E(1, ArcadeE.comboStunTotal)] ?? 0];
+    };
+    const plain = expireThenSuper(duel('sindarosa', 'pax'));
+    const restored = expireThenSuper(duel('sindarosa', 'pax'), (w) => {
+      const buf = createSnapshotBuf(w.state);
+      snapshot(w.state, buf);
+      w.state.arcade[E(1, ArcadeE.comboStunTotal)] = 0; // clobber, then restore
+      restore(w.state, buf);
+    });
+    expect(restored).toEqual(plain);
+  });
+
   it('a super 30 ticks or more after expiry starts a fresh chain, and recovered(stunEnded) is emitted once', () => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;

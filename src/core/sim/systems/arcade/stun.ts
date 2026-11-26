@@ -26,7 +26,12 @@ export function stunImmune(s: SimState, id: number): boolean {
   if (!isArcade(s)) return false;
   const u = s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0;
   const g = now(s);
-  return u > 0 && u <= g && g - u < STUN_IMMUNE_TICKS;
+  return inImmuneWindow(u, g);
+}
+
+/** True when a stun that ended (or ends) at `until` is still within STUN_IMMUNE_TICKS of game tick `g`; shared by stunImmune and the super carry. */
+function inImmuneWindow(until: number, g: number): boolean {
+  return until > 0 && until <= g && g - until < STUN_IMMUNE_TICKS;
 }
 
 /** The 1-based tick of `id`'s dash this game tick (FUN-DESIGN 2.7), 0 when it is not dashing. Always 0 in Classic. */
@@ -155,7 +160,7 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
 /**
  * Applies `base` ticks of hit-stun to `victim` (FUN-DESIGN 2.3). A hit on a free victim starts a combo (juggle 0, stun
  * budget and wall bounce reset); a hit while stunned raises `juggle` and stuns `base - JUGGLE_STUN_STEP * juggle`, never under MIN_HIT_STUN_TICKS.
- * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is exactly
+ * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is at most
  * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= JUGGLE_LIMIT`, or one that would push the chain past COMBO_STUN_CAP_TICKS, ends
  * the stun with `recovered` (reason 1 or 2) and RECOVERY_INVULN_TICKS of invulnerability instead. A super (`sup`, SIM_VERSION 117) skips
  * the juggle cap (its hits and root would otherwise trip it after a short prefix) and, since SIM_VERSION 118, obeys the longer
@@ -178,7 +183,7 @@ export function applyStun(world: SimWorld, sink: EventSink, source: number, vict
   if (until <= g) {
     const prev = a[e + ArcadeE.comboStunTotal] ?? 0;
     a[e + ArcadeE.juggle] = 0;
-    a[e + ArcadeE.comboStunTotal] = sup && until > 0 && g - until < STUN_IMMUNE_TICKS ? Math.abs(prev) : 0;
+    a[e + ArcadeE.comboStunTotal] = sup && inImmuneWindow(until, g) ? Math.abs(prev) : 0;
     a[e + ArcadeE.wallBounced] = 0;
   } else if (!sup && (a[e + ArcadeE.juggle] ?? 0) >= JUGGLE_LIMIT) {
     recover(s, sink, source, victim, RecoveredReason.juggleCap);
