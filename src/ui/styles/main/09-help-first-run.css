@@ -136,63 +136,7 @@
   }
 }
 
-/* Landscape phone: a slim strip (lines left, Got it right) docked in the band between the fighters' feet and the action bar (QA r31: at the top it hid the hero name banners and crowded ROUND 1), clear of the HUD, the banners, the stick and the TAG caption. */
-@media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
-  .firstRunHint:not(.firstRunWait) {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 0.7em;
-    align-items: center;
-    /* One slim line (no title); the name banners, ROUND/FIGHT!/ROOTED all sit above this band. */
-    top: auto;
-    bottom: 19vh;
-    /* Two short lines between the fighters (QA r33: the wide strip covered the foe's foot), so it stays clear of both. */
-    max-width: 38%;
-    font-size: 10px;
-    line-height: 1.2;
-    padding: 0.2em 0.5em;
-  }
-  .firstRunHint:not(.firstRunWait) .firstRunDone {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    margin: 0;
-    padding: 0.1em 0.8em;
-    min-height: 32px;
-  }
-  .firstRunHint:not(.firstRunWait) h2,
-  .firstRunHint:not(.firstRunWait) p {
-    margin: 0;
-  }
-  .firstRunHint:not(.firstRunWait) h2 {
-    display: none;
-  }
-  /* QA r44: docked in the top band of the floor, just under the HUD and the weather label (the fighters stand mid and low, and the thumbs own the lower corners), so it never covers the lower fighting area. */
-  #firstRunHint.firstRunHint:not(.firstRunWait) {
-    top: 29vh;
-    bottom: auto;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    max-width: min(56%, 380px);
-  }
-}
 
-/* Portrait phone: the first-run card is a short one (the move line and the footer go; Help has them), and it stays hidden behind the rotate overlay. */
-@media (orientation: portrait) and (pointer: coarse) {
-  .firstRunHint p:nth-of-type(1),
-  .firstRunHint .firstRunMore {
-    display: none;
-  }
-}
-/* Portrait: #game is the full-height box with the 16:9 canvas centred in it, so the card sits just under the canvas (not at the screen bottom, where the stick covered Got it). */
-@media (orientation: portrait) and (pointer: coarse) {
-  .firstRunHint {
-    bottom: auto;
-    top: calc(50% + 28.125vw + 12px);
-    max-width: 94%;
-    font-size: 12px;
-  }
-}
 #rotateOverlay:not([hidden]) ~ .firstRunHint {
   display: none;
 }

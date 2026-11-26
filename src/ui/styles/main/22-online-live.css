@@ -141,11 +141,3 @@ button.touchBtn#arcadeRun[aria-label$=', on'] {
   outline-offset: -3px;
 }
 
-/* QA r110: on a landscape phone the Tour stage chip (inline: bottom-left) sat on the first action-bar tile. It moves into the free band
-   under the life bars, left of the tag portraits, where nothing else is drawn. The inline style needs !important to be beaten. */
-@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
-  #tourHudStage {
-    top: 14vh !important;
-    bottom: auto !important;
-  }
-}
