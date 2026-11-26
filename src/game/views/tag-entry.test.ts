@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PoseKind, applyPose, easeOutCubic, resetPose, type Pose } from './pose-math';
-import { TAG_IN_BODY_PX, TAG_IN_MAX_SCALE, TAG_IN_SLIDE_PX, tagEntryDir, tagEntryOf, tagEntryPower, tagEntrySlide } from './tag-entry';
+import { TAG_IN_BODY_PX, TAG_IN_DROP_PX, TAG_IN_MAX_SCALE, TAG_IN_SLIDE_PX, tagEntryDir, tagEntryDrop, tagEntryOf, tagEntryPower, tagEntrySlide } from './tag-entry';
 
 const HERO_W = 100;
 
@@ -67,5 +67,15 @@ describe('tag-entry', () => {
     applyPose(p, PoseKind.tagIn, 0, 0, 1, false);
     expect(p.ox).toBeCloseTo(0);
     expect(p.oy).toBeLessThan(-40);
+  });
+
+  // qa-r125 left wall: the old 90 px drop left the sprite half on the foe; it now starts a body height above.
+  it('a wall entry starts a body height above rest and lands at 0', () => {
+    expect(tagEntryDrop(0)).toBe(TAG_IN_DROP_PX);
+    expect(TAG_IN_DROP_PX).toBeGreaterThanOrEqual(240);
+    expect(tagEntryDrop(1)).toBe(0);
+    const p: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
+    applyPose(p, PoseKind.tagIn, 0, 0, 1, false);
+    expect(p.oy).toBeLessThanOrEqual(-TAG_IN_DROP_PX);
   });
 });

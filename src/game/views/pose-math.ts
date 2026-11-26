@@ -1,5 +1,5 @@
 import { bobOffset, lungeOffset, popScale } from './pose-anim';
-import { tagEntrySlide } from './tag-entry';
+import { tagEntryDrop, tagEntrySlide } from './tag-entry';
 
 /**
  * Pure maths of the procedural pose layer (WP-arcade-pose-layer, FUN-DESIGN 2.16 step 1). No Phaser, no DOM, no clock:
@@ -118,7 +118,7 @@ export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, pow
     p.alpha *= tagInAlpha(Math.min(1, Math.max(0, fadeAgeMs / dur)));
     if (!reduced) {
       p.ox += -dir * tagEntrySlide(t) * Math.max(1, power); // power: slide scale from tagEntryPower
-      if (dir === 0) p.oy -= tagEntrySlide(t) * 0.75; // dir 0: no room at a wall, drop in from above
+      if (dir === 0) p.oy -= tagEntryDrop(t); // dir 0: no room at a wall, drop in from above
       const pop = popScale(t);
       p.sx *= pop;
       p.sy *= pop;
