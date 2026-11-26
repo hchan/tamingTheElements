@@ -24,7 +24,7 @@ const STILLS: Record<string, { src: string; srcSha: string; outSha: string; faci
   ishimi: { src: 'v-ishimi_61001_d0.4.png', srcSha: '677fccaebc3b4d017486009be0123aea76c5cc692266231441b4b7f4f7abd53a', outSha: '320c6e9714450c14fe70d261e2e80d875ce6a96064e168f66d8b05f8f21119bb', facing: 'right' },
   sindarosa: { src: 'v-sindarosa_61001_d0.4.png', srcSha: '8f1d4124d9b65e226851a968a58a08ed486716b2bd2b02ea56be8b0fa2eacb43', outSha: '5501c598f4813d61f1b3327dcb49cf3a122643555eca5d81c037ec9d5d7b3ac9', facing: 'right' },
   morblass: { src: 'v3-morblass_63031_d0.5.png', srcSha: '28596fbed145f1767e52d8a51565a189db49f20b2d862e3a7760cf9505ad44a3', outSha: '1ad3181d01728aaa0a512921ea2e24c39922cf57b1086d59bed9270cc3ee7c6c', facing: 'right' },
-  wispera: { src: 'wispera_win.png', srcSha: '5031f0107bb94ce135bee4b90886102fe6558757cb0ba7cbd5e404e0d3b9e3e2', outSha: 'a534781f01f3cf313d2ed54229722478a0e5d7ffef82e5f8a662888d1e228872', facing: 'right' },
+  wispera: { src: 'wispera_win.png', srcSha: '5031f0107bb94ce135bee4b90886102fe6558757cb0ba7cbd5e404e0d3b9e3e2', outSha: 'e0c42168f66492c159008d267db47187284936eb4f082cec675919f5f63700c2', facing: 'right' },
 };
 
 describe('victory frames (tools/assets/victory-gen/victory-key.py)', () => {

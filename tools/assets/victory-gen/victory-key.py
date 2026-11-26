@@ -66,9 +66,32 @@ def key(src: Image.Image, pocket_tol: int = 3, tol: int = TOL) -> Image.Image:
     return out
 
 
+# wispera only (art-director 2026-11-26): key out the flat grey disc (S < 0.15, mid luminance 90-150) so only the bright core, the blue/white
+# lightning and a faint blue cloud stay. Matte threshold 0.35, erode 3 px, feather 1.5 px; the cloud (dark pixels outside 0.8 of the ball radius)
+# is multiplied by 0.25. The core is not brightened.
+WISPERA_BALL = (512, 525, 155)  # centre x, y and radius in the 1024 source
+
+
+def key_wispera(src: Image.Image) -> Image.Image:
+    rgb = src.convert("RGB")
+    sat, lum = rgb.convert("HSV").getchannel("S"), rgb.convert("L")
+    grey = ImageChops.multiply(sat.point(lambda v: 255 if v < 38 else 0), lum.point(lambda v: 255 if 90 <= v <= 150 else 0))
+    matte = grey.point(lambda v: 0 if v else 255).filter(ImageFilter.GaussianBlur(1)).point(lambda v: 255 if v >= 0.35 * 255 else 0)
+    matte = matte.filter(ImageFilter.MinFilter(7)).filter(ImageFilter.GaussianBlur(1.5))
+    cx, cy, r = WISPERA_BALL
+    inner = Image.new("L", rgb.size, 0)
+    ImageDraw.Draw(inner).ellipse((cx - 0.8 * r, cy - 0.8 * r, cx + 0.8 * r, cy + 0.8 * r), fill=255)
+    cloud = ImageChops.multiply(ImageChops.invert(inner.filter(ImageFilter.GaussianBlur(4))), lum.point(lambda v: 255 if v < 110 else 0))
+    matte = ImageChops.lighter(matte, inner.filter(ImageFilter.GaussianBlur(1.5)))  # the ball interior stays opaque (no holes at the rust speck)
+    matte = ImageChops.multiply(matte, ImageChops.invert(cloud.point(lambda v: round(v * 0.75))))
+    out = rgb.convert("RGBA")
+    out.putalpha(matte)
+    return out
+
+
 def install(hero: str, out_dir: Path) -> None:
     src = Image.open(PROV / HEROES[hero])
-    im = src.convert("RGBA") if "A" in src.getbands() else key(src, POCKET_TOL.get(hero, 3), HERO_TOL.get(hero, TOL))
+    im = src.convert("RGBA") if "A" in src.getbands() else key_wispera(src) if hero == "wispera" else key(src, POCKET_TOL.get(hero, 3), HERO_TOL.get(hero, TOL))
     box = im.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
     if box is None:
         raise SystemExit(f"{hero}: empty matte")
