@@ -36,6 +36,7 @@
     "classic-bar-inset.spec.ts": "P1",
     "cleanse-fx.spec.ts": "P2",
     "combo-anchor.spec.ts": "P2",
+    "combo-super-cutin.spec.ts": "P2",
     "danger-zone.spec.ts": "P2",
     "display-size.spec.ts": "P1",
     "effect-sprites-shot.spec.ts": "P2",

@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY } from './parity/helpers';
+import { waitForArena } from './support/wait';
 
 // qa-r125: the combo counter must not draw over the super cut-in band (hud/combo-cut.ts). Long gate: visual, about 20 s.
 // SHOT_DIR=<dir> saves a headless screenshot there.
@@ -16,7 +16,7 @@ test('combo counter is hidden where it overlaps the super cut-in band', async ({
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
   await page.locator('#game canvas').waitFor();
-  await page.waitForFunction(ARENA_READY);
+  await waitForArena(page);
   // Combo on the foe pinned at a spot, then a super while the counter is still held.
   await page.evaluate(`(async () => {
     const a = window.__TTE__.arena;
