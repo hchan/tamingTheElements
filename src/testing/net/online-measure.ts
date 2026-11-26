@@ -1,3 +1,4 @@
+import { ROLLBACK_WINDOW } from '../../core/net/limits';
 import { CatchUp } from '../../core/net/pacing';
 import { LockstepSession } from '../../core/net/session';
 import { characterId } from '../../core/data/ids';
@@ -121,7 +122,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
   const ticks = o.ticks ?? 500;
   const profile = o.profile ?? PROFILES.typical;
   const batchEvery = o.batchEvery ?? 1;
-  const rollbackWindow = o.rollbackWindow ?? 6;
+  const rollbackWindow = o.rollbackWindow ?? ROLLBACK_WINDOW;
   const rng = seedSfc32(o.netSeed ?? 11, 'online-measure');
   const clock = { ms: 0 };
   const BASE = 1_000_000;
