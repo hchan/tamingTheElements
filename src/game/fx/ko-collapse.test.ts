@@ -9,8 +9,8 @@ describe('ko collapse', () => {
     for (const h of Object.keys(KO_COLLAPSE)) expect(KO_STILL_HEROES.has(h), h).toBe(false);
   });
 
-  it('wispera and echo fall back to the plain loser face (null under every gate)', () => {
-    for (const h of ['wispera', 'echo']) {
+  it('wispera, echo and ishimi fall back to the plain loser face (null under every gate)', () => {
+    for (const h of ['wispera', 'echo', 'ishimi']) {
       expect(KO_COLLAPSE[h], h).toBeUndefined();
       expect(KO_COLLAPSE_LEGACY.has(h), h).toBe(false);
       for (const [search, dev] of [['', false], ['?ff=roster24', true]] as const) expect(koCollapseFor(h, true, search, dev), h).toBeNull();
@@ -33,11 +33,10 @@ describe('ko collapse', () => {
     expect(koCollapseFrames(KO_COLLAPSE['lavax'] as KoCollapseSpec, false)).toHaveLength(2);
   });
 
-  it('pins rokcore and ishimi (legacy: no flag needed; appended after morblass)', () => {
-    expect(Object.keys(KO_COLLAPSE).slice(-2)).toEqual(['rokcore', 'ishimi']);
+  it('pins rokcore (legacy: no flag needed; appended after morblass)', () => {
+    expect(Object.keys(KO_COLLAPSE).slice(-1)).toEqual(['rokcore']);
     expect(KO_COLLAPSE['rokcore']).toMatchObject({ particle: 'dust', scaleX: 1.2, scaleY: 0.5, alpha: 1, ms: 1200, count: 12, floor: 22 });
-    expect(KO_COLLAPSE['ishimi']).toMatchObject({ particle: 'dust', scaleX: 1.28, scaleY: 0.3, alpha: 0.9, ms: 1300, count: 6, floor: 31 });
-    for (const h of ['rokcore', 'ishimi']) {
+    for (const h of ['rokcore']) {
       const f = KO_COLLAPSE[h] as KoCollapseSpec;
       expect(KO_COLLAPSE_LEGACY.has(h), h).toBe(true);
       expect(koCollapseFor(h, true, '', false), h).toBe(f);
@@ -54,13 +53,12 @@ describe('ko collapse', () => {
       expect(f.alpha, h).toBeGreaterThanOrEqual(0.55);
       expect(f.scaleY, h).toBeGreaterThanOrEqual(0.2);
     }
-    for (const h of ['morblass', 'rokcore', 'ishimi']) expect(KO_COLLAPSE[h]?.shadow, h).toBe(0.3);
+    for (const h of ['morblass', 'rokcore']) expect(KO_COLLAPSE[h]?.shadow, h).toBe(0.3);
     expect(koParticles({ particle: 'mote', count: 7, color: '#fff', ms: 1000 }).every((p) => p.size <= 4 && p.dy < 0)).toBe(true);
   });
 
   it('floor anchors sit the pile on the name label line (round 2); ripple, ring and streak ellipses exist', () => {
     for (const h of ['fiara', 'cyclonius', 'lavax']) expect(KO_COLLAPSE[h]?.floor, h).toBeUndefined();
-    expect(KO_COLLAPSE['ishimi']?.ellipses?.[0]).toMatchObject({ alpha: 0.39, ring: true, w: 150 });
     expect(KO_COLLAPSE['morblass']?.color).toBe('#3f6f80');
     expect(koParticles({ particle: 'wisp', count: 9, color: '#fff', ms: 1000 })).toHaveLength(9);
   });
