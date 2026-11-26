@@ -1,7 +1,7 @@
 import { cutinFlagOn, heroReleased } from './cutin-gate';
 
 /**
- * Procedural KO for roster24 heroes with no approved KO art (none now: Umbrel, Nykra and Abyssor have KO stills, see fx/ko-still; add a slug only while a hero has no KO art). In the arena the sprite already gets the generic `koFall` slump (pose-math); on the Versus
+ * Procedural KO for roster24 heroes with no approved KO art (none now: all 14 approved heroes have KO stills, see fx/ko-still; add a slug only while a hero has no KO art). In the arena the sprite already gets the generic `koFall` slump (pose-math); on the Versus
  * result screen the losing hero's portrait card slumps, desaturates and dims the same way. Render only (Web Animations on the
  * DOM, no sim state, no randomness), for released heroes always, else behind `?ff=roster24` in dev/test builds like the victory still. Other heroes keep the plain card.
  */

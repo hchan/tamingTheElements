@@ -36,7 +36,7 @@ for (const hero of ['glimmaw', 'kindrel', 'umbrel', 'durrok', 'quarrak']) test(`
 });
 
 // Roster24 KO still (src/game/fx/ko-still.ts): the AI hero loses and its still replaces the side card face.
-for (const hero of ['umbrel', 'abyssor', 'nykra']) test(`${hero} loses the match: its KO still replaces the portrait on the results screen`, async ({ page }) => {
+for (const hero of ['umbrel', 'abyssor', 'nykra', 'glimmaw', 'quarrak', 'ouroth', 'brazgor', 'treenoc']) test(`${hero} loses the match: its KO still replaces the portrait on the results screen`, async ({ page }) => {
   const errors = collectErrors(page);
   const koRequests: string[] = [];
   page.on('request', (r) => { if (r.url().includes('/assets/img/ko/')) koRequests.push(r.url()); });
