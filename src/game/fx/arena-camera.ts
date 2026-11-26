@@ -86,8 +86,27 @@ export function cameraTarget(i: CameraInput, prev: CameraFraming | undefined, dt
   if (!prev || snap || i.reducedMotion) return ideal;
   const a = 1 - Math.exp(-CAMERA_EASE_RATE * Math.max(0, dtSeconds));
   const zoom = prev.zoom + (ideal.zoom - prev.zoom) * a;
-  const centerX = clampCenter(prev.centerX + (ideal.centerX - prev.centerX) * a, zoom, i.worldWidth, i.viewWidth);
-  return { centerX, zoom };
+  const eased = clampCenter(prev.centerX + (ideal.centerX - prev.centerX) * a, zoom, i.worldWidth, i.viewWidth);
+  return { centerX: keepInView(eased, zoom, i), zoom };
+}
+
+/** A fighter is never allowed closer than this (world px at the current zoom) to the visible edge, however fast it is launched. */
+export const CAMERA_EDGE_GUARD = 48;
+
+/**
+ * Catch-up for a combo start: a hit launches the victim faster than the ease follows, so the eased centre is shifted just far enough
+ * to keep both fighters at least {@link CAMERA_EDGE_GUARD} inside the view (then re-clamped to the walls). If both cannot fit it
+ * leaves the centre alone. Reduces how often the anchored combo counter needs its wall clamp.
+ */
+export function keepInView(centerX: number, zoom: number, i: CameraInput): number {
+  const half = i.viewWidth / zoom / 2;
+  const lo = Math.min(i.x1, i.x2) - CAMERA_EDGE_GUARD;
+  const hi = Math.max(i.x1, i.x2) + CAMERA_EDGE_GUARD;
+  if (hi - lo > half * 2) return centerX;
+  let c = centerX;
+  if (lo < c - half) c = lo + half;
+  else if (hi > c + half) c = hi - half;
+  return clampCenter(c, zoom, i.worldWidth, i.viewWidth);
 }
 
 /**
