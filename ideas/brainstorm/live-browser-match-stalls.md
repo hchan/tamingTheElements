@@ -13,3 +13,8 @@ added: 2026-11-26
 - The relay MATCH frame sets input delay 4 (80 ms), not the harness default 2.
 - Probe fix made here: the probe waited for `#quickLink` to be visible, but the layout fix hides it during play; it now waits for it to be attached.
 - Next: find out whether the stall is two pages in one Chromium (timer or rAF throttling for the second context) or the relay; try two separate browsers, and log `session.status` per second.
+
+## Update 2026-11-26 (later)
+- With the probe fixed, current main passed 2 of 4 live browser runs (measurement; the failures ended "Connection lost").
+- Passing runs took 22 to 32 s for a 6 s match, with receive gaps up to 3 s, and each page sent only about 6 to 8 frames/s (measurements). A full-speed page would send about 17/s (estimate).
+- The Mac load average was 51 on 14 cores (measurement) while these ran, so the two software-rendered pages were probably starved. Treat these runs as rig noise until repeated on a quiet machine or the PC.
