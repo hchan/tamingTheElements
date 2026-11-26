@@ -192,7 +192,9 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
           feet.push(bbox(img, 160, footX - 40, footX + 40)?.[3] ?? 0);
           expect(haloShare(img), `${at} halo`).toBeLessThan(haloMax(hero));
         }
-        if (action === 'idle' || action === 'walk') expect(Math.max(...feet) - Math.min(...feet), `${action}/${dir} feet ${JSON.stringify(feet)}`).toBeLessThanOrEqual(3);
+        // Nykra's walk may swing its feet 5 px (art-director round 2, 2026-11-26, coordinator decision: a clearly readable gait); idle and every other hero stay at 3 px.
+        const feetMax = hero === 'nykra' && action === 'walk' ? 5 : 3;
+        if (action === 'idle' || action === 'walk') expect(Math.max(...feet) - Math.min(...feet), `${action}/${dir} feet ${JSON.stringify(feet)}`).toBeLessThanOrEqual(feetMax);
       }
   });
 
