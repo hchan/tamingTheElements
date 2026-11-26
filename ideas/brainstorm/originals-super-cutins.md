@@ -28,3 +28,7 @@ Final set so far (9): lavax B, sindarosa A, curomo, ishimi, pax A, rokcore A, mo
 
 (a) done on branch worktree-agent-abcaa4dfa03181ab4: nine composites installed to `public/assets/img/cutin/<hero>.png` (lavax, sindarosa, curomo, ishimi, pax, rokcore, morblass, treenoc, wispera) by `tools/assets/originals-cutin/install-cutins.py` (refuses unless the approval entry approves exactly the file; sha256 + byte pins; both approval files and the generator copied; `tests/repo/originals-cutin.test.ts`). File names match `cutinUrl` (`<hero>.png`). Not drawn yet: (b) `cutin-gate.ts` is another builder's. Echo still pending (add to SOURCES + `--pin` when approved).
 (c): `tools/ci/size-budget.json` only budgets gzip chunks and `assets/img/sheets/*.png`; cut-in PNGs are in neither, so no raise was needed (bundle cap is `pc-snapshot.ts` 600 MB; public/ is about 246 MB now). File left unchanged.
+
+## Progress note (2026-11-26, builder b)
+
+(b) done on branch worktree-agent-a212c59d7eaf3dcb6: `ORIGINAL_CUTIN_HEROES` (lavax, sindarosa, curomo, ishimi, pax, rokcore, morblass, treenoc, wispera) in `src/game/fx/cutin-gate.ts`, shown with no flag; `CUTIN_HEROES` stays roster24 only (tests/repo pins it). Echo = add one string once approved. Cut-in URL is `assets/img/cutin/<sprite>.png`, the same naming as roster24, so the installer must write `<hero>.png`. `tests/e2e/cutin.spec.ts` filters requests by hero and has a lavax case that passes only after the PNGs land in `public/assets/img/cutin/`. Still open: (a) installer, (c) size-budget.

@@ -23,7 +23,7 @@ test('glimmaw super: the cut-in composite loads on first use and shows mid-freez
   if (await card.isVisible()) await card.click();
   expect(cutinRequests).toEqual([]); // nothing preloaded
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(91); const [m, f] = a.characters(); a.place(m.id, 400, 360, 0); a.place(f.id, 900, 360, 4); a.setMeter(0, 1000); a.step(1, [${String(SUPER)}, 0]); })()`);
-  await expect(() => { expect(cutinRequests.length, 'cut-in composite requested once').toBe(1); }).toPass();
+  await expect(() => { expect(cutinRequests.filter((u) => u.endsWith('/glimmaw.png')).length, 'glimmaw cut-in composite requested once').toBe(1); }).toPass();
   await frames();
   await frames();
   await page.evaluate(`window.__TTE__.arena.step(15)`);
@@ -55,5 +55,25 @@ test('zephra is released: picker lists it and the cut-in shows without ?ff=roste
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(91); const [m, f] = a.characters(); a.place(m.id, 400, 360, 0); a.place(f.id, 900, 360, 4); a.setMeter(0, 1000); a.step(1, [${String(SUPER)}, 0]); })()`);
   await expect(() => { expect(cutinRequests.length, 'zephra cut-in requested').toBe(1); }).toPass();
   expect(cutinRequests[0]).toContain('zephra.png');
+  expect(errors).toEqual([]);
+});
+
+// Original heroes (cutin-gate ORIGINAL_CUTIN_HEROES): a lavax super requests its cut-in with no flag. Needs public/assets/img/cutin/lavax.png
+// (the installer builder's PNGs); until it merges the request 404s and this case cannot pass.
+test('lavax is an approved original: its super shows the cut-in without any roster24 flag', async ({ page }) => {
+  const errors = collectErrors(page);
+  const cutinRequests: string[] = [];
+  page.on('request', (r) => { if (r.url().includes('/assets/img/cutin/')) cutinRequests.push(r.url()); });
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByLabel('Your race').selectOption('lavax');
+  await page.getByLabel('AI race').selectOption('fiara');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await waitForArena(page);
+  await waitFor(page, 'arena views ready', ARENA_READY);
+  const card = page.getByRole('button', { name: 'Got it' });
+  if (await card.isVisible()) await card.click();
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(91); const [m, f] = a.characters(); a.place(m.id, 400, 360, 0); a.place(f.id, 900, 360, 4); a.setMeter(0, 1000); a.step(1, [${String(SUPER)}, 0]); })()`);
+  await expect(() => { expect(cutinRequests.filter((u) => u.endsWith('/lavax.png')).length, 'lavax cut-in requested once').toBe(1); }).toPass();
+  expect(cutinRequests.filter((u) => !u.endsWith('/lavax.png')), 'no other hero cut-in').toEqual([]);
   expect(errors).toEqual([]);
 });
