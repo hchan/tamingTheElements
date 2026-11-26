@@ -14,6 +14,8 @@ export const COMBO_GAP = 8;
 export const COMBO_CLEAR_MS = 300;
 /** Opacity cap of a counter that fits nowhere. */
 export const COMBO_STUCK_ALPHA = 0.4;
+/** A counter that stops being stuck brightens back to full over this long (it still goes faint at once when it becomes stuck). */
+export const COMBO_STUCK_RECOVER_MS = 160;
 /** A slide may go this far past the number lane's edge. */
 export const COMBO_SLIDE_EXTRA = 40;
 /** Damage-number lane: horizontal and upward fan reach (from NUMBER_FAN, in HUD px at s = 1) and half the width of one number. */
@@ -159,6 +161,18 @@ export function easeTo(shown: number, target: number, dtMs: number, snap: boolea
   const d = target - shown;
   if (snap || Math.abs(d) < COMBO_SETTLE_PX) return target;
   return shown + d * (1 - Math.exp(-Math.max(0, dtMs) / COMBO_EASE_TAU_MS));
+}
+
+/** Stuck-fade memory (1 = fully faint, 0 = normal): jumps to 1 when stuck, eases down to 0 afterwards; snaps with reduced motion. */
+export function stuckMix(mix: number, stuck: boolean, dtMs: number, reduced: boolean): number {
+  if (stuck) return 1;
+  if (reduced) return 0;
+  return Math.max(0, mix - Math.max(0, dtMs) / COMBO_STUCK_RECOVER_MS);
+}
+
+/** Opacity of a counter given its stuck mix: `alpha` blended toward the stuck cap. */
+export function stuckAlpha(alpha: number, mix: number): number {
+  return alpha - mix * (alpha - Math.min(alpha, COMBO_STUCK_ALPHA));
 }
 
 /**

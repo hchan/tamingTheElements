@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  COMBO_CLEAR_MS, COMBO_FAN_UP, COMBO_FAN_X, COMBO_GAP, COMBO_POP_MAX, COMBO_STUCK_ALPHA, NUMBER_H_MIN, comboCeil, comboMode, drop, easeTo, lift, newPlaceOut, newPlaceState,
-  numberLane, overlapsAny, placeCombo, popCap, slide, victimAnchor, type NumberLane, type PlaceInput, type PlaceState,
+  COMBO_CLEAR_MS, COMBO_FAN_UP, COMBO_FAN_X, COMBO_GAP, COMBO_POP_MAX, COMBO_STUCK_ALPHA, COMBO_STUCK_RECOVER_MS, NUMBER_H_MIN, comboCeil, comboMode, drop, easeTo, lift, newPlaceOut, newPlaceState,
+  numberLane, overlapsAny, placeCombo, popCap, slide, stuckAlpha, stuckMix, victimAnchor, type NumberLane, type PlaceInput, type PlaceState,
 } from './combo-anchor';
 import { NUMBER_FAN, NUMBER_RISE_PX, NUMBER_TOP, clampNumber, type HudRect } from './arcade-hud';
 import { arcadeHeroScale, setHeroBoost } from '../views/hero-scale';
@@ -246,5 +246,19 @@ describe('placeCombo', () => {
     expect(o.popMax).toBeGreaterThanOrEqual(1);
     expect(o.popMax).toBeLessThanOrEqual(COMBO_POP_MAX);
     expect(o.popMax).toBeCloseTo(Math.max(1, Math.min(COMBO_POP_MAX, (190 - 120) / H)));
+  });
+});
+
+describe('stuck fade recovery', () => {
+  it('goes faint at once, brightens back over COMBO_STUCK_RECOVER_MS, and snaps with reduced motion', () => {
+    expect(stuckMix(0, true, 16, false)).toBe(1);
+    const half = stuckMix(1, false, COMBO_STUCK_RECOVER_MS / 2, false);
+    expect(half).toBeCloseTo(0.5);
+    expect(stuckAlpha(1, half)).toBeCloseTo(0.7);
+    expect(stuckMix(half, false, COMBO_STUCK_RECOVER_MS, false)).toBe(0);
+    expect(stuckMix(1, false, 16, true)).toBe(0);
+    expect(stuckAlpha(1, 1)).toBe(COMBO_STUCK_ALPHA);
+    expect(stuckAlpha(0.2, 1)).toBe(0.2);
+    expect(stuckAlpha(0.8, 0)).toBe(0.8);
   });
 });
