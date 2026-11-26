@@ -231,7 +231,7 @@ export class Arena extends Phaser.Scene {
           });
           return p;
         },
-        () => effectsHeld(driver.isPaused, this.fxAges),
+        () => effectsHeld(driver.isPaused, this.fxAges, this.ended),
         () => view.tick,
         hud && ((x, y, amount, scaled, counter) => { hud.spawn(x, y, amount, scaled, counter); }),
         () => getPrefs().highContrast,
@@ -666,7 +666,7 @@ export class Arena extends Phaser.Scene {
     this.samplePos(view, alpha);
     // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them), unless the
     // test hook's ageFx lets them age; the fx sink's pause check above uses the same rule.
-    const live = !effectsHeld(driver.isPaused, this.fxAges);
+    const live = !effectsHeld(driver.isPaused, this.fxAges, this.ended);
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     // Who each combo's victim is this frame (indexed by the victim's team), so drawCharacter can feed the anchor.

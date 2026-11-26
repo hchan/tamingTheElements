@@ -165,6 +165,10 @@ describe('effectsHeld', () => {
     expect(effectsHeld(false, false)).toBe(false);
     expect(effectsHeld(false, true)).toBe(false);
   });
+  it('lets effects fade after the match ended (stale damage numbers after a KO)', () => {
+    expect(effectsHeld(true, false, true)).toBe(false);
+    expect(effectsHeld(true, false, false)).toBe(true);
+  });
 });
 
 describe('runLineFor and the Run press', () => {
