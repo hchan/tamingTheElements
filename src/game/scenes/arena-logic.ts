@@ -101,10 +101,11 @@ export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean
 
 /**
  * Whether frame-timed view effects hold their frame: while the sim is paused (pause dialog, hidden tab, overlay, replay
- * pause, match end, e2e manual stepping), unless the test hook's `ageFx(true)` lets them age on real frames.
+ * pause, e2e manual stepping), unless the test hook's `ageFx(true)` lets them age on real frames. A match end does not hold
+ * them: the sim stops there, but damage numbers must still fade instead of sticking over the K.O. text.
  */
-export function effectsHeld(paused: boolean, ageing: boolean): boolean {
-  return paused && !ageing;
+export function effectsHeld(paused: boolean, ageing: boolean, ended = false): boolean {
+  return paused && !ageing && !ended;
 }
 
 /**
