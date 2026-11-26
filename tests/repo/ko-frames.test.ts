@@ -30,7 +30,7 @@ describe('KO frames (tools/assets/ko-gen/ko-rigonly.py)', () => {
     expect(sha(`${DIR}/nykra_ko.png`)).toBe(sha('tools/assets/ko-gen/approved/nykra_ko.png'));
     const dims = (p: string): [number, number] => { const b = readFileSync(p); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
     expect(dims(`${DIR}/umbrel_ko.png`)).toEqual([904, 447]);
-    expect(dims(`${DIR}/abyssor_ko.png`)).toEqual([905, 500]);
+    expect(dims(`${DIR}/abyssor_ko.png`)).toEqual([972, 514]);
     expect(dims('tools/assets/ko-gen/approved/umbrel_ko.png')).toEqual([1024, 1024]);
     const ap = JSON.parse(readFileSync('tools/assets/ko-gen/approved/approval.json', 'utf8')) as Record<string, { verdict: string }>;
     for (const h of ['umbrel', 'abyssor', 'nykra']) expect(ap[`${h}_ko.png`]?.verdict, h).toBe('APPROVE');

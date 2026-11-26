@@ -81,12 +81,12 @@
   "note": "APPROVE 4; verdicts in tools/assets/ko-r24-new/approval-nykra.json Same bytes as approved/nykra_ko.png (11-24 APPROVE 4); install-r24-ko.py copies it."
  },
  "ko_abyssor": {
-  "approved": "approved/abyssor_ko.png (ko-warp-r24.py abyssor, eye darkened 40%; install-r24-ko.py crops to bbox)",
+  "approved": "approved/abyssor_ko.png (sources/abyssor_ko_r7_121010.png, matte-abyssor-r7.py; install-r24-ko.py crops to bbox)",
   "reviewer": "art-director",
-  "date": "2026-11-25",
+  "date": "2026-11-26",
   "beats_shipped": true,
-  "sha256": "0bbd413156ed8346a0ee999c36feb9e684a9f4a80318c275daa2922d605b5f99",
-  "note": "APPROVE 4 (approved/approval.json); supersedes the 11-24 tip still (sha b8e58ca7...)."
+  "sha256": "8f278afdf9de2610f2dc7e1c9ce9e3f7331d886dd1702feaa714c996e25bef10",
+  "note": "APPROVE 4 (approved/approval.json, art-director approval7.json 11-26); supersedes the 11-25 warp still (sha 0bbd4131...)."
  },
  "ko_quarrak": {
   "approved": "sheet-r2.png (quarrak KO rig-only, flip, from sources/quarrak-96214-cut.png)",
