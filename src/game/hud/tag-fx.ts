@@ -232,14 +232,14 @@ export const CALL_TOP_MIN = 144;
 
 /**
  * Where the call text (centre) goes: over the drawn head (`headX`, `headY` = top of the head in HUD px), never under the top
- * bar and chips, kept clear of the `avoid` rects (the combo readouts) by sliding towards the screen centre.
+ * bar and chips, kept clear of the `avoid` rects (the combo readouts) by sliding towards the screen centre (`centreX`, the HUD frame's centre; wider than 1280 on a wide view).
  */
-export function placeCall(headX: number, headY: number, halfW: number, h: number, avoid: readonly { x: number; y: number; w: number; h: number }[], out: { x: number; y: number }): { x: number; y: number } {
+export function placeCall(headX: number, headY: number, halfW: number, h: number, avoid: readonly { x: number; y: number; w: number; h: number }[], out: { x: number; y: number }, centreX = 640): { x: number; y: number } {
   const y = Math.max(CALL_TOP_MIN, headY - CALL_HEAD_GAP);
   let x = headX;
   for (const r of avoid) {
     if (!(x + halfW > r.x && x - halfW < r.x + r.w && y + h / 2 > r.y && y - h / 2 < r.y + r.h)) continue;
-    x = x < 640 ? r.x + r.w + halfW : r.x - halfW;
+    x = x < centreX ? r.x + r.w + halfW : r.x - halfW;
   }
   out.x = x;
   out.y = y;

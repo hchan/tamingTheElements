@@ -278,7 +278,7 @@ export function mountTagView(
         headX = hx;
         headY = hy;
         const avoid = (arena.registry as Phaser.Data.DataManager | undefined)?.get(COMBO_RECTS_KEY) as HudBox[] | undefined;
-        const at = placeCall(hx, hy, call.displayWidth / 2, call.displayHeight, avoid ?? [], callPos);
+        const at = placeCall(hx, hy, call.displayWidth / 2, call.displayHeight, avoid ?? [], callPos, frame.x + frame.w / 2);
         call.setPosition(at.x, at.y);
         // The chevron waits with the call (held under a banner).
         if (!held) {
