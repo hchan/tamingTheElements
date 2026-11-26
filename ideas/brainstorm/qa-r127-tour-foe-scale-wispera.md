@@ -9,3 +9,5 @@ added: 2026-11-19
 Progress 2026-11-19: not fixed in the UI pass. Wispera is drawn at the arcade scale of its sim box (src/core, off limits in that pass); a bigger or limbed sprite needs a box/art change. Screenshot .scratch/r127fix/wisp-echo.png shows Wispera about 100 px against a 150 px Sindarosa.
 
 triaged: 2026-11-21 real, large: needs src/core box or art change (see its progress note).
+
+Progress 2026-11-26: view-only partial fix: DISPLAY_SCALE wispera 1.3 (src/game/views/display-scale.ts), orb about 130 px against Sindarosa 150 px. A limbed silhouette or new baked art is still open (art session).
