@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ROSTER_24_CHARACTERS } from '@core/index';
-import { CUTIN_ALPHA, CUTIN_HEROES, CUTIN_MS, CUTIN_SLIDE, cutinFlagOn, cutinFrame, cutinKey, cutinUrl, shouldCutin } from './cutin-gate';
+import { CUTIN_ALPHA, CUTIN_HEROES, CUTIN_MS, ORIGINAL_CUTIN_HEROES, CUTIN_SLIDE, cutinFlagOn, cutinFrame, cutinKey, cutinUrl, shouldCutin } from './cutin-gate';
 
 describe('super cut-in gate', () => {
   it('covers exactly the roster24 heroes (tests/repo/cutin-backdrops pins the files)', () => {
@@ -15,9 +15,9 @@ describe('super cut-in gate', () => {
     expect(cutinFlagOn('?ff=play', true)).toBe(false);
   });
 
-  it('shows only for a roster24 hero', () => {
+  it('shows for a roster24 hero (released: no flag) and the approved originals', () => {
     expect(shouldCutin('umbrel', '?ff=roster24', true)).toBe(true);
-    expect(shouldCutin('curomo', '?ff=roster24', true)).toBe(false);
+    expect(shouldCutin('curomo', '?ff=roster24', true)).toBe(true); // original, approved
     expect(shouldCutin(undefined, '?ff=roster24', true)).toBe(false);
     expect(shouldCutin('zephra', '', false)).toBe(true); // released: no flag needed
     expect(shouldCutin('vortigal', '', false)).toBe(true);
@@ -31,8 +31,21 @@ describe('super cut-in gate', () => {
     expect(shouldCutin('abyssor', '', false)).toBe(true);
     expect(shouldCutin('quarrak', '', false)).toBe(true);
     expect(shouldCutin('umbrel', '', false)).toBe(true);
-    expect(shouldCutin('fiara', '', false)).toBe(false); // not a roster24 hero: never, flag or not
-    expect(shouldCutin('curomo', '?ff=roster24', false)).toBe(false);
+    expect(shouldCutin('fiara', '', false)).toBe(false); // rejected original: never, flag or not
+    expect(shouldCutin('fiara', '?ff=roster24', true)).toBe(false);
+    expect(shouldCutin('curomo', '?ff=roster24', false)).toBe(true);
+  });
+
+  it('shows each approved original with no flag, never cyclonius, fiara or echo', () => {
+    expect([...ORIGINAL_CUTIN_HEROES].sort()).toEqual(['curomo', 'ishimi', 'lavax', 'morblass', 'pax', 'rokcore', 'sindarosa', 'treenoc', 'wispera']);
+    for (const h of ORIGINAL_CUTIN_HEROES) {
+      expect(shouldCutin(h, '', false), h).toBe(true);
+      expect(shouldCutin(h, '', true), h).toBe(true);
+    }
+    for (const h of ['cyclonius', 'fiara', 'echo']) {
+      expect(shouldCutin(h, '', false), h).toBe(false);
+      expect(shouldCutin(h, '?ff=roster24', true), h).toBe(false);
+    }
   });
 
   it('builds the texture key and url', () => {

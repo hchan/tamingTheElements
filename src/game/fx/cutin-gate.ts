@@ -9,6 +9,12 @@ import { isReleased, characterId } from '@core/index';
 /** The heroes that have a composite: the 12 roster24 heroes (tests/repo pins the files; cutin-gate.test.ts pins the list to the roster). */
 export const CUTIN_HEROES: ReadonlySet<string> = new Set(['abyssor', 'brazgor', 'durrok', 'glimmaw', 'hyalia', 'kindrel', 'nykra', 'ouroth', 'quarrak', 'umbrel', 'vortigal', 'zephra']);
 
+/**
+ * The ORIGINAL heroes with an art-director-approved composite (2026-11-26): shown with no feature flag. Additive: echo is one line once
+ * approved. Not cyclonius, fiara (rejected: they keep the generic super band). Same file naming as roster24 (cutin/<sprite>.png).
+ */
+export const ORIGINAL_CUTIN_HEROES: ReadonlySet<string> = new Set(['lavax', 'sindarosa', 'curomo', 'ishimi', 'pax', 'rokcore', 'morblass', 'treenoc', 'wispera']);
+
 /** Dev and test builds only (same gate as `roster24On` in app/arcade-pick.ts, which fx must not import): `?ff=roster24`. Production never reads the URL. */
 export const cutinFlagOn = (search: string, devBuild: boolean): boolean =>
   devBuild && (new URLSearchParams(search).get('ff') ?? '').split(',').map((f) => f.trim()).includes('roster24');
@@ -18,7 +24,7 @@ export const heroReleased = (hero: string): boolean => isReleased(characterId(he
 
 /** Whether a super by `hero` (its sprite name) shows a composite on this page. */
 export const shouldCutin = (hero: string | undefined, search: string, devBuild: boolean): boolean =>
-  hero !== undefined && CUTIN_HEROES.has(hero) && (heroReleased(hero) || cutinFlagOn(search, devBuild));
+  hero !== undefined && (ORIGINAL_CUTIN_HEROES.has(hero) || (CUTIN_HEROES.has(hero) && (heroReleased(hero) || cutinFlagOn(search, devBuild))));
 
 export const cutinKey = (hero: string): string => `cutin:${hero}`;
 export const cutinUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/cutin/${hero}.png`;

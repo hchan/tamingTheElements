@@ -23,3 +23,7 @@ First builder (a): installer + pins + approval copy for the seven; (b) cutin-gat
 
 Approval `.claude/worktrees/gpu-job-server/.scratch/originals-cutin/approval-v2.json` (round 2) plus `approval.json` (round 1). APPROVE 4 in round 2: treenoc `comp_treenoc_v2.png` (B backdrop), wispera `comp_wispera_v2.png` (1344x768). FIARA: REJECT 2 (flat vector fill pasted on a painterly backdrop): skip, keep the generic band. ECHO: REVISE 3 (flat cut across the top of the funnel; eyes read as a face): one more fix pass in progress.
 Final set so far (9): lavax B, sindarosa A, curomo, ishimi, pax A, rokcore A, morblass B, treenoc v2, wispera v2. Skipped: cyclonius, fiara. Echo joins when approved.
+
+## Progress note (2026-11-26, builder b)
+
+(b) done on branch worktree-agent-a212c59d7eaf3dcb6: `ORIGINAL_CUTIN_HEROES` (lavax, sindarosa, curomo, ishimi, pax, rokcore, morblass, treenoc, wispera) in `src/game/fx/cutin-gate.ts`, shown with no flag; `CUTIN_HEROES` stays roster24 only (tests/repo pins it). Echo = add one string once approved. Cut-in URL is `assets/img/cutin/<sprite>.png`, the same naming as roster24, so the installer must write `<hero>.png`. `tests/e2e/cutin.spec.ts` filters requests by hero and has a lavax case that passes only after the PNGs land in `public/assets/img/cutin/`. Still open: (a) installer, (c) size-budget.
