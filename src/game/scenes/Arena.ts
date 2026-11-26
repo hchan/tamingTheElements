@@ -1,3 +1,4 @@
+import { CorrectionSmoother } from '../net/correction-smoother';
 import { HoldLerp } from '../loop/hold-lerp';
 import { mountShakeScroll } from '../fx/camera-shake';
 import { LowLifeVignette } from '../fx/low-life-vignette';
@@ -681,9 +682,8 @@ export class Arena extends Phaser.Scene {
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.ambient?.update(getPrefs().reduceMotion); if (this.arcadeBg && arcade) syncArcadeBg(this.arcadeBg, arcade.stage, view.heroElement(), this.textures);
     this.reportPlayback();
-    this.frameTick = tick;
-    this.frameAlpha = alpha;
-    this.frameLive = live;
+    this.frameTick = tick; this.frameAlpha = alpha; this.frameLive = live;
+    if (this.session) this.smooth.begin(this.session.stats.rollbacks);
     setBrightFloor(arcade ? arcade.stage === 4 : false);
     this.motion?.advance(view.tick);
     pool.begin();
@@ -713,16 +713,15 @@ export class Arena extends Phaser.Scene {
   private readonly anchorBox = { x: 0, y: 0, w: 0, h: 0 };
   private readonly anchorOut = { headX: 0, headY: 0, laneX: 0 };
   private readonly holdLerp = new HoldLerp();
-  private frameLive = true;
-  private arcadeMatch = false;
+  private readonly smooth = new CorrectionSmoother();
+  private frameLive = true; private arcadeMatch = false;
   /** Test hook: let frame-timed view effects (hit flash, HUD numbers, white pops, rings, sparks, streaks, KO wash) age on real frames while the sim stays paused. */
   private fxAges = false;
   /** Element of each team's character this frame (characters draw before projectiles); picks the Snag rope art. */
   private readonly teamElement: string[] = [];
   /** Drawn caster minus sim caster per team this frame (lerp of the sim step), for lunge and spin boxes. */
   private readonly casterShift: { dx: number; dy: number }[] = [{ dx: 0, dy: 0 }, { dx: 0, dy: 0 }];
-  private simPos: { x: number; y: number } | undefined;
-  private simPosId = -1;
+  private simPos: { x: number; y: number } | undefined; private simPosId = -1;
   private readonly findSimPos = (c: RenderCharacter): void => {
     if (c.id === this.simPosId) this.simPos = { x: c.x, y: c.y };
   };
@@ -744,6 +743,7 @@ export class Arena extends Phaser.Scene {
   }
 
   private readonly drawCharacter = (c: RenderCharacter): void => {
+    if (this.session) this.smooth.apply(c.id, c); // online: blend rollback corrections (view only)
     this.teamElement[c.team] = c.element;
     const cs = (this.casterShift[c.team] ??= { dx: 0, dy: 0 });
     cs.dx = lerp(c.px, c.x, this.framePos) - c.x;
