@@ -683,7 +683,7 @@ export class Arena extends Phaser.Scene {
     this.ambient?.update(getPrefs().reduceMotion); if (this.arcadeBg && arcade) syncArcadeBg(this.arcadeBg, arcade.stage, view.heroElement(), this.textures);
     this.reportPlayback();
     this.frameTick = tick; this.frameAlpha = alpha; this.frameLive = live;
-    if (this.session) this.smooth.begin(this.session.stats.rollbacks);
+    if (this.session) this.smooth.begin(this.session.stats.rollbacks, this.session.simTick);
     setBrightFloor(arcade ? arcade.stage === 4 : false);
     this.motion?.advance(view.tick);
     pool.begin();

@@ -17,6 +17,7 @@ import {
 import { InMemoryStore, LoopbackSender } from '../../core/relay/testing';
 import { hash } from '../../core/sim/hash';
 import { createMatch, type MatchSetup } from '../../core/sim/match';
+import type { SimWorld } from '../../core/sim/world';
 import { SIM_VERSION } from '../../core/version';
 import { linkQuality, medianRtt, type LinkQuality } from '../../game/net/link-quality';
 import { WebSocketTransport } from '../../game/net/ws/transport';
@@ -62,6 +63,8 @@ export interface MeasureOptions {
   readonly rollbackWindow?: number;
   /** Repay stalled wall ticks with extra updates (the game's behaviour; default true). */
   readonly catchUp?: boolean;
+  /** Called once per wall tick (one rendered frame) with side 0's session and world, after both sessions updated. Measurement hooks only. */
+  readonly onFrame?: (session: LockstepSession, world: SimWorld) => void;
   /** Seeds the link impairments and the relay's random numbers. */
   readonly netSeed?: number;
 }
@@ -248,6 +251,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
         transports[s.side].sendHash(matchId, tick, h);
       }
     }
+    o.onFrame?.(sessions[0], worlds[0]);
     await drain();
   }
   const durationSec = (wall * TICK_MS) / 1000;
