@@ -181,6 +181,31 @@ def paint_pits(rgb, solid, spec, seed):
     return rgb
 
 
+def key_holes(a, spec):
+    """matte.holes: flat opaque fill in the source (a generator's grey "background" left inside leg gaps) is keyed to transparent.
+    Pixels within `tol` of `rgb` inside `rects`, in components of at least `minPx`, grown by `grow` px (their blended edge)."""
+    holes = spec.get("matte", {}).get("holes")
+    if not holes:
+        return
+    h, w = a.shape[:2]
+    col = np.array(holes["rgb"], np.float32)
+    flat = (np.abs(a[..., :3] - col).max(-1) <= holes.get("tol", 6)) & (a[..., 3] > 0)
+    box = np.zeros_like(flat)
+    for x0, y0, x1, y1 in holes["rects"]:
+        box[y0:y1, x0:x1] = True
+    key = np.zeros_like(flat)
+    for comp in components(flat & box):
+        if len(comp) >= holes.get("minPx", 30):
+            ys, xs = zip(*comp)
+            key[list(ys), list(xs)] = True
+    for _ in range(holes.get("grow", 1)):
+        g = key.copy()
+        for dy, dx in NB8:
+            g |= shift(key, dy, dx)
+        key = g & (a[..., 3] > 0)
+    a[..., 3][key] = 0
+
+
 def blur(a, r):
     im = Image.fromarray(np.clip(a * 255, 0, 255).astype(np.uint8))
     return np.asarray(im.filter(ImageFilter.GaussianBlur(r)), np.float32) / 255.0
@@ -189,6 +214,7 @@ def blur(a, r):
 def clean(spec, src):
     a = src.astype(np.float32)
     m = spec.get("matte", {})
+    key_holes(a, spec)
     alpha = a[..., 3]
     alpha[alpha < 8] = 0
     cut = m.get("alphaCut")
