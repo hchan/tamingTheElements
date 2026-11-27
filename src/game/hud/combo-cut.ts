@@ -19,3 +19,8 @@ export function comboCutFadeOf(r: Registry, y: number, originY: number, displayH
   const top = y - originY * displayHeight;
   return comboCutFade(r.get(CUT_BAND_KEY) as CutBand | undefined, top, top + displayHeight);
 }
+
+/** True while a status chip (box `y`..`y + h`) overlaps the super cut-in band: the chip is skipped for that frame (qa-r124 6). */
+export function chipHiddenByCut(r: Registry, y: number, h: number): boolean {
+  return comboCutFade(r.get(CUT_BAND_KEY) as CutBand | undefined, y, y + h) === 0;
+}

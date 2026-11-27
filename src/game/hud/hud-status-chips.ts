@@ -11,6 +11,7 @@ import { dashSegments, type HudCharacter } from './bars';
 import { CHIP_BOTTOM, SLIM_H, getChipDrop } from './slim-hud';
 import { HUD_FONT, type HudFlags } from './hud-ctx';
 import { chipRowTop } from './hud-math';
+import { chipHiddenByCut } from './combo-cut';
 
 /** Portrait phone: the status chips start this far under the HUD bar's fill (SLIM_H + 2), so they never touch it. */
 const PHONE_CHIP_GAP = 6;
@@ -107,6 +108,11 @@ export class HudStatusChips {
       const t = (this.chipTexts[slot] ??= scene.add
         .text(0, 0, '', crisp(scene, { fontFamily: HUD_FONT, fontSize: `${String(px)}px`, color: '#d8d2c4', fontStyle: 'normal', stroke: '#0a0806', strokeThickness: 2 }))
         .setDepth(102));
+      // The super cut-in band covers the chip row: skip the chip (its rect stays published) instead of half-drawing it (qa-r124 6).
+      if (chipHiddenByCut(scene.registry, chip.y, chip.h)) {
+        t.setVisible(false);
+        return;
+      }
       const age = now - (born.get(chip.key) ?? Number.NEGATIVE_INFINITY);
       // Apply pop: the chip swells about its centre and settles; a flash washes over it (no motion under reduced motion).
       const pop = chipPop(age, reduced);
