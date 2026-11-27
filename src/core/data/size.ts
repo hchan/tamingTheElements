@@ -122,7 +122,9 @@ export function boxOfDef(defIdx: number): readonly [number, number] {
  * wider than its sim box (the view draws at `arcadeHeroScale`). Measured idle overhang per side (opaque alpha >= 32, widest idle
  * frame; left/right): curomo 40/35, pax 39/38, treenoc 38/35, echo 40/39, wispera 34/25, kindrel 38/37, nykra 37/37, brazgor 34/32,
  * durrok 44/45, ouroth 69/69, abyssor 20/21, vortigal 39/41. FIRST GUESS = 50% of that: the wall clamp (`boxSpanX`) already hides
- * the pinned foe's overhang, and the worst attack frames are brief. Step 2 measures the drawn overlap and may refit these numbers.
+ * the pinned foe's overhang, and the worst attack frames are brief. Refit (MEASUREMENT, wall-pin probe, level 4, 16 seeds): the median wall gap moves about 1.0x the applied
+ * extra for curomo, wispera and brazgor; brazgor's drawn overlap was still 12.4% at 17, so it is now 22 (x1.3). ouroth, durrok, vortigal, pax and
+ * echo do not improve with a bigger extra (ideas/brainstorm/wall-hold-*.md), so their rows stay.
  * Ranged heroes and unlisted ones are 0. Sim data (changing a value bumps SIM_VERSION).
  */
 export const CHARACTER_DRAWN_EXTRA_PX: Readonly<Record<string, number>> = {
@@ -133,7 +135,7 @@ export const CHARACTER_DRAWN_EXTRA_PX: Readonly<Record<string, number>> = {
   wispera: 15,
   kindrel: 19,
   nykra: 18,
-  brazgor: 17,
+  brazgor: 22,
   durrok: 22,
   ouroth: 35,
   abyssor: 10,

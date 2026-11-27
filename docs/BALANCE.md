@@ -693,3 +693,28 @@ Unchanged: morblass 3600/842 (a -8% life try moved it only -0.8 pp in M1, so it 
 Measurement (MEASUREMENT, M1 = seed 1, `tools/sim/balance.ts --ruleset arcade` with the plan's what-if hp mods, which include treenoc 6083 and morblass 3313, not the final rows; load1 13.5, exit 1 as expected): stalemates 3 (v119: 4), timeouts 0, melee-vs-ranged cross .473 (v119 .402). Win rate v119 -> M1: abyssor .543 -> .492, brazgor .462 -> .467, curomo .454 -> .454, cyclonius .603 -> .489, durrok .399 -> .500, echo .465 -> .486, fiara .514 -> .462, glimmaw .567 -> .534, hyalia .586 -> .507, ishimi .462 -> .473, kindrel .410 -> .516, lavax .567 -> .527, morblass .614 -> .606, nykra .440 -> .484, ouroth .425 -> .473, pax .372 -> .503, quarrak .440 -> .470, rokcore .582 -> .519, sindarosa .573 -> .516, treenoc .590 -> .427, umbrel .552 -> .538, vortigal .442 -> .526, wispera .386 -> .505, zephra .553 -> .526. The slope is not measurable from one block (field effect confounds); ESTIMATE for treenoc 2.3 pp per 1% life, which is why treenoc was eased to 6282.
 
 TODO (re-record agent): M1b (final rows, seed 1) and M2 (seed-41 hold-out) are PENDING. The 03:37 job writes `~/claudetmp/v120/measure2.md` (it did not exist when this section was written); fill in the final-row tables here, check the accept rule (mean of both blocks .45-.55 per hero, each block .40-.60, cross >= .45, stalemates <= 8, timeouts 0), and run `balance:compare --ruleset arcade --team-size 2` (must print 0.0 pp), stun-lock and `fun:gates`.
+
+## Arcade Hard AI wall hold (SIM_VERSION 121)
+
+The Hard AI (level 4) melee wall hold adds a per-hero drawn-overhang allowance so a pinned foe's art is not overlapped by a wide melee hero. Arcade only, Hard AI only; Classic bit-identical. Rows are `CHARACTER_DRAWN_EXTRA_PX` (px per side, `src/core/data/size.ts`):
+
+| hero | extra px |
+|---|---|
+| curomo | 19 |
+| pax | 19 |
+| treenoc | 18 |
+| echo | 20 |
+| wispera | 15 |
+| kindrel | 19 |
+| nykra | 18 |
+| brazgor | 22 (refit from 17, x1.3) |
+| durrok | 22 |
+| ouroth | 35 |
+| abyssor | 10 |
+| vortigal | 20 |
+
+MEASUREMENT (wall-pin probe, level 4, 16 seeds, idle P1): drawn overlap % main -> branch: curomo 75.5 -> 1.3, wispera 80.5 -> 4.5, brazgor 80.4 -> 12.4 (refit 22), durrok 96.8 -> 35.1, ouroth 84.6 -> 86.1. The median wall gap moves about 1.0x the applied extra for curomo, wispera and brazgor. Durrok is limited by the staleness gate and ouroth is not hold-limited (ideas/brainstorm/wall-hold-stale-gate-durrok.md, wall-hold-ouroth-vortigal-pax-echo.md).
+
+MEASUREMENT (Hard tournament, `sim:match --ruleset arcade --ai-level 4 --tournament`): 12-hero roster, 16 seeds: mean |delta winRate| 0.94 pp, max 2.3 pp (treenoc), median pair length 75.9 -> 75.8 s, stalemates 0 -> 0. Full 24-race roster, 4 seeds: mean |delta| 1.64 pp (noise about +/-5 pp).
+
+MEASUREMENT (`balance:compare --ruleset arcade`): every one of the 24 races +0.0 pp (Normal level unaffected); stalemates 3 -> 3.
