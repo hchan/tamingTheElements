@@ -14,3 +14,9 @@ added: 2026-11-14
 
 ## Progress
 - 2026-11-14: earth crystal at spawn and pale-stage chip contrast fixed (presentation only). `src/game/fx/terrain-props.ts`: a patch whose footprint lies within 200 px of either Arcade start column (fighters' row) draws flat scree instead of a crystal/spire/boulder (`overlapsSpawn`, test `terrain-props.test.ts`). `src/game/fx/terrain-view.ts`: chip plate 0.9 to 0.96 plus a thin dark halo outside the rim so the pill edge stays crisp on water and air. Shots: ~/claudetmp/stage-polish/{before,after}/ (all four stages, `rokcore-earth-seed2.png` shows Rokcore on earth with scree at the spawn side).
+- 2026-11-27 (re-check against main, no code change): the remaining items are already closed.
+  - Versus picker density: the 2v2 paragraph and "More heroes below" are gone from `src` (git grep finds neither); the picker became the team-select grid (hero-unselect, picker-min-text 14 px floor, picker-bar-reserved-space, Jump to Fight chip).
+  - First Blood bar: on a short desktop window the card is one line (`firstRunShortLine`, QA r31), solid backing and 16 px text (c4774366), sits in a low strip above the action bar, leaves for a super, tag call or banner (351e9417); `tests/e2e/first-run-hint.spec.ts` pins it.
+  - Super burst: `src/game/fx/super-burst.ts` draws a per-element shape (star, rings, swirl, squares, octagon) with a 260 px reach plus glow (843aa6f30, 241bb7b4d), not a thin white fan.
+  - Tag-in on top of the foe: fixed in the sim (fbca1c2a, ed8c875a tag-wall, 618bc045 qa-r125); needs src/core, so nothing to do view-side.
+  - Left open: terrain chips are still plain pill labels at random spots (contrast was fixed 2026-11-14); a placement or plate redesign is optional polish. Status stays `idea`.
