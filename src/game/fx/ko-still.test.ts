@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { KO_FALLBACK_HEROES } from './ko-fallback';
-import { KO_STILL_HEROES, koStillFor, koStillUrl } from './ko-still';
+import { KO_STILL_HEROES, RESULT_STILL_SIZE, koStillFor, koStillUrl } from './ko-still';
 
 describe('ko still', () => {
   it('covers the 16 approved heroes (files pinned in tests/repo/ko-frames), and none of them keeps the fallback', () => {
@@ -17,5 +17,12 @@ describe('ko still', () => {
     expect(koStillFor('nykra', false, '', false, '/')).toBeNull();
     expect(koStillFor('fiara', true, '', false, '/')).toBeNull();
     expect(koStillUrl('/g/', 'nykra')).toBe('/g/assets/img/ko/nykra_ko.png');
+  });
+
+  it('sizes result stills by height as well as width (aspect kept, not cropped) so the buttons stay above a 720p fold', () => {
+    expect(RESULT_STILL_SIZE).toMatch(/max-width:min\(300px,60vw\)/);
+    expect(RESULT_STILL_SIZE).toMatch(/max-height:min\(\d+px,\d+vh\)/);
+    expect(RESULT_STILL_SIZE).toContain('object-fit:contain');
+    expect(RESULT_STILL_SIZE).not.toMatch(/(^|;)height:\d/);
   });
 });

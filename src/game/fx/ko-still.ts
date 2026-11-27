@@ -10,6 +10,9 @@ export const KO_STILL_HEROES: ReadonlySet<string> = new Set([
   'abyssor', 'brazgor', 'curomo', 'durrok', 'glimmaw', 'hyalia', 'kindrel', 'nykra', 'ouroth', 'pax', 'quarrak', 'sindarosa', 'treenoc', 'umbrel', 'vortigal', 'zephra',
 ]);
 
+/** Result-card still size: capped by width AND height (aspect kept, centred, never cropped) so tall stills cannot push the buttons below a 720p fold. */
+export const RESULT_STILL_SIZE = 'width:auto;height:auto;max-width:min(300px,60vw);max-height:min(300px,24vh);object-fit:contain';
+
 export const koStillUrl = (base: string, hero: string): string => `${base.endsWith('/') ? base : `${base}/`}assets/img/ko/${hero}_ko.png`;
 
 /** The still's URL when `hero` lost (`lost`) and is released or the flag is on, else null. */
@@ -27,7 +30,7 @@ export function applyKoStill(root: HTMLElement, hero: string, side: 'main' | 'si
     img.alt = '';
     img.setAttribute('aria-hidden', 'true');
     img.dataset['hero'] = hero;
-    img.style.cssText = 'width:min(300px,60vw);height:auto;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.6))';
+    img.style.cssText = `${RESULT_STILL_SIZE};filter:drop-shadow(0 6px 10px rgba(0,0,0,0.6))`;
     face.replaceWith(img);
     if (typeof img.animate === 'function') img.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, easing: 'ease-out' });
   };
