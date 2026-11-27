@@ -13,7 +13,7 @@ Order: render-only files first (cheap, Sonnet, no golden risk), biggest first; s
 2. [src/ui/screens/arcade-versus.ts](refactor-split-arcade-versus.md) (972 lines)
 3. [src/game/views/pose-layer.ts](refactor-split-pose-layer.md) (966 lines)
 4. [src/game/scenes/Arena.ts](refactor-split-Arena.md) (824 lines)
-5. [src/game/fx/defence-view.ts](refactor-split-defence-view.md) (704 lines)
+5. [src/game/fx/defence-view.ts](../done/refactor-split-defence-view.md) (704 lines, split 2026-11-27)
 6. [src/game/hud/action-bar.ts](refactor-split-action-bar.md) (695 lines)
 7. [src/game/fx/terrain-view.ts](refactor-split-terrain-view.md) (631 lines)
 8. [src/game/fx/super-view.ts](refactor-split-super-view.md) (569 lines)

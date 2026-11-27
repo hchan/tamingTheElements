@@ -1,7 +1,6 @@
 {
   "fileLines": {
     "src/game/fx/cc-fx.ts": 501,
-    "src/game/fx/defence-view.ts": 704,
     "src/game/fx/event-fx.ts": 528,
     "src/game/fx/idle-aura.ts": 504,
     "src/game/fx/super-view.ts": 569,
