@@ -288,7 +288,13 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   actions.append(random, start, fightHint, back);
   const scroll = el('div', 'pickScroll');
   scroll.append(set, hint);
-  form.append(scroll, actions);
+  // Keyboard shortcut past the long roster: first Tab stop, shown on focus, moves focus to Fight (or Random while Fight waits on empty slots).
+  const jump = el('button', 'menuButton vsJumpFight', 'Jump to Fight');
+  jump.type = 'button';
+  jump.addEventListener('click', () => {
+    (start.disabled ? random : start).focus();
+  });
+  form.append(jump, scroll, actions);
   const more = markMoreBelow(scroll);
   const sync = (): void => {
     const { size } = syncFields(form, f);
