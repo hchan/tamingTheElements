@@ -254,6 +254,8 @@ SIM_VERSION 118 (Arcade only; Classic bit-identical): super hits obey `SUPER_COM
 
 SIM_VERSION 119 (Arcade only; Classic bit-identical): closes the two v118 super-stun gaps. A super hit that would pass `SUPER_COMBO_STUN_CAP_TICKS` is clamped to the remaining room (it recovers with `stunCap` only at room 0), and an expired stun keeps its budget as `-comboStunTotal`, which a super landing within `STUN_IMMUNE_TICKS` of the expiry carries instead of starting a fresh chain. Plain hits still start fresh. Arcade goldens and baselines were re-recorded; Classic goldens change only in the `simVersion` header.
 
+SIM_VERSION 120 (Arcade only; Classic bit-identical): data-only 1v1 life retune. 17 `ARCADE_RACE_NUMBERS` hpPm rows change and the matching `ARCADE_2V2_LIFE_PM` factors are re-fitted so `floor(hpPm x factor / 1000)` equals the v119 team life for every hero (2v2/3v3 lives bit-identical, pinned by `arcade-numbers-team-life.test.ts`); damagePm, morblass and sindarosa are unchanged. Arcade 1v1 goldens and `arcade-baseline`/`arcade-full-baseline` are re-recorded; the team goldens (`arcade-tag`, `arcade-tag3`) change only in the simVersion header; Classic goldens change only in the header. Details: docs/BALANCE.md "Arcade 1v1 life retune (SIM_VERSION 120)".
+
 ## Changing the contract or data
 
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value

@@ -85,17 +85,17 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
   });
 });
 
-describe('SIM_VERSION 118 R8 retune (supersedes the v113-v116 pins)', () => {
+describe('SIM_VERSION 120 retune (supersedes the v113-v118 pins; sindarosa is the unchanged v118 row)', () => {
   it('pins the retuned [life, damage] rows and the 2v2 team-life per-mille of the moved heroes', () => {
-    expect(arcadeRaceNumbers('brazgor')).toEqual([5600, 850]);
-    expect(arcadeRaceNumbers('ouroth')).toEqual([6650, 1264]);
-    expect(arcadeRaceNumbers('kindrel')).toEqual([6680, 1537]);
-    expect(arcadeRaceNumbers('nykra')).toEqual([5788, 1215]);
+    expect(arcadeRaceNumbers('brazgor')).toEqual([5942, 850]);
+    expect(arcadeRaceNumbers('ouroth')).toEqual([7312, 1264]);
+    expect(arcadeRaceNumbers('kindrel')).toEqual([7487, 1537]);
+    expect(arcadeRaceNumbers('nykra')).toEqual([6250, 1215]);
     expect(arcadeRaceNumbers('sindarosa')).toEqual([2708, 760]);
     expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('sindarosa')[0], n, 'sindarosa'))).toEqual([2708, 2269, 2949]);
-    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('brazgor')[0], n, 'brazgor'))).toEqual([5600, 2240, 2912]);
-    expect(ARCADE_2V2_LIFE_PM['kindrel']).toBe(770);
-    expect(ARCADE_2V2_LIFE_PM['ishimi']).toBe(765);
+    expect([1, 3, 2].map((n) => arcadeLifePm(arcadeRaceNumbers('brazgor')[0], n, 'brazgor'))).toEqual([5942, 2240, 2912]);
+    expect(ARCADE_2V2_LIFE_PM['kindrel']).toBe(687);
+    expect(ARCADE_2V2_LIFE_PM['ishimi']).toBe(729);
   });
 });
 
