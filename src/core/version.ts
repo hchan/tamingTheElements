@@ -405,5 +405,7 @@
  *    Re-record reason: v117/v118 stun nerf left 18 of 24 heroes outside 45-55 and melee-vs-ranged at .402; 17 hpPm rows retuned, 2v2/3v3 team life bit-identical; Classic unchanged. Arcade goldens (header only for team goldens) and arcade-baseline/arcade-full-baseline are re-recorded; Classic goldens change only the simVersion header.
  * 121: Arcade only (Classic hashes unchanged). Hard AI melee wall hold adds a per-hero drawn-overhang allowance (CHARACTER_DRAWN_EXTRA_PX, 12 melee rows; Hard AI only; observation drawnExtra).
  *    Re-record reason: Hard AI melee wall hold now adds a per-hero drawn-overhang allowance (Arcade only, Hard AI only; Classic bit-identical; Normal-level baselines unchanged: balance:compare +0.0 pp for all 24 races); goldens re-recorded for the simVersion header.
+ * 122: Arcade only (Classic hashes unchanged). Morblass-only Arcade super scale: ARCADE_SUPER_PM morblass 800 (Hailstorm wave damage x0.8).
+ *    Re-record reason: morblass-only Arcade super scale (Hailstorm wave damage x0.8; the unscaled super is about half its damage; life and damagePm are weak levers); Classic bit-identical; goldens that include a morblass super and the Arcade 1v1/full-roster/2v2 baselines re-recorded because Arcade behaviour changed on purpose.
  */
-export const SIM_VERSION = 121;
+export const SIM_VERSION = 122;

@@ -258,6 +258,8 @@ SIM_VERSION 120 (Arcade only; Classic bit-identical): data-only 1v1 life retune.
 
 SIM_VERSION 121 (Arcade only; Classic bit-identical): the Hard AI melee wall hold adds a per-hero drawn-overhang allowance (`CHARACTER_DRAWN_EXTRA_PX` in `src/core/data/size.ts`, 12 melee rows; the observation carries the sum of both fighters' allowances). Only the Hard AI (level 4) in Arcade reads it; Normal-level baselines are unchanged (`balance:compare` +0.0 pp for all 24 races). Goldens change only in the simVersion header. Details: docs/BALANCE.md "Arcade Hard AI wall hold (SIM_VERSION 121)".
 
+SIM_VERSION 122 (Arcade only; Classic bit-identical): morblass-only super damage scale, `ARCADE_SUPER_PM` morblass 800 (`src/core/sim/arcade-numbers.ts`; Hailstorm wave damage x0.8, every other hero keeps 1000, `damagePm` and life untouched). Goldens that include a morblass super and the Arcade 1v1/full-roster/2v2 baselines are re-recorded because Arcade behaviour changed on purpose; Classic goldens change only in the simVersion header. Details: docs/BALANCE.md "Morblass super scale (SIM_VERSION 122)".
+
 ## Changing the contract or data
 
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value

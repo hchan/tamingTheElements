@@ -148,8 +148,8 @@ describe('Fire Blast falloff numbers (FUN-DESIGN 2.27)', () => {
 });
 
 describe('ARCADE_SUPER_PM', () => {
-  it('only morblass has a row (900); every other slug defaults to 1000', () => {
-    expect(ARCADE_SUPER_PM).toEqual({ morblass: 900 });
-    expect([arcadeSuperPm('morblass'), arcadeSuperPm('curomo'), arcadeSuperPm('dummy')]).toEqual([900, 1000, 1000]);
+  it('only morblass has a row (800); every other slug defaults to 1000', () => {
+    expect(ARCADE_SUPER_PM).toEqual({ morblass: 800 });
+    expect([arcadeSuperPm('morblass'), arcadeSuperPm('curomo'), arcadeSuperPm('dummy')]).toEqual([800, 1000, 1000]);
   });
 });

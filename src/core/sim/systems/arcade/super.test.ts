@@ -310,13 +310,13 @@ describe('per-hero super scale (ARCADE_SUPER_PM)', () => {
     try { return f(); } finally { if (saved !== undefined) table['morblass'] = saved; }
   };
 
-  it('morblass super is scaled by its pm (150 base -> 135 base-equivalent); the pm ratio holds against the unscaled hit', () => {
+  it('morblass super is scaled by its pm (150 base -> 120 base-equivalent); the pm ratio holds against the unscaled hit', () => {
     const unscaled = withRow(undefined, () => superHit('morblass'));
     const scaled = superHit('morblass');
     expect(unscaled).toBeGreaterThan(0);
     expect(scaled).toBeCloseTo((unscaled * arcadeSuperPm('morblass')) / 1000, 6);
     expect(scaled).toBeLessThan(unscaled);
-    expect(SUPER_TIDE_DAMAGE * arcadeSuperPm('morblass')).toBe(135_000);
+    expect(SUPER_TIDE_DAMAGE * arcadeSuperPm('morblass')).toBe(120_000);
   });
 
   it('a hero without a row keeps the unscaled super (bit-identical, whatever morblass has)', () => {
