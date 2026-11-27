@@ -7,8 +7,7 @@
     "src/game/fx/terrain-view.ts": 632,
     "src/game/hud/action-bar-view.ts": 522,
     "src/game/scenes/Arena.ts": 824,
-    "src/game/views/character-view.ts": 523,
-    "src/game/views/pose-layer.ts": 966
+    "src/game/views/character-view.ts": 523
   },
   "longFunctionFiles": [
     "src/game/app/arcade-versus.ts",
