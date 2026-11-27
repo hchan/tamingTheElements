@@ -29,10 +29,10 @@ const TEAM_LIFE: Record<string, readonly [team3: number, team2: number]> = {
   umbrel: [5475, 7117],
 };
 
-/** 1v1 life `hpPm` of all 24 heroes as of SIM_VERSION 120 (17 rows changed from v119; the rest are unchanged). */
+/** 1v1 life `hpPm` of all 24 heroes as of SIM_VERSION 120 (16 rows changed from v119; morblass reverted to its v119 life 3600; the rest are unchanged). */
 const HP_PM_V120: Record<string, number> = {
-  curomo: 6233, cyclonius: 4896, echo: 8269, fiara: 4235, ishimi: 5668, lavax: 3680, morblass: 3313, pax: 5380,
-  rokcore: 1787, sindarosa: 2708, treenoc: 6083, wispera: 8028, kindrel: 7487, nykra: 6250, quarrak: 3796,
+  curomo: 6233, cyclonius: 4896, echo: 8269, fiara: 4235, ishimi: 5668, lavax: 3680, morblass: 3600, pax: 5380,
+  rokcore: 1787, sindarosa: 2708, treenoc: 6282, wispera: 8028, kindrel: 7487, nykra: 6250, quarrak: 3796,
   hyalia: 6969, brazgor: 5942, glimmaw: 7200, durrok: 5532, zephra: 6100, ouroth: 7312, abyssor: 5707,
   vortigal: 6598, umbrel: 8296,
 };
