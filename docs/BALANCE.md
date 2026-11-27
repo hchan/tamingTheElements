@@ -718,3 +718,16 @@ MEASUREMENT (wall-pin probe, level 4, 16 seeds, idle P1): drawn overlap % main -
 MEASUREMENT (Hard tournament, `sim:match --ruleset arcade --ai-level 4 --tournament`): 12-hero roster, 16 seeds: mean |delta winRate| 0.94 pp, max 2.3 pp (treenoc), median pair length 75.9 -> 75.8 s, stalemates 0 -> 0. Full 24-race roster, 4 seeds: mean |delta| 1.64 pp (noise about +/-5 pp).
 
 MEASUREMENT (`balance:compare --ruleset arcade`): every one of the 24 races +0.0 pp (Normal level unaffected); stalemates 3 -> 3.
+
+## Morblass super scale (SIM_VERSION 122)
+
+Lever: `ARCADE_SUPER_PM` morblass 800 (Arcade only; Classic bit-identical). Morblass was .63 in 1v1 after v120; its unscaled Hailstorm wave is about half of its damage, and life and `damagePm` are weak levers (-8% life moved it only -0.8 pp), so the super is scaled directly (wave damage x0.8).
+
+| candidate | seed 1 | seed 41 | two-block mean | 2v2 morblass-led |
+|---|---|---|---|---|
+| 900 | n/a | n/a | .572 | .429 |
+| 800 (final) | .576 | .500 | .538 | .424 |
+
+All cells are MEASUREMENT (~/claudetmp/morblass/measure.md). At 800 no other hero is outside .40-.60, cross seed 1 is .480, stalemates 5 (900: 3).
+
+2v2 note: at 800 `balance:compare --team-size 2` flagged durrok 56.5 -> 43.5 (-13 pp). Attributed to 8-seed sampling noise, not morblass's own result (the 2v2 pairs are fixed and a morblass change shifts butterfly outcomes). The baseline is re-recorded next; a confirm run after the re-record is recommended.

@@ -8,7 +8,7 @@ import { sizeLifePm, sizeOfSlug } from '../data/size';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { compareStrings } from '../math/compare';
 import { combatantStats } from '../rules/progression';
-import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_2V2_LIFE_SCALE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm, fireBlastFadePm } from './arcade-numbers';
+import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_2V2_LIFE_SCALE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, ARCADE_SUPER_PM, arcadeSuperPm, cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm, fireBlastFadePm } from './arcade-numbers';
 import { createMatch, type MatchSetup } from './match';
 
 /** The 12 playable races (Arcade Versus and the tournaments): every character but the void ones. */
@@ -144,5 +144,12 @@ describe('Fire Blast falloff numbers (FUN-DESIGN 2.27)', () => {
     const def = ALL_ABILITIES.find((d) => d.id === FIRE_BLAST_ABILITY);
     expect(def).toBeDefined();
     expect(((def?.h ?? 0) * CHARACTER_HEIGHT) + 40).toBeLessThan(CHARACTER_HEIGHT);
+  });
+});
+
+describe('ARCADE_SUPER_PM', () => {
+  it('only morblass has a row (800); every other slug defaults to 1000', () => {
+    expect(ARCADE_SUPER_PM).toEqual({ morblass: 800 });
+    expect([arcadeSuperPm('morblass'), arcadeSuperPm('curomo'), arcadeSuperPm('dummy')]).toEqual([800, 1000, 1000]);
   });
 });

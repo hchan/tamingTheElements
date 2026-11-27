@@ -17,6 +17,8 @@ import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, EntityKind } from '../../state';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
+import { SUPER_TIDE_DAMAGE } from '../../../data/arcade-supers';
+import { ARCADE_SUPER_PM, arcadeRaceNumbers, arcadeSuperPm } from '../../arcade-numbers';
 import { applyArcadeHit, SUPER_DEF } from './hit';
 import { meterOf } from './meter';
 import { canAct, inSuper, isInvulnerable } from './stun';
@@ -283,5 +285,51 @@ describe('super determinism', () => {
       expect(play(world, cut, 400)).toEqual(first);
       expect(first).toEqual(a.slice(cut));
     }
+  });
+});
+
+describe('per-hero super scale (ARCADE_SUPER_PM)', () => {
+  /** Health removed by one TIDE super hit (base 150) from `caster` on a 100k-HP victim; the first hit, so no combo scale. */
+  const superHit = (caster: string): number => {
+    const world = duel(caster, 'rokcore', METER_BAR);
+    world.state.hp[1] = 100_000;
+    applyArcadeHit(world, new EventSink(0), 0, 0, 1, SUPER_TIDE_DAMAGE, SUPER_DEF, 0);
+    return 100_000 - world.state.hp[1];
+  };
+  const plainHit = (caster: string): number => {
+    const world = duel(caster, 'rokcore');
+    world.state.hp[1] = 100_000;
+    applyArcadeHit(world, new EventSink(0), 0, 0, 1, 100, 0, 0);
+    return 100_000 - world.state.hp[1];
+  };
+  /** Runs `f` with morblass's row set to `pm` (undefined = no row), then restores the table. */
+  const withRow = <T>(pm: number | undefined, f: () => T): T => {
+    const table = ARCADE_SUPER_PM as Record<string, number>;
+    const saved = table['morblass'];
+    if (pm === undefined) delete table['morblass']; else table['morblass'] = pm;
+    try { return f(); } finally { if (saved !== undefined) table['morblass'] = saved; }
+  };
+
+  it('morblass super is scaled by its pm (150 base -> 120 base-equivalent); the pm ratio holds against the unscaled hit', () => {
+    const unscaled = withRow(undefined, () => superHit('morblass'));
+    const scaled = superHit('morblass');
+    expect(unscaled).toBeGreaterThan(0);
+    expect(scaled).toBeCloseTo((unscaled * arcadeSuperPm('morblass')) / 1000, 6);
+    expect(scaled).toBeLessThan(unscaled);
+    expect(SUPER_TIDE_DAMAGE * arcadeSuperPm('morblass')).toBe(120_000);
+  });
+
+  it('a hero without a row keeps the unscaled super (bit-identical, whatever morblass has)', () => {
+    const a = superHit('curomo');
+    const b = withRow(undefined, () => superHit('curomo'));
+    const c = withRow(500, () => superHit('curomo'));
+    expect([b, c]).toEqual([a, a]);
+    expect(a).toBeGreaterThan(0);
+  });
+
+  it('non-super morblass hits keep damagePm and ignore the super row (Classic never calls applyArcadeHit, pinned in hit.test.ts)', () => {
+    expect(arcadeRaceNumbers('morblass')[1]).toBe(1092);
+    const plain = plainHit('morblass');
+    expect(withRow(500, () => plainHit('morblass'))).toBe(plain);
   });
 });
