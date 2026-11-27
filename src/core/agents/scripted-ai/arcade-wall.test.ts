@@ -9,6 +9,7 @@ import { ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from '../../sim/state';
 import { step } from '../../sim/step';
 import type { SimWorld } from '../../sim/world';
 import { getCharacter } from '../../data/characters';
+import { boxOfSlug, drawnExtraOfSlug } from '../../data/size';
 import { collectCommands } from '../agent';
 import { AI_EASY, AI_HARD, AI_NORMAL, stepApart, type ArcadeAiLevel } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
@@ -84,18 +85,19 @@ describe('Hard AI never stands inside its foe (WALL-2, WALL-3b)', () => {
 interface WallStats { walled: boolean; post: number; over: number; gaps: number[] }
 
 /** Idle team-0 sindarosa against Hard rokcore for 40 s: fight-phase ticks, both alive, after the first wall contact. */
-function idleAgainstHard(seed: number): WallStats {
+function idleAgainstHard(seed: number, hero = 'rokcore', pin = false): WallStats {
   const setup: MatchSetup = {
     simVersion: 85, seed: 0x5eed + seed, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
     p1: [{ character: characterId('sindarosa'), xp: 1 }],
-    p2: [{ character: characterId('rokcore'), xp: 1 }],
+    p2: [{ character: characterId(hero), xp: 1 }],
   };
   const w = createMatch(setup);
   const s = w.state;
-  const ai = makeAgent('rokcore', 'sindarosa', AI_HARD);
+  const ai = makeAgent(hero, 'sindarosa', AI_HARD);
   const idle = { id: 'idle', observe: () => 0, save: () => null, load: () => undefined };
   const out: WallStats = { walled: false, post: 0, over: 0, gaps: [] };
   for (let t = 0; t < 50 * 40; t++) {
+    if (pin && t === 0) s.x[0] = arcadePlayfield().x;
     step(w, collectCommands(w, [idle, ai] as never));
     if ((s.x[0] ?? 0) <= 2) out.walled = true;
     const fight = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] === RoundPhase.fight;
@@ -116,7 +118,7 @@ describe('match level: idle P1 against Hard (WALL-3b)', () => {
   // 10th-percentile gap of 166 px (still no overlap), so seed 7 (201 px, no overlap) replaces it; thresholds unchanged.
   const SEEDS = [1, 2, 7, 4, 6];
   it('at least four seeds reach a wall, the pooled overlap is under 2% (under 5% per seed) and the gap stays open', () => {
-    const stats = SEEDS.map(idleAgainstHard);
+    const stats = SEEDS.map((seed) => idleAgainstHard(seed));
     const walled = stats.filter((x) => x.walled && x.post > 0);
     expect(walled.length).toBeGreaterThanOrEqual(4);
     const post = walled.reduce((n, x) => n + x.post, 0);
@@ -127,5 +129,22 @@ describe('match level: idle P1 against Hard (WALL-3b)', () => {
       expect(x.over / x.post).toBeLessThan(0.05);
       expect(x.gaps[Math.floor(x.gaps.length * 0.1)] ?? 0).toBeGreaterThanOrEqual(180);
     }
+  });
+});
+
+describe('match level: wide melee Hard hero holds its drawn overhang (SIM_VERSION 121)', () => {
+  const HOLD = 32;
+  // Durrok is not held by the rule at all (its gap sits at the touching distance: a pre-existing bypass, see the report), so only brazgor is pinned.
+  it.each(['brazgor'])('%s keeps a median centre distance >= (w0+w1)/2 + hold - slack + extra at the wall', (hero) => {
+    const extra = drawnExtraOfSlug(hero) + drawnExtraOfSlug('sindarosa');
+    expect(extra).toBeGreaterThan(0);
+    const w = boxOfSlug(hero)[0];
+    const min = (boxOfSlug('sindarosa')[0] + w) / 2 + HOLD - 16 + extra;
+    const walled = [1, 2, 7].map((seed) => idleAgainstHard(seed, hero, true)).filter((x) => x.walled && x.post > 0);
+    expect(walled.length).toBeGreaterThanOrEqual(2);
+    for (const x of walled) expect(x.gaps[Math.floor(x.gaps.length * 0.5)] ?? 0).toBeGreaterThanOrEqual(min);
+  });
+  it('a ranged or unlisted hero adds nothing (extra 0)', () => {
+    expect(drawnExtraOfSlug('rokcore') + drawnExtraOfSlug('sindarosa')).toBe(0);
   });
 });

@@ -488,9 +488,10 @@ const MOVE_BITS = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
  * `self` on the field side; equal centres count as "foe at the wall") and level with it. Overlapped boxes get the walking bit
  * away from the foe (`stepApart` when there is no room that way), whether or not the foe is stunned or rooted; closer than the hold
  * gap (melee or ranged) minus the slack the hero backs off, and inside the band it stops walking in and keeps its attack bits.
+ * `extra` (SIM_VERSION 121, integer px) is added to the MELEE hold only: the drawn overhang of the two heroes toward each other.
  * One movement bit at most, never a diagonal. Farther than the hold gap, or with no vertical overlap, `cmd` is unchanged.
  */
-export function wallHold(self: Aabb, opp: Aabb, cmd: Command, pf: Aabb, ranged: boolean): Command {
+export function wallHold(self: Aabb, opp: Aabb, cmd: Command, pf: Aabb, ranged: boolean, extra = 0): Command {
   const sc = self.x + self.w / 2;
   const oc = opp.x + opp.w / 2;
   const left = opp.x - pf.x <= ARCADE_AI_WALL_NEAR_PX && oc <= sc;
@@ -507,7 +508,7 @@ export function wallHold(self: Aabb, opp: Aabb, cmd: Command, pf: Aabb, ranged: 
     const apart = stepApart(self, opp, pf);
     return apart === 0 ? cmd : (cmd & ~MOVE_BITS) | apart;
   }
-  const hold = ranged ? ARCADE_AI_WALL_HOLD_RANGED_PX : ARCADE_AI_WALL_HOLD_MELEE_PX;
+  const hold = ranged ? ARCADE_AI_WALL_HOLD_RANGED_PX : ARCADE_AI_WALL_HOLD_MELEE_PX + extra;
   if (gap > hold) return cmd;
   if (gap < hold - ARCADE_AI_WALL_HOLD_SLACK_PX && room > 0) return (cmd & ~MOVE_BITS) | awayBit;
   return cmd & ~towardBit;

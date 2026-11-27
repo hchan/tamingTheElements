@@ -3,6 +3,7 @@ import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, Arcade
 import type { SimWorld } from '../sim/world';
 import { ARCADE_SNAG_SLOT, CC_RIDERS, CcKind, ELEMENTAL_COOLDOWN_TICKS, SNAG_FIRE_ABILITIES } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
+import { drawnExtraOfSlug } from '../data/size';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
 import { ccLevel, ccOn } from '../sim/systems/arcade/cc-state';
@@ -28,6 +29,16 @@ export interface FighterView {
   readonly maxHp: number;
   readonly flags: number;
   readonly alive: boolean;
+}
+
+function drawnExtraOfDef(s: SimState, f: FighterView | undefined): number {
+  return f === undefined ? 0 : drawnExtraOfSlug(CHARACTERS[s.defId[f.id] ?? 0]?.id ?? '');
+}
+
+/** `{ wallExtra }` only when non-zero, so a view of two unlisted heroes is the same object as before SIM_VERSION 121. */
+function wallExtraOf(s: SimState, self: FighterView | undefined, opp: FighterView | undefined): { wallExtra?: number } {
+  const e = drawnExtraOfDef(s, self) + drawnExtraOfDef(s, opp);
+  return e === 0 ? {} : { wallExtra: e };
 }
 
 /** Read-only facade over a SimWorld for one side. Mutable arrays are never exposed. */
@@ -63,6 +74,8 @@ export interface ArcadeView {
   readonly superActive: boolean;
   /** The id of the super this side's fighter casts (`SuperSpec.id`; 0 is the generic Elemental Burst). */
   readonly superId: number;
+  /** Sum of both fighters' drawn overhang allowances in px (`CHARACTER_DRAWN_EXTRA_PX`; Hard AI wall hold); absent reads as 0. */
+  readonly wallExtra?: number;
   /** Round phase (a `RoundPhase`, FUN-DESIGN 2.10): only `fight` (1) lets anyone act. */
   readonly phase: number;
   /**
@@ -309,6 +322,7 @@ function arcadeViewOf(
     oppCombo: team(1 - side, ArcadeT.comboHits),
     superActive: team(side, ArcadeT.superState) !== 0,
     superId: self === undefined ? 0 : superSpecOf(s, self.id).id,
+    ...wallExtraOf(s, self, opp),
     phase: roundPhase(s),
     prevCmd: team(side, ArcadeT.prevCmd),
     primaryAge: pressAge(s, side, Press.primary),

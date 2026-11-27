@@ -43,6 +43,15 @@ describe('wallHold (Hard AI gap rule, WALL-3b)', () => {
     // gap 5 < 16.
     expect(wallHold(box(45, 100), box(0, 100), atk, pf, false)).toBe(atk | Cmd.right);
   });
+  it('a wide melee hero (extra) backs off inside the longer hold; extra 0 is unchanged (SIM_VERSION 121)', () => {
+    // gap 20: extra 0 = in the band (drops the toward bit only); extra 30 = hold 62, 20 < 62 - 16, so it backs off.
+    expect(wallHold(box(60, 100), box(0, 100), Cmd.left | atk, pf, false, 0)).toBe(atk);
+    expect(wallHold(box(60, 100), box(0, 100), Cmd.left | atk, pf, false, 30)).toBe(atk | Cmd.right);
+    // Ranged ignores extra: gap 60 is inside the ranged hold either way.
+    expect(wallHold(box(100, 100), box(0, 100), Cmd.left, pf, true, 30)).toBe(wallHold(box(100, 100), box(0, 100), Cmd.left, pf, true));
+    // Past hold + extra the command is unchanged.
+    expect(wallHold(box(120, 100), box(0, 100), Cmd.left, pf, false, 30)).toBe(Cmd.left);
+  });
   it('holds a longer gap for a ranged hero', () => {
     // gap 60: past the melee hold (32), inside the ranged one (144).
     expect(wallHold(box(100, 100), box(0, 100), Cmd.left, pf, false)).toBe(Cmd.left);

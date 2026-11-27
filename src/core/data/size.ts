@@ -116,3 +116,31 @@ export function boxOfDef(defIdx: number): readonly [number, number] {
   const c = CHARACTERS[defIdx];
   return c === undefined ? [CHARACTER_WIDTH, CHARACTER_HEIGHT] : boxOfSlug(c.id);
 }
+
+/**
+ * Drawn overhang allowance (SIM_VERSION 121, Arcade Hard AI melee wall hold only): integer px per side that a melee hero's art is
+ * wider than its sim box (the view draws at `arcadeHeroScale`). Measured idle overhang per side (opaque alpha >= 32, widest idle
+ * frame; left/right): curomo 40/35, pax 39/38, treenoc 38/35, echo 40/39, wispera 34/25, kindrel 38/37, nykra 37/37, brazgor 34/32,
+ * durrok 44/45, ouroth 69/69, abyssor 20/21, vortigal 39/41. FIRST GUESS = 50% of that: the wall clamp (`boxSpanX`) already hides
+ * the pinned foe's overhang, and the worst attack frames are brief. Step 2 measures the drawn overlap and may refit these numbers.
+ * Ranged heroes and unlisted ones are 0. Sim data (changing a value bumps SIM_VERSION).
+ */
+export const CHARACTER_DRAWN_EXTRA_PX: Readonly<Record<string, number>> = {
+  curomo: 19,
+  pax: 19,
+  treenoc: 18,
+  echo: 20,
+  wispera: 15,
+  kindrel: 19,
+  nykra: 18,
+  brazgor: 17,
+  durrok: 22,
+  ouroth: 35,
+  abyssor: 10,
+  vortigal: 20,
+};
+
+/** Drawn overhang allowance in px per side of character `slug` (0 when not listed). */
+export function drawnExtraOfSlug(slug: string): number {
+  return CHARACTER_DRAWN_EXTRA_PX[slug] ?? 0;
+}
