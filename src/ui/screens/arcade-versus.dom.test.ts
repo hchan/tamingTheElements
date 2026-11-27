@@ -483,3 +483,19 @@ describe('arcadeResultsView (DOM)', () => {
     expect(draw.dataset['player']).toBeUndefined();
   });
 });
+
+describe('Jump to Fight', () => {
+  it('is the first control of the form and moves focus to Fight, or to Random while Fight is disabled', () => {
+    const page = mount();
+    const jump = page.querySelector<HTMLButtonElement>('.vsJumpFight');
+    expect(jump?.textContent).toBe('Jump to Fight');
+    expect(page.querySelector('form')?.querySelector('button, select, input, a')).toBe(jump);
+    const start = document.getElementById('arcadeStart') as HTMLButtonElement;
+    start.disabled = false;
+    jump?.click();
+    expect(document.activeElement).toBe(start);
+    start.disabled = true;
+    jump?.click();
+    expect(document.activeElement?.id).toBe('arcadeRandom');
+  });
+});
