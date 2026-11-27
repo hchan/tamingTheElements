@@ -725,7 +725,7 @@ Lever: `ARCADE_SUPER_PM` morblass 800 (Arcade only; Classic bit-identical). Morb
 
 | candidate | seed 1 | seed 41 | two-block mean | 2v2 morblass-led |
 |---|---|---|---|---|
-| 900 | n/a | n/a | .572 | .429 |
+| 900 | .592 | .552 | .572 | .429 |
 | 800 (final) | .576 | .500 | .538 | .424 |
 
 All cells are MEASUREMENT (~/claudetmp/morblass/measure.md). At 800 no other hero is outside .40-.60, cross seed 1 is .480, stalemates 5 (900: 3).
