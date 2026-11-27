@@ -28,14 +28,19 @@ describe('fx draw tweaks seam in ProjectileView (emberBite, abyssFlash)', () => 
     } as unknown as Phaser.Scene;
     return { view: new ProjectileView(scene), log };
   }
-  it('draws the bite 1.6x, one body length ahead and additive, without touching the hit box', () => {
+  it('draws the bite 2.1x, one body length ahead and additive, without touching the hit box', () => {
     const { view, log } = setup();
     log.blend.length = 0;
     view.apply({ id: 1, team: 0, sprite: 'emberBite', dir: 0, x: 300, y: 200, px: 0, py: 0, w: 48, h: 34 }, 1, true);
-    expect(log.size.at(-1)).toEqual([48 * 1.6, 34 * 1.6]);
-    expect(log.pos.at(-1)).toEqual([300 + 24 + 40, 200 + 17]);
+    expect(log.size.at(-1)).toEqual([48 * 2.1, 34 * 2.1]);
+    expect(log.pos.at(-1)).toEqual([300 + 24 + 48, 200 + 17]);
     expect(log.blend.at(-1)).toBe(1);
     expect(view.image.alpha).toBe(1);
+  });
+  it('shifts a west-facing bite the other way', () => {
+    const { view, log } = setup();
+    view.apply({ id: 1, team: 0, sprite: 'emberBite', dir: 4, x: 300, y: 200, px: 0, py: 0, w: 48, h: 34 }, 1, true);
+    expect(log.pos.at(-1)).toEqual([300 + 24 - 48, 200 + 17]);
   });
   it('draws abyssFlash 1.8x and a plain melee sprite on normal blend', () => {
     const { view, log } = setup();

@@ -197,7 +197,7 @@ export class ProjectileView {
     const tw = applyFxTweak(p.sprite, look.w, look.h, fade, p.dir);
     look.w = tw.w;
     look.h = tw.h;
-    this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip).setAlpha(tw.alpha).setBlendMode(tw.additive ? BLEND_ADD : BLEND_NORMAL);
+    this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip).setAlpha(tw.alpha).setTint(tw.tint).setBlendMode(tw.additive ? BLEND_ADD : BLEND_NORMAL);
     // Melee boxes carry no previous position (px/py unset): never lerp from it. Lunge and spin boxes follow the caster each tick, so
     // the caller's `shift` (drawn caster minus sim caster) keeps the art on the smoothly drawn body.
     const a = melee ? 1 : alpha;

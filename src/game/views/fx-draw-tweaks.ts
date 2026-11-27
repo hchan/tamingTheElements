@@ -8,6 +8,10 @@ export interface FxDrawTweak {
   readonly scale: number;
   /** Floor for the drawn alpha (1 = fully opaque). */
   readonly minAlpha: number;
+  /** Multiplier applied after the floor (abyssFlash 0.9 keeps some teal in the core). */
+  readonly alphaMul: number;
+  /** Tint (0xffffff = none); a flame-orange base so the bite does not read as spark confetti. */
+  readonly tint: number;
   /** Draw with additive blending (the sprite glows instead of reading as a dark box). */
   readonly additive: boolean;
   /** Shift the art this many px along the attack heading (one body length for a bite at the jaw). */
@@ -15,25 +19,25 @@ export interface FxDrawTweak {
 }
 
 /** Hero body length (px) used for "one body length ahead" of a bite; an estimate, tune against the real-game capture. */
-export const BODY_LENGTH_PX = 40;
+export const BODY_LENGTH_PX = 48;
 
 export const FX_DRAW_TWEAKS: Readonly<Record<string, FxDrawTweak>> = {
-  emberBite: { scale: 1.6, minAlpha: 1, additive: true, forwardPx: BODY_LENGTH_PX },
+  emberBite: { scale: 2.1, minAlpha: 1, alphaMul: 1, tint: 0xff7a1a, additive: true, forwardPx: BODY_LENGTH_PX },
   // Omni embers already fly along their own heading (rotationForDir), so the spray fans out in the facing direction; no extra shift.
-  cinderSpray: { scale: 1.5, minAlpha: 1, additive: true, forwardPx: 0 },
-  abyssFlash: { scale: 1.8, minAlpha: 0, additive: true, forwardPx: 0 },
+  cinderSpray: { scale: 1.5, minAlpha: 1, alphaMul: 1, tint: 0xffffff, additive: true, forwardPx: 0 },
+  abyssFlash: { scale: 1.8, minAlpha: 0, alphaMul: 0.9, tint: 0xffffff, additive: true, forwardPx: 0 },
 };
 
 const DIR_X = [1, 1, 0, -1, -1, -1, 0, 1] as const;
 const DIR_Y = [0, -1, -1, -1, 0, 1, 1, 1] as const;
 
-export interface FxDrawResult { readonly w: number; readonly h: number; readonly alpha: number; readonly dx: number; readonly dy: number; readonly additive: boolean }
+export interface FxDrawResult { readonly w: number; readonly h: number; readonly alpha: number; readonly tint: number; readonly dx: number; readonly dy: number; readonly additive: boolean }
 
 /** The drawn size, alpha, offset and blend for `sprite` heading dir8 `dir`; unlisted sprites come back unchanged. */
 export function applyFxTweak(sprite: string, w: number, h: number, alpha: number, dir: number): FxDrawResult {
   const t = FX_DRAW_TWEAKS[sprite];
-  if (!t) return { w, h, alpha, dx: 0, dy: 0, additive: false };
+  if (!t) return { w, h, alpha, tint: 0xffffff, dx: 0, dy: 0, additive: false };
   const d = dir & 7;
   const len = (d & 1) === 1 ? 0.7071 : 1;
-  return { w: w * t.scale, h: h * t.scale, alpha: Math.max(alpha, t.minAlpha), dx: (DIR_X[d] ?? 0) * len * t.forwardPx, dy: (DIR_Y[d] ?? 0) * len * t.forwardPx, additive: t.additive };
+  return { w: w * t.scale, h: h * t.scale, alpha: Math.max(alpha, t.minAlpha) * t.alphaMul, tint: t.tint, dx: (DIR_X[d] ?? 0) * len * t.forwardPx, dy: (DIR_Y[d] ?? 0) * len * t.forwardPx, additive: t.additive };
 }
