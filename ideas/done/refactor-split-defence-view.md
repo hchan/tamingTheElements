@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-21
 epic: [process-and-docs](../epics/process-and-docs.md)
 ---
@@ -11,3 +11,5 @@ epic: [process-and-docs](../epics/process-and-docs.md)
 - Proposed seams: (1) pool sizes, depths and `DefenceState`/prefs types into `defence-types`; (2) `mountDefenceView` (the bulk of the file) into guard/dash/parry sub-mounts (sparks, rings, pops, dash afterimages); (3) rope loops and afterimage trails as their own helper module; (4) HUD-rect and bar drawing helpers.
 - Risk: Low: src/game is render-only (no sim state). Sonnet builds directly; check with a real-game screenshot or the touched e2e specs.
 - Acceptance: `gate:commit` passes; the grandfather entry is removed or lowered; one REPO-MAP line per new file; no behaviour change (no golden or snapshot re-record).
+
+Done 2026-11-27: the call-out pops (Texts, placement, published rects) moved to `src/game/fx/defence-pops.ts` (`createPopBoard`); `defence-view.ts` 704 -> 484 lines, `defence-pops.ts` 271; grandfather line cap removed (long-function entry stays). Pure refactor, no behaviour change.
