@@ -18,8 +18,8 @@ describe('ko collapse', () => {
   });
 
   it('pins lavax and morblass (legacy: no flag needed)', () => {
-    expect(KO_COLLAPSE['lavax']).toMatchObject({ particle: 'ash', scaleY: 0.6 });
-    expect(KO_COLLAPSE['morblass']).toMatchObject({ particle: 'droplet', scaleX: 1.3, scaleY: 0.4, alpha: 0.85, color: '#3f6f80', rest: { particle: 'splat', count: 6 }, shadow: 0.3, floor: 24 });
+    expect(KO_COLLAPSE['lavax']).toMatchObject({ particle: 'ash', scaleY: 0.42 });
+    expect(KO_COLLAPSE['morblass']).toMatchObject({ particle: 'droplet', scaleX: 1.3, scaleY: 0.4, alpha: 0.85, color: '#3f6f80', rest: { particle: 'splat', count: 6 }, shadow: 0.3, floor: 14 });
     for (const h of ['lavax', 'morblass']) {
       expect(KO_COLLAPSE_LEGACY.has(h), h).toBe(true);
       expect(koCollapseFor(h, true, '', false), h).toBe(KO_COLLAPSE[h]);
@@ -53,12 +53,12 @@ describe('ko collapse', () => {
       expect(f.alpha, h).toBeGreaterThanOrEqual(0.55);
       expect(f.scaleY, h).toBeGreaterThanOrEqual(0.2);
     }
-    for (const h of ['morblass', 'rokcore']) expect(KO_COLLAPSE[h]?.shadow, h).toBe(0.3);
+    for (const h of ['fiara', 'cyclonius', 'lavax', 'morblass', 'rokcore']) expect(KO_COLLAPSE[h]?.shadow, h).toBe(0.3);
     expect(koParticles({ particle: 'mote', count: 7, color: '#fff', ms: 1000 }).every((p) => p.size <= 4 && p.dy < 0)).toBe(true);
   });
 
   it('floor anchors sit the pile on the name label line (round 2); ripple, ring and streak ellipses exist', () => {
-    for (const h of ['fiara', 'cyclonius', 'lavax']) expect(KO_COLLAPSE[h]?.floor, h).toBeUndefined();
+    expect(['fiara', 'cyclonius', 'lavax'].map((h) => KO_COLLAPSE[h]?.floor)).toEqual([32, 62, 26]);
     expect(KO_COLLAPSE['morblass']?.color).toBe('#3f6f80');
     expect(koParticles({ particle: 'wisp', count: 9, color: '#fff', ms: 1000 })).toHaveLength(9);
   });

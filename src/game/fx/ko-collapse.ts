@@ -39,11 +39,11 @@ export interface KoCollapseSpec {
 export interface KoEllipse { readonly w: number; readonly h: number; readonly alpha: number; readonly color: string; readonly blur: number; readonly ring?: boolean }
 
 export const KO_COLLAPSE: Readonly<Record<string, KoCollapseSpec>> = {
-  fiara: { scaleX: 1, scaleY: 0.5, alpha: 1, filter: 'brightness(0.6) sepia(1) saturate(2.2) hue-rotate(-18deg)', ms: 900, particle: 'ember', count: 9, color: '#ff8a2a' },
-  cyclonius: { scaleX: 1.25, scaleY: 0.55, alpha: 0.6, filter: 'grayscale(0.55) sepia(0.25) hue-rotate(180deg) brightness(0.85)', ms: 900, particle: 'dust', count: 7, color: '#8899aa' },
+  fiara: { scaleX: 1, scaleY: 0.5, alpha: 1, filter: 'brightness(0.6) sepia(1) saturate(2.2) hue-rotate(-18deg)', ms: 900, particle: 'ember', count: 9, color: '#ff8a2a', shadow: 0.3, floor: 32 },
+  cyclonius: { scaleX: 1.25, scaleY: 0.55, alpha: 0.6, filter: 'grayscale(0.55) sepia(0.25) hue-rotate(180deg) brightness(0.85)', ms: 900, particle: 'dust', count: 7, color: '#8899aa', shadow: 0.3, floor: 62 },
   // Lavax: cools to grey ash and slumps. Morblass: a splash up, then a wide puddle. (Wispera and Echo fell back to the plain loser face after two failed rounds, art-director 2026-11-26.)
-  lavax: { scaleX: 1.05, scaleY: 0.6, alpha: 0.9, filter: 'grayscale(0.95) brightness(0.55) contrast(0.9)', ms: 1400, particle: 'ash', count: 10, color: '#6e6a66' },
-  morblass: { scaleX: 1.3, scaleY: 0.4, alpha: 0.85, filter: 'brightness(0.8) sepia(1) saturate(1.6) hue-rotate(135deg)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#3f6f80', rest: { particle: 'splat', count: 6, color: '#3f6f80' }, shadow: 0.3, floor: 24 },
+  lavax: { scaleX: 1.15, scaleY: 0.42, alpha: 0.9, filter: 'grayscale(0.95) brightness(0.55) contrast(0.9)', ms: 1400, particle: 'ash', count: 10, color: '#6e6a66', shadow: 0.3, floor: 26 },
+  morblass: { scaleX: 1.3, scaleY: 0.4, alpha: 0.85, filter: 'brightness(0.8) sepia(1) saturate(1.6) hue-rotate(135deg)', ms: 1000, mid: { at: 0.3, scaleX: 1.1, scaleY: 1.12, alpha: 1 }, particle: 'droplet', count: 11, color: '#3f6f80', rest: { particle: 'splat', count: 6, color: '#3f6f80' }, shadow: 0.3, floor: 14 },
   // Rokcore: crumbles in a shudder and settles into rubble. (Wispera, Echo and Ishimi fell back to the plain loser face, art-director 2026-11-26.)
   rokcore: { scaleX: 1.2, scaleY: 0.5, alpha: 1, filter: 'grayscale(0.4) brightness(0.65) contrast(1.1)', ms: 1200, mid: { at: 0.45, scaleX: 1.04, scaleY: 0.8, alpha: 1 }, particle: 'dust', count: 12, color: '#8a7a68', shadow: 0.3, floor: 22 },
 };
