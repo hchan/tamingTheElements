@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-15
 ---
 
@@ -15,4 +15,4 @@ added: 2026-11-15
 - Phone portrait item: closed, obsolete (owner dropped phone work 2026-11-19).
 - Roster24 at 800x600: already covered, `tests/e2e/picker-bar.spec.ts` runs the picker at 800x600 (bar below the scroll region, no sideways scroll).
 - Keyboard "Jump to Fight": done, a first-Tab "Jump to Fight" chip (shown on focus) in the Versus picker moves focus to Fight (or Random while Fight is disabled); test in `src/ui/screens/arcade-versus.dom.test.ts`.
-- Left open: the same chip for the World Tour (`tour.ts`) picker, which shares the "More below" cue.
+- World Tour picker: same chip via the shared `jumpToFightChip` in `src/ui/dom.ts` (focuses Start tour, or Random while Start waits); dom test in `tour.dom.test.ts`. Nothing left open.

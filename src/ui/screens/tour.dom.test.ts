@@ -180,6 +180,19 @@ describe('tourPickView', () => {
   const startBtn = (): HTMLButtonElement => document.getElementById('tourStart') as HTMLButtonElement;
   const hint = (): string => document.getElementById('tourHint')?.textContent ?? '';
 
+  it('has a first-Tab Jump to Fight chip that focuses Start tour, or Random while Start waits', () => {
+    const page = mount();
+    const jump = page.querySelector<HTMLButtonElement>('.vsJumpFight');
+    expect(jump?.textContent).toBe('Jump to Fight');
+    expect(page.querySelector('form')?.querySelector('button, select, input, a')).toBe(jump);
+    startBtn().disabled = false;
+    jump?.click();
+    expect(document.activeElement).toBe(startBtn());
+    startBtn().disabled = true;
+    jump?.click();
+    expect(document.activeElement?.id).toBe('tourRandom');
+  });
+
   // Preselection is not asserted: happy-dom mis-reports option.selected for options set before they are attached.
   it('keeps three labelled hidden selects, each listing every race', () => {
     mount(vi.fn(), ['lavax', 'sindarosa', 'rokcore']);
