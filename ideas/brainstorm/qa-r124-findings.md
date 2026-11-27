@@ -61,3 +61,9 @@ On the 2v2 defeat screen (`54-2v2-results.png`) the player's hero art is a large
 - Hit weight is still light: no visible hit-stop or shake in the stepped frames (open since r123).
 - In stepped 1v1 (300 ticks, no input) the foe did not close in; live play and Tour did (not a bug claim, the stepped harness may pause the AI). The first-run hint ("First blood...") sits low and faint (`10-1v1-fire-b.png`).
 - Machine load was 17 to 33 during runs; shots were taken with fixed waits, so this does not affect findings.
+
+## Progress
+
+- 2026-11-26 triage on main 7a301ff6. Already fixed: r123 1 Help chips (grid, help.css qa-r127), r123 2 More-below strip (97bd3ce5), r123 3 Key Bindings scroll (router scrollTo(0,0)), new 3 Settings touch block hidden on desktop (hasTouchScreen), combo text under cut-in (4bce6f61), new 2 duplicate "Opponent:" row (no longer in src), new 4 results portraits (winner large, other side small by design, match-end.css).
+- Built: status chips are skipped while the super cut-in band overlaps them (`chipHiddenByCut`, r123 6); test in combo-cut.test.ts.
+- Open: r123 4 (bar labels vs bindings table), r123 5 (per-hero life on Tour card), r123 7, new 1 (persisted picker cue; owner call), feel notes (hit-stop, earth stage).

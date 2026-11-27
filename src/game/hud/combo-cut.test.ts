@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { comboCutFade, comboCutFadeOf } from './combo-cut';
+import { chipHiddenByCut, comboCutFade, comboCutFadeOf } from './combo-cut';
 import { CUT_BAND_KEY } from './cut-numbers';
 
 const band = { top: 200, bottom: 280 };
@@ -18,5 +18,14 @@ describe('comboCutFade', () => {
     expect(comboCutFadeOf(r, 290, 1, 60)).toBe(0); // origin bottom: box 230..290
     expect(comboCutFadeOf(r, 290, 0, 60)).toBe(1); // origin top: box 290..350
     expect(comboCutFadeOf({ get: () => undefined }, 290, 1, 60)).toBe(1);
+  });
+});
+
+describe('chipHiddenByCut', () => {
+  it('is true only for a status chip box overlapping the published band', () => {
+    const r = { get: (k: string) => (k === CUT_BAND_KEY ? band : undefined) };
+    expect(chipHiddenByCut(r, 190, 20)).toBe(true);
+    expect(chipHiddenByCut(r, 100, 20)).toBe(false);
+    expect(chipHiddenByCut({ get: () => undefined }, 190, 20)).toBe(false);
   });
 });
