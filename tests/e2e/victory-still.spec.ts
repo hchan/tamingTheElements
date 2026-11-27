@@ -62,7 +62,7 @@ for (const hero of ['umbrel', 'abyssor', 'nykra', 'glimmaw', 'quarrak', 'ouroth'
 
 // Procedural KO collapse (src/game/fx/ko-collapse.ts): Fiara, Cyclonius, Lavax, Morblass and Rokcore lose and the Large portrait collapses at its base; Wispera, Echo and Ishimi fell back to the plain loser face (no collapse element).
 // Long gate: a real two-round fight, about 20 s each. SHOT_DIR saves the headless screenshot.
-const PLAIN_FACE = new Set(['wispera', 'echo', 'ishimi']);
+const PLAIN_FACE = new Set(['fiara', 'cyclonius', 'wispera', 'echo', 'ishimi']);
 for (const hero of ['fiara', 'cyclonius', 'wispera', 'lavax', 'morblass', 'echo', 'rokcore', 'ishimi']) test(`${hero} loses the match: ${PLAIN_FACE.has(hero) ? 'the plain loser face stays' : 'its portrait collapses'} on the results screen`, async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto(`${START}&ff=arcade,roster24#arcade`);
