@@ -1,6 +1,6 @@
 import { type CharacterId } from '@core/index';
 import { CHARACTERS } from '@core/menu-index';
-import { el, markMoreBelow } from '../dom';
+import { el, jumpToFightChip, markMoreBelow } from '../dom';
 import { faceUrl } from './hero-panel';
 import { heroLife, raceLabel, rosterView } from './roster-view';
 import '../styles/picker-compact.css';
@@ -289,11 +289,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const scroll = el('div', 'pickScroll');
   scroll.append(set, hint);
   // Keyboard shortcut past the long roster: first Tab stop, shown on focus, moves focus to Fight (or Random while Fight waits on empty slots).
-  const jump = el('button', 'menuButton vsJumpFight', 'Jump to Fight');
-  jump.type = 'button';
-  jump.addEventListener('click', () => {
-    (start.disabled ? random : start).focus();
-  });
+  const jump = jumpToFightChip([start, random]);
   form.append(jump, scroll, actions);
   const more = markMoreBelow(scroll);
   const sync = (): void => {

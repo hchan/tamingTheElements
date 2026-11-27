@@ -132,8 +132,8 @@
   }
 }
 
-/* "Jump to Fight" (arcade-versus.ts): out of sight until keyboard focus, then a small chip over the top-left of the picker. */
-#menu #arcadePick .vsJumpFight:not(:focus-visible) {
+/* "Jump to Fight" (arcade-versus.ts, tour.ts via jumpToFightChip in dom.ts): out of sight until keyboard focus, then a small chip over the top-left of the picker. */
+#menu :is(#arcadePick, #tourPick) .vsJumpFight:not(:focus-visible) {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -144,7 +144,7 @@
   white-space: nowrap;
   border: 0;
 }
-#menu #arcadePick .vsJumpFight:focus-visible {
+#menu :is(#arcadePick, #tourPick) .vsJumpFight:focus-visible {
   align-self: flex-start;
   margin: 4px 8px 0;
 }

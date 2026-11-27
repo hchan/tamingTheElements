@@ -14,7 +14,7 @@ Main menu, hero picker, Tour screens and ladder, splash art; the first things a 
 
 Member ideas, in suggested priority order (work them as separate small work packages):
 
-- [picker-followups](../brainstorm/picker-followups.md): Picker follow-ups after PB1. - PB2 (planned separately, see ~/claudetmp/plans/picker-fightbar-plan.md).
+- [picker-followups](../done/picker-followups.md): Picker follow-ups after PB1. - PB2 (planned separately, see ~/claudetmp/plans/picker-fightbar-plan.md).
 - [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md) (in progress): Picker: the Fight / Start bar takes its own space (PB1). The picker page scrolled and the bar was position:
 - [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md) (in progress): QA: Versus and Play put the start button below the fold at 1280x720. At 1280x720 the Fight! button on Versus is clipped at the bottom edge and the Play roster is long enough that Start is out of view.
 - [one-game-menu](../in-progress/one-game-menu.md) (in progress): One game, five-entry menu. Menu: Play, Versus, Online, Settings, Help.
@@ -44,7 +44,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### MT-1 Picker and menu cleanup
 
-- Members: [picker-followups](../brainstorm/picker-followups.md), [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md), [mvc-character-select-with-ability-info](../in-progress/mvc-character-select-with-ability-info.md), [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md), [menu-cleanup](../brainstorm/menu-cleanup.md)
+- Members: [picker-followups](../done/picker-followups.md), [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md), [mvc-character-select-with-ability-info](../in-progress/mvc-character-select-with-ability-info.md), [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md), [menu-cleanup](../brainstorm/menu-cleanup.md)
 - Size: M
 - Shared files: src/ui/* (menu, versus picker), main.css
 - Flags: needs browser/e2e; menu stays five entries (menu-cleanup comes after the online flow per the owner)
