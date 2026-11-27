@@ -36,3 +36,11 @@ Online screen; phone viewports (owner dropped); live-clock feel (stepped manuall
 ## Smoke
 
 `pnpm e2e:smoke`: 15 passed, 0 failed (2m02s). e2e ran on: PC (job 20261119-093517-short-6f1e39, short lane) -> exit 0
+
+## Progress note (view-only triage check, 2026-11-27)
+
+Checked against main (b4d6873a): all three view-only items of the triage plan are already fixed, so no code change.
+- Smaller hit burst (item 5): `IMPACT_SIZE = 72` in `src/game/fx/impact-view.ts`, alpha fade; target flash/recoil in `character-view.ts`.
+- Super cut-in damage number depth (item 7): ac684905c (`tte.cutBand`, `cutNumberFadeOf`, test `cut-numbers.test.ts`), also recorded in qa-r119-findings.md; status chips skip the band (6e425efe).
+- FIGHT banner offset when close (item 8): 66a1708e (banner dims while a fighter sits under it), c483d098 (banner ends shortly after the first hit), e2e settle fix f513281f.
+Still open: HUD vs picker life scale (2), water stage props (3, needs art-director), AI footsies (4, sim work, Opus plan first). File stays in brainstorm.
