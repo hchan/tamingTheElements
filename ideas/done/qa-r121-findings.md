@@ -1,6 +1,6 @@
 # QA r121 findings
 
-status: idea
+status: done
 added: 2026-11-19
 
 Build: main at 724b7ce1 (`Merge tour chips and Help height`), dev server in test mode, headless Chromium (SwiftShader) at 1280x720 only, `?manual=1&seed=7`. Screenshots live under `.scratch/qa-r121/`. Scores are in `qa-r121-scorecard.md`.
@@ -8,7 +8,7 @@ Stepped play (manual ticks), not live input. Each entry below is its own idea.
 
 ## 1. 2v2 results screen still does not fit 720p; Rematch is not focused; Escape does nothing
 
-status: idea
+status: done
 added: 2026-11-19
 severity: high
 
@@ -18,7 +18,7 @@ Idea: shrink the winner tile and the stat sentence so all three buttons fit in 7
 
 ## 2. Settings: Escape does nothing while a slider has focus
 
-status: idea
+status: done
 added: 2026-11-19
 severity: medium
 
@@ -28,7 +28,7 @@ Idea: let Escape bubble from range inputs (arrow keys are the only keys a slider
 
 ## 3. Help: Jump-to chips are three rows (4, 1, 4), not two rows of three
 
-status: idea
+status: done
 added: 2026-11-19
 severity: medium
 
@@ -38,7 +38,7 @@ Idea: set the chips to a three-column grid (three rows of three) or drop the rar
 
 ## 4. Tour card does not name the lead hero's abilities, and lists a Snag key the hero lacks
 
-status: idea
+status: done
 added: 2026-11-19
 severity: medium
 
@@ -48,7 +48,7 @@ Idea: build the Controls row from the lead hero's kit (1 Blast, 2 Flame, ...) an
 
 ## 5. Weather chip shows the fire glyph on every stage
 
-status: idea
+status: done
 added: 2026-11-19
 severity: low
 
@@ -58,7 +58,7 @@ Idea: show the glyph of the weather's own element, or drop the glyph.
 
 ## 6. Super call-out overlaps the combo counter and status chip
 
-status: idea
+status: done
 added: 2026-11-19
 severity: low
 
@@ -68,7 +68,7 @@ Idea: hide the combo counter and the safe chip for the length of the cut-in, or 
 
 ## 7. First-run hint card sits on the arena floor in the middle of the fight
 
-status: idea
+status: done
 added: 2026-11-19
 severity: low
 
@@ -78,7 +78,7 @@ Idea: dock it above the action bar or auto-dismiss after the first move.
 
 ## 8. Test failure: `tests/e2e/keyboard.spec.ts:93` fails on this main
 
-status: idea
+status: done
 added: 2026-11-19
 severity: medium
 
@@ -90,3 +90,7 @@ Idea: put Back (and Save) first in the tab order on Key Bindings as on Settings,
 triaged: 2026-11-21 partly fixed: item 2 (Escape on slider) in src/ui/keyboard.ts; item 7 by 81ce03a2 (first-run hint scales). Items 1, 3, 4, 5, 6 not code-checked as small; keep open, re-QA live.
 
 triaged: 2026-11-21 code-check. Item 1 fixed: Rematch is focused at src/game/app/arcade-versus.ts:167, Escape goes to the menu at :103, results layout redone in src/ui/styles/match-end.css (e2e fit check in tests/e2e/match-end.spec.ts). Item 3 fixed: Help chips share an equal-column grid, src/ui/styles/help.css:26 (qa-r127). Item 4 fixed: the Tour Controls row is built from the lead hero's kit, Snag only when the team can throw it, src/game/app/tour-controls.ts:24-40. Item 5 fixed: the weather badge draws a glyph per weather kind, src/game/fx/weather-view.ts:381. Item 6 still open: it needs the Hud/super-view cut-in (hide the combo counter and SAFE chip during the cut-in); not a small item. Items 2 and 7 were already fixed; item 8 not in this pass. Stays in brainstorm until 6 and 8 are settled.
+
+## Progress
+
+2026-11-26 re-check on main 4bdb338f: all items closed. Item 1: live 1280x720 headless run of the default (2v2) results screen: scroll height 720, Rematch 489-548, Change fighters and Main Menu 580-630, `document.activeElement` is `arcadeRematch`, Escape goes to `#main` (screenshot `.scratch/qa-r121/results-1280x720.png`; fit pinned by tests/e2e/match-end.spec.ts). Item 6: combo chip and status chips hide under the cut-in band (src/game/hud/combo-cut.ts, 4bce6f61, 6e425efe, tests/e2e/combo-super-cutin.spec.ts). Item 8: the Back-tab budget is now the control count (tests/e2e/keyboard.spec.ts:93); the keyBindings case passed on the PC (job 20261127-025437-short-3835d4). Items 2 to 5 and 7 were closed earlier (see the triage notes). No code change.
