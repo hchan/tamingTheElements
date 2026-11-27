@@ -64,6 +64,7 @@ describe('heroPanel Alignment explanation', () => {
     p.show(RACES[0] as CharacterId);
     const hint = p.node.querySelector('.heroStatHint');
     expect(hint?.textContent).toBe(ALIGNMENT_HINT);
+    expect(p.node.querySelector('.heroStats > p')).toBeNull(); // a <p> directly inside the <dl> fails the axe definition-list rule (nightly 2026-11-27)
     const row = [...p.node.querySelectorAll('.heroStats div')].find((r) => r.querySelector('dt')?.textContent === 'Alignment');
     expect(row?.getAttribute('title')).toBe(ALIGNMENT_HINT);
   });

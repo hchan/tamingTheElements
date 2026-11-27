@@ -94,7 +94,7 @@ export function heroPanel(onAdd?: () => void, lifeOf?: (id: CharacterId) => numb
       if (label === 'Alignment') row.title = ALIGNMENT_HINT;
       stats.append(row);
     }
-    if (p.stats.some(([label]) => label === 'Alignment')) stats.append(el('p', 'heroStatHint', ALIGNMENT_HINT));
+    const statHint = p.stats.some(([label]) => label === 'Alignment') ? [el('p', 'heroStatHint', ALIGNMENT_HINT)] : []; // outside the <dl>: a <p> inside it fails the axe definition-list rule
     const abil = el('ul', 'heroAbilities');
     for (const a of p.abilities) {
       const li = el('li', 'heroAbility');
@@ -109,7 +109,7 @@ export function heroPanel(onAdd?: () => void, lifeOf?: (id: CharacterId) => numb
     }
     const top = el('div', 'heroTop');
     top.append(face, head);
-    node.append(top, ...(onAdd ? [add] : []), stats, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
+    node.append(top, ...(onAdd ? [add] : []), stats, ...statHint, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
   };
   const setAction = (label: string): void => {
     add.textContent = label;
