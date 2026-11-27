@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPrunable, parseArgs, parseWorktreeList } from '../../tools/dev/worktree-prune';
+import { isActive, isPrunable, parseArgs, parseWorktreeList } from '../../tools/dev/worktree-prune';
 
 const PORCELAIN = `worktree /r
 HEAD aaa
@@ -52,8 +52,27 @@ describe('worktree-prune', () => {
   });
 
   it('defaults to dry run', () => {
-    expect(parseArgs([])).toEqual({ apply: false });
-    expect(parseArgs(['--apply'])).toEqual({ apply: true });
+    expect(parseArgs([])).toEqual({ apply: false, minAge: 30 });
+    expect(parseArgs(['--apply', '--min-age', '5'])).toEqual({ apply: true, minAge: 5 });
+    expect(() => parseArgs(['--min-age', 'x'])).toThrow(/min-age/);
     expect(() => parseArgs(['--force'])).toThrow(/Unknown argument/);
+  });
+
+  describe('isActive', () => {
+    const now = 10_000_000_000;
+    const min = 60_000;
+    it('flags a fresh empty-branch worktree, not an old merged one', () => {
+      expect(isActive({ fsMtimeMs: null, reflogMs: now - 2 * min, ahead: 0 }, now, 30)).toBe(true);
+      expect(isActive({ fsMtimeMs: now - 300 * min, reflogMs: now - 300 * min, ahead: 0 }, now, 30)).toBe(false);
+    });
+    it('flags recently modified dirs even with commits, not old ones', () => {
+      expect(isActive({ fsMtimeMs: now - 5 * min, reflogMs: now - 300 * min, ahead: 0 }, now, 30)).toBe(true);
+      expect(isActive({ fsMtimeMs: now - 5 * min, reflogMs: null, ahead: 4 }, now, 30)).toBe(true);
+      expect(isActive({ fsMtimeMs: now - 31 * min, reflogMs: now - 31 * min, ahead: 4 }, now, 30)).toBe(false);
+    });
+    it('honours --min-age and unknown facts', () => {
+      expect(isActive({ fsMtimeMs: now - 31 * min, reflogMs: null, ahead: 0 }, now, 60)).toBe(true);
+      expect(isActive({ fsMtimeMs: null, reflogMs: null, ahead: 0 }, now, 30)).toBe(false);
+    });
   });
 });
