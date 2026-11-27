@@ -228,7 +228,7 @@
   font-weight: bold;
   text-transform: capitalize;
 }
-.heroStats .heroStatHint {
+.heroStatHint {
   flex-basis: 100%;
   margin: 0;
   font-size: 0.8em;
