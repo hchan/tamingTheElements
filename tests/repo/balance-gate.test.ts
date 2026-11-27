@@ -109,14 +109,14 @@ describe('balance baseline', () => {
 
 /**
  * Arcade band checks. 2v2 keeps the 35-65 hard limit (fixture outliers there come from which hero leads a fixed pair).
- * After SIM_VERSION 120 the 1v1 and full-roster baselines must have every hero inside 40-60%, except morblass, excused up to
- * 65%: life is a weak lever for morblass (its supers are about half its damage and `damagePm` does not scale them), so a
- * separate damage/super-scaling plan is pending (ideas/brainstorm/balance-v120-plan.md, ideas/brainstorm/morblass-super-scaling-plan.md).
+ * Since SIM_VERSION 122 the 1v1 and full-roster baselines have every hero inside 40-60% with no excused hero (morblass was
+ * fixed by the v122 super scale, ARCADE_SUPER_PM 800: .630 -> .576; ideas/done/morblass-super-scaling-plan.md, ideas/done/balance-v120-plan.md).
+ * `excused` stays as an optional generic map (hero -> own max), empty by default.
  */
 interface Band { readonly min: number; readonly max: number; readonly excused?: Readonly<Record<string, number>> }
 const BAND_2V2: Band = { min: 0.35, max: 0.65 };
-const BAND_1V1: Band = { min: 0.4, max: 0.6, excused: { morblass: 0.65 } };
-/** Melee-vs-ranged cross (melee score against ranged) must stay at or above this in the 1v1 and full-roster baselines (v120: .472). */
+const BAND_1V1: Band = { min: 0.4, max: 0.6 };
+/** Melee-vs-ranged cross (melee score against ranged) must stay at or above this in the 1v1 and full-roster baselines (v122: .48). */
 const MIN_CROSS = 0.42;
 
 function bandViolations(report: Pick<BalanceReport, 'winRates'>, band: Band): string[] {
@@ -145,11 +145,16 @@ describe('Arcade band helper (fake data: each assertion fails when the data viol
     expect(bandViolations({ winRates: { ...ok, h3: 0.66 } }, BAND_2V2)).toHaveLength(1);
     expect(bandViolations({ winRates: { ...ok, h3: 0.34 } }, BAND_2V2)).toHaveLength(1);
   });
-  it('excuses only morblass, and only up to 65%', () => {
-    expect(bandViolations({ winRates: { ...ok, morblass: 0.64 } }, BAND_1V1)).toEqual([]);
-    expect(bandViolations({ winRates: { ...ok, morblass: 0.66 } }, BAND_1V1)).toHaveLength(1);
+  it('has no excused hero: any hero at 61 fails, morblass included', () => {
+    expect(bandViolations({ winRates: { ...ok, morblass: 0.61 } }, BAND_1V1)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, pax: 0.61 } }, BAND_1V1)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, morblass: 0.6 } }, BAND_1V1)).toEqual([]);
     expect(bandViolations({ winRates: { ...ok, morblass: 0.38 } }, BAND_1V1)).toHaveLength(1);
-    expect(bandViolations({ winRates: { ...ok, pax: 0.64 } }, BAND_1V1)).toHaveLength(1);
+  });
+  it('an optional excused map still widens only the named hero', () => {
+    const band: Band = { ...BAND_1V1, excused: { h1: 0.65 } };
+    expect(bandViolations({ winRates: { ...ok, h1: 0.64 } }, band)).toEqual([]);
+    expect(bandViolations({ winRates: { ...ok, h2: 0.64 } }, band)).toHaveLength(1);
   });
   it('flags a short roster', () => {
     expect(bandViolations({ winRates: { a: 0.5 } }, BAND_1V1)).toContain('fewer than 24 heroes');

@@ -1,11 +1,11 @@
 ---
-status: idea
+status: done
 added: 2026-11-27
 ---
 
 # Morblass is above the 1v1 Arcade band: super-damage scaling (needs an Opus plan)
 
-After SIM_VERSION 120 morblass is the only hero outside .45-.55 (recorded 1v1 baseline .63, two-block mean .6005; the band test excuses it up to .65). Background: [balance-v120-plan](../done/balance-v120-plan.md).
+After SIM_VERSION 120 morblass is the only hero outside .45-.55 (recorded 1v1 baseline .63, two-block mean .6005; the band test excuses it up to .65). Background: [balance-v120-plan](balance-v120-plan.md).
 
 ## Evidence
 - Life is a weak lever: .614 at -8% life only moved to .606 (measurement, M1 seed 1), so v120 left morblass at its v119 life (3600, 2v2 factor 842).
@@ -25,3 +25,7 @@ Facts: morblass is 1v1 .63 (recorded baseline; two measured blocks .630 and .571
 Decision (coordinator): lever = a morblass-only SUPER scale (data + 3 lines): `export const ARCADE_SUPER_PM: Readonly<Record<string, number>> = { morblass: <pm> }` and `arcadeSuperPm(slug)` (default 1000) in `arcade-numbers.ts`; `hit.ts:112` becomes `const pm = sup ? arcadeSuperPm(attDef?.id ?? '') : arcadeRaceNumbers(...)[1]`, and make sure l115/l122 apply `racePm` for a super with pm !== 1000 (check the `=== 1000` exact-path guard; integer pm only; Classic never reaches this code). Rejected for now: shared damagePm cut (too weak, hits 2v2), 1v1-only scale (needs a new hashed state field for the roster size), editing ice-blast/icicles in ABILITY_DEFS (shared with Classic: changes Classic goldens). Start value 900 (-10% on the wave only: an ESTIMATE of about -4 to -5% total morblass damage), measure candidates 900 and 800 in a scratch worktree (TTE_MODS has no super key: edit the table in the worktree, one candidate per run).
 Acceptance (all MEASUREMENT, one at a time, load1 < 15; 1v1 full baseline ~430 s, 2v2 ~10-15 min estimate): morblass 1v1 two-block mean (seed 1 + seed 41) in .45-.55 (or the largest cut that keeps the 2v2 guard); morblass-led 2v2 >= .40 (guard: stop raising the cut if it fails); no other hero outside .40-.60; cross within 1 pp of .472; stalemates <= 8. If .55 is unreachable without breaking the 2v2 guard, take the largest passing value and move the band excuse down (balance-gate: morblass excused up to 60 instead of 65) with a note.
 Version: SIM_VERSION 122, AFTER the Hard AI wall-hold change (v121, `balance-v121-wall-hold-plan.md`): independent changes, separate bumps keep baseline moves attributable. Builder split per the owner's rule: (1) code + tests (arcade-numbers.ts table + accessor, hit.ts, a unit test: morblass super does X dmg at pm 900, a control hero unchanged, Classic untouched; no heavy runs), (2) read-only measure of the candidates (two seed blocks + the 2v2 guard), (3) bump + docs (version.ts, DETERMINISM.md, BALANCE.md), (4) night re-record: `golden:record --ruleset arcade` + `balance:record` 1v1/full + 2v2 baseline (the 2v2 number changes for morblass-led pairs) + `balance:compare` proof, (5) band tests: lower or remove the morblass excuse in `tests/repo/balance-gate.test.ts` (lines ~112-118).
+
+## Progress
+
+- v122 complete: merges 8e063630 and the re-record (b9ad0331), final value 800 (ARCADE_SUPER_PM). Morblass 1v1 .630 -> .576 (seed 1), two-block mean .538, 2v2 morblass-led .418 -> .424. Durrok 2v2 .565 -> .435 is a deterministic shift of the fixed sample (watch item, see docs/BALANCE.md v122). The morblass excuse in tests/repo/balance-gate.test.ts was removed in this commit (every hero .454-.576 in 1v1 and the full roster).
