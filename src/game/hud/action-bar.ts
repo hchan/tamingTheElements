@@ -1,17 +1,21 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderArcade } from '@core/index';
-import { Cmd, GUARD_MAX, SwapBlock, METER_BAR, RUN_AWAY_DESCRIPTION, RUN_AWAY_NAME, RUN_TICKS, RUN_TOWARDS_DESCRIPTION, RUN_TOWARDS_NAME, WEATHER_CHARGE_FULL } from '@core/index';
+import { Cmd, GUARD_MAX, SwapBlock, METER_BAR, RUN_AWAY_NAME, RUN_TICKS, RUN_TOWARDS_NAME, WEATHER_CHARGE_FULL } from '@core/index';
 import { LOGICAL_WIDTH as LOGICAL_W } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { gradeRgba, mute } from '../fx/grim-fx';
 import { CLEANSE_COOLDOWN } from './cleanse-clock';
 import { elementalShown } from '../platform/cleanse-info';
-import { abilityNameOfSprite, abilityShortOfSprite, trapNameOfElement, trapShortOfElement, trapTextOfElement } from './kit-names';
-import { COMMON_EFFECT, HERO_EFFECT, elementalEffect, elementalTitle } from '../platform/ability-text';
+import { abilityShortOfSprite, trapShortOfElement } from './kit-names';
 import { stunWord } from './stun-secs';
+import { SNAG_SPRITE, type ActionSlot, type SlotKind, type TouchName } from './action-bar-types';
+import { elementalNote, trapNote } from './action-bar-tips';
 
-const ELEMENT_BY_KIND = ['void', 'fire', 'water', 'earth', 'air'] as const;
+export { type ActionSlot, type SlotKind, type TouchName } from './action-bar-types';
+export * from './action-bar-tips';
+export * from './action-bar-strike';
+export { COOLDOWN_ALPHA, READY_FLASH_MS, READY_FLASH_COLOR, READY_FLASH_ALPHA, cooldownSweep, cooldownLook, type CooldownLook } from './action-bar-cooldown';
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
@@ -29,7 +33,6 @@ const SLOT_BORDER = 2;
 /** Legacy `Global.actionBarHeight - slotBorderWidth / 2 - topBorderWidth * 2`. */
 export const SLOT_SIDE = ACTION_BAR_HEIGHT - SLOT_BORDER / 2 - TOP_BORDER * 2;
 export const BAR_Y = LOGICAL_HEIGHT - ACTION_BAR_HEIGHT;
-export const COOLDOWN_ALPHA = 0.52;
 export const COOLDOWN_COLOR = 0x090909;
 export const CAPTURE_READY_COLOR = 0xb39653;
 
@@ -96,12 +99,8 @@ export const CLEANSE_LABEL = 102;
 export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS);
 
 const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
-/** Sprite key of the Snag rope throw (Entangling Vines): the hero slot that holds it is labelled Snag. */
-const SNAG_SPRITE = 'entanglingVines';
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
-/** Every kind of box on the bar: the one shape, told apart by its icon, key and words. */
-export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge' | 'cleanse' | 'run';
 
 /** Cell of each icon on the `hud:actions` sheet (`tools/assets/hud-gen/actions.py` TILES order, 4 per row, 64 px cells). */
 export const ACTION_ICON = { trap: 0, tag: 1, charge: 2, weather: 3, dash: 4, guard: 5, super: 6, fire: 7, water: 8, earth: 9, air: 10, element: 11, cleanse: 12 } as const;
@@ -109,96 +108,13 @@ export const ACTION_SHEET = 'hud:actions';
 export const SHEET_CELL = 64;
 export const SHEET_COLS = 4;
 
-/** The touch button (id `arcade<touch>`) that sits over a box as a transparent overlay; '' for a box with none. */
-export type TouchName = '' | 'Super' | 'Guard' | 'Dash' | 'Weather' | 'Charge' | 'Tag' | 'Tag2' | 'Trap' | 'Element' | 'Cleanse' | 'Run';
 
 /** The sheet cell an elemental box wears: its element's mark (1 fire, 2 water, 3 earth, 4 air), else the generic one. */
 export function elementIcon(kind: number): number {
   return [ACTION_ICON.element, ACTION_ICON.fire, ACTION_ICON.water, ACTION_ICON.earth, ACTION_ICON.air][kind] ?? ACTION_ICON.element;
 }
 
-export interface ActionSlot {
-  readonly kind: SlotKind;
-  /** Elemental slot only: the element kind (1 fire, 2 water, 3 earth, 4 air), else 0 (tints the ready edge). */
-  readonly element?: number;
-  readonly x: number;
-  readonly y: number;
-  readonly size: number;
-  /** The Command bit this slot emits when clicked (same bit as its key); 0 for a box whose transparent touch overlay does the input. */
-  readonly cmd: Command;
-  readonly label: string;
-  readonly sprite: string;
-  /** Cell on the `hud:actions` sheet, drawn when there is no character sprite; -1 for none. */
-  readonly icon: number;
-  /** The DOM touch button laid over this box, '' for none. */
-  readonly touch: TouchName;
-  /** Cooldown elapsed 0..1; 1 means ready (no sweep). */
-  readonly progress: number;
-  /** Capture only: highlighted when the enemy is capturable and the slot is ready. */
-  readonly highlight: boolean;
-  /** Greyed out: capture while not capturable, or a dead teammate. */
-  readonly disabled: boolean;
-  /** Second line under the key: the box's name and state in words ("Trap 7s", "Super 40%", "Dash"), else ''. */
-  readonly note: string;
-  /** Run slot only: true for Run Away (a ranged hero), false for Run Towards (names the box and its tip). */
-  readonly runAway?: boolean;
-}
 
-/** The Trap slot's words (never colour alone): whole seconds left while cooling, else the live count, or "full" at the cap. */
-export function trapNote(tick: number, t: { readyTick: number; count: number; max: number }, name = 'Trap'): string {
-  if (tick < t.readyTick) return `${name} ${String(Math.ceil((t.readyTick - tick) / 50))}s`;
-  return t.count >= t.max ? `${name} full` : `${name} ${String(t.count)}/${String(t.max)}`;
-}
-
-/** The elemental slot's words (never colour alone): "<Name> on" while its buff runs, whole seconds left while cooling, else the name. */
-export function elementalNote(tick: number, e: { name: string; readyTick: number; activeUntil: number }): string {
-  if (tick < e.activeUntil) return `${e.name} on`;
-  if (tick < e.readyTick) return `${e.name} ${String(Math.ceil((e.readyTick - tick) / 50))}s`;
-  return e.name;
-}
-
-/** The tooltip for a box: its plain name and a one-line effect (the Guide's own text, so the two never disagree). */
-export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'> & { sprite?: string; runAway?: boolean }): { title: string; text: string } {
-  switch (s.kind) {
-    case 'ability':
-      if (s.sprite === SNAG_SPRITE) return { title: 'Snag', text: COMMON_EFFECT.snag };
-      {
-        const own = abilityNameOfSprite(s.sprite ?? '');
-        if (own !== undefined) return { title: own, text: s.cmd === Cmd.primary ? HERO_EFFECT.primary : HERO_EFFECT.secondary };
-      }
-      return s.cmd === Cmd.primary ? { title: 'Attack', text: HERO_EFFECT.primary } : { title: 'Special', text: HERO_EFFECT.secondary };
-    case 'capture': return { title: 'Snag', text: COMMON_EFFECT.snag };
-    case 'swap': return { title: 'Tag', text: COMMON_EFFECT.tag };
-    case 'trap': return { title: trapNameOfElement(s.element), text: trapTextOfElement(s.element) ?? COMMON_EFFECT.trap };
-    case 'elemental': return { title: elementalTitle(s.element ?? 0), text: elementalEffect(ELEMENT_BY_KIND[s.element ?? 0] ?? 'void') };
-    case 'super': return { title: 'Super', text: COMMON_EFFECT.super };
-    case 'guard': return { title: 'Guard', text: COMMON_EFFECT.guard };
-    case 'dash': return { title: 'Dash', text: COMMON_EFFECT.dash };
-    case 'weather': return { title: 'Weather', text: COMMON_EFFECT.weather };
-    case 'charge': return { title: 'Charge', text: COMMON_EFFECT.charge };
-    case 'cleanse': return { title: 'Cleanse', text: COMMON_EFFECT.cleanse };
-    case 'run': return s.runAway === false ? { title: RUN_TOWARDS_NAME, text: RUN_TOWARDS_DESCRIPTION } : { title: RUN_AWAY_NAME, text: RUN_AWAY_DESCRIPTION };
-  }
-}
-
-/** A tip sits this far above the box's top, clearing the TAG caption that floats over the swap slot (tag-view CAPTION_LIFT 26 + its height). */
-const TIP_LIFT = 44;
-/** Where a tooltip `w` x `h` goes for a box: centred above it (clear of the TAG caption), kept inside the 1280-wide screen, below the top edge. Pure, for tests. */
-export function tipPlacement(s: Pick<ActionSlot, 'x' | 'y' | 'size'>, w: number, h: number): { x: number; y: number } {
-  const x = Math.min(LOGICAL_W - w - 4, Math.max(4, s.x + s.size / 2 - w / 2));
-  return { x, y: Math.max(4, s.y - h - TIP_LIFT) };
-}
-
-/** How long a held finger waits before a touch tip shows, and how long tips stay hidden after a super starts (its banner owns the screen). */
-export const TIP_LONG_PRESS_MS = 450;
-export const TIP_SUPER_QUIET_MS = 2800;
-/** A tip never stays pinned: it hides this long after it first showed for the current target (a resting mouse or focus is not a request to read it all fight). */
-export const TIP_MAX_MS = 3500;
-
-/** Pure: has a tip that began at `since` (ms) run out at `now`? */
-export function tipExpired(since: number, now: number): boolean {
-  return now - since >= TIP_MAX_MS;
-}
 
 /** Line colour per element kind (index 0 is Void, a violet, so a Void box is not left bone; a second cue only: the icon's shape and the slot's words say which). */
 export const ELEMENT_TINT: readonly number[] = [0xb48cff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
@@ -213,24 +129,6 @@ export function fitTextScale(width: number, size: number, pad = 4): number {
   return width <= 0 ? 1 : Math.min(1, Math.max(0.1, (size - pad * 2) / width));
 }
 
-/** A plain-word name for a box that has no state words of its own, so every box of the dressed bar carries a readable label. */
-export function slotWord(s: Pick<ActionSlot, 'kind' | 'cmd' | 'note'>): string {
-  if (s.note !== '') return s.note;
-  switch (s.kind) {
-    case 'ability': return s.cmd === Cmd.primary ? 'Attack' : 'Special';
-    case 'capture': return 'Snag';
-    case 'swap': return 'Tag';
-    case 'trap': return 'Trap';
-    case 'elemental': return 'Element';
-    case 'super': return 'Super';
-    case 'guard': return 'Guard';
-    case 'dash': return 'Dash';
-    case 'weather': return 'Weather';
-    case 'charge': return 'Charge';
-    case 'cleanse': return 'Cleanse';
-    case 'run': return 'Run';
-  }
-}
 
 /** Frame colour per kind of box in the dressed bar (the element's own colour for an Element box): ash-dulled, never the only cue. */
 export const KIND_TINT: Readonly<Record<SlotKind, number>> = {
@@ -346,50 +244,6 @@ export function portraitBarSlots<T extends { x: number; y: number; size: number 
   return { slots: slots.map((s, i) => { const r = Math.floor(i / per); return { ...s, x: left(r) + (i % per) * side, y: y0 - (rows - 1 - r) * side, size: side }; }), top: y0 - (rows - 1) * side, ext: 0 };
 }
 
-/**
- * Portrait phones draw Strike 1 and Strike 2 as circles on the deck, so the bar's Blast and Flame tiles (the same two commands) are dropped:
- * one way to fire each, and the remaining eight tiles fit one row. A Snag rope slot stays (a tile with that note is not a plain strike). Pure, for tests.
- */
-export function withoutStrikeTiles<T extends Pick<ActionSlot, 'kind' | 'sprite'>>(slots: readonly T[]): T[] {
-  return slots.filter((s) => !(s.kind === 'ability' && s.sprite !== SNAG_SPRITE));
-}
-
-/** The two Strike circles' own ability names for a bar's abilities (index 0 = Strike 1): [short word on the circle, full name for screen readers]. Pure, for tests. */
-export function strikeCues(abilities: readonly { sprite: string }[]): [string, string][] {
-  return [0, 1].map((i): [string, string] => {
-    const sprite = abilities[i]?.sprite ?? '';
-    // The rope-throw ability is "Snag" on the bar box (buildSlots, slotTip), so the circle says the same (QA r107 P2).
-    if (sprite === SNAG_SPRITE) return ['Snag', 'Snag'];
-    const short = abilityShortOfSprite(sprite) ?? '';
-    return [short, abilityNameOfSprite(sprite) ?? short];
-  });
-}
-
-/** Portrait phones: name what each Strike circle fires (the bar's Blast / Flame / Ice Shock tiles are dropped), as a small third line on the circle. Idempotent. */
-export function showStrikeCues(cues: readonly (readonly [string, string])[]): void {
-  if (typeof document === 'undefined') return;
-  ['touchStrike1', 'touchStrike2'].forEach((id, i) => {
-    const b = document.getElementById(id);
-    const cue = cues[i];
-    if (!b || !cue) return;
-    let n = b.querySelector<HTMLElement>('.touchStrikeAbility');
-    if (!n) {
-      n = document.createElement('span');
-      n.className = 'touchStrikeAbility';
-      b.append(n);
-    }
-    if (n.textContent !== cue[0]) n.textContent = cue[0];
-    // Long names (Adrenaline, Rock Armr) get a smaller face so the whole word fits the circle (QA r101 P2).
-    const len = cue[0].length >= 10 ? 'xl' : cue[0].length >= 8 ? 'long' : '';
-    if ((n.dataset['len'] ?? '') !== len) {
-      if (len) n.dataset['len'] = len;
-      else delete n.dataset['len'];
-    }
-    const key = b.querySelector('.touchStrikeKey')?.textContent ?? String(i + 1);
-    const label = cue[1] === '' ? `${key} Strike` : `${key} Strike: ${cue[1]}`;
-    if (b.getAttribute('aria-label') !== label) b.setAttribute('aria-label', label);
-  });
-}
 
 const PUNCTUATION: Readonly<Record<string, string>> = { Semicolon: ';', Period: '.', Comma: ',', Slash: '/', Quote: "'", Minus: '-', Equal: '=' };
 
@@ -640,56 +494,3 @@ export function commandAt(slots: readonly ActionSlot[], px: number, py: number):
   return 0;
 }
 
-/**
- * Legacy `drawCooldown` polygon as flat x,y pairs: the not-yet-elapsed region, starting at top-centre
- * and sweeping clockwise as `progress` grows 0..1.
- */
-export function cooldownSweep(progress: number, x: number, y: number, size: number): number[] {
-  const p = Math.min(1, Math.max(0, progress));
-  const half = size / 2;
-  const pts = [x + half, y, x + half, y + half];
-  const right = x + size;
-  const bottom = y + size;
-  if (p < 0.125) {
-    pts.push(x + half + (p / 0.125) * half, y, right, y, right, bottom, x, bottom, x, y);
-  } else if (p < 0.375) {
-    pts.push(right, y + ((p - 0.125) / 0.25) * size, right, bottom, x, bottom, x, y);
-  } else if (p < 0.625) {
-    pts.push(right - ((p - 0.375) / 0.25) * size, bottom, x, bottom, x, y);
-  } else if (p < 0.875) {
-    pts.push(x, bottom - ((p - 0.625) / 0.25) * size, x, y);
-  } else {
-    pts.push(x + ((p - 0.875) / 0.125) * half, y);
-  }
-  return pts;
-}
-
-/** How long the ready flash lasts (ms), the colour and the strongest alpha of it: one look for every box. */
-export const READY_FLASH_MS = 350;
-export const READY_FLASH_COLOR = 0xe0d8c6;
-export const READY_FLASH_ALPHA = 0.45;
-
-/** What the one shared cooldown renderer draws for a box. */
-export interface CooldownLook {
-  /** The shaded not-yet-ready region as flat x,y pairs; undefined when the box is ready. */
-  readonly fill: number[] | undefined;
-  readonly fillAlpha: number;
-  /** Ready flash: alpha of the bone wash over the box (0: none), and how strong its frame pulse is (0..1). */
-  readonly flashAlpha: number;
-  readonly pulse: number;
-}
-
-/**
- * THE cooldown look, the same for every kind of box (abilities, Snag, Tag, Charge, Weather, Dash, Guard, Super, Trap, Element): a clockwise
- * sweep over the part not yet ready (one fixed shade), then an eased-out bone flash for READY_FLASH_MS when it comes back
- * (`flashAgeMs` since it did, -1 for none). A disabled box is shaded whole. Reduced motion: a static whole-box shade while cooling and no flash.
- * Pure; `ActionBarView.drawCooldown` is its only drawer.
- */
-export function cooldownLook(progress: number, disabled: boolean, x: number, y: number, size: number, flashAgeMs: number, reduced: boolean): CooldownLook {
-  const whole = [x, y, x + size, y, x + size, y + size, x, y + size];
-  const shaded = disabled || progress < 1;
-  const fill = !shaded ? undefined : disabled || reduced ? whole : cooldownSweep(progress, x, y, size);
-  const t = flashAgeMs < 0 ? 1 : flashAgeMs / READY_FLASH_MS;
-  const ease = reduced || disabled || t >= 1 ? 0 : (1 - t) ** 3;
-  return { fill, fillAlpha: COOLDOWN_ALPHA, flashAlpha: READY_FLASH_ALPHA * ease, pulse: ease };
-}

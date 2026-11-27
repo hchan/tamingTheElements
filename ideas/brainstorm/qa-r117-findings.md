@@ -11,7 +11,7 @@ Desktop 1280x720 only, headless Chromium (SwiftShader), test build of local main
 1. First-run hint ("FIRST BLOOD ... Got it") covers the lower arena: STILL OPEN. It shows in every fresh Versus fight (fire, earth, air) and sits over the floor right where fighters brawl, 100+ ticks in (`07-fire-hit-5.png`, `23-stage-earth-hit.png`, `23-stage-air-hit.png`). It also repeats the controls line that Help and the action bar already show. Idea: dismiss on the first move or hit, or dock it into the footer strip above the action bar.
 2. Help chips wrap unevenly: STILL OPEN. Rows are 4 / 1 / 4 with "Reading the arena" alone and centred (`20-help.png`). Idea: grid of equal columns, or one scroll row.
 3. Fighters static: PARTLY. The AI foe stands still unless hit; in 2v2 and Tour both sides sit at opposite ends 700+ px apart after 150 ticks (`12-2v2-fight.png`, `19-tour-fight.png`). Idea: AI should close distance (footsies).
-4. HUD life numbers vs picker "Life 100": STILL OPEN. HUD shows Sindarosa 286, Pax 690/591, Curomo 542, Echo 675; picker says Life 100. Idea: percent in HUD or the same scale in the picker.
+4. HUD life numbers vs picker "Life 100": FIXED 2026-11-19 (8b064ae4, picker-life: `heroLife(id, size)` in `src/ui/screens/roster-view.ts` builds a tick-0 Arcade world and reads the sim max HP, injected into `heroPanel(onAdd, lifeOf)`; so it follows any hpPm retune incl. SIM_VERSION 120; tests `arcade-setup.test.ts` heroLife equals `w.state.maxHp[0]` for every race and size, `hero-panel.dom.test.ts` Life row). Re-checked on main 2026-11-27, no code change. Was: STILL OPEN. HUD shows Sindarosa 286, Pax 690/591, Curomo 542, Echo 675; picker says Life 100. Idea: percent in HUD or the same scale in the picker.
 5. Projectile bursts cover the target: FIXED 2026-11-21 (the 110 px starburst is src/game/fx/impact-view.ts IMPACT_SIZE, not pose-vfx.ts:232 which is the mote burst; now 72 px, alpha 0.8 fading out, impactAlphaAt; the target flash/recoil already exists in character-view.ts flash/recoil). Was: STILL OPEN. The starburst hit spark is about 110 px wide and hides the target's torso (`07-fire-hit-5.png`, `23-stage-air-hit.png`); the damage number is large and clear though. Idea: smaller burst at the contact point, plus a brief target flash/recoil so the body stays readable.
 
 ## New
@@ -36,3 +36,11 @@ Online screen; phone viewports (owner dropped); live-clock feel (stepped manuall
 ## Smoke
 
 `pnpm e2e:smoke`: 15 passed, 0 failed (2m02s). e2e ran on: PC (job 20261119-093517-short-6f1e39, short lane) -> exit 0
+
+## Progress note (view-only triage check, 2026-11-27)
+
+Checked against main (b4d6873a): all three view-only items of the triage plan are already fixed, so no code change.
+- Smaller hit burst (item 5): `IMPACT_SIZE = 72` in `src/game/fx/impact-view.ts`, alpha fade; target flash/recoil in `character-view.ts`.
+- Super cut-in damage number depth (item 7): ac684905c (`tte.cutBand`, `cutNumberFadeOf`, test `cut-numbers.test.ts`), also recorded in qa-r119-findings.md; status chips skip the band (6e425efe).
+- FIGHT banner offset when close (item 8): 66a1708e (banner dims while a fighter sits under it), c483d098 (banner ends shortly after the first hit), e2e settle fix f513281f.
+Item 4 (HUD vs picker life scale) is already fixed, see above. Still open: water stage props (3, needs art-director), AI footsies (4, sim work, Opus plan first). File stays in brainstorm.

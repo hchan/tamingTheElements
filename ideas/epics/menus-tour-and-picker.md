@@ -14,13 +14,13 @@ Main menu, hero picker, Tour screens and ladder, splash art; the first things a 
 
 Member ideas, in suggested priority order (work them as separate small work packages):
 
-- [picker-followups](../brainstorm/picker-followups.md): Picker follow-ups after PB1. - PB2 (planned separately, see ~/claudetmp/plans/picker-fightbar-plan.md).
+- [picker-followups](../done/picker-followups.md): Picker follow-ups after PB1. - PB2 (planned separately, see ~/claudetmp/plans/picker-fightbar-plan.md).
 - [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md) (in progress): Picker: the Fight / Start bar takes its own space (PB1). The picker page scrolled and the bar was position:
 - [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md) (in progress): QA: Versus and Play put the start button below the fold at 1280x720. At 1280x720 the Fight! button on Versus is clipped at the bottom edge and the Play roster is long enough that Start is out of view.
 - [one-game-menu](../in-progress/one-game-menu.md) (in progress): One game, five-entry menu. Menu: Play, Versus, Online, Settings, Help.
 - [mvc-character-select-with-ability-info](../in-progress/mvc-character-select-with-ability-info.md) (in progress): Marvel vs Capcom style character select, with abilities explained. Owner idea (2026-11-13): the main menu's character choice is a drop-down, which is ugly.
 - [tour-select-screen-redesign](../in-progress/tour-select-screen-redesign.md) (in progress): Tour screen redesign: Marvel vs Capcom style select, dark fantasy. Owner feedback (2026-11-13, screenshot of #tour):
-- [tour-hud-stage-number-and-continues](../brainstorm/tour-hud-stage-number-and-continues.md): Tour HUD stage number and continues count. Show the Tour stage number and the remaining continues in the fight HUD, not only on the stage card.
+- [tour-hud-stage-number-and-continues](../done/tour-hud-stage-number-and-continues.md): Tour HUD stage number and continues count. Show the Tour stage number and the remaining continues in the fight HUD, not only on the stage card.
 - [tour-ladder-roster-pin](../in-progress/tour-ladder-roster-pin.md): Pin the roster in a saved Tour run. buildTour(hero, seed) depends on the released roster, so a roster release (RELEASED_CHARACTERS / ARCADE_RACES change) re-rolls the ladder of a saved r
 - [tour-void-floor](../brainstorm/tour-void-floor.md): Tour Void stage has no void floor. The last Tour stage says "Void" on the card and "The Eternal Void" on the splash, but the fight floor is a random element:
 - [qa-menu-bland](../done/qa-menu-bland.md): QA: main menu and Help are plain text buttons. Five full-width grey buttons, a tiny logo and a yellow italic title.
@@ -44,7 +44,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### MT-1 Picker and menu cleanup
 
-- Members: [picker-followups](../brainstorm/picker-followups.md), [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md), [mvc-character-select-with-ability-info](../in-progress/mvc-character-select-with-ability-info.md), [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md), [menu-cleanup](../brainstorm/menu-cleanup.md)
+- Members: [picker-followups](../done/picker-followups.md), [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md), [mvc-character-select-with-ability-info](../in-progress/mvc-character-select-with-ability-info.md), [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md), [menu-cleanup](../brainstorm/menu-cleanup.md)
 - Size: M
 - Shared files: src/ui/* (menu, versus picker), main.css
 - Flags: needs browser/e2e; menu stays five entries (menu-cleanup comes after the online flow per the owner)
@@ -52,7 +52,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### MT-2 Tour screens and HUD
 
-- Members: [tour-select-screen-redesign](../in-progress/tour-select-screen-redesign.md), [tour-hud-stage-number-and-continues](../brainstorm/tour-hud-stage-number-and-continues.md), [tour-ladder-roster-pin](../in-progress/tour-ladder-roster-pin.md), [tour-void-floor](../brainstorm/tour-void-floor.md), [qa-r107-findings](../done/qa-r107-findings.md)
+- Members: [tour-select-screen-redesign](../in-progress/tour-select-screen-redesign.md), [tour-hud-stage-number-and-continues](../done/tour-hud-stage-number-and-continues.md), [tour-ladder-roster-pin](../in-progress/tour-ladder-roster-pin.md), [tour-void-floor](../brainstorm/tour-void-floor.md), [qa-r107-findings](../done/qa-r107-findings.md)
 - Size: M
 - Shared files: src/ui/* (tour), src/core/rules/*, main.css
 - Flags: needs browser/e2e; tour-void-floor and roster pin may need SIM (check the file)

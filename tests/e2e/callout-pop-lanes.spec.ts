@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { benchRects, popCeil } from '../../src/game/fx/pop-lanes';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
 // CALLOUT-POP-1: an Arcade call-out (ROOTED, CHARGE! ...) keeps clear of the white damage pop over the same fighter, at every age of the
@@ -10,6 +11,10 @@ const CHARGE = 1 << 15;
 const SNAG = 16;
 const INTRO = 91;
 const GAP = 7;
+// The demo is 2v2, so a bench row (tag pill and portraits, cbdb2e9e) sits under the scrim and lifts the call-out ceiling to its bottom; the
+// ceiling is the same popCeil the game uses over the chips plus these rects (the extent of one benched hero per team covers the call-out x).
+const BENCH = benchRects([1, 1]);
+const ceilingFor = (c: Box, chips: Box[][]): number => popCeil([...chips, ...BENCH], c.x, c.x + c.w);
 const SHOT_DIR = process.env['SHOT_DIR'];
 
 interface Box { x: number; y: number; w: number; h: number }
@@ -195,8 +200,7 @@ for (const v of VIEWS) {
           await shot(page, info, `s5a-ceiling-${tag}`);
         }
         s.ov.hudCallouts.forEach((c) => {
-          let ceil = 102;
-          for (const team of s.ov.chips) for (const r of team) if (c.x + c.w > r.x && c.x < r.x + r.w) ceil = Math.max(ceil, r.y + r.h + 4);
+          const ceil = ceilingFor(c, s.ov.chips);
           seen++;
           pinned = Math.min(pinned, c.y - ceil);
           expect(c.y, `call-out top ${String(c.y)} above its ceiling ${String(ceil)}`).toBeGreaterThanOrEqual(ceil - 1);
@@ -231,8 +235,9 @@ test.describe('call-outs slide sideways at the ceiling, 1280x720', () => {
     for (const s of seen) {
       expectApart(s, 'S5b');
       for (const c of s.ov.hudCallouts) {
-        pinned = Math.min(pinned, c.y - 102);
-        expect(c.y).toBeGreaterThanOrEqual(101);
+        const ceil = ceilingFor(c, s.ov.chips);
+        pinned = Math.min(pinned, c.y - ceil);
+        expect(c.y).toBeGreaterThanOrEqual(ceil - 1);
         expect(c.x).toBeGreaterThanOrEqual(s.ov.frame.x + 16 - 1);
         expect(c.x + c.w).toBeLessThanOrEqual(s.ov.frame.x + s.ov.frame.w - 16 + 1);
       }

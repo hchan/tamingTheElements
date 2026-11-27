@@ -38,3 +38,16 @@ export function markMoreBelow(box: HTMLElement): () => void {
   }
   return update;
 }
+
+/**
+ * Keyboard "Jump to Fight" chip shared by the Versus and World Tour pickers: build it as the first control of the form (first Tab
+ * stop; CSS shows it only while focused); activating it focuses the first enabled control of `targets` (Fight, else Random).
+ */
+export function jumpToFightChip(targets: readonly HTMLButtonElement[]): HTMLButtonElement {
+  const chip = el('button', 'menuButton vsJumpFight', 'Jump to Fight');
+  chip.type = 'button';
+  chip.addEventListener('click', () => {
+    (targets.find((t) => !t.disabled) ?? targets[0])?.focus();
+  });
+  return chip;
+}

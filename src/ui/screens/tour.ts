@@ -1,5 +1,5 @@
 import type { CharacterId } from '@core/index';
-import { el, markMoreBelow } from '../dom';
+import { el, jumpToFightChip, markMoreBelow } from '../dom';
 import { select } from './arcade-versus';
 import { faceUrl } from './hero-panel';
 import { raceLabel, rosterView } from './roster-view';
@@ -288,7 +288,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   actions.append(random, start, hint, back);
   const scroll = el('div', 'pickScroll');
   scroll.append(intro, hidden, roster.node);
-  form.append(scroll, actions);
+  form.append(jumpToFightChip([start, random]), scroll, actions);
   const more = markMoreBelow(scroll);
   const sync = (): void => {
     roster.refresh();

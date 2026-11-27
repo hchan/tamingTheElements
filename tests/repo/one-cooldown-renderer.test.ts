@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const read = (f: string): string => readFileSync(resolve(import.meta.dirname, '../../src/game/hud', f), 'utf8');
 const pure = read('action-bar.ts');
 const view = read('action-bar-view.ts');
-const src = pure + view;
+const src = pure + read('action-bar-cooldown.ts') + view;
 
 describe('every action box shares one cooldown renderer', () => {
   it('has one look function, one sweep, one drawer and one fill call for all slot kinds', () => {

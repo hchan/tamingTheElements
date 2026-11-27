@@ -43,14 +43,31 @@ test(`plain hit frame sequence (${hero} vs ${foeName})`, async ({ page }, info) 
     if (landed) break;
   }
   expect(landed).toBe(true);
+  const xs = async (): Promise<{ me: number; foe: number }> => {
+    const cs = await page.evaluate<{ id: number; x: number }[]>('window.__TTE__.arena.characters()');
+    return { me: cs.find((c) => c.id === me?.id)?.x ?? NaN, foe: cs.find((c) => c.id === foe?.id)?.x ?? NaN };
+  };
+  const trace = [await xs()];
   let t = 0;
   for (const a of AFTER) {
     while (t < a) {
       await page.evaluate('window.__TTE__.arena.step(1)');
+      trace.push(await xs());
       t++;
     }
     await raf(page);
     await page.screenshot({ path: out(`hit-t${String(a).padStart(2, '0')}`) });
   }
+  // Displacement over the sequence (a regression in recoil or hit-stop would flatten or jitter it): the defender is pushed away
+  // from the attacker, never back toward it, and ends clearly displaced; the attacker is not dragged along.
+  const first = trace[0];
+  const last = trace[trace.length - 1];
+  expect(first && last).toBeTruthy();
+  const pushed = (last?.foe ?? 0) - (first?.foe ?? 0);
+  expect(pushed, 'defender recoils away from the attacker over 16 ticks').toBeGreaterThanOrEqual(10);
+  for (let i = 1; i < trace.length; i++) {
+    expect(trace[i]?.foe ?? NaN, `defender x never moves back toward the attacker at tick ${String(i)}`).toBeGreaterThanOrEqual(trace[i - 1]?.foe ?? Infinity);
+  }
+  expect(Math.abs((last?.me ?? NaN) - (first?.me ?? 0)), 'attacker is not dragged by the hit').toBeLessThanOrEqual(40);
   expect(errors).toEqual([]);
 });

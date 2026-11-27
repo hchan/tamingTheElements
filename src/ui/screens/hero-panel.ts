@@ -31,7 +31,10 @@ export function styleBadge(style: HeroStyle, withWord: boolean): HTMLElement {
 }
 
 /** What the Run key does for each style (a ranged hero runs away from the foe, a melee hero runs towards it). */
-const RUN_WORDS: Readonly<Record<HeroStyle, string>> = { melee: '(Run Towards)', ranged: '(Run Away)' };
+/** Plain explanation for the Alignment stat (qa-r11): it is story flavour, not a fighting number. */
+export const ALIGNMENT_HINT = "Alignment is the hero's story side (good, neutral or evil). It does not change Life or Speed.";
+
+const RUN_WORDS:Readonly<Record<HeroStyle, string>> = { melee: '(Run Towards)', ranged: '(Run Away)' };
 
 export interface HeroPanel {
   readonly node: HTMLElement;
@@ -88,8 +91,10 @@ export function heroPanel(onAdd?: () => void, lifeOf?: (id: CharacterId) => numb
     for (const [label, value] of p.stats) {
       const row = el('div');
       row.append(el('dt', undefined, label), el('dd', undefined, value));
+      if (label === 'Alignment') row.title = ALIGNMENT_HINT;
       stats.append(row);
     }
+    const statHint = p.stats.some(([label]) => label === 'Alignment') ? [el('p', 'heroStatHint', ALIGNMENT_HINT)] : []; // outside the <dl>: a <p> inside it fails the axe definition-list rule
     const abil = el('ul', 'heroAbilities');
     for (const a of p.abilities) {
       const li = el('li', 'heroAbility');
@@ -104,7 +109,7 @@ export function heroPanel(onAdd?: () => void, lifeOf?: (id: CharacterId) => numb
     }
     const top = el('div', 'heroTop');
     top.append(face, head);
-    node.append(top, ...(onAdd ? [add] : []), stats, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
+    node.append(top, ...(onAdd ? [add] : []), stats, ...statHint, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
   };
   const setAction = (label: string): void => {
     add.textContent = label;
