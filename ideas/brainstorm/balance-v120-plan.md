@@ -41,3 +41,9 @@ Do NOT merge any v120 sim change before tonight's 23:00 nightly e2e (2026-11-26)
 
 ## Risks
 Slope uncertainty (at 0.5, pax/wispera stay ~.43-.44: R2 handles); treenoc slope measured 0.3 at v108 (may stay .53-.56); morblass at 3313 life gets more variable (supers unscaled); seed dependence up to ~6 pp (acceptance uses the two-block mean); v108 left pax off by one, the pinned test prevents it; 1v1 rounds get longer (round median vs the 30 s floor); tour 3v3 boss unchanged, 1v1 chapter fights change for the changed heroes.
+
+## Progress (2026-11-26 17:20)
+- Step 1 (code + tests) DONE on branch `worktree-agent-af9091e96b84b1e01` (commit c1bc15bd), HOLD: do not merge before the 2026-11-27 nightly push. All 17 pairs give exactly the plan's team life (no factor adjusted); `src/core/sim/arcade-numbers-team-life.test.ts` pins v119 2v2/3v3 team life for all 24 heroes plus the new 1v1 hpPm table. Lint and typecheck green.
+- Expected-stale tests after merge (fixed in steps 3-4): `src/core/sim/arcade-numbers.test.ts` ("SIM_VERSION 118 R8 retune ... pins the retuned [life, damage] rows": old hpPm for brazgor, ouroth, kindrel, nykra and old factors for kindrel, ishimi: update the pins, step 3), `tests/repo/arcade-moves-coverage.test.ts` (goldens are what the scripts record today) and `tests/repo/replay-fixtures.test.ts` (arcade-1v1, arcade-moves, arcade-run, arcade-traps verify): re-recorded in step 4.
+- Hand-scripted beat-downs in `tools/gen/arcade-moves.ts` (1v1 scripts where the loser's life changes) are unverified until the re-record; 2v2/3v3 tag scripts are safe by construction. Step 4 must check each script still ends in the intended KO.
+- Step 2 (measure M1/M2) running; output `~/claudetmp/v120/measure.md`.
