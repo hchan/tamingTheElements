@@ -18,6 +18,7 @@
     "src/game/app/tour.ts",
     "src/game/fx/ability-aura-view.ts",
     "src/game/fx/cc-view.ts",
+    "src/game/fx/defence-pops.ts",
     "src/game/fx/defence-view.ts",
     "src/game/fx/event-fx.ts",
     "src/game/fx/hazard-view.ts",
