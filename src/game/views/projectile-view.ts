@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import type { RenderProjectile } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { lerp } from './character-view';
-import { applyFxTweak } from './fx-draw-tweaks';
+import { FX_DRAW_TWEAKS, applyFxTweak, forgeGoreLook } from './fx-draw-tweaks';
 import { hidesSporeSprite } from '../fx/spore-specks';
 import { SMOOTH_KIND, hurricaneSpin, meleeFadeOut, meleeGrowIn, pulseBump } from '../fx/ability-smooth';
 
@@ -194,15 +194,18 @@ export class ProjectileView {
     if (grown > 0) { look.w += grown; look.h += grown; }
     look.w *= scale;
     look.h *= scale;
+    const gore = melee && p.sprite === 'forgeGore' ? forgeGoreLook(p.dir) : undefined;
+    if (gore) Object.assign(look, { angle: gore.angle, w: gore.w, h: gore.h, flip: false });
     const tw = applyFxTweak(p.sprite, look.w, look.h, fade);
     look.w = tw.w;
     look.h = tw.h;
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip).setAlpha(tw.alpha).setBlendMode(tw.additive ? BLEND_ADD : BLEND_NORMAL);
+    this.image.setTint(FX_DRAW_TWEAKS[p.sprite]?.tint ?? 0xffffff);
     // Melee boxes carry no previous position (px/py unset): never lerp from it. Lunge and spin boxes follow the caster each tick, so
     // the caller's `shift` (drawn caster minus sim caster) keeps the art on the smoothly drawn body.
     const a = melee ? 1 : alpha;
     const follow = kind === 'lunge' || kind === 'spin' ? shift : undefined;
-    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2 + (follow?.dx ?? 0), lerp(p.py, p.y, a) + p.h / 2 + (follow?.dy ?? 0));
+    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2 + (follow?.dx ?? 0) + (gore?.dx ?? 0), lerp(p.py, p.y, a) + p.h / 2 + (follow?.dy ?? 0) + (gore?.dy ?? 0));
     if (clock && kind === 'spin') look.angle += (hurricaneSpin(ageMs, reduced) * 180) / Math.PI;
     this.image.setAngle(look.angle);
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.

@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { PULL_TENDRIL_START_PX } from '../views/fx-draw-tweaks';
 import { hash01, paintEmbers, toPts } from './grim-fx';
 
 /**
@@ -109,9 +110,10 @@ export function abyssalPull(x: number, y: number, dir: number, age: number, redu
   const tendril: number[] = [];
   const suckers: Mote[] = [];
   const n = 14;
+  const start = Math.min(PULL_TENDRIL_START_PX, 8 + reach / 2);
   for (let i = 0; i <= n; i++) {
     const f = i / n;
-    const px = x + s * (8 + f * reach);
+    const px = x + s * (start + f * Math.max(0, reach - start + 8));
     const py = y + Math.sin(f * 9 - wob) * (4 + f * 8);
     tendril.push(px, py);
     if (i % 2 === 1 && f > 0.15) suckers.push({ x: px, y: py + 3, r: 1.5 + f * 1.2, a: 0.7 });
