@@ -1,6 +1,6 @@
 # QA r122 findings
 
-status: idea
+status: done
 added: 2026-11-19
 
 Build: main at 7491ef07 (`Merge sticky bar scroll padding (scroll-pad)`), dev server in test mode, headless Chromium with SwiftShader, `?manual=1&seed=7&ff=arcade`, 1280x720 only.
@@ -8,7 +8,7 @@ Screenshots: `.scratch/qa-r122/`. Stepped play (manual ticks) except the Tour wa
 
 ## 1. Help chip layout still ragged
 
-status: idea
+status: done
 added: 2026-11-19
 severity: low
 
@@ -16,7 +16,7 @@ The "Jump to" chips wrap 2 / 3 / 5 per row with the label inline, and the first 
 
 ## 2. Picker "More below" chip overlaps the arena-help sentence
 
-status: idea
+status: done
 added: 2026-11-19
 severity: low
 
@@ -24,7 +24,7 @@ The chip sits over the end of the arena-help sentence, which the sticky bar also
 
 ## 3. HUD life does not match the picker Life
 
-status: idea
+status: done
 added: 2026-11-19
 severity: medium
 
@@ -32,7 +32,7 @@ Picker shows "Life 100". HUD shows 286/286 (Sindarosa), 321 and 308 (Rokcore), 2
 
 ## 4. Super cut-in covers the Weather chip but not SAFE/STUN chips
 
-status: idea
+status: done
 added: 2026-11-19
 severity: low
 
@@ -40,7 +40,7 @@ The cut-in band (y 130-245) hides the Weather chip while SAFE/STUN chips at y~90
 
 ## 5. Tour stage 1 dead walk still about 4-6 s
 
-status: idea
+status: done
 added: 2026-11-19
 severity: medium
 
@@ -48,7 +48,7 @@ Live run: the foe starts at x=1360 and first reaches the player after roughly 4 
 
 ## 6. Verified fixed
 
-status: idea
+status: done
 added: 2026-11-19
 severity: none
 
@@ -56,3 +56,7 @@ severity: none
 - Settings Escape with a slider focused goes to `#main`.
 - Key Bindings Shift+Tab with the sticky bar: no focused control hidden behind `.settingsBar` over an 80-press sweep (`45-kb-shifttab-end.png`).
 - Smoke: `e2e ran on: PC (job 20261119-142449-short-56a740, short lane) -> exit 0` (15 passed).
+
+## Progress
+
+2026-11-27 re-check on main b4d6873a: all items closed, no code change. Item 1 and 2: Help chips sit in equal-column grids (src/ui/styles/help.css:26, 87f5b33b) and the More below pill has its own strip (97bd3ce5, 87f5b33b); live 1280x720 headless shot of Help shows two even rows (5 and 6 chips) left-aligned with the panel (`.scratch/qa-r122/help.png`). Item 3: the picker shows the exact HUD starting life (8b064ae4; the hero spread itself is the separate qa-r125-life-disparity-heroes idea). Item 4: status chips skip the cut-in band (6e425efe, 7a8efd0f). Item 5: Tour stage 1 opening rush, foe closes in and dashes at round start (f7f9681b, 2c562db8).
