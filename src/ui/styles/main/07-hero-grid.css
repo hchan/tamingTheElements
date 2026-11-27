@@ -228,6 +228,12 @@
   font-weight: bold;
   text-transform: capitalize;
 }
+.heroStats .heroStatHint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8em;
+  opacity: 0.7;
+}
 .heroAbilitiesTitle {
   margin: 0.4em 0 0.2em;
   font-size: 0.85em;
