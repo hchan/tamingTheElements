@@ -1,11 +1,10 @@
 import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderArcade, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import { poseHoldMs } from '../fx/hit-feel';
-import { COLUMN_FADE_MS, SMOOTH_KIND, columnEnvelope, lungeStretch, settlePose, smoothKindForDef, type SmoothKind } from '../fx/ability-smooth';
-import { REDUCED_FADE_MS } from '../fx/motion';
+import { smoothKindForDef } from '../fx/ability-smooth';
 import { PoseVfx } from './pose-vfx';
 import { tagEntryOf } from './tag-entry';
-import { CAST_HOLD_MS, CAST_Z, PROJ_CAST_GAP_MS, PROJ_CAST_Z, SUPER_HOLD_MS, applyDepth, depthTarget, shadowFor, stepDepth, type ShadowPose } from './pose-depth';
+import { CAST_Z, PROJ_CAST_GAP_MS, PROJ_CAST_Z, shadowFor, type ShadowPose } from './pose-depth';
 import { FX_ELEMENTS } from './pose-vfx-math';
 import { createFrameResolver, generatedSheets, walkTime, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
 import type { Action, SheetsManifest } from '../assets/sheet-spec';
@@ -16,18 +15,27 @@ declare global {
   }
 }
 import { SheetBook } from './pose-sheets';
-import { boxSpanX, fitToBox, frameBox, type SpanX } from './hero-scale';
+import { fitToBox } from './hero-scale';
 import { idleLookOf } from '../platform/idle-look';
 import { applyIdleMotif } from './idle-motif';
 import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeFor } from './locomotion';
-import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
-import { fireBlastFxStrength } from '../fx/fire-blast-fade';
+import { gradedHeroTexture } from '../fx/hero-grade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
 import {
-  MAX_DT_MS, POSE_MS, PoseKind, STAND_SPEED, STRIDE_PX, TELEPORT_PX, applyPose, breathe, easeOutCubic, follow, headingOf, koFall,
-  leanFor, resetPose, shortestArc, walkFrame, type Pose,
+  POSE_MS, PoseKind, STAND_SPEED, STRIDE_PX, TELEPORT_PX, applyPose, breathe, follow, headingOf,
+  leanFor, resetPose, walkFrame, type Pose,
 } from './pose-math';
+import { SLOTS, PoseClock, posePivot, type PoseState, type SheetDrawn } from './pose-layer-types';
+import { GhostPool } from './pose-ghosts';
+import { PoseProjectiles } from './pose-projectiles';
+import { ShakeDecay } from './pose-shake';
+import { abilityMotion, edgeSquash, type MotionInput } from './pose-motion';
+import { PoseSlots } from './pose-slots';
+import { PoseMelee } from './pose-melee';
+import { PoseDepthState } from './pose-depth-state';
+import { drawnCharacters } from './pose-probe';
+export type { PoseState, SheetDrawn };
 
 /**
  * The procedural pose layer (WP-arcade-pose-layer, FUN-DESIGN 2.16 step 1), a lazy chunk mounted by the Arena for every
@@ -41,23 +49,8 @@ import {
  * a fixed pool of ghost Images, no allocation per frame; everything goes with the Arena.
  */
 
-const SLOTS = 64;
-const DEG = Math.PI / 180;
-const STALL_MS = 80;
-const SPAWN_MS = 60;
-const SPAWN_FROM = 0.6;
-const FADE_MS = 220;
-/** Spawn ease-in never dims a bolt below this alpha (a fully transparent first frames hid thin sprites such as Strangling Branches). */
-const SPAWN_ALPHA_FLOOR = 0.55;
-const FADE_GROW = 0.35;
-const GHOST_ALPHA = 0.95;
-const ROT_TAU_MS = 45;
-const KO_MS = 700;
-const GHOSTS = 8;
-const START_MS = 100;
 const SUPER_CHARGE_MS = 700;
 const CHARGE_MS = 220;
-const STOP_MS = 170;
 const DEAD_OR_BENCHED = EntityFlag.benched | EntityFlag.dead;
 /** Sheet row for each transient `PoseKind`. */
 const KIND_ACTION: readonly Action[] = ['idle', 'cast', 'hurt', 'dash', 'tagIn', 'victory'];
@@ -66,72 +59,8 @@ const GUARD_ROW_MS = 140;
 const LUNGE_HOLD_MS = 25;
 /** A second hit from the same Hurricane within this wall-ms gap is a repeat pulse (pulses come every 500 ms): no pose hold. */
 const HURRICANE_REPEAT_MS = 1500;
-const SETTLE_MS = 260;
-const SQUEEZE_MS = 260;
-const SQUEEZE_SX = 0.12;
-const SQUEEZE_SY = 0.06;
-const SQUEEZE_PULL_PX = 4;
-/** Distance (px) between lunge afterimages, and the sim tick length used to turn drawn px per frame into px per tick. */
+/** Distance (px) between lunge afterimages. */
 const AFTER_GAP_PX = 16;
-const TICK_MS = 20;
-/** Ghost kinds: projectile fade, KO fall, tornado shrink-out. */
-const GHOST_COLUMN = 2;
-
-/** Read-out for the test probe. */
-export interface PoseState {
-  readonly animMs: number;
-  /** Characters with a pose or locomotion effect applied on the last frame, ghosts fading, and shortest-arc rotation steps taken. */
-  readonly posed: number;
-  readonly ghosts: number;
-  /** Ability VFX motes and glows showing. */
-  readonly fx: number;
-}
-
-/** One drawn character in the sheet probe; `bodyHeight` is the display height of the body (the frame's box when it has one). */
-export interface SheetDrawn {
-  id: number;
-  texture: string;
-  frame: string;
-  flipX: boolean;
-  rotation: number;
-  graded: boolean;
-  bodyHeight: number;
-  /** Eased backward-walk amount, 0..1 (backing away from the foe). */
-  back: number;
-  /** Idle body motif of the hero's look and the pose it added last frame (rot degrees, oy px, alpha multiplier). */
-  motif: string;
-  motifRot: number;
-  motifOy: number;
-  motifAlpha: number;
-  /** World x extent of the drawn (rotated) visual box, 0.1 px: the left and right edge the viewer sees. */
-  boxL: number;
-  boxR: number;
-  /** Depth step (pose-depth.ts): eased 0..1 amount (2 dp) and the dolly scale used (3 dp; 1 for portrait rigs). */
-  depth: number;
-  dolly: number;
-}
-
-interface Ghost {
-  readonly image: Phaser.GameObjects.Image;
-  /** Start of the fade on the animation clock; negative infinity while free. */
-  from: number;
-  ms: number;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rot: number;
-  /** Opacity the fading projectile had when it left (Fire Blast falloff); 1 otherwise. */
-  alpha: number;
-  /** 0 projectile fade (centre origin), 1 KO fall (feet pivot, top-left origin), 2 tornado shrink-out (centre origin). */
-  kind: number;
-  dir: number;
-  /** KO fall: the sprite and facing, to play its sheet's `ko` row when it has one. */
-  sprite: string;
-  face: number;
-  /** KO fall: the fallen hero's team (-1 otherwise), so only that team's tag-in clears it. */
-  team: number;
-}
 
 export interface PoseLayerDeps {
   readonly scene: Phaser.Scene;
@@ -145,138 +74,51 @@ export interface PoseLayerDeps {
 }
 
 export class PoseLayer {
-  /** The animation clock in ms: advances only while the sim runs (not paused, not in a hit-stop). */
-  private animMs = 0;
-  private dt = 0;
-  /** Render-side hit-stop (QA r35): wall ms left to hold the animation clock after a landed hit; the sim keeps ticking. */
-  private holdMs = 0;
-  private frameNo = 0;
-  private lastTick = -1;
-  private lastTickAt = 0;
-  private reduced = false;
-  private arcade = false;
-  private shaking = false;
-  private shakeX = 0;
-  private shakeY = 0;
+  /** Animation and VFX clocks and per-frame flags (read by the ghost pool and the projectile pass). */
+  private readonly clk = new PoseClock();
   private victoryTeam = -1;
   private victoryAt = 0;
   private posed = 0;
-  /** The VFX clock in ms (runs through a super's hit-stop, stops on a real pause) and its last frame step; the depth step uses both. */
-  private fxMs = 0;
-  private fxDt = 0;
-  private heldCount = 0;
   private readonly shadowOut: ShadowPose = { dx: 0, dy: 0, scaleMul: 1, alphaMul: 1 };
   private readonly vfx: PoseVfx;
   readonly book: SheetBook;
   private readonly pose: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
-  // Per character slot (entity id).
-  private readonly have = new Uint8Array(SLOTS);
-  private readonly moving = new Uint8Array(SLOTS);
-  private readonly team = new Int8Array(SLOTS).fill(-1);
-  private readonly elem = new Uint8Array(SLOTS);
-  private readonly lx = new Float64Array(SLOTS);
-  private readonly ly = new Float64Array(SLOTS);
-  private readonly phase = new Float64Array(SLOTS);
-  private readonly move = new Float64Array(SLOTS);
-  private readonly lean = new Float64Array(SLOTS);
-  private readonly guard = new Float64Array(SLOTS);
-  private readonly kind = new Uint8Array(SLOTS);
-  private readonly kindAt = new Float64Array(SLOTS);
-  private readonly kindFxAt = new Float64Array(SLOTS); // fxMs at pose start: the tag-in fade runs on it, past a hit-stop
-  private readonly kindDir = new Float64Array(SLOTS);
-  private readonly kindPower = new Float64Array(SLOTS);
-  private readonly edge = new Uint8Array(SLOTS);
-  private readonly edgeAt = new Float64Array(SLOTS);
-  private readonly face = new Uint8Array(SLOTS);
-  /** The last horizontal mirror per slot: a big-frame (side-view) sheet keeps it while facing straight up or down (auto-face). */
-  private readonly hflip = new Uint8Array(SLOTS);
-  /** The visual box (x, y, w, h) the character view drew last, before any pose (the KO ghost starts from it). */
-  private readonly base = new Float64Array(SLOTS * 4);
-  private readonly spriteOf: string[] = new Array<string>(SLOTS).fill('');
-  /** Backward walk (Arcade): the eased amount, the foe's side while backing (+1 east, -1 west) and each character's sim x this frame. */
-  private readonly back = new Float64Array(SLOTS);
-  private readonly backSide = new Int8Array(SLOTS).fill(1);
-  /** 1 while the baked `walkBack` row (Phase 2, played forward by distance) is shown: its art carries the lean, so no procedural back cue. */
-  private readonly bakedBack = new Uint8Array(SLOTS);
-  private readonly simX = new Float64Array(SLOTS);
-  // Per projectile slot.
-  private readonly pid = new Int32Array(SLOTS).fill(-1);
-  private readonly born = new Float64Array(SLOTS);
-  private readonly ang = new Float64Array(SLOTS);
-  private readonly seen = new Int32Array(SLOTS);
-  private readonly pel = new Uint8Array(SLOTS);
-  private readonly snap = new Float64Array(SLOTS * 5);
-  private readonly snapAlpha = new Float64Array(SLOTS).fill(1);
-  private readonly snapKey: string[] = new Array<string>(SLOTS).fill('');
-  private readonly snapFrame: string[] = new Array<string>(SLOTS).fill('');
-  private readonly ghosts: Ghost[] = [];
-  /** Idle-motif contribution last frame, per slot (test probe). */
-  private readonly mRot = new Float32Array(SLOTS);
-  private readonly mOy = new Float32Array(SLOTS);
-  private readonly mAlpha = new Float32Array(SLOTS).fill(1);
-  /** Depth step per slot: eased amount, dolly used, super held flag and its end, last cast pulse start and level. */
-  private readonly z = new Float32Array(SLOTS);
-  private readonly dolly = new Float32Array(SLOTS).fill(1);
-  private readonly superHeld = new Uint8Array(SLOTS);
-  private readonly superUntil = new Float64Array(SLOTS);
-  private readonly castAt = new Float64Array(SLOTS).fill(-1e9);
-  private readonly castZ = new Float32Array(SLOTS);
+  /** Per-character slot data (entity id masked into SLOTS). */
+  private readonly s = new PoseSlots();
   private readonly eachChar = (c: RenderCharacter): void => { this.character(c); };
-  private readonly eachX = (c: RenderCharacter): void => { this.simX[c.id & (SLOTS - 1)] = c.x; };
-  private readonly eachProj = (p: RenderProjectile): void => { this.projectile(p); };
-  private readonly eachMelee = (p: RenderProjectile): void => { this.melee(p); };
-  // Per melee slot (ids masked like projectiles, own arrays so a melee box never takes a projectile's retire path).
-  private readonly meleeId = new Int32Array(SLOTS).fill(-1);
-  private readonly meleeSeen = new Int32Array(SLOTS);
-  /** Caster slot of the melee box (-1: none found) and its smooth kind (undefined: no smoothing entry). */
-  private readonly meleeCaster = new Int8Array(SLOTS).fill(-1);
-  private readonly meleeKind: (SmoothKind | undefined)[] = new Array<SmoothKind | undefined>(SLOTS).fill(undefined);
-  // Per character slot: lunge in progress, afterimage carry, settle and squeeze starts on the VFX clock, last Hurricane hit.
-  private readonly lungeOn = new Uint8Array(SLOTS);
-  private readonly lungeAcc = new Float64Array(SLOTS);
-  private readonly settleAt = new Float64Array(SLOTS).fill(-1e9);
-  private readonly squeezeAt = new Float64Array(SLOTS).fill(-1e9);
-  private readonly squeezeDir = new Int8Array(SLOTS).fill(1);
-  private readonly hurriAt = new Float64Array(SLOTS).fill(-1e9);
-  /** Tornado columns (sprite kind 'column') in the projectile slots: their size before the grow-in is kept for the shrink-out ghost. */
-  private readonly isColumn = new Uint8Array(SLOTS);
+  private readonly eachX = (c: RenderCharacter): void => { this.s.simX[c.id & (SLOTS - 1)] = c.x; };
+  private readonly eachProj = (p: RenderProjectile): void => { this.projectiles.update(p); };
+  private readonly eachMelee = (p: RenderProjectile): void => { this.abil.update(p); };
+
+  private readonly ghosts: GhostPool;
+  private readonly projectiles: PoseProjectiles;
+  private readonly shake = new ShakeDecay();
+  private readonly depth = new PoseDepthState(this.clk);
+  /** Melee boxes and the per-character ability smoothing state (lunge, settle, squeeze, last Hurricane hit). */
+  private readonly abil = new PoseMelee(this.clk, {
+    nearestCaster: (p) => this.nearestCaster(p),
+    castFrom: (best, p) => { this.castFrom(best, p); },
+    dustAt: (j) => { this.dustAt(j); },
+  });
+  private readonly motion: MotionInput = { fxMs: 0, reduced: false, settleAt: 0, lunging: false, squeezeAt: 0, squeezeDir: 1 };
 
   constructor(private readonly deps: PoseLayerDeps) {
     this.vfx = new PoseVfx(deps.scene);
     this.book = new SheetBook(deps.scene, deps.sheets ?? createFrameResolver(generatedSheets), deps.sheetBase ?? '');
+    this.ghosts = new GhostPool(deps.scene, this.clk, this.book);
+    this.projectiles = new PoseProjectiles(this.clk, (id) => deps.projectiles.peek(id), this.vfx, this.ghosts, (p) => this.casterOf(p));
   }
 
   /** The rendered ghosts in use (test probe). */
   get state(): PoseState {
-    let ghosts = 0;
-    for (const g of this.ghosts) if (g.from > Number.NEGATIVE_INFINITY) ghosts++;
-    return { animMs: this.animMs, posed: this.posed, ghosts, fx: this.vfx.live };
+    return { animMs: this.clk.animMs, posed: this.posed, ghosts: this.ghosts.live, fx: this.vfx.live };
   }
 
-  private readonly probeSpan: SpanX = { min: 0, max: 0 };
-
   sheetProbe(): { loaded: string[]; characters: SheetDrawn[] } {
-    const characters: SheetDrawn[] = [];
-    this.deps.view.forEachCharacter((c) => {
-      const img = this.deps.characters.peek(c.id)?.image;
-      if (img && (c.flags & DEAD_OR_BENCHED) === 0) {
-        const box = frameBox(img.frame);
-        // the visual-box height actually drawn: the whole display for a frame without a box, the box's share for a boxed one
-        const span = boxSpanX(img, img.rotation, this.probeSpan);
-        const bodyHeight = box ? (img.displayHeight * box.h) / img.frame.height : img.displayHeight;
-        characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX), bodyHeight,
-          boxL: Math.round(span.min * 10) / 10, boxR: Math.round(span.max * 10) / 10,
-          back: Math.round((this.back[c.id & (SLOTS - 1)] ?? 0) * 100) / 100,
-          motif: idleLookOf(c.sprite, c.element).motif,
-          motifRot: Math.round((this.mRot[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
-          motifOy: Math.round((this.mOy[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
-          motifAlpha: Math.round((this.mAlpha[c.id & (SLOTS - 1)] ?? 1) * 1000) / 1000,
-          depth: Math.round((this.z[c.id & (SLOTS - 1)] ?? 0) * 100) / 100,
-          dolly: Math.round((this.dolly[c.id & (SLOTS - 1)] ?? 1) * 1000) / 1000,
-        });
-      }
-    });
-    return { loaded: this.book.loaded, characters };
+    return {
+      loaded: this.book.loaded,
+      characters: drawnCharacters(this.deps.view, this.deps.characters, this.s, this.depth),
+    };
   }
 
   /** Feeds one tick's events (once each: the caller dedupes). */
@@ -289,15 +131,15 @@ export class PoseLayer {
           const a = (e['attacker'] ?? e.sourceId) & (SLOTS - 1);
           const kind = smoothKindForDef(e['ability'] ?? -1);
           // Hurricane pulses 2..: a repeat hit from the same hurricane keeps the sim running (no pose hold); a lunge holds a touch longer.
-          const repeat = kind === 'spin' && this.fxMs - (this.hurriAt[a] ?? -1e9) < HURRICANE_REPEAT_MS;
-          if (kind === 'spin') this.hurriAt[a] = this.fxMs;
-          const base = repeat ? 0 : poseHoldMs(e['strength'] ?? 0, this.reduced);
-          this.holdMs = Math.max(this.holdMs, base + (kind === 'lunge' && !this.reduced ? LUNGE_HOLD_MS : 0));
-          if (kind === 'grab' && !this.reduced) {
-            this.squeezeAt[t] = this.fxMs;
-            this.squeezeDir[t] = (this.lx[a] ?? 0) >= (this.lx[t] ?? 0) ? 1 : -1;
+          const repeat = kind === 'spin' && this.clk.fxMs - (this.abil.hurriAt[a] ?? -1e9) < HURRICANE_REPEAT_MS;
+          if (kind === 'spin') this.abil.hurriAt[a] = this.clk.fxMs;
+          const base = repeat ? 0 : poseHoldMs(e['strength'] ?? 0, this.clk.reduced);
+          this.clk.holdMs = Math.max(this.clk.holdMs, base + (kind === 'lunge' && !this.clk.reduced ? LUNGE_HOLD_MS : 0));
+          if (kind === 'grab' && !this.clk.reduced) {
+            this.abil.squeezeAt[t] = this.clk.fxMs;
+            this.abil.squeezeDir[t] = (this.s.lx[a] ?? 0) >= (this.s.lx[t] ?? 0) ? 1 : -1;
           }
-          this.start(t, PoseKind.hurt, (this.lx[t] ?? 0) >= (this.lx[a] ?? 0) ? 1 : -1, ((e['strength'] ?? 0) / 3));
+          this.start(t, PoseKind.hurt, (this.s.lx[t] ?? 0) >= (this.s.lx[a] ?? 0) ? 1 : -1, ((e['strength'] ?? 0) / 3));
           break;
         }
         case SimEventKind.dashed: {
@@ -306,35 +148,33 @@ export class PoseLayer {
           break;
         }
         case SimEventKind.tagIn:
-          this.clearKoGhosts(e['team'] ?? 0); this.deps.view.forEachCharacter(this.eachX);
-          this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, ...tagEntryOf(e, SLOTS - 1, this.team, this.have, this.simX));
+          this.ghosts.clearKo(e['team'] ?? 0); this.deps.view.forEachCharacter(this.eachX);
+          this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, ...tagEntryOf(e, SLOTS - 1, this.s.team, this.s.have, this.s.simX));
           break;
         case SimEventKind.superStarted: {
           const s = (e['caster'] ?? e.sourceId) & (SLOTS - 1);
           this.vfx.charge(s, SUPER_CHARGE_MS, true);
-          if (this.superHeld[s] !== 1) this.heldCount++;
-          this.superHeld[s] = 1;
-          this.superUntil[s] = this.fxMs + SUPER_HOLD_MS;
+          this.depth.holdSuper(s);
           break;
         }
         case SimEventKind.elementalCast:
-          this.castPulse(e.sourceId & (SLOTS - 1), CAST_Z);
+          this.depth.castPulse(e.sourceId & (SLOTS - 1), CAST_Z);
           break;
         case SimEventKind.chargeStarted:
           this.vfx.charge(e.sourceId & (SLOTS - 1), CHARGE_MS, false);
-          this.castPulse(e.sourceId & (SLOTS - 1), CAST_Z);
+          this.depth.castPulse(e.sourceId & (SLOTS - 1), CAST_Z);
           break;
         case SimEventKind.died:
-          this.resetDepth(e.sourceId & (SLOTS - 1));
+          this.depth.reset(e.sourceId & (SLOTS - 1));
           this.knockOut(e.sourceId, e['team'] ?? -1);
           break;
         case SimEventKind.roundEnded:
           this.victoryTeam = e['winner'] ?? -1;
-          this.victoryAt = this.animMs;
+          this.victoryAt = this.clk.animMs;
           break;
         case SimEventKind.roundStarted:
           this.victoryTeam = -1;
-          for (let s = 0; s < SLOTS; s++) this.resetDepth(s);
+          for (let s = 0; s < SLOTS; s++) this.depth.reset(s);
           break;
         default:
       }
@@ -345,73 +185,31 @@ export class PoseLayer {
   frame(nowMs: number, deltaMs: number): void {
     const { view } = this.deps;
     const ar = view.arcade();
-    this.arcade = ar !== undefined;
-    this.reduced = this.deps.reduced();
-    // The sim has stopped when its tick has not changed for a few ticks (pause, overlay) or a hit-stop holds it.
-    if (view.tick !== this.lastTick) {
-      this.lastTick = view.tick;
-      this.lastTickAt = nowMs;
-    }
-    const stalled = nowMs - this.lastTickAt > STALL_MS || ar?.frozen === true;
-    this.dt = stalled ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS);
-    if (this.holdMs > 0) {
-      // Wall time burns the hold (also through a sim hit-stop), but a real pause (manual stepping, overlay) keeps it held.
-      if (nowMs - this.lastTickAt <= STALL_MS) this.holdMs = Math.max(0, this.holdMs - Math.min(Math.max(deltaMs, 0), MAX_DT_MS));
-      this.dt = 0;
-    }
-    this.animMs += this.dt;
-    // The VFX clock keeps running through a hit-stop freeze (a super's charge happens inside it) and stops only on a real pause.
-    this.fxDt = nowMs - this.lastTickAt > STALL_MS && ar?.frozen !== true ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS);
-    this.fxMs += this.fxDt;
-    if (this.arcade) this.vfx.frame(this.fxDt, this.reduced);
-    if (this.heldCount > 0 && ar?.frozen !== true) {
-      for (let s = 0; s < SLOTS; s++) {
-        if (this.superHeld[s] === 1 && this.fxMs >= (this.superUntil[s] ?? 0)) {
-          this.superHeld[s] = 0;
-          this.heldCount--;
-        }
-      }
-    }
-    this.frameNo++;
+    this.clk.arcade = ar !== undefined;
+    this.clk.reduced = this.deps.reduced();
+    this.clk.advance(nowMs, deltaMs, view.tick, ar?.frozen === true);
+    if (this.clk.arcade) this.vfx.frame(this.clk.fxDt, this.clk.reduced);
+    if (ar?.frozen !== true) this.depth.expireHolds();
+    this.clk.frameNo++;
     this.posed = 0;
     // The foe may have a higher id than the hero: every sim x is read before any character is posed.
-    if (this.arcade) view.forEachCharacter(this.eachX);
+    if (this.clk.arcade) view.forEachCharacter(this.eachX);
     // Melee boxes first, so a cast pose starts on the frame the box appears; they are never visited by the projectile pass below.
-    if (this.arcade) {
+    if (this.clk.arcade) {
       view.forEachProjectile(this.eachMelee, true);
-      for (let i = 0; i < SLOTS; i++) {
-        if (this.meleeId[i] !== -1 && this.meleeSeen[i] !== this.frameNo) this.meleeEnd(i);
-      }
+      this.abil.endFrame();
     }
     view.forEachCharacter(this.eachChar);
     view.forEachProjectile(this.eachProj);
-    for (let i = 0; i < SLOTS; i++) {
-      if (this.pid[i] !== -1 && this.seen[i] !== this.frameNo) this.retire(i);
-    }
-    this.fadeGhosts();
-    this.decayShake();
-  }
-
-  /** A cast pulse of level `z` for the hero in `slot`; never replaces a stronger pulse that is still running. */
-  private castPulse(slot: number, z: number): void {
-    if (this.fxMs - (this.castAt[slot] ?? -1e9) < CAST_HOLD_MS && (this.castZ[slot] ?? 0) > z) return;
-    this.castAt[slot] = this.fxMs;
-    this.castZ[slot] = z;
-  }
-
-  private resetDepth(slot: number): void {
-    if (this.superHeld[slot] === 1) this.heldCount--;
-    this.superHeld[slot] = 0;
-    this.z[slot] = 0;
-    this.dolly[slot] = 1;
-    this.castAt[slot] = -1e9;
-    this.castZ[slot] = 0;
+    this.projectiles.endFrame();
+    this.ghosts.fade();
+    this.shake.update(this.deps.scene);
   }
 
   private start(slot: number, kind: number, dir: number, power: number): void {
-    this.kind[slot] = kind;
-    this.kindAt[slot] = this.animMs; this.kindFxAt[slot] = this.fxMs;
-    this.kindDir[slot] = dir; this.kindPower[slot] = power;
+    this.s.kind[slot] = kind;
+    this.s.kindAt[slot] = this.clk.animMs; this.s.kindFxAt[slot] = this.clk.fxMs;
+    this.s.kindDir[slot] = dir; this.s.kindPower[slot] = power;
   }
 
   private character(c: RenderCharacter): void {
@@ -420,15 +218,10 @@ export class PoseLayer {
     // Every character of the match (the bench too) gets its sheet loaded, if the manifest has one.
     this.book.want(c.sprite);
     if (!v || (c.flags & DEAD_OR_BENCHED) !== 0) {
-      this.have[i] = 0;
-      this.moving[i] = 0;
-      this.back[i] = 0;
-      this.z[i] = 0;
-      this.dolly[i] = 1;
-      if (this.superHeld[i] === 1) {
-        this.superHeld[i] = 0;
-        this.heldCount--;
-      }
+      this.s.have[i] = 0;
+      this.s.moving[i] = 0;
+      this.s.back[i] = 0;
+      this.depth.hide(i);
       return;
     }
     const img = v.image;
@@ -438,49 +231,49 @@ export class PoseLayer {
     const bw = c.w * v.scale;
     const bh = c.h * v.scale;
     const o = i * 4;
-    this.base[o] = bx;
-    this.base[o + 1] = by;
-    this.base[o + 2] = bw;
-    this.base[o + 3] = bh;
-    this.team[i] = c.team;
-    this.elem[i] = Math.max(FX_ELEMENTS.indexOf(c.element), 0);
+    this.s.base[o] = bx;
+    this.s.base[o + 1] = by;
+    this.s.base[o + 2] = bw;
+    this.s.base[o + 3] = bh;
+    this.s.team[i] = c.team;
+    this.s.elem[i] = Math.max(FX_ELEMENTS.indexOf(c.element), 0);
     // The drawn position without the hit-stop jitter (which only exists while the character is held still).
     const dx = c.x !== c.px ? img.x : c.x;
     const dy = c.y !== c.py ? img.y : c.y;
-    if (this.arcade) this.vfx.anchor(i, dx + c.w / 2, dy + c.h / 2, this.elem[i] ?? 0);
+    if (this.clk.arcade) this.vfx.anchor(i, dx + c.w / 2, dy + c.h / 2, this.s.elem[i] ?? 0);
     let dist = 0;
-    if (this.have[i] === 1) {
-      dist = Math.hypot(dx - (this.lx[i] ?? dx), dy - (this.ly[i] ?? dy));
+    if (this.s.have[i] === 1) {
+      dist = Math.hypot(dx - (this.s.lx[i] ?? dx), dy - (this.s.ly[i] ?? dy));
       if (dist > TELEPORT_PX) dist = 0;
     }
-    const ddx = dx - (this.lx[i] ?? dx);
-    const ddy = dy - (this.ly[i] ?? dy);
-    this.have[i] = 1;
-    this.lx[i] = dx;
-    this.ly[i] = dy;
-    const dt = this.dt;
+    const ddx = dx - (this.s.lx[i] ?? dx);
+    const ddy = dy - (this.s.ly[i] ?? dy);
+    this.s.have[i] = 1;
+    this.s.lx[i] = dx;
+    this.s.ly[i] = dy;
+    const dt = this.clk.dt;
     const walking = dt > 0 && (dist * 1000) / dt > STAND_SPEED;
-    const wasWalking = this.moving[i] === 1;
-    this.moving[i] = walking ? 1 : 0;
+    const wasWalking = this.s.moving[i] === 1;
+    this.s.moving[i] = walking ? 1 : 0;
     if (walking !== wasWalking) {
-      this.edge[i] = walking ? 1 : 2;
-      this.edgeAt[i] = this.animMs;
+      this.s.edge[i] = walking ? 1 : 2;
+      this.s.edgeAt[i] = this.clk.animMs;
     }
-    const m = (this.move[i] ?? 0) + ((walking ? 1 : 0) - (this.move[i] ?? 0)) * follow(dt, walking ? 60 : 140);
-    this.move[i] = m;
-    this.phase[i] = !walking && m < 0.05 ? 0 : (this.phase[i] ?? 0) + dist;
+    const m = (this.s.move[i] ?? 0) + ((walking ? 1 : 0) - (this.s.move[i] ?? 0)) * follow(dt, walking ? 60 : 140);
+    this.s.move[i] = m;
+    this.s.phase[i] = !walking && m < 0.05 ? 0 : (this.s.phase[i] ?? 0) + dist;
     const ar = this.deps.view.arcade();
     const face = ar ? ar.aim(c.id) : c.dir;
-    this.face[i] = face;
-    this.spriteOf[i] = c.sprite;
+    this.s.face[i] = face;
+    this.s.spriteOf[i] = c.sprite;
     const backing = ar !== undefined && this.backingNow(c, i, ar, face);
-    const b = (this.back[i] ?? 0) + ((backing ? 1 : 0) - (this.back[i] ?? 0)) * follow(dt, 80);
-    this.back[i] = b;
+    const b = (this.s.back[i] ?? 0) + ((backing ? 1 : 0) - (this.s.back[i] ?? 0)) * follow(dt, 80);
+    this.s.back[i] = b;
     const gait = backGaitOf(c.sprite);
 
     // A sheet row when the character has one (its own art carries the walk, idle and lean), else the legacy art: the walk
     // cycle by distance walked (all views), the facing, and the procedural lean and bob for 8-way movement and aim.
-    this.bakedBack[i] = 0;
+    this.s.bakedBack[i] = 0;
     const sheet = this.book.has(c.sprite) ? this.sheetFrame(c, i, face, walking || m > 0.05) : undefined;
     const sprite = MAP_SPRITES[c.sprite];
     if (sheet) {
@@ -489,74 +282,72 @@ export class PoseLayer {
       else img.setTexture(shown, sheet.frame);
       // N and S of a big-frame sheet are side views (baked from NE / SE): keep the last horizontal facing.
       const vertical = face === 2 || face === 6;
-      const flip = vertical && sheet.box.w !== sheet.rect.w ? this.hflip[i] === 1 : sheet.flipX;
-      if (!vertical) this.hflip[i] = flipForDir(face) ? 1 : 0;
+      const flip = vertical && sheet.box.w !== sheet.rect.w ? this.s.hflip[i] === 1 : sheet.flipX;
+      if (!vertical) this.s.hflip[i] = flipForDir(face) ? 1 : 0;
       img.setFlipX(flip);
-      this.lean[i] = 0;
+      this.s.lean[i] = 0;
     } else {
       if (sprite) {
         const set = frameSetFor(face);
         const count = framesOf(sprite, set).length;
-        const name = frameName(set, m > 0.05 || walking ? (b > 0.5 && gait.reverse ? walkFrameBack(this.phase[i] ?? 0, count, gait.stridePx) : walkFrame(this.phase[i] ?? 0, count)) : 0);
+        const name = frameName(set, m > 0.05 || walking ? (b > 0.5 && gait.reverse ? walkFrameBack(this.s.phase[i] ?? 0, count, gait.stridePx) : walkFrame(this.s.phase[i] ?? 0, count)) : 0);
         if (img.texture.key.startsWith('sheet:')) img.setTexture(gradedHeroTexture(this.deps.scene, `map:${c.sprite}`), name);
         else img.setFrame(name);
       }
       img.setFlipX(flipForDir(face));
-      if (face !== 2 && face !== 6) this.hflip[i] = flipForDir(face) ? 1 : 0;
+      if (face !== 2 && face !== 6) this.s.hflip[i] = flipForDir(face) ? 1 : 0;
     }
     fitToBox(img, bx, by, bw, bh);
 
     const p = resetPose(this.pose);
-    if (!this.reduced && !sheet) {
+    let lungeTrail = false;
+    if (!this.clk.reduced && !sheet) {
       const heading = walking ? headingOf(ddx, ddy) : -1;
       const target = (heading >= 0 ? leanFor(heading) * m * (1 - b) : 0) + (walking || (face & 1) === 0 ? 0 : leanFor(face) * 0.4);
-      this.lean[i] = (this.lean[i] ?? 0) + (target - (this.lean[i] ?? 0)) * follow(dt, 90);
-      p.rot = this.lean[i] ?? 0;
-      breathe(p, this.animMs + i * 370, 1 - m);
-      p.oy -= 1.5 * Math.abs(Math.sin(((this.phase[i] ?? 0) / STRIDE_PX) * Math.PI)) * m;
+      this.s.lean[i] = (this.s.lean[i] ?? 0) + (target - (this.s.lean[i] ?? 0)) * follow(dt, 90);
+      p.rot = this.s.lean[i] ?? 0;
+      breathe(p, this.clk.animMs + i * 370, 1 - m);
+      p.oy -= 1.5 * Math.abs(Math.sin(((this.s.phase[i] ?? 0) / STRIDE_PX) * Math.PI)) * m;
     }
     // Wings flap and knees bend while moving (per-hero flags, views/locomotion.ts); nothing under reduced motion.
     // While backing away the forward cues fade out and the hero's back gait fades in (no double flap or knee dip).
-    applyLocomotion(p, locomotionOf(c.sprite), m * (1 - b), this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
+    applyLocomotion(p, locomotionOf(c.sprite), m * (1 - b), this.s.phase[i] ?? 0, this.clk.animMs + i * 131, this.clk.reduced);
     // Idle body motif (idle-element-auras): a small per-hero move while standing, sheet heroes included; boxed rigs keep rot/oy/alpha.
     const boxedRig = sheet !== undefined && sheet.box.w !== sheet.rect.w;
     const look = idleLookOf(c.sprite, c.element);
     const r0 = p.rot;
     const o0 = p.oy;
     const a0 = p.alpha;
-    applyIdleMotif(p, look.motif, this.animMs + i * 211, (1 - m) * (1 - b), this.reduced, boxedRig, look.amount);
-    this.mRot[i] = p.rot - r0;
-    this.mOy[i] = p.oy - o0;
-    this.mAlpha[i] = a0 === 0 ? 1 : p.alpha / a0;
-    applyBackGait(p, gait, this.bakedBack[i] === 1 ? 0 : m * b, this.backSide[i] ?? 1, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
-    if (!this.reduced) {
-      const e = this.edge[i] ?? 0;
-      if (e !== 0) {
-        const age = this.animMs - (this.edgeAt[i] ?? 0);
-        const dur = e === 1 ? START_MS : STOP_MS;
-        if (age >= dur) this.edge[i] = 0;
-        else {
-          const bell = Math.sin((Math.PI * age) / dur);
-          // Start: a short crouch into the heading; stop: a small rebound as the character settles.
-          p.sy *= e === 1 ? 1 - 0.06 * bell : 1 + 0.035 * bell;
-          p.sx *= e === 1 ? 1 + 0.04 * bell : 1 - 0.02 * bell;
-        }
-      }
+    applyIdleMotif(p, look.motif, this.clk.animMs + i * 211, (1 - m) * (1 - b), this.clk.reduced, boxedRig, look.amount);
+    this.s.mRot[i] = p.rot - r0;
+    this.s.mOy[i] = p.oy - o0;
+    this.s.mAlpha[i] = a0 === 0 ? 1 : p.alpha / a0;
+    applyBackGait(p, gait, this.s.bakedBack[i] === 1 ? 0 : m * b, this.s.backSide[i] ?? 1, this.s.phase[i] ?? 0, this.clk.animMs + i * 131, this.clk.reduced);
+    if (!this.clk.reduced) {
+      const e = this.s.edge[i] ?? 0;
+      if (e !== 0 && !edgeSquash(p, e, this.clk.animMs - (this.s.edgeAt[i] ?? 0))) this.s.edge[i] = 0;
     }
     if (ar) {
-      const g = (this.guard[i] ?? 0) + ((ar.guarding(c.id) ? 1 : 0) - (this.guard[i] ?? 0)) * follow(dt, 70);
-      this.guard[i] = g;
-      if (!this.reduced) {
+      const g = (this.s.guard[i] ?? 0) + ((ar.guarding(c.id) ? 1 : 0) - (this.s.guard[i] ?? 0)) * follow(dt, 70);
+      this.s.guard[i] = g;
+      if (!this.clk.reduced) {
         p.sy *= 1 - 0.1 * g;
         p.sx *= 1 + 0.04 * g;
       }
-      const k = this.kind[i] ?? 0;
+      const k = this.s.kind[i] ?? 0;
       if (k !== 0) {
-        if (this.animMs - (this.kindAt[i] ?? 0) >= (POSE_MS[k] ?? 0)) this.kind[i] = 0;
-        else applyPose(p, k, this.animMs - (this.kindAt[i] ?? 0), this.kindDir[i] ?? 1, this.kindPower[i] ?? 0, this.reduced, this.fxMs - (this.kindFxAt[i] ?? 0));
+        if (this.clk.animMs - (this.s.kindAt[i] ?? 0) >= (POSE_MS[k] ?? 0)) this.s.kind[i] = 0;
+        else applyPose(p, k, this.clk.animMs - (this.s.kindAt[i] ?? 0), this.s.kindDir[i] ?? 1, this.s.kindPower[i] ?? 0, this.clk.reduced, this.clk.fxMs - (this.s.kindFxAt[i] ?? 0));
       }
-      if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
-      this.abilityMotion(p, i, ddx, ddy, dist, dt);
+      if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.clk.animMs - this.victoryAt, 1, 0, this.clk.reduced);
+      const m = this.motion;
+      m.fxMs = this.clk.fxMs;
+      m.reduced = this.clk.reduced;
+      m.settleAt = this.abil.settleAt[i] ?? -1e9;
+      m.lunging = this.abil.lungeOn[i] === 1;
+      m.squeezeAt = this.abil.squeezeAt[i] ?? -1e9;
+      m.squeezeDir = this.abil.squeezeDir[i] ?? 1;
+      lungeTrail = abilityMotion(p, m, ddx, ddy, dist, dt);
     }
     // Portrait rigs (boxed frames, ADR-0020) bake their own weighty motion: no runtime squash and stretch on top (owner: no
     // bouncy squash; it also made the painted body jump ~5% in height). Lean, offsets and fades still apply.
@@ -565,73 +356,36 @@ export class PoseLayer {
       p.sy = 1;
     }
     // Depth step (Arcade): a super or cast steps the hero toward the camera, last before place() so it sits on every other pose.
-    if (this.arcade) {
-      this.z[i] = stepDepth(this.z[i] ?? 0, depthTarget(this.superHeld[i] === 1, this.fxMs - (this.castAt[i] ?? -1e9), this.castZ[i] ?? 0, this.reduced), this.fxDt);
-      this.dolly[i] = applyDepth(p, this.z[i] ?? 0, bh, boxedRig);
-    }
+    if (this.clk.arcade) this.depth.step(i, p, bh, boxedRig);
     this.place(img, bx + bw / 2, by + bh, p);
-    if (this.arcade && this.lungeOn[i] === 1 && !this.reduced) {
-      this.lungeAcc[i] = (this.lungeAcc[i] ?? 0) + dist;
-      if ((this.lungeAcc[i] ?? 0) >= AFTER_GAP_PX && this.lungeTrail) {
-        this.lungeAcc[i] = 0;
-        this.vfx.afterimage(img, this.elem[i] ?? 0, this.reduced);
+    if (this.clk.arcade && this.abil.lungeOn[i] === 1 && !this.clk.reduced) {
+      this.abil.lungeAcc[i] = (this.abil.lungeAcc[i] ?? 0) + dist;
+      if ((this.abil.lungeAcc[i] ?? 0) >= AFTER_GAP_PX && lungeTrail) {
+        this.abil.lungeAcc[i] = 0;
+        this.vfx.afterimage(img, this.s.elem[i] ?? 0, this.clk.reduced);
       }
     }
-    if (this.arcade && (this.z[i] ?? 0) > 0.001) {
-      const o2 = shadowFor(this.z[i] ?? 0, bh, this.shadowOut);
+    if (this.clk.arcade && (this.depth.z[i] ?? 0) > 0.001) {
+      const o2 = shadowFor(this.depth.z[i] ?? 0, bh, this.shadowOut);
       v.shadowPose(o2.dx, o2.dy, o2.scaleMul, o2.alphaMul);
-    }
-  }
-
-  /** Set by abilityMotion: the lunge trail flag of the character just posed. */
-  private lungeTrail = false;
-
-  /** Ability smoothing on the body: settle squash during the recovery, lunge stretch along the drawn motion, Wyrm Coil squeeze on the foe. */
-  private abilityMotion(p: Pose, i: number, ddx: number, ddy: number, dist: number, dt: number): void {
-    this.lungeTrail = false;
-    const sAge = this.fxMs - (this.settleAt[i] ?? -1e9);
-    if (sAge >= 0 && sAge < SETTLE_MS) {
-      const s = settlePose(sAge / SETTLE_MS, this.reduced);
-      p.sx *= s.sx;
-      p.sy *= s.sy;
-    }
-    if (this.lungeOn[i] === 1) {
-      const speed = dt > 0 ? (dist * TICK_MS) / dt : 0;
-      const l = lungeStretch(speed, this.reduced);
-      this.lungeTrail = l.trail;
-      // Axis-aligned stretch along the dominant direction of the drawn motion.
-      if (Math.abs(ddx) >= Math.abs(ddy)) {
-        p.sx *= l.sx;
-        p.sy *= l.sy;
-      } else {
-        p.sx *= l.sy;
-        p.sy *= l.sx;
-      }
-    }
-    const qAge = this.fxMs - (this.squeezeAt[i] ?? -1e9);
-    if (qAge >= 0 && qAge < SQUEEZE_MS && !this.reduced) {
-      const bell = Math.sin((Math.PI * qAge) / SQUEEZE_MS);
-      p.sx *= 1 - SQUEEZE_SX * bell;
-      p.sy *= 1 + SQUEEZE_SY * bell;
-      p.ox += (this.squeezeDir[i] ?? 1) * SQUEEZE_PULL_PX * bell;
     }
   }
 
   /** The sheet frame to show: a running event pose, the victory, guard, walk (by distance walked) or idle row. */
   private sheetFrame(c: RenderCharacter, i: number, face: number, walking: boolean): SheetFrame | undefined {
-    const k = this.kind[i] ?? 0;
-    const age = this.animMs - (this.kindAt[i] ?? 0);
-    const g = this.guard[i] ?? 0;
+    const k = this.s.kind[i] ?? 0;
+    const age = this.clk.animMs - (this.s.kindAt[i] ?? 0);
+    const g = this.s.guard[i] ?? 0;
     if (k !== 0 && age < (POSE_MS[k] ?? 0)) return this.book.frame(c.sprite, KIND_ACTION[k] ?? 'idle', face, age);
-    if (this.victoryTeam === c.team) return this.book.frame(c.sprite, 'victory', face, this.animMs - this.victoryAt);
+    if (this.victoryTeam === c.team) return this.book.frame(c.sprite, 'victory', face, this.clk.animMs - this.victoryAt);
     if (g > 0.05) return this.book.frame(c.sprite, 'guard', face, g * GUARD_ROW_MS);
     if (walking) {
-      const bk = (this.back[i] ?? 0) > 0.5;
-      const baked = bk ? this.book.frame(c.sprite, 'walkBack', face, walkTime(this.phase[i] ?? 0, backGaitOf(c.sprite).stridePx)) : undefined;
-      this.bakedBack[i] = baked ? 1 : 0;
-      return baked ?? this.book.frame(c.sprite, 'walk', face, walkTimeFor(c.sprite, this.phase[i] ?? 0, bk));
+      const bk = (this.s.back[i] ?? 0) > 0.5;
+      const baked = bk ? this.book.frame(c.sprite, 'walkBack', face, walkTime(this.s.phase[i] ?? 0, backGaitOf(c.sprite).stridePx)) : undefined;
+      this.s.bakedBack[i] = baked ? 1 : 0;
+      return baked ?? this.book.frame(c.sprite, 'walk', face, walkTimeFor(c.sprite, this.s.phase[i] ?? 0, bk));
     }
-    return this.book.frame(c.sprite, 'idle', face, this.animMs + i * 370);
+    return this.book.frame(c.sprite, 'idle', face, this.clk.animMs + i * 370);
   }
 
   /**
@@ -642,12 +396,12 @@ export class PoseLayer {
   private backingNow(c: RenderCharacter, i: number, ar: RenderArcade, face: number): boolean {
     const foe = ar.active(1 - c.team);
     if (foe < 0 || foe === c.id) return false;
-    const foeX = this.simX[foe & (SLOTS - 1)] ?? c.x;
+    const foeX = this.s.simX[foe & (SLOTS - 1)] ?? c.x;
     if (!backingAway(c.x, c.px, foeX) || !facesToward(face, c.px, foeX)) return false;
     if (ar.stunned(c.id) || ar.guarding(c.id) || ar.rooted(c.id) || this.victoryTeam === c.team) return false;
-    const k = this.kind[i] ?? 0;
-    if (k !== 0 && this.animMs - (this.kindAt[i] ?? 0) < (POSE_MS[k] ?? 0)) return false;
-    this.backSide[i] = foeX > c.px ? 1 : -1;
+    const k = this.s.kind[i] ?? 0;
+    if (k !== 0 && this.clk.animMs - (this.s.kindAt[i] ?? 0) < (POSE_MS[k] ?? 0)) return false;
+    this.s.backSide[i] = foeX > c.px ? 1 : -1;
     return true;
   }
 
@@ -662,67 +416,13 @@ export class PoseLayer {
     posePivot(img, fx, fy, p);
   }
 
-  private projectile(p: RenderProjectile): void {
-    const v = this.deps.projectiles.peek(p.id);
-    if (!v) return;
-    const i = p.id & (SLOTS - 1);
-    const { image, glow } = v;
-    const target = image.angle;
-    let fresh = false;
-    const column = SMOOTH_KIND[p.sprite] === 'column';
-    if (this.pid[i] !== p.id) {
-      this.pid[i] = p.id;
-      this.isColumn[i] = column ? 1 : 0;
-      this.born[i] = this.animMs;
-      this.ang[i] = target;
-      fresh = true;
-      if (this.arcade) this.casterOf(p, i);
-    } else if (this.dt > 0) {
-      this.ang[i] = (this.ang[i] ?? target) + shortestArc(this.ang[i] ?? target, target) * follow(this.dt, ROT_TAU_MS);
-    }
-    this.seen[i] = this.frameNo;
-    if (this.arcade) this.vfx.trail(i, image.x, image.y, this.pel[i] ?? 0, fresh, this.reduced, fireBlastFxStrength(p.alphaPm));
-    const a = this.ang[i] ?? target;
-    const k = easeOutCubic((this.animMs - (this.born[i] ?? 0)) / SPAWN_MS);
-    const o = i * 5;
-    let lift = 0;
-    if (column) {
-      // A tornado column grows in over its own envelope (not the 60 ms bolt ease), pinned at its base.
-      this.snap[o + 2] = image.displayWidth;
-      this.snap[o + 3] = image.displayHeight;
-      const env = columnEnvelope(this.animMs - (this.born[i] ?? 0), 1e9, this.reduced);
-      lift = (1 - env.scaleY) * image.displayHeight / 2;
-      image.setAngle(a).setScale(image.scaleX, image.scaleY * env.scaleY).setPosition(image.x, image.y + lift).setAlpha(image.alpha * env.alpha);
-      glow.setAngle(a).setScale(glow.scaleX, glow.scaleY * env.scaleY).setPosition(glow.x, glow.y + lift).setAlpha(glow.alpha * env.alpha);
-    } else {
-      const grow = this.reduced ? 1 : SPAWN_FROM + (1 - SPAWN_FROM) * k;
-      image.setAngle(a).setScale(image.scaleX * grow, image.scaleY * grow);
-      glow.setAngle(a).setScale(glow.scaleX * grow, glow.scaleY * grow);
-    }
-    if (!column && k < 1) {
-      const ka = SPAWN_ALPHA_FLOOR + (1 - SPAWN_ALPHA_FLOOR) * k;
-      image.setAlpha(image.alpha * ka);
-      glow.setAlpha(glow.alpha * ka);
-    }
-    this.snap[o] = image.x;
-    this.snap[o + 1] = image.y - lift;
-    if (!column) {
-      this.snap[o + 2] = image.displayWidth;
-      this.snap[o + 3] = image.displayHeight;
-    }
-    this.snap[o + 4] = a;
-    this.snapAlpha[i] = (p.alphaPm ?? 1000) / 1000;
-    this.snapKey[i] = image.texture.key;
-    this.snapFrame[i] = image.frame.name;
-  }
-
   /** The slot of the nearest same-team character to `p` (-1: none seen yet). */
   private nearestCaster(p: RenderProjectile): number {
     let best = -1;
     let bestD = Infinity;
     for (let j = 0; j < SLOTS; j++) {
-      if (this.have[j] !== 1 || this.team[j] !== p.team) continue;
-      const d = Math.abs((this.lx[j] ?? 0) - p.x) + Math.abs((this.ly[j] ?? 0) - p.y);
+      if (this.s.have[j] !== 1 || this.s.team[j] !== p.team) continue;
+      const d = Math.abs((this.s.lx[j] ?? 0) - p.x) + Math.abs((this.s.ly[j] ?? 0) - p.y);
       if (d < bestD) {
         bestD = d;
         best = j;
@@ -733,207 +433,41 @@ export class PoseLayer {
 
   /** The cast pose, depth pulse and release flare for the caster `best` of `p`. */
   private castFrom(best: number, p: RenderProjectile): void {
-    if (this.fxMs - (this.castAt[best] ?? -1e9) >= PROJ_CAST_GAP_MS) this.castPulse(best, PROJ_CAST_Z);
+    if (this.clk.fxMs - (this.depth.castAt[best] ?? -1e9) >= PROJ_CAST_GAP_MS) this.depth.castPulse(best, PROJ_CAST_Z);
     this.start(best, PoseKind.cast, p.dir === 0 || p.dir === 1 || p.dir === 7 ? 1 : -1, 1);
     this.vfx.release(best);
   }
 
-  /** A projectile first seen: the nearest same-team character just cast it. */
-  private casterOf(p: RenderProjectile, slot: number): void {
+  /** A projectile first seen: the nearest same-team character just cast it. Returns that caster's element index (-1: none seen yet). */
+  private casterOf(p: RenderProjectile): number {
     const best = this.nearestCaster(p);
-    if (best < 0) return;
+    if (best < 0) return -1;
     this.castFrom(best, p);
-    this.pel[slot] = this.elem[best] ?? 0;
-  }
-
-  /** A melee box (Arcade): its first sight is the only cue the renderer gets that the ability was cast. */
-  private melee(p: RenderProjectile): void {
-    const i = p.id & (SLOTS - 1);
-    if (this.meleeId[i] !== p.id) {
-      if (this.meleeId[i] !== -1) this.meleeEnd(i); // the slot's previous box ended and its id was reused in one frame
-      this.meleeId[i] = p.id;
-      const kind = SMOOTH_KIND[p.sprite];
-      this.meleeKind[i] = kind;
-      const best = this.nearestCaster(p);
-      this.meleeCaster[i] = best;
-      if (best >= 0) {
-        this.castFrom(best, p);
-        if (kind === 'lunge') {
-          this.lungeOn[best] = 1;
-          this.lungeAcc[best] = 0;
-          this.dustAt(best);
-        } else if (kind !== undefined) this.settleAt[best] = this.fxMs;
-      }
-    }
-    this.meleeSeen[i] = this.frameNo;
+    return this.s.elem[best] ?? 0;
   }
 
   /** A dust puff at the feet of character slot `j` (the box centre bottom CharacterView drew last). */
   private dustAt(j: number): void {
     const o = j * 4;
-    this.vfx.dust((this.base[o] ?? 0) + (this.base[o + 2] ?? 0) / 2, (this.base[o + 1] ?? 0) + (this.base[o + 3] ?? 0), this.elem[j] ?? 0, this.reduced);
-  }
-
-  /** A melee box that is no longer live: ends a lunge (dust puff, settle). Never an impact burst or a ghost: it is not a projectile. */
-  private meleeEnd(i: number): void {
-    const best = this.meleeCaster[i] ?? -1;
-    this.meleeId[i] = -1;
-    this.meleeCaster[i] = -1;
-    if (best >= 0 && this.meleeKind[i] === 'lunge' && this.lungeOn[best] === 1) {
-      this.lungeOn[best] = 0;
-      this.settleAt[best] = this.fxMs;
-      this.dustAt(best);
-    }
-    this.meleeKind[i] = undefined;
-  }
-
-  /** A projectile slot that was not drawn this frame has hit or expired: fade its last pose out. */
-  private retire(i: number): void {
-    this.pid[i] = -1;
-    const o = i * 5;
-    const column = this.isColumn[i] === 1;
-    this.isColumn[i] = 0;
-    if (this.arcade && !column) this.vfx.impact(this.snap[o] ?? 0, this.snap[o + 1] ?? 0, this.pel[i] ?? 0, this.reduced, fireBlastFxStrength((this.snapAlpha[i] ?? 1) * 1000));
-    const g = this.free();
-    if (!g) return;
-    g.kind = column ? GHOST_COLUMN : 0;
-    g.from = this.animMs;
-    g.ms = column ? (this.reduced ? REDUCED_FADE_MS : COLUMN_FADE_MS) : FADE_MS;
-    g.x = this.snap[o] ?? 0;
-    g.y = this.snap[o + 1] ?? 0;
-    g.w = this.snap[o + 2] ?? 0;
-    g.h = this.snap[o + 3] ?? 0;
-    g.rot = this.snap[o + 4] ?? 0;
-    g.alpha = this.snapAlpha[i] ?? 1;
-    g.image.setTexture(this.snapKey[i] ?? '__DEFAULT', this.snapFrame[i] ?? '').setOrigin(0.5, 0.5).setVisible(true);
+    this.vfx.dust((this.s.base[o] ?? 0) + (this.s.base[o + 2] ?? 0) / 2, (this.s.base[o + 1] ?? 0) + (this.s.base[o + 3] ?? 0), this.s.elem[j] ?? 0, this.clk.reduced);
   }
 
   /** The KO fall of character `id`: a ghost copy of its last drawn image falls over and fades while the real one is hidden. */
   private knockOut(id: number, team: number): void {
     const v = this.deps.characters.peek(id);
     if (!v) return;
-    const img = v.image;
-    const g = this.free();
-    if (!g) return;
-    g.kind = 1;
-    g.team = team;
-    g.from = this.animMs;
-    g.ms = KO_MS;
-    g.dir = img.flipX ? 1 : -1;
-    // The visual box (not the drawn frame, which may carry overscan): the fall pivots on the feet.
-    const o = (id & (SLOTS - 1)) * 4;
-    g.w = this.base[o + 2] ?? img.displayWidth;
-    g.h = this.base[o + 3] ?? img.displayHeight;
-    g.x = (this.base[o] ?? img.x) + g.w / 2;
-    g.y = (this.base[o + 1] ?? img.y) + g.h;
-    g.rot = 0;
-    g.sprite = this.spriteOf[id & (SLOTS - 1)] ?? '';
-    g.face = this.face[id & (SLOTS - 1)] ?? 0;
-    g.image.setTexture(img.texture.key, img.frame.name).setOrigin(0, 0).setFlipX(img.flipX).setVisible(true).setDepth(img.depth - 0.2);
-  }
-
-  /** A KO'd hero's partner tags in where it fell (QA r34, r74, r75): that team's KO ghost goes at once ("opaque or gone"), so only the arriving hero shows. */
-  private clearKoGhosts(team: number): void {
-    for (const g of this.ghosts) {
-      if (g.kind !== 1 || g.from === Number.NEGATIVE_INFINITY || g.team !== team) continue;
-      g.from = Number.NEGATIVE_INFINITY;
-      g.image.setVisible(false);
-    }
-  }
-
-  private free(): Ghost | undefined {
-    for (const g of this.ghosts) {
-      if (g.from !== Number.NEGATIVE_INFINITY) continue;
-      g.alpha = 1;
-      g.team = -1;
-      return g;
-    }
-    if (this.ghosts.length >= GHOSTS) return undefined;
-    const image = this.deps.scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, alpha: 1, kind: 0, dir: 1, sprite: '', face: 0, team: -1 };
-    this.ghosts.push(g);
-    return g;
-  }
-
-  private fadeGhosts(): void {
-    for (const g of this.ghosts) {
-      if (g.from === Number.NEGATIVE_INFINITY) continue;
-      const t = (this.animMs - g.from) / g.ms;
-      if (t >= 1) {
-        g.from = Number.NEGATIVE_INFINITY;
-        g.image.setVisible(false);
-        continue;
-      }
-      const img = g.image;
-      if (g.kind === GHOST_COLUMN) {
-        // Tornado ending (early or not): shrink toward its base while fading, instead of the generic grow-and-fade.
-        const env = columnEnvelope(1e6, 1e6 + (1 - t) * g.ms, this.reduced);
-        img.setPosition(g.x, g.y + ((1 - env.scaleY) * g.h) / 2).setDisplaySize(g.w, g.h * env.scaleY).setAngle(g.rot).setAlpha(GHOST_ALPHA * g.alpha * env.alpha);
-        img.setDepth(1);
-      } else if (g.kind === 0) {
-        const grow = this.reduced ? 1 : 1 + FADE_GROW * easeOutCubic(t);
-        img.setPosition(g.x, g.y).setDisplaySize(g.w * grow, g.h * grow).setAngle(g.rot).setAlpha(GHOST_ALPHA * g.alpha * (1 - t));
-        img.setDepth(1);
-      } else {
-        const p = resetPose(this.pose);
-        koFall(p, t, g.dir, this.reduced);
-        // A sheet's own KO row replaces the procedural fall-over (the fade stays).
-        const ko = this.book.has(g.sprite) ? this.book.frame(g.sprite, 'ko', g.face, t * KO_MS) : undefined;
-        if (ko) {
-          img.setTexture(this.book.texture(g.sprite, ko.texture), ko.frame).setFlipX(ko.flipX);
-          p.rot = 0;
-          p.ox = 0;
-          p.oy = 0;
-        }
-        fitToBox(img, g.x - g.w / 2, g.y - g.h, g.w, g.h);
-        img.setAlpha(1);
-        posePivot(img, g.x, g.y, p);
-      }
-    }
-  }
-
-  /** Camera shake decays quadratically with its progress instead of holding its strength and stopping dead. */
-  private decayShake(): void {
-    const fx = this.deps.scene.cameras.main.shakeEffect;
-    if (!fx.isRunning) {
-      this.shaking = false;
-      return;
-    }
-    if (!this.shaking) {
-      this.shaking = true;
-      this.shakeX = fx.intensity.x;
-      this.shakeY = fx.intensity.y;
-    }
-    const k = 1 - fx.progress;
-    fx.intensity.set(this.shakeX * k * k, this.shakeY * k * k);
+    const slot = id & (SLOTS - 1);
+    this.ghosts.knockOut(v.image, team, this.s.base, id, this.s.spriteOf[slot] ?? '', this.s.face[slot] ?? 0);
   }
 
   destroy(): void {
-    for (const g of this.ghosts) g.image.destroy();
-    this.ghosts.length = 0;
+    this.ghosts.destroy();
     this.vfx.destroy();
   }
 }
-
 const layers = new WeakMap<Phaser.Scene, PoseLayer>();
 
 /** Test probe: the sheets loaded and, per drawn character, the texture, frame, mirror and rotation shown (undefined before the mount). */
-/**
- * Scales `img` (top-left origin, already fitted to its visual box) by the pose about the feet point (fx, fy), rotates it about
- * that point, offsets it, and multiplies its alpha.
- */
-function posePivot(img: Phaser.GameObjects.Image, fx: number, fy: number, p: Pose): void {
-  const r = p.rot * DEG;
-  const cos = Math.cos(r);
-  const sin = Math.sin(r);
-  const a = (img.x - fx) * p.sx;
-  const b = (img.y - fy) * p.sy;
-  img.setScale(img.scaleX * p.sx, img.scaleY * p.sy);
-  img.setRotation(r);
-  img.setPosition(fx + p.ox + a * cos - b * sin, fy + p.oy + a * sin + b * cos);
-  if (p.alpha !== 1) img.setAlpha(img.alpha * p.alpha);
-}
-
 export function sheetState(scene: Phaser.Scene): { loaded: string[]; characters: SheetDrawn[] } | undefined {
   const layer = layers.get(scene);
   return layer?.sheetProbe();
