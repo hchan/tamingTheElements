@@ -14,36 +14,24 @@ export interface FxDrawTweak {
   readonly additive: boolean;
   /** Optional tint multiplied into the art (pale teal lifts a dark-teal sprite off its own caster). */
   readonly tint?: number;
+  /** Optional flat-colour silhouette drawn additively behind the art (a dark sprite cannot be lightened by tint or additive blend). */
+  /** Draw depth override: sprites that spawn inside the caster's body hide under the fighter at the default depth 0. */
+  readonly depth?: number;
+  readonly haloFill?: number;
+  readonly haloAlpha?: number;
+  readonly haloScale?: number;
 }
 
 export const FX_DRAW_TWEAKS: Readonly<Record<string, FxDrawTweak>> = {
   cinderSpray: { scale: 1.5, minAlpha: 1, alphaMul: 1, additive: true },
   abyssFlash: { scale: 1.8, minAlpha: 0, alphaMul: 0.9, additive: true },
-  // The 8-frame loop is a dark-teal worm that starts inside Abyssor's teal body: bigger, lighter, additive pale teal.
-  abyssalPull: { scale: 1.5, minAlpha: 0, alphaMul: 0.9, additive: true, tint: 0xbff4f0 },
+  // The 8-frame loop is a dark-teal worm that starts inside Abyssor's teal body. Additive/tint on dark art shows nothing (captured), so
+  // it stays a normal-blend 1.5x worm and gets a pale-teal flat silhouette halo that separates it from the body and the floor.
+  abyssalPull: { scale: 1.5, minAlpha: 0, alphaMul: 0.95, additive: false, haloFill: 0xbff4f0, haloAlpha: 0.85, haloScale: 1.35, depth: 400 },
 };
 
 /** Abyssal Pull procedural tendril: it starts this many px from the caster (was 8) so it does not pile onto the sprite/body. */
 export const PULL_TENDRIL_START_PX = 44;
-
-/**
- * Brazgor Forge Gore: the approved 80x60 art is an arc bulging UP (not symmetric, but drawn stretched over the 70x80 box it read as a
- * starburst). Drawn instead at its own aspect, turned so the bulge points along the attack heading, `forwardPx` ahead of the hero.
- */
-export const FORGE_GORE_LOOK = { w: 80, h: 60, scale: 0.85, forwardPx: 20 } as const;
-
-/** Unit vectors for the 8 headings (0 east, 2 north, 4 west, 6 south; screen y down). */
-const HEADING: readonly (readonly [number, number])[] = [[1, 0], [0.7071, -0.7071], [0, -1], [-0.7071, -0.7071], [-1, 0], [-0.7071, 0.7071], [0, 1], [0.7071, 0.7071]];
-
-export interface ForgeGoreLook { readonly angle: number; readonly w: number; readonly h: number; readonly dx: number; readonly dy: number }
-
-/** Drawn angle (degrees, clockwise), size and forward offset for Forge Gore heading `dir`; the bulge-up art turns +90 deg to point along the heading. */
-export function forgeGoreLook(dir: number): ForgeGoreLook {
-  const d = ((Math.round(dir) % 8) + 8) % 8;
-  const [ux, uy] = HEADING[d] ?? [1, 0];
-  const { w, h, scale, forwardPx } = FORGE_GORE_LOOK;
-  return { angle: (360 - d * 45 + 90) % 360, w: w * scale, h: h * scale, dx: ux * forwardPx, dy: uy * forwardPx };
-}
 
 export interface FxDrawResult { readonly w: number; readonly h: number; readonly alpha: number; readonly additive: boolean }
 

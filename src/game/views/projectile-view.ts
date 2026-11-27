@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import type { RenderProjectile } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { lerp } from './character-view';
-import { FX_DRAW_TWEAKS, applyFxTweak, forgeGoreLook } from './fx-draw-tweaks';
+import { FX_DRAW_TWEAKS, applyFxTweak } from './fx-draw-tweaks';
 import { hidesSporeSprite } from '../fx/spore-specks';
 import { SMOOTH_KIND, hurricaneSpin, meleeFadeOut, meleeGrowIn, pulseBump } from '../fx/ability-smooth';
 
@@ -16,6 +16,9 @@ const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, Entry>>;
 const FRAME = 'proj';
 /** Phaser.BlendModes.ADD (a type-only Phaser import keeps this module unit-testable without the engine). */
 const BLEND_ADD = 1;
+/** Phaser.TintModes values (type-only Phaser import here). */
+const TINT_MULTIPLY = 0;
+const TINT_FILL = 1;
 /** Phaser.BlendModes.NORMAL. */
 const BLEND_NORMAL = 0;
 
@@ -194,8 +197,6 @@ export class ProjectileView {
     if (grown > 0) { look.w += grown; look.h += grown; }
     look.w *= scale;
     look.h *= scale;
-    const gore = melee && p.sprite === 'forgeGore' ? forgeGoreLook(p.dir) : undefined;
-    if (gore) Object.assign(look, { angle: gore.angle, w: gore.w, h: gore.h, flip: false });
     const tw = applyFxTweak(p.sprite, look.w, look.h, fade);
     look.w = tw.w;
     look.h = tw.h;
@@ -205,9 +206,11 @@ export class ProjectileView {
     // the caller's `shift` (drawn caster minus sim caster) keeps the art on the smoothly drawn body.
     const a = melee ? 1 : alpha;
     const follow = kind === 'lunge' || kind === 'spin' ? shift : undefined;
-    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2 + (follow?.dx ?? 0) + (gore?.dx ?? 0), lerp(p.py, p.y, a) + p.h / 2 + (follow?.dy ?? 0) + (gore?.dy ?? 0));
+    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2 + (follow?.dx ?? 0), lerp(p.py, p.y, a) + p.h / 2 + (follow?.dy ?? 0));
     if (clock && kind === 'spin') look.angle += (hurricaneSpin(ageMs, reduced) * 180) / Math.PI;
     this.image.setAngle(look.angle);
+    const dz = FX_DRAW_TWEAKS[p.sprite]?.depth;
+    if (dz !== undefined) this.image.setDepth(dz);
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
@@ -219,6 +222,9 @@ export class ProjectileView {
       .setAngle(look.angle)
       .setPosition(this.image.x, this.image.y)
       .setDepth(this.image.depth - 0.01);
+    const halo = FX_DRAW_TWEAKS[p.sprite];
+    if (halo?.haloFill === undefined) this.glow.setTintMode(TINT_MULTIPLY);
+    if (halo?.haloFill !== undefined) this.glow.setTint(halo.haloFill).setTintMode(TINT_FILL).setAlpha((halo.haloAlpha ?? 0.8) * fade).setBlendMode(BLEND_ADD).setDisplaySize(look.w * (halo.haloScale ?? 1.3), look.h * (halo.haloScale ?? 1.3));
   }
 
   hide(): void {
