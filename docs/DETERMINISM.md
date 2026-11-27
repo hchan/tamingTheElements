@@ -256,6 +256,8 @@ SIM_VERSION 119 (Arcade only; Classic bit-identical): closes the two v118 super-
 
 SIM_VERSION 120 (Arcade only; Classic bit-identical): data-only 1v1 life retune. 17 `ARCADE_RACE_NUMBERS` hpPm rows change and the matching `ARCADE_2V2_LIFE_PM` factors are re-fitted so `floor(hpPm x factor / 1000)` equals the v119 team life for every hero (2v2/3v3 lives bit-identical, pinned by `arcade-numbers-team-life.test.ts`); damagePm, morblass and sindarosa are unchanged. Arcade 1v1 goldens and `arcade-baseline`/`arcade-full-baseline` are re-recorded; the team goldens (`arcade-tag`, `arcade-tag3`) change only in the simVersion header; Classic goldens change only in the header. Details: docs/BALANCE.md "Arcade 1v1 life retune (SIM_VERSION 120)".
 
+SIM_VERSION 121 (Arcade only; Classic bit-identical): the Hard AI melee wall hold adds a per-hero drawn-overhang allowance (`CHARACTER_DRAWN_EXTRA_PX` in `src/core/data/size.ts`, 12 melee rows; the observation carries the sum of both fighters' allowances). Only the Hard AI (level 4) in Arcade reads it; Normal-level baselines are unchanged (`balance:compare` +0.0 pp for all 24 races). Goldens change only in the simVersion header. Details: docs/BALANCE.md "Arcade Hard AI wall hold (SIM_VERSION 121)".
+
 ## Changing the contract or data
 
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value

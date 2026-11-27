@@ -451,7 +451,7 @@ export class ArcadeTactics {
     if (self === undefined || opp === undefined || this.level < AI_HARD || a.phase !== RoundPhase.fight) return cmd;
     if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
     if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
-    return wallHold(self, opp, cmd, arcadePlayfield(), a.chargeIn === -1);
+    return wallHold(self, opp, cmd, arcadePlayfield(), a.chargeIn === -1, a.wallExtra ?? 0);
   }
 
   /**
