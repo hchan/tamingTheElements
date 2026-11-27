@@ -4,7 +4,7 @@ import {
   PARRY_HIT_STOP_TICKS, TRAP_HIT_FLOOR, TRAP_SPIKE_STUN_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
-import { arcadeRaceNumbers } from '../../arcade-numbers';
+import { arcadeRaceNumbers, arcadeSuperPm } from '../../arcade-numbers';
 import { computeDamage, damageDealt } from '../../../rules/damage';
 import { now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
@@ -107,9 +107,9 @@ export function applyArcadeHit(
   const attDef = CHARACTERS[s.defId[attacker] ?? 0];
   const attEl = attDef?.element ?? 'void';
   const defEl = CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void';
-  // The attacker race's Arcade damage pm (FUN-DESIGN 2.13), never on the shared super. A trap hit takes it on its base,
+  // The attacker race's Arcade damage pm (FUN-DESIGN 2.13), a super takes arcadeSuperPm (1000 unless listed). A trap hit takes it on its base,
   // floored at TRAP_HIT_FLOOR, before the chart (WP 39e), so a low-damagePm race's trap is not worth 13 HP.
-  const pm = sup ? 1000 : arcadeRaceNumbers(attDef?.id ?? '')[1];
+  const pm = sup ? arcadeSuperPm(attDef?.id ?? '') : arcadeRaceNumbers(attDef?.id ?? '')[1];
   const trap = defIdx === TRAP_BOMB_DEF || defIdx === TRAP_SPIKE_DEF;
   const hitBase = trap ? Math.max((base * pm) / 1000, TRAP_HIT_FLOOR) : base;
   const racePm = trap ? 1000 : pm;
@@ -118,7 +118,7 @@ export function applyArcadeHit(
   // Stage terrain (FUN-DESIGN 2.15): the attacker's patch bonus, the total modifier capped against the plain hit.
   const tpm = terrainDamagePm(s, attacker);
   if (tpm !== 1000) charted = capDamage(charted, tpm, computeDamage({ ...input, attEl: 'void', defEl: 'void' }));
-  // The race damage pm (a trap hit or a super uses 1000); 1000 keeps the value exact.
+  // The race damage pm (a trap hit uses 1000; a super uses its arcadeSuperPm); 1000 keeps the value exact.
   const raced = racePm === 1000 ? charted : (charted * racePm) / 1000;
   // Ember and Stoneskin (FUN-DESIGN 2.24) on every hit, supers and traps too.
   const epm0 = elementalDamagePm(s, attacker, victim);

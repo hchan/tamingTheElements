@@ -119,6 +119,19 @@ export function arcadeLifePm(hpPm: number, size: number, slug: string): number {
   return size === 2 ? Math.floor((team * ARCADE_2V2_LIFE_SCALE_PM) / 1000) : team;
 }
 
+/**
+ * Per-hero super damage pm (Arcade only; every other hero keeps the shared 1000, a super never takes `damagePm`).
+ * Why morblass: 1v1 win rate .63 after SIM_VERSION 120, and life and `damagePm` are weak levers for it; its unscaled
+ * Hailstorm wave is about half of its damage, so scaling the super is the direct lever. 900 is the INITIAL candidate
+ * (the measurement step tries 900 and 800 by editing this one row).
+ */
+export const ARCADE_SUPER_PM: Readonly<Record<string, number>> = { morblass: 900 };
+
+/** Super damage pm of `slug`: its ARCADE_SUPER_PM row, else 1000. */
+export function arcadeSuperPm(slug: string): number {
+  return ARCADE_SUPER_PM[slug] ?? 1000;
+}
+
 /** The Arcade numbers of race `slug`: its ARCADE_RACE_NUMBERS row, else ARCADE_RACE_DEFAULT. */
 export function arcadeRaceNumbers(slug: string): ArcadeRaceNumbers {
   return ARCADE_RACE_NUMBERS[slug] ?? ARCADE_RACE_DEFAULT;
