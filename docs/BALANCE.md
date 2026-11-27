@@ -662,3 +662,34 @@ The game-tick column of this table is not comparable with the world-tick column 
 Known exception: `expireStuns` zeroes the combo total at natural expiry, so a super that lands on the exact expiry tick starts a fresh combo and an unbroken run can exceed 81 game ticks (2v2 longest 147). Not closed; options are to treat a stun that ended this tick as the same combo for supers, or to give supers stun immunity.
 
 Standard-seed win rates (1v1 16 seeds, 2v2 8 seeds): 1v1 37.5-63.0%, 2v2 42.4-58.4%, all inside the hard 35-65% band (pinned by `tests/repo/balance-gate.test.ts`). Residual: 1v1 melee-vs-ranged cross is 0.403 (v117 0.343), still under the 0.42 target. Arcade baselines and goldens were re-recorded because Arcade behaviour changed on purpose; Classic hashes are unchanged (Classic goldens changed only in the simVersion header).
+
+## Arcade 1v1 life retune (SIM_VERSION 120)
+
+Cause: after the v117/v118 stun nerf 18 of 24 heroes were outside 45-55 in the 1v1 baseline and the melee-vs-ranged cross was .402 (v119). Supers are about half of the damage and `damagePm` does not scale them, so life `hpPm` is the lever. Plan: `ideas/brainstorm/balance-v120-plan.md`. Data only (`src/core/sim/arcade-numbers.ts`), Classic unchanged.
+
+Retune (hpPm old -> new, 2v2 factor old -> new, team life unchanged; `arcade-numbers-team-life.test.ts` pins all 24 team lives):
+
+| hero | hpPm | 2v2 factor | team life |
+|---|---|---|---|
+| cyclonius | 5264 -> 4896 | 905 -> 973 | 4763 |
+| treenoc | 6540 -> 6282 | 733 -> 763 | 4793 |
+| hyalia | 7334 -> 6969 | 613 -> 645 | 4495 |
+| rokcore | 1881 -> 1787 | 767 -> 807 | 1442 |
+| echo | 7800 -> 8269 | 651 -> 614 | 5077 |
+| brazgor | 5600 -> 5942 | 400 -> 377 | 2240 |
+| ishimi | 5400 -> 5668 | 765 -> 729 | 4131 |
+| curomo | 5880 -> 6233 | 777 -> 733 | 4568 |
+| vortigal | 6110 -> 6598 | 650 -> 602 | 3971 |
+| nykra | 5788 -> 6250 | 595 -> 551 | 3443 |
+| quarrak | 3515 -> 3796 | 675 -> 625 | 2372 |
+| ouroth | 6650 -> 7312 | 552 -> 502 | 3670 |
+| kindrel | 6680 -> 7487 | 770 -> 687 | 5143 |
+| durrok | 4892 -> 5532 | 630 -> 557 | 3081 |
+| wispera | 7041 -> 8028 | 658 -> 577 | 4632 |
+| pax | 4677 -> 5380 | 628 -> 546 | 2937 |
+
+Unchanged: morblass 3600/842 (a -8% life try moved it only -0.8 pp in M1, so it stays at the v119 row; plan value 3313/915 rejected). treenoc is 6282/763 (-3.9%), not the plan's 6083/788, which overshot to .427 in M1.
+
+Measurement (MEASUREMENT, M1 = seed 1, `tools/sim/balance.ts --ruleset arcade` with the plan's what-if hp mods, which include treenoc 6083 and morblass 3313, not the final rows; load1 13.5, exit 1 as expected): stalemates 3 (v119: 4), timeouts 0, melee-vs-ranged cross .473 (v119 .402). Win rate v119 -> M1: abyssor .543 -> .492, brazgor .462 -> .467, curomo .454 -> .454, cyclonius .603 -> .489, durrok .399 -> .500, echo .465 -> .486, fiara .514 -> .462, glimmaw .567 -> .534, hyalia .586 -> .507, ishimi .462 -> .473, kindrel .410 -> .516, lavax .567 -> .527, morblass .614 -> .606, nykra .440 -> .484, ouroth .425 -> .473, pax .372 -> .503, quarrak .440 -> .470, rokcore .582 -> .519, sindarosa .573 -> .516, treenoc .590 -> .427, umbrel .552 -> .538, vortigal .442 -> .526, wispera .386 -> .505, zephra .553 -> .526. The slope is not measurable from one block (field effect confounds); ESTIMATE for treenoc 2.3 pp per 1% life, which is why treenoc was eased to 6282.
+
+TODO (re-record agent): M1b (final rows, seed 1) and M2 (seed-41 hold-out) are PENDING. The 03:37 job writes `~/claudetmp/v120/measure2.md` (it did not exist when this section was written); fill in the final-row tables here, check the accept rule (mean of both blocks .45-.55 per hero, each block .40-.60, cross >= .45, stalemates <= 8, timeouts 0), and run `balance:compare --ruleset arcade --team-size 2` (must print 0.0 pp), stun-lock and `fun:gates`.
