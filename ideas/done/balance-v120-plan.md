@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-26
 ---
 
@@ -53,3 +53,6 @@ M1 (measurement, seed 1, TTE_MODS what-if, 549 s; `~/claudetmp/v120/measure.md`,
 - treenoc .427 (was .590) for -7% life: steeper than the plan's slope (one block cannot separate it from the field effect). Refit on the HOLD branch `worktree-agent-af9091e96b84b1e01` (commit 3a3d10ff): treenoc `[6282, 1253]` (-3.94% life) and 2v2 factor 763 (6282 x 763 = 4793 exactly; no exact pair exists at 6278).
 - morblass .606 for -8% life: life is a weak lever (supers, about half its damage, are not scaled by damagePm). Reverted to v119 life (3600/842, team 3031). `damagePm` is read in `src/core/sim/systems/arcade/hit.ts:112` as `arcadeRaceNumbers(attDef?.id)[1]` with no team-size or ruleset factor, so a morblass damage cut would also change 2v2/3v3. COORDINATOR DECISION: option 4: leave morblass at its v119 values for v120 (.606 is inside the hard 35-65 band and inside the .40-.60 per-block check only marginally); investigate it separately (options: shared damage cut + 2v2 measurement; a team-size damage compensation in hit.ts = a new sim mechanism, needs its own plan; a morblass super-damage scale = new code).
 Still to do: M1b (seed 1 with the refit treenoc/morblass) and M2 (seed-41 hold-out) when load1 < 15, overnight after the nightly (a one-shot cron at about 03:37 launches the read-only measure agent); then steps 3 (bump + docs + update the stale `arcade-numbers.test.ts` pins), 4 (re-record), 5 (band tests). Acceptance must be re-judged on the two-block mean; morblass may be excused from the .45-.55 criterion (documented) as long as it stays inside .40-.65.
+
+## Progress (2026-11-27): v120 complete
+v120 complete (merges fa73c0f5, afa5c98d, and the step 5 band-test commit). Measured acceptance: M1b cross .472, M2 .515; 23 of 24 heroes in .45-.55 on the two-block mean; morblass is excused (mean .6005; recorded 1v1 baseline .63): life is a weak lever for it, so a separate plan is needed, see [morblass-super-scaling-plan](../brainstorm/morblass-super-scaling-plan.md). Step 5: `tests/repo/balance-gate.test.ts` now checks `arcade-full-baseline.json` as well, requires every 1v1 and full-roster hero inside 40-60% (morblass up to 65%) and the melee-vs-ranged cross >= .42 (recorded .472 in both); 2v2 stays 35-65.
