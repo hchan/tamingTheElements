@@ -60,6 +60,31 @@ for (const hero of ['umbrel', 'abyssor', 'nykra', 'glimmaw', 'quarrak', 'ouroth'
   expect(errors).toEqual([]);
 });
 
+// Results fit (QA rerun 2): a tall hero's still must not push the buttons below a 1280x720 fold. Long gate: a real two-round fight, about 20 s each.
+for (const side of ['win', 'lose'] as const) test(`hyalia ${side}: results buttons stay inside 1280x720`, async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${START}&ff=arcade,roster24#arcade`);
+  await page.getByLabel('Your race').selectOption(side === 'win' ? 'hyalia' : 'fiara');
+  await page.getByLabel('AI race').selectOption(side === 'win' ? 'fiara' : 'hyalia');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await waitFor(page, 'arena ready', ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(91)`);
+  for (let round = 0; round < 2; round++) {
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 300, 360, 0); a.place(f.id, 540, 360, 4); a.setMeter(0, 1000); a.setHp(f.id, 1); a.step(1, [${String(SUPER)}, 0]); a.step(${String(ROUND)}); })()`);
+  }
+  await waitFor(page, 'results screen', `!!document.querySelector('#arcadeResults')`);
+  await expect(page.locator(side === 'win' ? '#arcadeResults .matchEndStill' : '#arcadeResults .matchEndKoStill')).toHaveAttribute('data-hero', 'hyalia');
+  await waitFor(page, 'Phaser teardown settled', 'window.__TTE__.settled()');
+  for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
+    await expect(async () => {
+      const box = await page.locator(`#arcadeResults ${sel}`).boundingBox();
+      expect(box, sel).not.toBeNull();
+      expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} bottom is inside the viewport`).toBeLessThanOrEqual(720);
+    }).toPass();
+  }
+});
+
 // Procedural KO collapse (src/game/fx/ko-collapse.ts): Fiara, Cyclonius, Lavax, Morblass and Rokcore lose and the Large portrait collapses at its base; Wispera, Echo and Ishimi fell back to the plain loser face (no collapse element).
 // Long gate: a real two-round fight, about 20 s each. SHOT_DIR saves the headless screenshot.
 const PLAIN_FACE = new Set(['wispera', 'echo', 'ishimi']);

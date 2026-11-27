@@ -1,6 +1,7 @@
 import { CHARACTERS, characterId, type Element } from '@core/index';
 import { cutinFlagOn, heroReleased } from './cutin-gate';
 import { ELEMENT_COLORS } from './element-colors';
+import { RESULT_STILL_SIZE } from './ko-still';
 
 /**
  * The roster24 victory still (public/assets/img/victory/<hero>_victory.png, installed by tools/assets/victory-gen/victory-key.py) on
@@ -26,7 +27,7 @@ export function applyVictoryStill(root: HTMLElement, hero: string, url: string):
     img.alt = '';
     img.setAttribute('aria-hidden', 'true');
     img.dataset['hero'] = hero;
-    img.style.cssText = 'width:min(300px,60vw);height:auto;border-radius:14px;box-shadow:0 0 22px rgba(255,230,0,0.5)';
+    img.style.cssText = `${RESULT_STILL_SIZE};border-radius:14px;box-shadow:0 0 22px rgba(255,230,0,0.5)`;
     face.replaceWith(img);
   };
   img.src = url;
