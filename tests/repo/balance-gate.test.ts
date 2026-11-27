@@ -9,7 +9,7 @@ import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { createMatch } from '../../src/core/sim/match';
 import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
-import { ARCADE_2V2_BASELINE_PATH, ARCADE_2V2_PARAMS, ARCADE_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
+import { ARCADE_2V2_BASELINE_PATH, ARCADE_2V2_PARAMS, ARCADE_BASELINE_PATH, ARCADE_FULL_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
 import { DEFAULT_MAX_TICKS, RACES, RELEASED_RACES, makeAgent, partnerOffsets, runPairing, runTournament } from '../../tools/sim/run-match';
 import { styleGateFindings } from '../../tools/sim/style-summary';
 
@@ -107,16 +107,60 @@ describe('balance baseline', () => {
   });
 });
 
-/** R8 (SIM_VERSION 118): the recorded Arcade baselines stay inside the 35-65% hard limit (the target band is 40-60%; the limit leaves room for sampling noise). */
-const HARD_MIN = 0.35;
-const HARD_MAX = 0.65;
-function expectInsideBand(label: string, report: BalanceReport): void {
-  expect(Object.keys(report.winRates).length).toBeGreaterThanOrEqual(24);
+/**
+ * Arcade band checks. 2v2 keeps the 35-65 hard limit (fixture outliers there come from which hero leads a fixed pair).
+ * After SIM_VERSION 120 the 1v1 and full-roster baselines must have every hero inside 40-60%, except morblass, excused up to
+ * 65%: life is a weak lever for morblass (its supers are about half its damage and `damagePm` does not scale them), so a
+ * separate damage/super-scaling plan is pending (ideas/brainstorm/balance-v120-plan.md, ideas/brainstorm/morblass-super-scaling-plan.md).
+ */
+interface Band { readonly min: number; readonly max: number; readonly excused?: Readonly<Record<string, number>> }
+const BAND_2V2: Band = { min: 0.35, max: 0.65 };
+const BAND_1V1: Band = { min: 0.4, max: 0.6, excused: { morblass: 0.65 } };
+/** Melee-vs-ranged cross (melee score against ranged) must stay at or above this in the 1v1 and full-roster baselines (v120: .472). */
+const MIN_CROSS = 0.42;
+
+function bandViolations(report: Pick<BalanceReport, 'winRates'>, band: Band): string[] {
+  const out: string[] = [];
+  if (Object.keys(report.winRates).length < 24) out.push('fewer than 24 heroes');
   for (const [hero, rate] of Object.entries(report.winRates)) {
-    expect(rate, `${label} ${hero}`).toBeGreaterThanOrEqual(HARD_MIN);
-    expect(rate, `${label} ${hero}`).toBeLessThanOrEqual(HARD_MAX);
+    const max = band.excused?.[hero] ?? band.max;
+    if (rate < band.min || rate > max) out.push(`${hero} ${String(rate)} outside ${String(band.min)}-${String(max)}`);
   }
+  return out;
 }
+function expectInsideBand(label: string, report: BalanceReport, band: Band): void {
+  expect(bandViolations(report, band), label).toEqual([]);
+}
+function expectCross(label: string, report: BalanceReport): void {
+  expect(report.styleSummary?.crossMeleeVsRanged.winRate ?? 0, `${label} melee-vs-ranged cross`).toBeGreaterThanOrEqual(MIN_CROSS);
+}
+
+describe('Arcade band helper (fake data: each assertion fails when the data violates it)', () => {
+  const ok = Object.fromEntries(Array.from({ length: 24 }, (_, i) => [`h${String(i)}`, 0.5]));
+  it('accepts a flat field and flags a hero outside 40-60 in 1v1 but not inside 35-65 in 2v2', () => {
+    expect(bandViolations({ winRates: ok }, BAND_1V1)).toEqual([]);
+    expect(bandViolations({ winRates: { ...ok, h3: 0.61 } }, BAND_1V1)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, h3: 0.39 } }, BAND_1V1)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, h3: 0.61 } }, BAND_2V2)).toEqual([]);
+    expect(bandViolations({ winRates: { ...ok, h3: 0.66 } }, BAND_2V2)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, h3: 0.34 } }, BAND_2V2)).toHaveLength(1);
+  });
+  it('excuses only morblass, and only up to 65%', () => {
+    expect(bandViolations({ winRates: { ...ok, morblass: 0.64 } }, BAND_1V1)).toEqual([]);
+    expect(bandViolations({ winRates: { ...ok, morblass: 0.66 } }, BAND_1V1)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, morblass: 0.38 } }, BAND_1V1)).toHaveLength(1);
+    expect(bandViolations({ winRates: { ...ok, pax: 0.64 } }, BAND_1V1)).toHaveLength(1);
+  });
+  it('flags a short roster', () => {
+    expect(bandViolations({ winRates: { a: 0.5 } }, BAND_1V1)).toContain('fewer than 24 heroes');
+  });
+  it('the cross check fails below .42 and passes at .42', () => {
+    const withCross = (winRate: number): BalanceReport => ({ winRates: ok, styleSummary: { crossMeleeVsRanged: { winRate } } }) as unknown as BalanceReport;
+    expect(() => { expectCross('fake', withCross(0.41)); }).toThrow();
+    expect(() => { expectCross('fake', withCross(0.42)); }).not.toThrow();
+    expect(() => { expectCross('fake', { winRates: ok } as BalanceReport); }).toThrow();
+  });
+});
 
 describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report only)', () => {
   const arcade = JSON.parse(readFileSync(ARCADE_BASELINE_PATH, 'utf8')) as BalanceReport;
@@ -128,7 +172,15 @@ describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report o
   });
 
   it('recorded baselines stay inside the band', () => {
-    expectInsideBand('arcade-baseline', arcade);
+    expectInsideBand('arcade-baseline', arcade, BAND_1V1);
+    expectCross('arcade-baseline', arcade);
+  });
+
+  it('the full-roster baseline (arcade-full-baseline.json, never checked before) stays inside the band too', () => {
+    const full = JSON.parse(readFileSync(ARCADE_FULL_BASELINE_PATH, 'utf8')) as BalanceReport;
+    expect(full.params).toEqual({ ...ARCADE_PARAMS, roster: 'full' });
+    expectInsideBand('arcade-full-baseline', full, BAND_1V1);
+    expectCross('arcade-full-baseline', full);
   });
 
   it('leaves the Classic parameters alone (Classic stays bit-identical)', () => {
@@ -148,7 +200,7 @@ describe('Arcade 2v2 balance baseline (WP-arcade-2v2-tune; compared nightly, rep
   });
 
   it('recorded baselines stay inside the band', () => {
-    expectInsideBand('arcade-2v2-baseline', tag);
+    expectInsideBand('arcade-2v2-baseline', tag, BAND_2V2);
   });
 });
 
