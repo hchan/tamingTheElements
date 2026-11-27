@@ -89,7 +89,7 @@
   "inputs": {
    "prep.py": "19d9f78175886a9219336b9b6cb721ee3779f4875ca192ee64ba65b5019e70f3",
    "spec": "78bab55ec91ae73ce580fc52f10e5d153e8c92f4644f62b7c39c6432cc4a1a9e",
-   "anim": "278685eaff1f68149362562da26db73e7a10f4222159b8f4d39e6317a162edf0",
+   "anim": "51e29f32c6cb2e2d15ceea5fcd909ac5a4b243f7a84b05f7bed114a1d336cbe3",
    "portrait": "dac21b886faeb399774066b0dc008e354fa15cced6ae15ab5f6a6e448fb14d6f"
   },
   "outputs": {
@@ -98,7 +98,7 @@
    "parts/eye.png": "bf2991732d48cacb679db604da510c13fc5be6c06f4943e391dabfcbb6c1dd93",
    "parts/rim.png": "4005b0c3d4d5f1950fe3f7ea4b0fa9d162859f8b1fc5cc63530f42c96ae778a4",
    "parts/flash.png": "cfba1bd7bedfc18a48558eb9babb7b5997fe81faedb1492e7e4e01c29b385eec",
-   "rig.json": "f86c2c9f627186da039b3f766ecd1177e154e89f2abb537fe875fe2019196066"
+   "rig.json": "6a034d13da8a4e070417b6f50d93d575ff13706dfc0c036b9c29839c2b655ca0"
   }
  },
  "hyalia": {
