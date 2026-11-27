@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { CHARACTERS, getCharacter } from '@core/menu-index';
 import type { CharacterId } from '@core/menu-index';
 import { ELEMENT_ORDER, heroProfile, heroStyle, heroesPerElement } from './hero-info';
-import { heroGrid, heroPanel, styleBadge } from './hero-panel';
+import { ALIGNMENT_HINT, heroGrid, heroPanel, styleBadge } from './hero-panel';
 
 const RACES = CHARACTERS.slice(0, 14)
   .filter((c) => ELEMENT_ORDER.includes(c.element))
@@ -55,6 +55,17 @@ describe('heroGrid', () => {
     const g = heroGrid({ races: RACES });
     expect(g.grid.dataset['cols']).toBe('3');
     expect(g.columns()).toBe(3);
+  });
+});
+
+describe('heroPanel Alignment explanation', () => {
+  it('explains Alignment in visible text and a row title', () => {
+    const p = heroPanel();
+    p.show(RACES[0] as CharacterId);
+    const hint = p.node.querySelector('.heroStatHint');
+    expect(hint?.textContent).toBe(ALIGNMENT_HINT);
+    const row = [...p.node.querySelectorAll('.heroStats div')].find((r) => r.querySelector('dt')?.textContent === 'Alignment');
+    expect(row?.getAttribute('title')).toBe(ALIGNMENT_HINT);
   });
 });
 
